@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+<extension point="org.eclipse.jdt.ls.core.delegateCommandHandler">
+        <delegateCommandHandler class="com.microsoft.jdtls.ext.core.CommandHandler">
+            <command id="java.getProjects"/>
+            <command id="java.getPackageData"/>
+        </delegateCommandHandler>
+    </extension>
+    <extension
+         point="org.eclipse.jdt.ls.core.contentProvider">
+      <contentProvider
+            class="com.microsoft.jdtls.ext.core.JarFileContentProvider"
+            id="jarFileContentProvider"
+            priority="10000"
+            uriPattern="jdt://jarentry/.*"
+            cacheable="true">
+      </contentProvider>
+   </extension>
+</plugin>

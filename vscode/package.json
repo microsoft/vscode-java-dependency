@@ -1,0 +1,84 @@
+{
+  "name": "vscode-java-copilot",
+  "displayName": "Java Project Manager",
+  "description": "Manage Java Projects in VSCode",
+  "version": "0.2.0",
+  "publisher": "yaozheng",
+  "preview": true,
+  "keywords": [
+    "java",
+    "project",
+    "explorer"
+  ],
+  "engines": {
+    "vscode": "^1.17.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yaohaizh/java-copilot.git"
+  },
+  "homepage": "https://github.com/yaohaizh/java-copilot/blob/master/README.md",
+  "icon": "logo.png",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "activationEvents": [
+    "onLanguage:java",
+    "workspaceContains:pom.xml",
+    "workspaceContains:build.gradle"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "javaExtensions": [
+      "./server/com.microsoft.jdtls.ext.core-0.2.0.jar"
+    ],
+    "commands": [
+      {
+        "command": "java.view.package.refresh",
+        "title": "Refresh",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-refresh.svg",
+          "light": "images/light/icon-refresh.svg"
+        }
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "java.view.package.refresh",
+          "when": "view == javaProjectExplorer",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "javaProjectExplorer",
+          "name": "Java Projects"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "node ./node_modules/vscode/bin/test",
+    "build-server": "./node_modules/.bin/gulp build_server"
+  },
+  "extensionDependencies": [
+    "redhat.java"
+  ],
+  "devDependencies": {
+    "@types/mocha": "^2.2.32",
+    "@types/node": "^6.0.40",
+    "gulp": "^3.9.1",
+    "gulp-copy": "^1.0.1",
+    "gulp-tslint": "^8.1.2",
+    "mocha": "^2.3.3",
+    "tslint": "^5.7.0",
+    "typescript": "^2.0.3",
+    "vscode": "^1.1.5"
+  },
+  "dependencies": {}
+}
