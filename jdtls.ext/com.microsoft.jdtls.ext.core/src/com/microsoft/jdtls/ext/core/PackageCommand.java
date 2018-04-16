@@ -50,11 +50,16 @@ import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapterFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.microsoft.jdtls.ext.core.model.ContainerNode;
+import com.microsoft.jdtls.ext.core.model.NodeKind;
+import com.microsoft.jdtls.ext.core.model.PackageNode;
+import com.microsoft.jdtls.ext.core.model.PackageRootNode;
 
 @SuppressWarnings("deprecation")
 public class PackageCommand {
 
-	private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapterFactory()).registerTypeAdapterFactory(new EnumTypeAdapterFactory()).create();
+	private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapterFactory())
+			.registerTypeAdapterFactory(new EnumTypeAdapterFactory()).create();
 
 	private static final Map<NodeKind, BiFunction<PackageParams, IProgressMonitor, List<PackageNode>>> commands;
 
@@ -62,7 +67,7 @@ public class PackageCommand {
 		commands = new HashMap<>();
 		commands.put(NodeKind.PROJECT, PackageCommand::getContainers);
 		commands.put(NodeKind.CONTAINER, PackageCommand::getPackageFragmentRoots);
-		commands.put(NodeKind.JAR, PackageCommand::getPackages);
+		commands.put(NodeKind.PACKAGEROOT, PackageCommand::getPackages);
 		commands.put(NodeKind.PACKAGE, PackageCommand::getClassfiles);
 		commands.put(NodeKind.Folder, PackageCommand::getFolderChildren);
 	}
@@ -86,7 +91,8 @@ public class PackageCommand {
 
 		BiFunction<PackageParams, IProgressMonitor, List<PackageNode>> loader = commands.get(params.getKind());
 		if (loader == null) {
-			throw new CoreException(new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, String.format("Unknown classpath item type: %s", params.getKind())));
+			throw new CoreException(
+					new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("Unknown classpath item type: %s", params.getKind())));
 		}
 		List<PackageNode> result = loader.apply(params, pm);
 		return result;
@@ -106,15 +112,8 @@ public class PackageCommand {
 						entry = JavaCore.getResolvedClasspathEntry(entry);
 						IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
 						if (container != null) {
-							if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-								IPackageFragmentRoot[] packageFragmentRoots = javaProject.findPackageFragmentRoots(entry);
-								for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
-									String rootName = ExtUtils.removeProjectSegment(javaProject.getElementName(), fragmentRoot.getPath()).toPortableString();
-									return new PackageNode(rootName, fragmentRoot.getPath().toPortableString(), NodeKind.JAR);
-								}
-							} else {
-								return new PackageNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER);
-							}
+							return new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
+									entry.getEntryKind());
 						}
 					} catch (CoreException e) {
 						// Ignore it
@@ -145,7 +144,8 @@ public class PackageCommand {
 					ArrayList<PackageNode> children = new ArrayList<>();
 					IPackageFragmentRoot[] packageFragmentRoots = javaProject.findPackageFragmentRoots(containerEntry);
 					for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
-						PackageNode node = new PackageNode(fragmentRoot.getElementName(), fragmentRoot.getPath().toPortableString(), NodeKind.JAR);
+						PackageNode node = new PackageRootNode(fragmentRoot.getElementName(), fragmentRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT,
+								fragmentRoot.getKind());
 						children.add(node);
 						if (fragmentRoot instanceof JrtPackageFragmentRoot) {
 							node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
@@ -169,7 +169,9 @@ public class PackageCommand {
 			try {
 				IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
 				if (packageRoot == null) {
-					throw new CoreException(new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
+					throw new CoreException(
+							new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID,
+									String.format("No package root found for %s", query.getPath())));
 				}
 				Object[] result = getPackageFragmentRootContent(packageRoot, pm);
 				return convertToClasspathNode(result);
@@ -186,7 +188,8 @@ public class PackageCommand {
 			try {
 				IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
 				if (packageRoot == null) {
-					throw new CoreException(new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
+					throw new CoreException(
+							new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
 				}
 				IPackageFragment packageFragment = packageRoot.getPackageFragment(query.getPath());
 				if (packageFragment != null) {
@@ -210,7 +213,8 @@ public class PackageCommand {
 			try {
 				IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
 				if (packageRoot == null) {
-					throw new CoreException(new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
+					throw new CoreException(
+							new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
 				}
 				// jar file and folders
 				Object[] resources = packageRoot.getNonJavaResources();

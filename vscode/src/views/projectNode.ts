@@ -4,7 +4,8 @@ import { TreeItem, TreeItemCollapsibleState } from "vscode";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Jdtls } from "../java/jdtls";
 import { ContainerNode } from "./containerNode";
-import { JarNode } from "./jarNode";
+import { PackageRootNode } from "./packageRootNode";
+import { IContainerNodeData, ContainerEntryKind } from "../java/containerNodeData";
 
 export class ProjectNode extends DataNode {
 
@@ -13,7 +14,27 @@ export class ProjectNode extends DataNode {
     }
 
     protected loadData(): Thenable<INodeData[]> {
-        return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri });
+        let result: INodeData[] = [];
+        return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
+            const sourceContainer: IContainerNodeData[] = [];
+            res.forEach((node) => {
+                const containerNode = <IContainerNodeData>node;
+                if (containerNode.entryKind === ContainerEntryKind.CPE_SOURCE) {
+                    sourceContainer.push(containerNode);
+                } else {
+                    result.push(node);
+                }
+            });
+            if (sourceContainer.length > 0) {
+                return Promise.all(sourceContainer.map(c => Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this.uri, path: c.path })))
+                    .then((rootPackages) => {
+                        result = result.concat(...rootPackages);
+                        return result;
+                    });
+            } else {
+                return result;
+            }
+        });
     }
 
     protected createChildNodeList(): ExplorerNode[] {
@@ -23,8 +44,8 @@ export class ProjectNode extends DataNode {
             this.nodeData.children.forEach((data) => {
                 if (data.kind === NodeKind.Container) {
                     result.push(new ContainerNode(data, this));
-                } else if (data.kind === NodeKind.Jar) {
-                    result.push(new JarNode(data, this));
+                } else if (data.kind === NodeKind.PackageRoot) {
+                    result.push(new PackageRootNode(data, this));
                 }
             });
         }

@@ -2,7 +2,7 @@ import { DataNode } from "./dataNode";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { ExplorerNode } from "./explorerNode";
 import { Jdtls } from "../java/jdtls";
-import { JarNode } from "./jarNode";
+import { PackageRootNode } from "./packageRootNode";
 import { ProjectNode } from "./projectNode";
 
 export class ContainerNode extends DataNode {
@@ -17,7 +17,7 @@ export class ContainerNode extends DataNode {
         const result = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((classpathNode) => {
-                result.push(new JarNode(classpathNode, this._project));
+                result.push(new PackageRootNode(classpathNode, this._project));
             });
         }
         return result;

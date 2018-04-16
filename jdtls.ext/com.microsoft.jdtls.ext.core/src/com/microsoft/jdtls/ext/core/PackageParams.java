@@ -11,6 +11,8 @@
 
 package com.microsoft.jdtls.ext.core;
 
+import com.microsoft.jdtls.ext.core.model.NodeKind;
+
 /**
  * The query object to get the project dependency information from the language
  * server.
