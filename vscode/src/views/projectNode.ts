@@ -49,6 +49,11 @@ export class ProjectNode extends DataNode {
                 }
             });
         }
+
+        result.sort((a: DataNode, b: DataNode) => {
+            return b.nodeData.kind - a.nodeData.kind;
+        });
+
         return result;
     }
 

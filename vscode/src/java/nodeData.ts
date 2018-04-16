@@ -5,7 +5,7 @@ export enum NodeKind {
     Container = 3,
     PackageRoot = 4,
     Package = 5,
-    Classfile = 6,
+    TypeRoot = 6,
     Folder = 7,
     File = 8
 }

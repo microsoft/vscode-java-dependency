@@ -2,14 +2,16 @@ import { DataNode } from "./dataNode";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Jdtls } from "../java/jdtls";
 import { ExplorerNode } from "./explorerNode";
-import { ClassfileNode } from "./classfileNode";
+import { TypeRootNode } from "./typeRootNode";
 import { FolderNode } from "./folderNode";
 import { FileNode } from "./fileNode";
 import { PackageNode } from "./packageNode";
 import { ProjectNode } from "./projectNode";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
+import { IContainerNodeData } from "../java/containerNodeData";
 
 export class PackageRootNode extends DataNode {
+
     constructor(nodeData: INodeData, private _project: ProjectNode) {
         super(nodeData);
     }
@@ -28,8 +30,8 @@ export class PackageRootNode extends DataNode {
                     result.push(new FileNode(data));
                 } else if (data.kind === NodeKind.Folder) {
                     result.push(new FolderNode(data, this._project, this));
-                } else if (data.kind === NodeKind.Classfile) {
-                    result.push(new ClassfileNode(data));
+                } else if (data.kind === NodeKind.TypeRoot) {
+                    result.push(new TypeRootNode(data));
                 }
             });
         }
