@@ -9,40 +9,23 @@
  *     Microsoft Corporation - initial API and implementation
  *******************************************************************************/
 
-package com.microsoft.jdtls.ext.core;
 
-public enum NodeKind {
-	WORKSPACE(1),
+package com.microsoft.jdtls.ext.core.model;
 
-	PROJECT(2),
+public class ContainerNode extends PackageNode {
 
-	CONTAINER(3),
+	private int entryKind;
 
-	JAR(4),
-
-	PACKAGE(5),
-
-	CLASSFILE(6),
-
-	Folder(7),
-
-	FILE(8);
-
-	private final int value;
-
-	NodeKind(int value) {
-		this.value = value;
+	public ContainerNode(String name, String path, NodeKind kind, int entryKind) {
+		super(name, path, kind);
+		this.entryKind = entryKind;
 	}
 
-	public int getValue() {
-		return value;
+	public ContainerNode() {
+
 	}
 
-	public static NodeKind forValue(int value) {
-		NodeKind[] allValues = NodeKind.values();
-		if (value < 1 || value > allValues.length) {
-			throw new IllegalArgumentException("Illegal enum value: " + value);
-		}
-		return allValues[value - 1];
+	public int getEntryType() {
+		return this.entryKind;
 	}
 }

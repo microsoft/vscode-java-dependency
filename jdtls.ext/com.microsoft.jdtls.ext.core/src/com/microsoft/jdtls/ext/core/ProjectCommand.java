@@ -8,6 +8,7 @@
  * Contributors:
  *     Microsoft Corporation - initial API and implementation
  *******************************************************************************/
+
 package com.microsoft.jdtls.ext.core;
 
 import java.util.ArrayList;
@@ -20,6 +21,9 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
+
+import com.microsoft.jdtls.ext.core.model.NodeKind;
+import com.microsoft.jdtls.ext.core.model.PackageNode;
 
 public final class ProjectCommand {
 

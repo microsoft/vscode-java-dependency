@@ -42,7 +42,7 @@ public class JarFileContentProvider implements IContentProvider {
 		try {
 			IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(rootId);
 			if (packageRoot == null) {
-				throw new CoreException(new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, String.format("No package root found for %s", rootId)));
+				throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", rootId)));
 			}
 			if (packageRoot instanceof JarPackageFragmentRoot) {
 				Object[] resources = packageRoot.getNonJavaResources();

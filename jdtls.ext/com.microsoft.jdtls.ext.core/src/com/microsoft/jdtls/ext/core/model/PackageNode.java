@@ -6,10 +6,11 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     Microsoft Corporation - initial API and implementation
+ *    Microsoft Corporation - initial API and implementation
  *******************************************************************************/
 
-package com.microsoft.jdtls.ext.core;
+
+package com.microsoft.jdtls.ext.core.model;
 
 import java.util.List;
 

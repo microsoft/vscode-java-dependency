@@ -7,14 +7,15 @@ import { FolderNode } from "./folderNode";
 import { FileNode } from "./fileNode";
 import { PackageNode } from "./packageNode";
 import { ProjectNode } from "./projectNode";
+import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
 
-export class JarNode extends DataNode {
+export class PackageRootNode extends DataNode {
     constructor(nodeData: INodeData, private _project: ProjectNode) {
         super(nodeData);
     }
 
     protected loadData(): Thenable<INodeData[]> {
-        return Jdtls.getPackageData({ kind: NodeKind.Jar, projectUri: this._project.nodeData.uri, rootPath: this.nodeData.path });
+        return Jdtls.getPackageData({ kind: NodeKind.PackageRoot, projectUri: this._project.nodeData.uri, rootPath: this.nodeData.path });
     }
 
     protected createChildNodeList(): ExplorerNode[] {
@@ -35,7 +36,12 @@ export class JarNode extends DataNode {
         return result;
     }
 
-    protected get iconPath() : string {
-        return "./images/jar_src.png";
+    protected get iconPath(): string {
+        const data = <IPackageRootNodeData>this.nodeData;
+        if (data.entryKind === PackageRootKind.K_BINARY) {
+            return "./images/jar_src.png";
+        } else {
+            return "./images/packagefolder.png";
+        }
     }
 }
