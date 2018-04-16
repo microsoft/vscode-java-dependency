@@ -9,14 +9,23 @@
  *     Microsoft Corporation - initial API and implementation
  *******************************************************************************/
 
-
 package com.microsoft.jdtls.ext.core.model;
 
-public class ContainerNode extends PackageNode {
+public class TypeRootNode extends PackageNode {
+
+	/**
+	 * Kind constant for a source file.
+	 */
+	public final static int K_SOURCE = 1;
+
+	/**
+	 * Kind constant for a binary type.
+	 */
+	public final static int K_BINARY = 2;
 
 	private int entryKind;
 
-	public ContainerNode(String name, String path, NodeKind kind, int entryKind) {
+	public TypeRootNode(String name, String path, NodeKind kind, int entryKind) {
 		super(name, path, kind);
 		this.entryKind = entryKind;
 	}

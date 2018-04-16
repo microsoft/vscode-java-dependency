@@ -3,8 +3,9 @@ import { ExplorerNode } from "./explorerNode";
 import { DataNode } from "./dataNode";
 import { TreeItem, TreeItemCollapsibleState } from "vscode";
 import { Services } from "../services";
+import { ITypeRootNodeData, TypeRootKind } from "../java/typeRootNodeData";
 
-export class ClassfileNode extends DataNode {
+export class TypeRootNode extends DataNode {
     constructor(nodeData: INodeData) {
         super(nodeData);
     }
@@ -27,6 +28,11 @@ export class ClassfileNode extends DataNode {
     }
 
     protected get iconPath(): string {
-        return "./images/classfile.png";
+        const data = <ITypeRootNodeData>this.nodeData;
+        if (data.entryKind === TypeRootKind.K_BINARY) {
+            return "./images/classfile.png";
+        } else {
+            return "./images/file_type_java.svg";
+        }
     }
 }

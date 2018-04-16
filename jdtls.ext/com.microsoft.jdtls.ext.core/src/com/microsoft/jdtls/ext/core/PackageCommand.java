@@ -44,7 +44,6 @@ import org.eclipse.jdt.internal.core.JarEntryFile;
 import org.eclipse.jdt.internal.core.JarEntryResource;
 import org.eclipse.jdt.internal.core.JrtPackageFragmentRoot;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
-import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapterFactory;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapterFactory;
 
@@ -54,6 +53,7 @@ import com.microsoft.jdtls.ext.core.model.ContainerNode;
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 import com.microsoft.jdtls.ext.core.model.PackageRootNode;
+import com.microsoft.jdtls.ext.core.model.TypeRootNode;
 
 @SuppressWarnings("deprecation")
 public class PackageCommand {
@@ -68,7 +68,7 @@ public class PackageCommand {
 		commands.put(NodeKind.PROJECT, PackageCommand::getContainers);
 		commands.put(NodeKind.CONTAINER, PackageCommand::getPackageFragmentRoots);
 		commands.put(NodeKind.PACKAGEROOT, PackageCommand::getPackages);
-		commands.put(NodeKind.PACKAGE, PackageCommand::getClassfiles);
+		commands.put(NodeKind.PACKAGE, PackageCommand::getRootTypes);
 		commands.put(NodeKind.Folder, PackageCommand::getFolderChildren);
 	}
 
@@ -91,8 +91,7 @@ public class PackageCommand {
 
 		BiFunction<PackageParams, IProgressMonitor, List<PackageNode>> loader = commands.get(params.getKind());
 		if (loader == null) {
-			throw new CoreException(
-					new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("Unknown classpath item type: %s", params.getKind())));
+			throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("Unknown classpath item type: %s", params.getKind())));
 		}
 		List<PackageNode> result = loader.apply(params, pm);
 		return result;
@@ -121,7 +120,7 @@ public class PackageCommand {
 					return null;
 				}).filter(containerNode -> containerNode != null).collect(Collectors.toList());
 			} catch (CoreException e) {
-				JavaLanguageServerPlugin.logException("Problem load project library ", e);
+				JdtlsExtActivator.logException("Problem load project library ", e);
 			}
 		}
 		return Collections.emptyList();
@@ -144,7 +143,11 @@ public class PackageCommand {
 					ArrayList<PackageNode> children = new ArrayList<>();
 					IPackageFragmentRoot[] packageFragmentRoots = javaProject.findPackageFragmentRoots(containerEntry);
 					for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
-						PackageNode node = new PackageRootNode(fragmentRoot.getElementName(), fragmentRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT,
+						String displayName = fragmentRoot.getElementName();
+						if (fragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+							displayName = ExtUtils.removeProjectSegment(javaProject.getElementName(), fragmentRoot.getPath()).toPortableString();
+						}
+						PackageNode node = new PackageRootNode(displayName, fragmentRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT,
 								fragmentRoot.getKind());
 						children.add(node);
 						if (fragmentRoot instanceof JrtPackageFragmentRoot) {
@@ -154,7 +157,7 @@ public class PackageCommand {
 					return children;
 				}
 			} catch (CoreException e) {
-				JavaLanguageServerPlugin.logException("Problem load project JAR entries ", e);
+				JdtlsExtActivator.logException("Problem load project JAR entries ", e);
 			}
 		}
 
@@ -170,38 +173,38 @@ public class PackageCommand {
 				IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
 				if (packageRoot == null) {
 					throw new CoreException(
-							new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID,
-									String.format("No package root found for %s", query.getPath())));
+							new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
 				}
 				Object[] result = getPackageFragmentRootContent(packageRoot, pm);
 				return convertToClasspathNode(result);
 			} catch (CoreException e) {
-				JavaLanguageServerPlugin.logException("Problem load project package ", e);
+				JdtlsExtActivator.logException("Problem load project package ", e);
 			}
 		}
 		return Collections.emptyList();
 	}
 
-	private static List<PackageNode> getClassfiles(PackageParams query, IProgressMonitor pm) {
+	private static List<PackageNode> getRootTypes(PackageParams query, IProgressMonitor pm) {
 		IJavaProject javaProject = getJavaProject(query.getProjectUri());
 		if (javaProject != null) {
 			try {
 				IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
 				if (packageRoot == null) {
 					throw new CoreException(
-							new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
+							new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
 				}
 				IPackageFragment packageFragment = packageRoot.getPackageFragment(query.getPath());
 				if (packageFragment != null) {
-					IJavaElement[] classFiles = packageFragment.getChildren();
-					return Arrays.stream(classFiles).filter(classFile -> !classFile.getElementName().contains("$")).map(classFile -> {
-						PackageNode item = new PackageNode(classFile.getElementName(), classFile.getPath().toPortableString(), NodeKind.CLASSFILE);
+					IJavaElement[] types = packageFragment.getChildren();
+					return Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$")).map(typeRoot -> {
+						PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT,
+								typeRoot instanceof IClassFile ? TypeRootNode.K_BINARY : TypeRootNode.K_SOURCE);
 						return item;
 					}).collect(Collectors.toList());
 
 				}
 			} catch (CoreException e) {
-				JavaLanguageServerPlugin.logException("Problem load project classfile list ", e);
+				JdtlsExtActivator.logException("Problem load project classfile list ", e);
 			}
 		}
 		return Collections.emptyList();
@@ -232,7 +235,7 @@ public class PackageCommand {
 				}
 
 			} catch (CoreException e) {
-				JavaLanguageServerPlugin.logException("Problem load project classfile list ", e);
+				JdtlsExtActivator.logException("Problem load project classfile list ", e);
 			}
 		}
 		return Collections.emptyList();
@@ -264,7 +267,7 @@ public class PackageCommand {
 				result.add(entry);
 			} else if (root instanceof IClassFile) {
 				IClassFile classFile = (IClassFile) root;
-				PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.CLASSFILE);
+				PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.TYPEROOT);
 				entry.setUri(JDTUtils.toUri(classFile));
 				result.add(entry);
 			} else if (root instanceof JarEntryResource) {
