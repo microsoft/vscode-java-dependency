@@ -34,4 +34,8 @@ export class JarNode extends DataNode {
         }
         return result;
     }
+
+    protected get iconPath() : string {
+        return "./images/jar_src.png";
+    }
 }
