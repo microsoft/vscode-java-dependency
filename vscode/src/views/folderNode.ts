@@ -27,4 +27,8 @@ export class FolderNode extends DataNode {
         }
         return result;
     }
+
+    protected get iconPath() : string {
+        return "./images/folder.png";
+    }
 }

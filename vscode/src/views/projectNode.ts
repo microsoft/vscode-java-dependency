@@ -4,6 +4,7 @@ import { TreeItem, TreeItemCollapsibleState } from "vscode";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Jdtls } from "../java/jdtls";
 import { ContainerNode } from "./containerNode";
+import { JarNode } from "./jarNode";
 
 export class ProjectNode extends DataNode {
 
@@ -20,9 +21,17 @@ export class ProjectNode extends DataNode {
         const result = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((data) => {
-                result.push(new ContainerNode(data, this));
+                if (data.kind === NodeKind.Container) {
+                    result.push(new ContainerNode(data, this));
+                } else if (data.kind === NodeKind.Jar) {
+                    result.push(new JarNode(data, this));
+                }
             });
         }
         return result;
+    }
+
+    protected get iconPath(): string {
+        return "./images/project.gif";
     }
 }

@@ -14,4 +14,8 @@ export class FileNode extends DataNode {
     protected createChildNodeList(): ExplorerNode[] {
         return null;
     }
+
+    protected get iconPath() : string {
+        return "./images/file.png";
+    }
 }

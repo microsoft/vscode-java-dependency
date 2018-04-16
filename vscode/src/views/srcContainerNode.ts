@@ -22,4 +22,8 @@ export class SrcContainerNode extends DataNode {
         }
         return result;
     }
+
+    protected get iconPath(): string {
+        return "./images/library.png";
+    }
 }

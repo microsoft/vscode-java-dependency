@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 Microsoft Corporation and others.
+ * Copyright (c) 2018 Microsoft Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ package com.microsoft.jdtls.ext.core;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.internal.core.JarEntryFile;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
@@ -34,4 +35,10 @@ public final class ExtUtils {
 		}
 	}
 
+	public static IPath removeProjectSegment(String projectElementName, IPath path) {
+		if (projectElementName.equals(path.segment(0))) {
+			return path.removeFirstSegments(1).makeRelative();
+		}
+		return path;
+	}
 }

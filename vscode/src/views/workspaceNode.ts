@@ -23,4 +23,8 @@ export class WorkspaceNode extends DataNode {
         }
         return result;
     }
+
+    protected get iconPath() : string {
+        return "./images/project.gif";
+    }
 }

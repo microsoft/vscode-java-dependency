@@ -1,7 +1,8 @@
 
 import { ExplorerNode } from "./explorerNode";
 import { INodeData } from "../java/nodeData";
-import { ProviderResult, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { ProviderResult, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
+import { Services } from "../services";
 
 export abstract class DataNode extends ExplorerNode {
     constructor(private _nodeData: INodeData) {
@@ -11,7 +12,7 @@ export abstract class DataNode extends ExplorerNode {
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this._nodeData) {
             const item = new TreeItem(this._nodeData.name, TreeItemCollapsibleState.Collapsed);
-            item.iconPath = {};
+            item.iconPath = Services.context.asAbsolutePath(this.iconPath);
             return item;
         }
     }
@@ -37,6 +38,8 @@ export abstract class DataNode extends ExplorerNode {
         }
         return this.createChildNodeList();
     }
+
+    protected abstract get iconPath(): string;
 
     protected abstract loadData(): Thenable<INodeData[]>;
 

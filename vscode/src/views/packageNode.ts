@@ -24,4 +24,8 @@ export class PackageNode extends DataNode {
         }
         return result;
     }
+
+    protected get iconPath() : string {
+        return "./images/package.png";
+    }
 }
