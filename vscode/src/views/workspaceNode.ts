@@ -1,8 +1,7 @@
-import { DataNode } from "./dataNode";
-import { INodeData, NodeKind } from "../java/nodeData";
-import { ExplorerNode } from "./explorerNode";
 import { Jdtls } from "../java/jdtls";
-import { TreeItem, TreeItemCollapsibleState } from "vscode";
+import { INodeData } from "../java/nodeData";
+import { DataNode } from "./dataNode";
+import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 
 export class WorkspaceNode extends DataNode {
@@ -24,7 +23,7 @@ export class WorkspaceNode extends DataNode {
         return result;
     }
 
-    protected get iconPath() : string {
+    protected get iconPath(): string {
         return "./images/project.gif";
     }
 }

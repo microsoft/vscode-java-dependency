@@ -1,9 +1,9 @@
-import { DataNode } from "./dataNode";
-import { INodeData, NodeKind } from "../java/nodeData";
 import { Jdtls } from "../java/jdtls";
-import { ProjectNode } from "./projectNode";
+import { INodeData, NodeKind } from "../java/nodeData";
+import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
+import { ProjectNode } from "./projectNode";
 
 export class FolderNode extends DataNode {
     constructor(nodeData: INodeData, private _project: ProjectNode, private _rootNode: DataNode) {
@@ -28,7 +28,7 @@ export class FolderNode extends DataNode {
         return result;
     }
 
-    protected get iconPath() : string {
+    protected get iconPath(): string {
         return "./images/folder.png";
     }
 }

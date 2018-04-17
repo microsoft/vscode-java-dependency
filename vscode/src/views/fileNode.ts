@@ -1,5 +1,7 @@
-import { DataNode } from "./dataNode";
+import { Command } from "vscode";
+import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
+import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 
 export class FileNode extends DataNode {
@@ -15,7 +17,15 @@ export class FileNode extends DataNode {
         return null;
     }
 
-    protected get iconPath() : string {
+    protected get iconPath(): string {
         return "./images/file.png";
+    }
+
+    protected get command(): Command {
+        return {
+            title: "Open file",
+            command: Commands.VIEW_PACKAGE_OPEN_FILE,
+            arguments: [this.uri],
+        };
     }
 }

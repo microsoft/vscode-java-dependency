@@ -32,6 +32,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJarEntryResource;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -199,6 +200,11 @@ public class PackageCommand {
 					return Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$")).map(typeRoot -> {
 						PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT,
 								typeRoot instanceof IClassFile ? TypeRootNode.K_BINARY : TypeRootNode.K_SOURCE);
+						if (typeRoot instanceof ICompilationUnit) {
+							item.setUri(JDTUtils.toURI((ICompilationUnit) typeRoot));
+						} else if (typeRoot instanceof IClassFile) {
+							item.setUri(JDTUtils.toUri((IClassFile) typeRoot));
+						}
 						return item;
 					}).collect(Collectors.toList());
 

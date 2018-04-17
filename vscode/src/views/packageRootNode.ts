@@ -1,14 +1,13 @@
-import { DataNode } from "./dataNode";
-import { INodeData, NodeKind } from "../java/nodeData";
 import { Jdtls } from "../java/jdtls";
+import { INodeData, NodeKind } from "../java/nodeData";
+import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
+import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { TypeRootNode } from "./typeRootNode";
-import { FolderNode } from "./folderNode";
 import { FileNode } from "./fileNode";
+import { FolderNode } from "./folderNode";
 import { PackageNode } from "./packageNode";
 import { ProjectNode } from "./projectNode";
-import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
-import { IContainerNodeData } from "../java/containerNodeData";
+import { TypeRootNode } from "./typeRootNode";
 
 export class PackageRootNode extends DataNode {
 

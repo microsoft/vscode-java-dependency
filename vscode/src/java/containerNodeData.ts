@@ -2,10 +2,10 @@ import { INodeData } from "./nodeData";
 
 export enum ContainerEntryKind {
     /**
- * Entry kind constant describing a classpath entry identifying a
- * library. A library is a folder or JAR containing package
- * fragments consisting of pre-compiled binaries.
- */
+     * Entry kind constant describing a classpath entry identifying a
+     * library. A library is a folder or JAR containing package
+     * fragments consisting of pre-compiled binaries.
+     */
     CPE_LIBRARY = 1,
 
     /**
@@ -33,7 +33,7 @@ export enum ContainerEntryKind {
      *
      * @since 2.0
      */
-    CPE_CONTAINER = 5
+    CPE_CONTAINER = 5,
 }
 
 export interface IContainerNodeData extends INodeData {
