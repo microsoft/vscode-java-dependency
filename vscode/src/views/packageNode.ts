@@ -1,9 +1,8 @@
 
-import { ExplorerNode } from "./explorerNode";
+import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
-import { ProjectNode } from "./projectNode";
-import { Jdtls } from "../java/jdtls";
+import { ExplorerNode } from "./explorerNode";
 import { TypeRootNode } from "./typeRootNode";
 
 export class PackageNode extends DataNode {
@@ -12,7 +11,12 @@ export class PackageNode extends DataNode {
     }
 
     protected loadData(): Thenable<INodeData[]> {
-        return Jdtls.getPackageData({ kind: NodeKind.Package, projectUri: this._project.nodeData.uri, path: this.nodeData.name, rootPath: this._rootNode.path });
+        return Jdtls.getPackageData({
+            kind: NodeKind.Package,
+            projectUri: this._project.nodeData.uri,
+            path: this.nodeData.name,
+            rootPath: this._rootNode.path,
+        });
     }
 
     protected createChildNodeList(): ExplorerNode[] {

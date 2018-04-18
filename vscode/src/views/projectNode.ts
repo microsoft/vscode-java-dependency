@@ -1,11 +1,10 @@
-import { ExplorerNode } from "./explorerNode";
-import { DataNode } from "./dataNode";
-import { TreeItem, TreeItemCollapsibleState } from "vscode";
-import { INodeData, NodeKind } from "../java/nodeData";
+import { ContainerEntryKind, IContainerNodeData } from "../java/containerNodeData";
 import { Jdtls } from "../java/jdtls";
+import { INodeData, NodeKind } from "../java/nodeData";
 import { ContainerNode } from "./containerNode";
+import { DataNode } from "./dataNode";
+import { ExplorerNode } from "./explorerNode";
 import { PackageRootNode } from "./packageRootNode";
-import { IContainerNodeData, ContainerEntryKind } from "../java/containerNodeData";
 
 export class ProjectNode extends DataNode {
 
@@ -26,7 +25,7 @@ export class ProjectNode extends DataNode {
                 }
             });
             if (sourceContainer.length > 0) {
-                return Promise.all(sourceContainer.map(c => Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this.uri, path: c.path })))
+                return Promise.all(sourceContainer.map((c) => Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this.uri, path: c.path })))
                     .then((rootPackages) => {
                         result = result.concat(...rootPackages);
                         return result;

@@ -1,7 +1,7 @@
-import { DataNode } from "./dataNode";
-import { INodeData, NodeKind } from "../java/nodeData";
-import { ExplorerNode } from "./explorerNode";
 import { Jdtls } from "../java/jdtls";
+import { INodeData, NodeKind } from "../java/nodeData";
+import { DataNode } from "./dataNode";
+import { ExplorerNode } from "./explorerNode";
 import { PackageRootNode } from "./packageRootNode";
 import { ProjectNode } from "./projectNode";
 
@@ -23,7 +23,7 @@ export class ContainerNode extends DataNode {
         return result;
     }
 
-    protected get iconPath() : string {
+    protected get iconPath(): string {
         return "./images/library.png";
     }
 }

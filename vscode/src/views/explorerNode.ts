@@ -1,11 +1,14 @@
-import { TreeItem, ProviderResult } from "vscode";
-import { INodeData } from "../java/nodeData";
+import { Command, ProviderResult, TreeItem } from "vscode";
 
 export abstract class ExplorerNode {
     constructor() {
     }
 
-    abstract getChildren(): ProviderResult<ExplorerNode[]>;
+    protected get command(): Command {
+        return undefined;
+    }
 
-    abstract getTreeItem(): TreeItem | Promise<TreeItem>;
+    public abstract getChildren(): ProviderResult<ExplorerNode[]>;
+
+    public abstract getTreeItem(): TreeItem | Promise<TreeItem>;
 }

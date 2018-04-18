@@ -1,7 +1,7 @@
 import { ExtensionContext } from "vscode";
 
 export class Services {
-    static initialize(context: ExtensionContext) {
+    public static initialize(context: ExtensionContext) {
         this._context = context;
     }
 

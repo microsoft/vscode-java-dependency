@@ -7,7 +7,7 @@ export enum NodeKind {
     Package = 5,
     TypeRoot = 6,
     Folder = 7,
-    File = 8
+    File = 8,
 }
 
 export interface INodeData {
@@ -16,5 +16,5 @@ export interface INodeData {
     path?: string;
     uri?: string;
     kind: NodeKind;
-    children?: INodeData[];
+    children?: any[];
 }
