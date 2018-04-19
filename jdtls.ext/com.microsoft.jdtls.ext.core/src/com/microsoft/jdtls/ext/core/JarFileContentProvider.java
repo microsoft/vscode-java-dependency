@@ -14,7 +14,9 @@ package com.microsoft.jdtls.ext.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.io.IOUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -88,12 +90,11 @@ public class JarFileContentProvider implements IContentProvider {
 		try (InputStream stream = (file.getContents())) {
 			return convertStreamToString(stream);
 		} catch (IOException e) {
-			throw new CoreException(new Status(IStatus.ERROR, JavaLanguageServerPlugin.PLUGIN_ID, "Can't read file content: " + file.getFullPath()));
+			throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, "Can't read file content: " + file.getFullPath()));
 		}
 	}
 
-	private static String convertStreamToString(java.io.InputStream is) {
-		java.util.Scanner s = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A");
-		return s.hasNext() ? s.next() : "";
+	private static String convertStreamToString(InputStream inputStream) throws IOException {
+		return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 	}
 }

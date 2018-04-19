@@ -9,7 +9,6 @@
  *    Microsoft Corporation - initial API and implementation
  *******************************************************************************/
 
-
 package com.microsoft.jdtls.ext.core.model;
 
 import java.util.List;
@@ -17,17 +16,17 @@ import java.util.List;
 import org.eclipse.core.runtime.IPath;
 
 /**
- * Represent a ClasspathNode in the project view.
+ * Represent a PackageNode in the project view.
  */
 public class PackageNode {
 
 	/**
-	 * The name of the ClasspathNode
+	 * The name of the PackageNode
 	 */
 	private String name;
 
 	/**
-	 * The module name of the ClasspathNode for Java 9 and above
+	 * The module name of the PackageNode for Java 9 and above
 	 */
 	private String moduleName;
 
@@ -37,17 +36,17 @@ public class PackageNode {
 	private String path;
 
 	/**
-	 * The URI value of the ClasspathNode
+	 * The URI value of the PackageNode
 	 */
 	private String uri;
 
 	/**
-	 * ClasspathNode kind
+	 * PackageNode kind
 	 */
 	private NodeKind kind;
 
 	/**
-	 * ClasspathNode children list
+	 * PackageNode children list
 	 */
 	private List<PackageNode> children;
 
