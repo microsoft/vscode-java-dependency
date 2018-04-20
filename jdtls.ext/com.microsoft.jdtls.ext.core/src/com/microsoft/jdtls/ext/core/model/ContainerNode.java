@@ -9,7 +9,6 @@
  *     Microsoft Corporation - initial API and implementation
  *******************************************************************************/
 
-
 package com.microsoft.jdtls.ext.core.model;
 
 public class ContainerNode extends PackageNode {
