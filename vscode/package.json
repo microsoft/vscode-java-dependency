@@ -1,9 +1,9 @@
 {
-  "name": "vscode-java-copilot",
+  "name": "vscode-java-explorer",
   "displayName": "Java Project Manager",
   "description": "Manage Java Projects in VSCode",
   "version": "0.2.0",
-  "publisher": "yaozheng",
+  "publisher": "vscjava",
   "preview": true,
   "keywords": [
     "java",
@@ -11,15 +11,14 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.17.0"
+    "vscode": "^1.22.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yaohaizh/java-copilot.git"
+    "url": "https://github.com/Microsoft/vscode-java-explorer.git"
   },
-  "homepage": "https://github.com/yaohaizh/java-copilot/blob/master/README.md",
+  "homepage": "https://github.com/Microsoft/vscode-java-explorer/blob/master/README.md",
   "icon": "logo.png",
-  "license": "SEE LICENSE IN LICENSE.txt",
   "activationEvents": [
     "onLanguage:java",
     "workspaceContains:pom.xml",
