@@ -54,7 +54,7 @@
       "explorer": [
         {
           "id": "javaProjectExplorer",
-          "name": "Java Projects"
+          "name": "Java Packages"
         }
       ]
     }
