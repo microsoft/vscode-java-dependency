@@ -6,17 +6,6 @@ import { Uri, workspace } from "vscode";
 import * as xml2js from "xml2js";
 
 export class Utility {
-    public static async parseXml(xml: string): Promise<any> {
-        return new Promise((resolve: (obj: {}) => void, reject: (e: Error) => void): void => {
-            xml2js.parseString(xml, { explicitArray: true }, (err: Error, res: {}) => {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve(res);
-            });
-        });
-    }
-
     public static checkJavaVersion(javaHome: string): Promise<number> {
         return new Promise((resolve, reject) => {
             child_process.execFile(javaHome + "/bin/java", ["-version"], {}, (error, stdout, stderr) => {
@@ -50,7 +39,7 @@ export class Utility {
                 if (!await fse.pathExists(javaHome)) {
                     this.openJDKDownload(reject, source + " points to a missing folder");
                 }
-                if (!fse.pathExists(path.resolve(javaHome, "bin", JAVAC_FILENAME))) {
+                if (!await fse.pathExists(path.resolve(javaHome, "bin", JAVAC_FILENAME))) {
                     this.openJDKDownload(reject, source + " does not point to a JDK.");
                 }
                 return resolve(javaHome);
@@ -65,6 +54,18 @@ export class Utility {
             });
         });
     }
+
+    public static async parseXml(xml: string): Promise<any> {
+        return new Promise((resolve: (obj: {}) => void, reject: (e: Error) => void): void => {
+            xml2js.parseString(xml, { explicitArray: true }, (err: Error, res: {}) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(res);
+            });
+        });
+    }
+
     private static openJDKDownload(reject, cause) {
         let jdkUrl = "http://developers.redhat.com/products/openjdk/overview/?from=vscode";
         if (process.platform === "darwin") {
