@@ -18,6 +18,7 @@ export class Utility {
             });
         });
     }
+
     public static checkJavaRuntime(): Promise<string> {
         const isWindows = process.platform.indexOf("win") === 0;
         const JAVAC_FILENAME = "javac" + (isWindows ? ".exe" : "");
