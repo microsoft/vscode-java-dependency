@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Java Debug",
+      "request": "launch",
+      "cwd": "${workspaceRoot}",
+      "stopOnEntry": true,
+      "mainClass": "HelloWorld",
+      "sourcePaths": [
+        "${workspaceRoot}/src/main/java"
+      ],
+      "options": []
+    },
+    {
+      "type": "java",
+      "name": "Java Debug (Attach)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 0,
+      "attachTimeout": 30000,
+      "cwd": "${workspaceRoot}",
+      "sourcePaths": [
+        "${workspaceRoot}"
+      ]
+    }
+  ]
+}
