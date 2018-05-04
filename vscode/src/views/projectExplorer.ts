@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range, Selection,
     TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,

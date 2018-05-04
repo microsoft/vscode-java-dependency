@@ -23,7 +23,7 @@ public class CommandHandler implements IDelegateCommandHandler {
 	public Object executeCommand(String commandId, List<Object> arguments, IProgressMonitor monitor) throws Exception {
 		if (!StringUtils.isBlank(commandId)) {
 			switch (commandId) {
-				case "java.getProjects":
+				case "java.project.list":
 					return ProjectCommand.execute(arguments, monitor);
 				case "java.getPackageData":
 					return PackageCommand.getChildren(arguments, monitor);

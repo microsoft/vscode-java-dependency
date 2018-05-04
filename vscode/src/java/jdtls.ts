@@ -1,10 +1,13 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 import { commands } from "vscode";
 import { Commands } from "../commands";
 import { INodeData } from "./nodeData";
 
 export namespace Jdtls {
     export function getProjects(params): Thenable<INodeData[]> {
-        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_GETPROJECTS, params);
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_LIST, params);
     }
 
     export function getPackageData(params): Thenable<INodeData[]> {

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 /**
  * Commonly used commands
  */
@@ -13,9 +16,9 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_OUTLINE = "java.view.package.outline";
 
-    export const CREATE_JAVA_PROJECT = "java.project.create";
+    export const JAVA_PROJECT_CREATE = "java.project.create";
 
-    export const JAVA_GETPROJECTS = "java.getProjects";
+    export const JAVA_PROJECT_LIST = "java.project.list";
 
     export const JAVA_GETPACKAGEDATA = "java.getPackageData";
 }
