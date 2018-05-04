@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 import * as fse from "fs-extra";
 import * as path from "path";
 import { commands, ExtensionContext, Uri, window, workspace } from "vscode";
@@ -39,7 +42,7 @@ export class ProjectController {
             return;
         }
         if (await this.scaffoldJavaProject(basePath, projectName, javaVersion)) {
-            commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), true);
+            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), true);
         }
     }
 
