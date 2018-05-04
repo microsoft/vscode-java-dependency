@@ -31,6 +31,15 @@
     ],
     "commands": [
       {
+        "command": "java.project.create",
+        "title": "Create Java Project",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-create.svg",
+          "light": "images/light/icon-create.svg"
+        }
+      },
+      {
         "command": "java.view.package.refresh",
         "title": "Refresh",
         "category": "Java",
@@ -42,6 +51,11 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "java.project.create",
+          "when": "view == javaProjectExplorer",
+          "group": "navigation@0"
+        },
         {
           "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer",
@@ -69,8 +83,10 @@
     "redhat.java"
   ],
   "devDependencies": {
+    "@types/fs-extra": "^5.0.2",
     "@types/mocha": "^2.2.32",
     "@types/node": "^6.0.40",
+    "@types/xml2js": "^0.4.2",
     "gulp": "^3.9.1",
     "gulp-copy": "^1.0.1",
     "gulp-tslint": "^8.1.2",
@@ -79,5 +95,9 @@
     "typescript": "^2.0.3",
     "vscode": "^1.1.5"
   },
-  "dependencies": {}
+  "dependencies": {
+    "find-java-home": "^0.2.0",
+    "fs-extra": "^5.0.0",
+    "xml2js": "^0.4.19"
+  }
 }

@@ -1,9 +1,12 @@
 
-import { ExtensionContext, window } from "vscode";
+import { commands, ExtensionContext, Uri, window, workspace } from "vscode";
+import { ProjectController } from "./controllers/projectController";
 import { Services } from "./services";
-import { PackageExplorer } from "./views/packageExplorer";
+import { ProjectExplorer } from "./views/projectExplorer";
 
 export function activate(context: ExtensionContext) {
     Services.initialize(context);
-    context.subscriptions.push(window.registerTreeDataProvider("javaProjectExplorer", new PackageExplorer(context)));
+    const projectController: ProjectController = new ProjectController(context);
+    context.subscriptions.push(window.registerTreeDataProvider("javaProjectExplorer", new ProjectExplorer(context)));
+    context.subscriptions.push(commands.registerCommand("java.project.create", () => { projectController.createJavaProject(); }));
 }
