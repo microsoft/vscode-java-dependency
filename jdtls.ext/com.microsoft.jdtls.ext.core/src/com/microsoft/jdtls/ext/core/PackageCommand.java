@@ -59,6 +59,8 @@ import com.microsoft.jdtls.ext.core.model.TypeRootNode;
 @SuppressWarnings("deprecation")
 public class PackageCommand {
 
+	private static final String DEFAULT_PACKAGE_DISPLAYNAME = "(default package)";
+
 	private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapterFactory())
 			.registerTypeAdapterFactory(new EnumTypeAdapterFactory()).create();
 
@@ -177,7 +179,7 @@ public class PackageCommand {
 							new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
 				}
 				Object[] result = getPackageFragmentRootContent(packageRoot, pm);
-				return convertToClasspathNode(result);
+				return convertToPackageNode(result);
 			} catch (CoreException e) {
 				JdtlsExtActivator.logException("Problem load project package ", e);
 			}
@@ -194,7 +196,7 @@ public class PackageCommand {
 					throw new CoreException(
 							new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
 				}
-				IPackageFragment packageFragment = packageRoot.getPackageFragment(query.getPath());
+				IPackageFragment packageFragment = packageRoot.getPackageFragment(DEFAULT_PACKAGE_DISPLAYNAME.equals(query.getPath()) ? "" : query.getPath());
 				if (packageFragment != null) {
 					IJavaElement[] types = packageFragment.getChildren();
 					return Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$")).map(typeRoot -> {
@@ -235,7 +237,7 @@ public class PackageCommand {
 						JarEntryDirectory directory = (JarEntryDirectory) resource;
 						Object[] children = findJarDirectoryChildren(directory, query.getPath());
 						if (children != null) {
-							return convertToClasspathNode(children);
+							return convertToPackageNode(children);
 						}
 					}
 				}
@@ -252,11 +254,7 @@ public class PackageCommand {
 		for (IJavaElement child : root.getChildren()) {
 			IPackageFragment fragment = (IPackageFragment) child;
 			if (fragment.hasChildren()) {
-				if (fragment.isDefaultPackage()) {
-					result.addAll(Arrays.asList(fragment.getChildren()));
-				} else {
-					result.add(child);
-				}
+				result.add(child);
 			}
 		}
 		Object[] nonJavaResources = root.getNonJavaResources();
@@ -264,12 +262,13 @@ public class PackageCommand {
 		return result.toArray();
 	}
 
-	private static List<PackageNode> convertToClasspathNode(Object[] rootContent) throws JavaModelException {
+	private static List<PackageNode> convertToPackageNode(Object[] rootContent) throws JavaModelException {
 		List<PackageNode> result = new ArrayList<>();
 		for (Object root : rootContent) {
 			if (root instanceof IPackageFragment) {
 				IPackageFragment packageFragment = (IPackageFragment) root;
-				PackageNode entry = new PackageNode(((IPackageFragment) root).getElementName(), packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+				String packageName = packageFragment.isDefaultPackage() ? DEFAULT_PACKAGE_DISPLAYNAME : packageFragment.getElementName();
+				PackageNode entry = new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
 				result.add(entry);
 			} else if (root instanceof IClassFile) {
 				IClassFile classFile = (IClassFile) root;
