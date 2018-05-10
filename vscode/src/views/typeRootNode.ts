@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command, commands, SymbolInformation, TextDocument, Uri, workspace } from "vscode";
+import { Command, commands, SymbolInformation, TextDocument, ThemeIcon, Uri, workspace } from "vscode";
 import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
 import { ITypeRootNodeData, TypeRootKind } from "../java/typeRootNodeData";
+import { Services } from "../services";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { SymbolNode } from "./symbolNode";
@@ -35,12 +36,12 @@ export class TypeRootNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string {
+    protected get iconPath(): string | ThemeIcon {
         const data = <ITypeRootNodeData>this.nodeData;
         if (data.entryKind === TypeRootKind.K_BINARY) {
-            return "./images/classfile.png";
+            return ExplorerNode.resolveIconPath("classfile");
         } else {
-            return "./images/file_type_java.svg";
+            return Services.context.asAbsolutePath("./images/file-type-java.svg");
         }
     }
 

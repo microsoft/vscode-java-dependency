@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import { ThemeIcon } from "vscode";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
@@ -31,7 +32,7 @@ export class FolderNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string {
-        return "./images/folder.png";
+    protected get iconPath(): ThemeIcon {
+        return ThemeIcon.Folder;
     }
 }
