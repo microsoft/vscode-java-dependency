@@ -5,9 +5,11 @@ import { commands, ExtensionContext, window } from "vscode";
 import { Commands } from "./commands";
 import { ProjectController } from "./controllers/projectController";
 import { Services } from "./services";
+import { Telemetry } from "./telemetry";
 import { ProjectExplorer } from "./views/projectExplorer";
 
 export function activate(context: ExtensionContext) {
+    Telemetry.sendEvent("activateExtension", {});
     Services.initialize(context);
 
     context.subscriptions.push(window.registerTreeDataProvider("javaProjectExplorer", new ProjectExplorer(context)));
