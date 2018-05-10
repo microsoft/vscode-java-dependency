@@ -40,12 +40,12 @@ export class PackageRootNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string {
+    protected get iconPath(): { light: string; dark: string } {
         const data = <IPackageRootNodeData>this.nodeData;
         if (data.entryKind === PackageRootKind.K_BINARY) {
-            return "./images/jar_src.png";
+            return ExplorerNode.resolveIconPath("jar");
         } else {
-            return "./images/packagefolder.png";
+            return ExplorerNode.resolveIconPath("packagefolder");
         }
     }
 }

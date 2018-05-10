@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command } from "vscode";
+import { Command, ThemeColor, ThemeIcon } from "vscode";
 import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
 import { DataNode } from "./dataNode";
@@ -20,8 +20,8 @@ export class FileNode extends DataNode {
         return null;
     }
 
-    protected get iconPath(): string {
-        return "./images/file.png";
+    protected get iconPath(): ThemeIcon {
+        return ThemeIcon.File;
     }
 
     protected get command(): Command {

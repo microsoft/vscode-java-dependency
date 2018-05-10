@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { ProviderResult, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { ProviderResult, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { INodeData } from "../java/nodeData";
-import { Services } from "../services";
 import { ExplorerNode } from "./explorerNode";
 
 export abstract class DataNode extends ExplorerNode {
@@ -14,7 +13,7 @@ export abstract class DataNode extends ExplorerNode {
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this._nodeData) {
             const item = new TreeItem(this._nodeData.name, TreeItemCollapsibleState.Collapsed);
-            item.iconPath = Services.context.asAbsolutePath(this.iconPath);
+            item.iconPath = this.iconPath;
             item.command = this.command;
             return item;
         }
@@ -42,7 +41,7 @@ export abstract class DataNode extends ExplorerNode {
         return this.createChildNodeList();
     }
 
-    protected abstract get iconPath(): string;
+    protected abstract get iconPath(): string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
     protected abstract loadData(): Thenable<any[]>;
 

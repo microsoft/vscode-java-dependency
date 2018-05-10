@@ -59,7 +59,7 @@ export class ProjectNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string {
-        return "./images/project.gif";
+    protected get iconPath(): { light: string; dark: string } {
+        return ExplorerNode.resolveIconPath("project");
     }
 }

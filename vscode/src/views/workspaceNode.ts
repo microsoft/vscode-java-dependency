@@ -3,6 +3,7 @@
 
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
+import { Services } from "../services";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
@@ -27,6 +28,6 @@ export class WorkspaceNode extends DataNode {
     }
 
     protected get iconPath(): string {
-        return "./images/project.gif";
+        return Services.context.asAbsolutePath("./images/root-folder.svg");
     }
 }
