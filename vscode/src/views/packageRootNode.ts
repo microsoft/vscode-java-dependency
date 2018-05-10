@@ -25,6 +25,7 @@ export class PackageRootNode extends DataNode {
     protected createChildNodeList(): ExplorerNode[] {
         const result = [];
         if (this.nodeData.children && this.nodeData.children.length) {
+            this.sort();
             this.nodeData.children.forEach((data) => {
                 if (data.kind === NodeKind.Package) {
                     result.push(new PackageNode(data, this._project, this));
