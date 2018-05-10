@@ -19,6 +19,7 @@ export class ContainerNode extends DataNode {
     protected createChildNodeList(): ExplorerNode[] {
         const result = [];
         if (this.nodeData.children && this.nodeData.children.length) {
+            this.sort();
             this.nodeData.children.forEach((classpathNode) => {
                 result.push(new PackageRootNode(classpathNode, this._project));
             });

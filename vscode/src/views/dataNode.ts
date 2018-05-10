@@ -41,6 +41,16 @@ export abstract class DataNode extends ExplorerNode {
         return this.createChildNodeList();
     }
 
+    protected sort() {
+        this.nodeData.children.sort((a: INodeData, b: INodeData) => {
+            if (a.kind === b.kind) {
+                return a.name < b.name ? -1 : 1;
+            } else {
+                return a.kind - b.kind;
+            }
+        });
+    }
+
     protected abstract get iconPath(): string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
     protected abstract loadData(): Thenable<any[]>;
