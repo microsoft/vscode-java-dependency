@@ -26,7 +26,7 @@ export class ContainerNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string {
-        return "./images/library.png";
+    protected get iconPath(): { light: string, dark: string } {
+        return ExplorerNode.resolveIconPath("library");
     }
 }

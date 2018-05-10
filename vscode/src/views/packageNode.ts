@@ -31,7 +31,7 @@ export class PackageNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string {
-        return "./images/package.png";
+    protected get iconPath(): { light: string; dark: string } {
+        return ExplorerNode.resolveIconPath("package");
     }
 }
