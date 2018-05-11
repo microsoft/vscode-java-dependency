@@ -11,7 +11,7 @@ const aiKey: string = packageJSON.aiKey;
 
 export class Telemetry {
     public static sendEvent(eventName: string, properties?: { [key: string]: string; }, measures?: { [key: string]: number; }) {
-        this._client.sendTelemetryEvent(eventName, properties);
+        this._client.sendTelemetryEvent(eventName, properties, measures);
     }
     private static _client = new TelemetryReporter(extensionId, extensionVersion, aiKey);
 }

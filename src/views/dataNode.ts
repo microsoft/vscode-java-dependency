@@ -35,8 +35,8 @@ export abstract class DataNode extends ExplorerNode {
     public getChildren(): ProviderResult<ExplorerNode[]> {
         if (!this._nodeData.children) {
             return this.loadData().then((res) => {
-                if (res && res[0]) {
-                  Telemetry.sendEvent(`loda data of node with NodeKind: ${res[0].kind}`);
+                if (!res) {
+                  Telemetry.sendEvent(`load data of ${this._nodeData.name}(kind ${this._nodeData.kind}) get undefined result`);
                 }
                 this._nodeData.children = res;
                 return this.createChildNodeList();
