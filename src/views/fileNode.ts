@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command, ThemeColor, ThemeIcon } from "vscode";
+import { Command, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
 import { DataNode } from "./dataNode";
@@ -10,6 +10,10 @@ import { ExplorerNode } from "./explorerNode";
 export class FileNode extends DataNode {
     constructor(nodeData: INodeData) {
         super(nodeData);
+    }
+
+    protected hasChildren(): boolean {
+        return false;
     }
 
     protected loadData(): Thenable<INodeData[]> {
