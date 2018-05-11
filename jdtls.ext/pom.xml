@@ -95,7 +95,7 @@
         <repository>
             <id>JDT.LS</id>
             <layout>p2</layout>
-            <url>http://download.eclipse.org/jdtls/snapshots/repository/latest/</url>
+            <url>http://download.eclipse.org/jdtls/snapshots/repository/0.16.0.201804042215/</url>
         </repository>
         <repository>
             <id>LSP4J</id>

@@ -3,7 +3,7 @@ const gulp = require('gulp');
 const gulp_tslint = require('gulp-tslint');
 const cp = require('child_process');
 
-const server_dir = '../jdtls.ext';
+const server_dir = './jdtls.ext';
 
 gulp.task('tslint', () => {
     return gulp.src(['**/*.ts', '!**/*.d.ts', '!node_modules/**'])
