@@ -7,6 +7,7 @@ import {
 } from "vscode";
 import { Commands } from "../commands";
 import { NodeKind } from "../java/nodeData";
+import { Telemetry } from "../telemetry";
 import { ExplorerNode } from "./explorerNode";
 import { WorkspaceNode } from "./workspaceNode";
 
@@ -32,12 +33,14 @@ export class ProjectExplorer implements TreeDataProvider<ExplorerNode> {
 
     public openFile(uri: string) {
         return workspace.openTextDocument(Uri.parse(uri)).then((res) => {
+            Telemetry.sendEvent("open source file");
             return window.showTextDocument(res);
         });
     }
 
     public goToOutline(uri: string, range: Range): Thenable<{}> {
         return this.openFile(uri).then((editor) => {
+            Telemetry.sendEvent("view package outline");
             editor.revealRange(range, TextEditorRevealType.Default);
             editor.selection = new Selection(range.start, range.start);
             return commands.executeCommand("workbench.action.focusActiveEditorGroup");
@@ -60,6 +63,7 @@ export class ProjectExplorer implements TreeDataProvider<ExplorerNode> {
     private getRootNodes() {
         const result: ExplorerNode[] = new Array<ExplorerNode>();
         const folders = workspace.workspaceFolders;
+        Telemetry.sendEvent("create workspace node(s)");
         if (folders && folders.length) {
             folders.forEach((folder) => result.push(new WorkspaceNode({
                 name: folder.name,
