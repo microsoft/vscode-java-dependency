@@ -13,7 +13,7 @@ export abstract class DataNode extends ExplorerNode {
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this._nodeData) {
-            const item = new TreeItem(this._nodeData.name, TreeItemCollapsibleState.Collapsed);
+            const item = new TreeItem(this._nodeData.name, this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
             item.iconPath = this.iconPath;
             item.command = this.command;
             return item;
@@ -36,7 +36,7 @@ export abstract class DataNode extends ExplorerNode {
         if (!this._nodeData.children) {
             return this.loadData().then((res) => {
                 if (!res) {
-                  Telemetry.sendEvent(`load data of ${this._nodeData.name}(kind ${this._nodeData.kind}) get undefined result`);
+                    Telemetry.sendEvent(`load data of ${this._nodeData.name}(kind ${this._nodeData.kind}) get undefined result`);
                 }
                 this._nodeData.children = res;
                 return this.createChildNodeList();
@@ -53,6 +53,10 @@ export abstract class DataNode extends ExplorerNode {
                 return a.kind - b.kind;
             }
         });
+    }
+
+    protected hasChildren(): boolean {
+        return true;
     }
 
     protected abstract get iconPath(): string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
