@@ -1,4 +1,4 @@
-# Java Project Viewer
+# Java Project Explorer
 
 [![Travis CI](https://travis-ci.org/Microsoft/vscode-java-explorer.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-java-explorer)
 
