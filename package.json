@@ -2,7 +2,7 @@
   "name": "vscode-java-explorer",
   "displayName": "Java Project Manager",
   "description": "Manage Java Projects in VSCode",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "vscjava",
   "preview": true,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -28,7 +28,7 @@
   "main": "./out/src/extension",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.2.0.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.3.0.jar"
     ],
     "commands": [
       {
