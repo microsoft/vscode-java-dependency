@@ -2,13 +2,15 @@
 // Licensed under the MIT license.
 
 import {
-    commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range, Selection,
-    TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
+    commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
+    Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { Commands } from "../commands";
-import { NodeKind } from "../java/nodeData";
+import { Jdtls } from "../java/jdtls";
+import { INodeData, NodeKind } from "../java/nodeData";
 import { Telemetry } from "../telemetry";
 import { ExplorerNode } from "./explorerNode";
+import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
 
 export class ProjectExplorer implements TreeDataProvider<ExplorerNode> {
@@ -53,24 +55,36 @@ export class ProjectExplorer implements TreeDataProvider<ExplorerNode> {
 
     public getChildren(element?: ExplorerNode): ProviderResult<ExplorerNode[]> {
         if (!this._rootItems || !element) {
-            this._rootItems = this.getRootNodes();
-            return this._rootItems;
+            return this.getRootNodes();
         } else {
             return element.getChildren();
         }
     }
 
-    private getRootNodes() {
-        const result: ExplorerNode[] = new Array<ExplorerNode>();
-        const folders = workspace.workspaceFolders;
-        Telemetry.sendEvent("create workspace node(s)");
-        if (folders && folders.length) {
-            folders.forEach((folder) => result.push(new WorkspaceNode({
-                name: folder.name,
-                uri: folder.uri.toString(),
-                kind: NodeKind.Workspace,
-            })));
-        }
-        return result;
+    private getRootNodes(): Thenable<ExplorerNode[]> {
+        return new Promise((resolve, reject) => {
+            this._rootItems = new Array<ExplorerNode>();
+            const folders = workspace.workspaceFolders;
+            Telemetry.sendEvent("create workspace node(s)");
+            if (folders && folders.length) {
+                if (folders.length > 1) {
+                    folders.forEach((folder) => this._rootItems.push(new WorkspaceNode({
+                        name: folder.name,
+                        uri: folder.uri.toString(),
+                        kind: NodeKind.Workspace,
+                    })));
+                    resolve(this._rootItems);
+                } else {
+                    Jdtls.getProjects(folders[0].uri.toString()).then((result: INodeData[]) => {
+                        result.forEach((project) => {
+                            this._rootItems.push(new ProjectNode(project));
+                        });
+                        resolve(this._rootItems);
+                    });
+                }
+            } else {
+                reject("No workspace found");
+            }
+        });
     }
 }
