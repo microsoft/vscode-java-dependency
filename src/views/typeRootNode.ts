@@ -6,6 +6,7 @@ import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
 import { ITypeRootNodeData, TypeRootKind } from "../java/typeRootNodeData";
 import { Services } from "../services";
+import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { SymbolNode } from "./symbolNode";
@@ -43,6 +44,9 @@ export class TypeRootNode extends DataNode {
         } else {
             return Services.context.asAbsolutePath("./images/file-type-java.svg");
         }
+    }
+    protected hasChildren(): boolean {
+        return Settings.showOutline();
     }
 
     private getSymbols(document: TextDocument): Thenable<SymbolInformation[]> {
