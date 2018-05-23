@@ -1,4 +1,4 @@
-# Java Project Explorer
+# Java Dependencies
 
 [![Travis CI](https://travis-ci.org/Microsoft/vscode-java-explorer.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-java-explorer)
 

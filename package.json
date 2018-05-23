@@ -1,7 +1,7 @@
 {
   "name": "vscode-java-explorer",
-  "displayName": "Java Depdendency",
-  "description": "Manage Java Dependency in VSCode",
+  "displayName": "Java Dependencies",
+  "description": "Manage Java Dependencies in VSCode",
   "version": "0.3.0",
   "publisher": "vscjava",
   "preview": true,
@@ -62,7 +62,7 @@
       "view/title": [
         {
           "command": "java.view.package.refresh",
-          "when": "view == javaProjectExplorer",
+          "when": "view == javaDependencyExplorer",
           "group": "navigation@0"
         }
       ]
@@ -70,8 +70,8 @@
     "views": {
       "explorer": [
         {
-          "id": "javaProjectExplorer",
-          "name": "Java Dependency"
+          "id": "javaDependencyExplorer",
+          "name": "Java Dependencies"
         }
       ]
     }
