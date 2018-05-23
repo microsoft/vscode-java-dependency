@@ -1,7 +1,7 @@
 {
   "name": "vscode-java-explorer",
-  "displayName": "Java Project Explorer",
-  "description": "Manage Java Projects in VSCode",
+  "displayName": "Java Depdendency",
+  "description": "Manage Java Dependency in VSCode",
   "version": "0.3.0",
   "publisher": "vscjava",
   "preview": true,
