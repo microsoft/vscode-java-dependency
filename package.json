@@ -35,11 +35,7 @@
       {
         "command": "java.project.create",
         "title": "Create Java Project",
-        "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-create.svg",
-          "light": "images/light/icon-create.svg"
-        }
+        "category": "Java"
       },
       {
         "command": "java.view.package.refresh",
@@ -51,17 +47,23 @@
         }
       }
     ],
+    "configuration": {
+      "type": "object",
+      "title": "Java Dependency Configuration",
+      "properties": {
+        "java.dependency.showOutline": {
+          "type": "boolean",
+          "description": "Enable show outline in the Java Dependency explorer",
+          "default": false
+        }
+      }
+    },
     "menus": {
       "view/title": [
         {
-          "command": "java.project.create",
-          "when": "view == javaProjectExplorer",
-          "group": "navigation@0"
-        },
-        {
           "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer",
-          "group": "navigation@1"
+          "group": "navigation@0"
         }
       ]
     },
@@ -69,7 +71,7 @@
       "explorer": [
         {
           "id": "javaProjectExplorer",
-          "name": "Java Packages"
+          "name": "Java Dependency"
         }
       ]
     }

@@ -113,6 +113,11 @@ public class PackageCommand {
 					try {
 						entry = JavaCore.getResolvedClasspathEntry(entry);
 						IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
+						// HACK: There is an initialization issue for the first container.
+						if (container == null) {
+							container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
+						}
+
 						if (container != null) {
 							return new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
 									entry.getEntryKind());
