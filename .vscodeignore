@@ -4,7 +4,8 @@ out/test/**
 test/**
 src/**
 **/*.map
-jdtls.ext
+jdtls.ext/**
+vscode/**
 tsconfig.json
 gulpfile.js
 .gitignore
