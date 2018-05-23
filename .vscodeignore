@@ -1,0 +1,10 @@
+.vscode/**
+.vscode-test/**
+out/test/**
+test/**
+src/**
+**/*.map
+jdtls.ext
+tsconfig.json
+gulpfile.js
+.gitignore
