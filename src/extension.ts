@@ -12,7 +12,7 @@ export function activate(context: ExtensionContext) {
     Telemetry.sendEvent("activateExtension", {});
     Services.initialize(context);
 
-    context.subscriptions.push(window.registerTreeDataProvider("javaProjectExplorer", new ProjectExplorer(context)));
+    context.subscriptions.push(window.registerTreeDataProvider("javaDependencyExplorer", new ProjectExplorer(context)));
 
     const projectController: ProjectController = new ProjectController(context);
     context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_CREATE, async () => { projectController.createJavaProject(); }));
