@@ -9,8 +9,8 @@ import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 
 export class WorkspaceNode extends DataNode {
-    constructor(nodeData: INodeData) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode) {
+        super(nodeData, parent);
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -21,7 +21,7 @@ export class WorkspaceNode extends DataNode {
         const result = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((nodeData) => {
-                result.push(new ProjectNode(nodeData));
+                result.push(new ProjectNode(nodeData, this));
             });
         }
         return result;

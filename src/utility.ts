@@ -6,6 +6,11 @@ import { Uri, workspace } from "vscode";
 import * as xml2js from "xml2js";
 
 export class Utility {
+
+    public static isThenable<T>(obj: any): obj is Thenable<T> {
+        return obj && typeof (<Thenable<any>>obj).then === "function";
+    }
+
     public static checkJavaVersion(javaHome: string): Promise<number> {
         return new Promise((resolve, reject) => {
             child_process.execFile(javaHome + "/bin/java", ["-version"], {}, (error, stdout, stderr) => {

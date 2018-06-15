@@ -13,4 +13,8 @@ export namespace Jdtls {
     export function getPackageData(params): Thenable<INodeData[]> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_GETPACKAGEDATA, params);
     }
+
+    export function resolvePath(params): Thenable<INodeData[]> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_RESOLVEPATH, params);
+    }
 }

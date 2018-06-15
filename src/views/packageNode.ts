@@ -8,8 +8,8 @@ import { ExplorerNode } from "./explorerNode";
 import { TypeRootNode } from "./typeRootNode";
 
 export class PackageNode extends DataNode {
-    constructor(nodeData: INodeData, private _project: DataNode, private _rootNode: DataNode) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode, private _project: DataNode, private _rootNode: DataNode) {
+        super(nodeData, parent);
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -26,7 +26,7 @@ export class PackageNode extends DataNode {
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((nodeData) => {
-                result.push(new TypeRootNode(nodeData));
+                result.push(new TypeRootNode(nodeData, this));
             });
         }
         return result;

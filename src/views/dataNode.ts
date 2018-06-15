@@ -7,8 +7,8 @@ import { Telemetry } from "../telemetry";
 import { ExplorerNode } from "./explorerNode";
 
 export abstract class DataNode extends ExplorerNode {
-    constructor(private _nodeData: INodeData) {
-        super();
+    constructor(private _nodeData: INodeData, parent: DataNode) {
+        super(parent);
     }
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {

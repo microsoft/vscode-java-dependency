@@ -10,8 +10,8 @@ import { FileNode } from "./fileNode";
 import { ProjectNode } from "./projectNode";
 
 export class FolderNode extends DataNode {
-    constructor(nodeData: INodeData, private _project: ProjectNode, private _rootNode: DataNode) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode, private _project: ProjectNode, private _rootNode: DataNode) {
+        super(nodeData, parent);
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -23,9 +23,9 @@ export class FolderNode extends DataNode {
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((nodeData) => {
                 if (nodeData.kind === NodeKind.File) {
-                    result.push(new FileNode(nodeData));
+                    result.push(new FileNode(nodeData, this));
                 } else if (nodeData.kind === NodeKind.Folder) {
-                    result.push(new FolderNode(nodeData, this._project, this._rootNode));
+                    result.push(new FolderNode(nodeData, this, this._project, this._rootNode));
                 }
             });
         }

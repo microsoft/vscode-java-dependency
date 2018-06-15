@@ -6,14 +6,14 @@ import { Commands } from "./commands";
 import { ProjectController } from "./controllers/projectController";
 import { Services } from "./services";
 import { Telemetry } from "./telemetry";
-import { ProjectExplorer } from "./views/projectExplorer";
+import { DependencyExplorer } from "./views/depedencyExplorer";
 
 export function activate(context: ExtensionContext) {
     Telemetry.sendEvent("activateExtension", {});
     Services.initialize(context);
 
-    context.subscriptions.push(window.registerTreeDataProvider("javaDependencyExplorer", new ProjectExplorer(context)));
-
     const projectController: ProjectController = new ProjectController(context);
     context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_CREATE, async () => { projectController.createJavaProject(); }));
+
+    context.subscriptions.push(new DependencyExplorer(context));
 }

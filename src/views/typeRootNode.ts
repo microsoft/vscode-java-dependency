@@ -12,8 +12,8 @@ import { ExplorerNode } from "./explorerNode";
 import { SymbolNode } from "./symbolNode";
 
 export class TypeRootNode extends DataNode {
-    constructor(nodeData: INodeData) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode) {
+        super(nodeData, parent);
     }
 
     protected loadData(): Thenable<SymbolInformation[]> {

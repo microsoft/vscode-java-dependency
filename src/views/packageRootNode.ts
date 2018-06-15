@@ -14,8 +14,8 @@ import { TypeRootNode } from "./typeRootNode";
 
 export class PackageRootNode extends DataNode {
 
-    constructor(nodeData: INodeData, private _project: ProjectNode) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode, private _project: ProjectNode) {
+        super(nodeData, parent);
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -28,13 +28,13 @@ export class PackageRootNode extends DataNode {
             this.sort();
             this.nodeData.children.forEach((data) => {
                 if (data.kind === NodeKind.Package) {
-                    result.push(new PackageNode(data, this._project, this));
+                    result.push(new PackageNode(data, this, this._project, this));
                 } else if (data.kind === NodeKind.File) {
-                    result.push(new FileNode(data));
+                    result.push(new FileNode(data, this));
                 } else if (data.kind === NodeKind.Folder) {
-                    result.push(new FolderNode(data, this._project, this));
+                    result.push(new FolderNode(data, this, this._project, this));
                 } else if (data.kind === NodeKind.TypeRoot) {
-                    result.push(new TypeRootNode(data));
+                    result.push(new TypeRootNode(data, this));
                 }
             });
         }

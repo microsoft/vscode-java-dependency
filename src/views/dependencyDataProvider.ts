@@ -9,11 +9,12 @@ import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Telemetry } from "../telemetry";
+import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
 
-export class ProjectExplorer implements TreeDataProvider<ExplorerNode> {
+export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     private _onDidChangeTreeData: EventEmitter<null> = new EventEmitter<null>();
 
@@ -61,6 +62,10 @@ export class ProjectExplorer implements TreeDataProvider<ExplorerNode> {
         }
     }
 
+    public getParent(element: ExplorerNode): ProviderResult<ExplorerNode> {
+        return element.getParent();
+    }
+
     private getRootNodes(): Thenable<ExplorerNode[]> {
         return new Promise((resolve, reject) => {
             this._rootItems = new Array<ExplorerNode>();
@@ -72,12 +77,12 @@ export class ProjectExplorer implements TreeDataProvider<ExplorerNode> {
                         name: folder.name,
                         uri: folder.uri.toString(),
                         kind: NodeKind.Workspace,
-                    })));
+                    }, null)));
                     resolve(this._rootItems);
                 } else {
                     Jdtls.getProjects(folders[0].uri.toString()).then((result: INodeData[]) => {
                         result.forEach((project) => {
-                            this._rootItems.push(new ProjectNode(project));
+                            this._rootItems.push(new ProjectNode(project, null));
                         });
                         resolve(this._rootItems);
                     });

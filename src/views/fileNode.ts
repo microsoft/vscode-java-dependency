@@ -8,8 +8,8 @@ import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 
 export class FileNode extends DataNode {
-    constructor(nodeData: INodeData) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode) {
+        super(nodeData, parent);
     }
 
     protected hasChildren(): boolean {
