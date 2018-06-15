@@ -21,4 +21,6 @@ export namespace Commands {
     export const JAVA_PROJECT_LIST = "java.project.list";
 
     export const JAVA_GETPACKAGEDATA = "java.getPackageData";
+
+    export const JAVA_RESOLVEPATH = "java.resolvePath";
 }

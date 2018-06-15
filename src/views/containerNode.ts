@@ -9,8 +9,8 @@ import { PackageRootNode } from "./packageRootNode";
 import { ProjectNode } from "./projectNode";
 
 export class ContainerNode extends DataNode {
-    constructor(nodeData: INodeData, private readonly _project: ProjectNode) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode, private readonly _project: ProjectNode) {
+        super(nodeData, parent);
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -21,7 +21,7 @@ export class ContainerNode extends DataNode {
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((classpathNode) => {
-                result.push(new PackageRootNode(classpathNode, this._project));
+                result.push(new PackageRootNode(classpathNode, this, this._project));
             });
         }
         return result;

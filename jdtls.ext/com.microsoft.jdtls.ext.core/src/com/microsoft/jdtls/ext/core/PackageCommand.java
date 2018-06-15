@@ -88,7 +88,7 @@ public class PackageCommand {
 	 */
 	public static List<PackageNode> getChildren(List<Object> arguments, IProgressMonitor pm) throws CoreException {
 		if (arguments == null || arguments.size() < 1) {
-			throw new IllegalArgumentException("Should have at least one arugments for getChildren");
+			throw new IllegalArgumentException("Should have at least one arugment for getChildren");
 		}
 		PackageParams params = gson.fromJson(gson.toJson(arguments.get(0)), PackageParams.class);
 
@@ -97,6 +97,48 @@ public class PackageCommand {
 			throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("Unknown classpath item type: %s", params.getKind())));
 		}
 		List<PackageNode> result = loader.apply(params, pm);
+		return result;
+	}
+
+	/**
+	 * Resolve the path for Java file URI
+	 *
+	 * @param arguments
+	 *            List of the arguments which contain one entry of the target
+	 *            compilation unit URI.
+	 *
+	 * @return the list of the path
+	 * @throws CoreException
+	 */
+	public static List<PackageNode> resolvePath(List<Object> arguments, IProgressMonitor pm) throws CoreException {
+		if (arguments == null || arguments.size() < 1) {
+			throw new IllegalArgumentException("Should have one arugment for resolvePath");
+		}
+		String typeRootUri = (String) arguments.get(0);
+
+		List<PackageNode> result = new ArrayList<>();
+
+		ICompilationUnit cu = JDTUtils.resolveCompilationUnit(typeRootUri);
+
+		// Add project node:
+		IProject proj = cu.getJavaProject().getProject();
+		PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
+		projectNode.setUri(proj.getLocationURI().toString());
+		result.add(projectNode);
+
+		IPackageFragment packageFragment = (IPackageFragment) cu.getParent();
+		String packageName = packageFragment.isDefaultPackage() ? DEFAULT_PACKAGE_DISPLAYNAME : packageFragment.getElementName();
+		PackageNode packageNode = new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+		IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getParent();
+		PackageNode rootNode = new PackageRootNode(ExtUtils.removeProjectSegment(cu.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
+				pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+		result.add(rootNode);
+		result.add(packageNode);
+
+		PackageNode item = new TypeRootNode(cu.getElementName(), cu.getPath().toPortableString(), NodeKind.TYPEROOT, TypeRootNode.K_SOURCE);
+		item.setUri(JDTUtils.toURI(cu));
+		result.add(item);
+
 		return result;
 	}
 

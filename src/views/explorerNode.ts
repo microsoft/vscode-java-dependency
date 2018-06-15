@@ -13,7 +13,11 @@ export abstract class ExplorerNode {
         };
     }
 
-    constructor() {
+    constructor(private _parent: ExplorerNode) {
+    }
+
+    public getParent(): ExplorerNode {
+        return this._parent;
     }
 
     protected get command(): Command {

@@ -12,8 +12,8 @@ import { PackageRootNode } from "./packageRootNode";
 
 export class ProjectNode extends DataNode {
 
-    constructor(nodeData: INodeData) {
-        super(nodeData);
+    constructor(nodeData: INodeData, parent: DataNode) {
+        super(nodeData, parent);
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -52,9 +52,9 @@ export class ProjectNode extends DataNode {
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((data) => {
                 if (data.kind === NodeKind.Container) {
-                    result.push(new ContainerNode(data, this));
+                    result.push(new ContainerNode(data, this, this));
                 } else if (data.kind === NodeKind.PackageRoot) {
-                    result.push(new PackageRootNode(data, this));
+                    result.push(new PackageRootNode(data, this, this));
                 }
             });
         }

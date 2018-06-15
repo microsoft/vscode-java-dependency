@@ -28,15 +28,15 @@ export class SymbolNode extends ExplorerNode {
 
     private _children: SymbolInformation[];
 
-    constructor(public readonly symbolInfo: SymbolInformation, private _prarent: TypeRootNode) {
-        super();
+    constructor(public readonly symbolInfo: SymbolInformation, private parent: TypeRootNode) {
+        super(parent);
     }
 
     public getChildren(): ExplorerNode[] | Thenable<ExplorerNode[]> {
         const res: ExplorerNode[] = [];
         if (this._children && this._children.length) {
             this._children.forEach((child) => {
-                res.push(new SymbolNode(child, this._prarent));
+                res.push(new SymbolNode(child, this.getParent() as TypeRootNode));
             });
         }
         return res;
@@ -44,7 +44,7 @@ export class SymbolNode extends ExplorerNode {
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this.symbolInfo) {
-            const parentData = <ITypeRootNodeData>this._prarent.nodeData;
+            const parentData = <ITypeRootNodeData>(<TypeRootNode>this.getParent()).nodeData;
             if (parentData && parentData.symbolTree) {
                 this._children = parentData.symbolTree.get(this.symbolInfo.name);
             }
@@ -70,7 +70,7 @@ export class SymbolNode extends ExplorerNode {
         return {
             title: "Go to outline",
             command: Commands.VIEW_PACKAGE_OUTLINE,
-            arguments: [this._prarent.uri, this.symbolInfo.location.range],
+            arguments: [(this.getParent() as TypeRootNode).uri, this.symbolInfo.location.range],
         };
     }
 }
