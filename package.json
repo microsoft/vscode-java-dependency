@@ -76,7 +76,8 @@
       "explorer": [
         {
           "id": "javaDependencyExplorer",
-          "name": "Java Dependencies"
+          "name": "Java Dependencies",
+          "when": "extensionActivated"
         }
       ]
     }
