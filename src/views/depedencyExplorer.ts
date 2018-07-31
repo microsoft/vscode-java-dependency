@@ -4,6 +4,7 @@
 import { ExtensionContext, ProviderResult, TextEditor, TreeView, Uri, window } from "vscode";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
+import { Settings } from "../settings";
 import { Utility } from "../utility";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
@@ -20,7 +21,7 @@ export class DependencyExplorer {
         this._dependencyViewer = window.createTreeView("javaDependencyExplorer", { treeDataProvider: this._dataProvider });
 
         window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
-            if (textEditor && textEditor.document && textEditor.document.languageId === "java") {
+            if (textEditor && textEditor.document && textEditor.document.languageId === "java" && Settings.syncWithFolderExplorer()) {
                 this.reveal(textEditor.document.uri);
             }
         });

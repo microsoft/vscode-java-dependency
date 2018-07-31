@@ -55,6 +55,11 @@
           "type": "boolean",
           "description": "Enable show outline in the Java Dependency explorer",
           "default": false
+        }, 
+        "java.dependency.syncWithFolderExplorer": {
+          "type": "boolean",
+          "description": "Synchronize dependency viewer selection with folder explorer",
+          "default": true
         }
       }
     },
