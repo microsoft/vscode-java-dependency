@@ -11,6 +11,9 @@ import { DependencyExplorer } from "./views/depedencyExplorer";
 
 export function activate(context: ExtensionContext) {
     Telemetry.sendEvent("activateExtension", {});
+
+    commands.executeCommand("setContext", "extensionActivated", true);
+
     Services.initialize(context);
     Settings.initialize(context);
 
