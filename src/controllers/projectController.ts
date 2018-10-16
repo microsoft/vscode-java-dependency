@@ -53,12 +53,11 @@ export class ProjectController {
         const projectFile: string = path.join(basePath, projectName, ".project");
         const extensionPath: string = this.context.extensionPath;
         try {
-            await Promise.all([
-                fse.copy(path.join(extensionPath, "templates", "App.java.sample"), path.join(basePath, projectName, "src", "app", "App.java")),
-                fse.copy(path.join(extensionPath, "templates", `Java${javaVersion}`), path.join(basePath, projectName)),
-                fse.copy(path.join(extensionPath, "templates", ".project"), projectFile),
-                fse.ensureDir(path.join(basePath, projectName, "bin")),
-            ]);
+            await fse.ensureDir(path.join(basePath, projectName, "bin"));
+            await fse.copy(path.join(extensionPath, "templates", "App.java.sample"), path.join(basePath, projectName, "src", "app", "App.java"));
+            await fse.copy(path.join(extensionPath, "templates", `Java${javaVersion}`), path.join(basePath, projectName));
+            await fse.copy(path.join(extensionPath, "templates", ".project"), projectFile);
+
 
             // replace the project name with user input project name
             const xml: string = await fse.readFile(projectFile, "utf8");
