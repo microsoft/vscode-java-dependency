@@ -58,7 +58,6 @@ export class ProjectController {
             fse.copySync(path.join(extensionPath, "templates", `Java${javaVersion}`), path.join(basePath, projectName));
             fse.copySync(path.join(extensionPath, "templates", ".project"), projectFile);
 
-
             // replace the project name with user input project name
             const xml: string = await fse.readFile(projectFile, "utf8");
             const jsonObj: any = await Utility.parseXml(xml);
