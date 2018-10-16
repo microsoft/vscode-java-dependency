@@ -4,7 +4,7 @@
 import * as vscode from "vscode";
 import TelemetryReporter from "vscode-extension-telemetry";
 
-const extensionId = "vscjava.vscode-java-explorer";
+const extensionId = "vscjava.vscode-java-dependency";
 const packageJSON = vscode.extensions.getExtension(extensionId).packageJSON;
 const extensionVersion: string = packageJSON.version;
 const aiKey: string = packageJSON.aiKey;

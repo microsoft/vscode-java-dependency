@@ -1,5 +1,5 @@
 {
-  "name": "vscode-java-explorer",
+  "name": "vscode-java-dependency",
   "displayName": "Java Dependencies",
   "description": "Manage Java Dependencies in VSCode",
   "version": "0.3.0",
@@ -16,9 +16,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-java-explorer.git"
+    "url": "https://github.com/Microsoft/vscode-java-dependency.git"
   },
-  "homepage": "https://github.com/Microsoft/vscode-java-explorer/blob/master/README.md",
+  "homepage": "https://github.com/Microsoft/vscode-java-dependency/blob/master/README.md",
   "icon": "logo.png",
   "activationEvents": [
     "onLanguage:java",
