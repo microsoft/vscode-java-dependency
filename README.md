@@ -1,16 +1,16 @@
 # Java Dependencies
 
-[![Travis CI](https://travis-ci.org/Microsoft/vscode-java-explorer.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-java-explorer)
+[![Travis CI](https://travis-ci.org/Microsoft/vscode-java-dependency.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-java-dependency)
 
 ## Overview
 
 A lightweight extension to provide additional Java project explorer features. It works with [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java) to provide the following features:
 
 * Dependency viewer
-![viewer](https://raw.githubusercontent.com/Microsoft/vscode-java-explorer/master/images/project-dependency.gif)
+![viewer](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/project-dependency.gif)
 
 * Create simple Java Project
-![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-explorer/master/images/create-project.gif)
+![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/create-project.gif)
 
 ## Requirements
 
