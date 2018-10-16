@@ -50,13 +50,18 @@ export class ProjectController {
     }
 
     private async scaffoldJavaProject(basePath: string, projectName: string, javaVersion: number): Promise<boolean> {
-        const projectFile: string = path.join(basePath, projectName, ".project");
-        const extensionPath: string = this.context.extensionPath;
+        const projectRoot: string = path.join(basePath, projectName);
+        const templateRoot: string = path.join(this.context.extensionPath, "templates");
+        const projectFile: string = path.join(projectRoot, ".project");
         try {
-            fse.ensureDirSync(path.join(basePath, projectName, "bin"));
-            fse.copySync(path.join(extensionPath, "templates", "App.java.sample"), path.join(basePath, projectName, "src", "app", "App.java"));
-            fse.copySync(path.join(extensionPath, "templates", `Java${javaVersion}`), path.join(basePath, projectName));
-            fse.copySync(path.join(extensionPath, "templates", ".project"), projectFile);
+            fse.ensureDirSync(projectRoot);
+
+            await Promise.all([
+                fse.copy(path.join(templateRoot, "App.java.sample"), path.join(projectRoot, "src", "app", "App.java")),
+                fse.copy(path.join(templateRoot, `Java${javaVersion}`), projectRoot),
+                fse.copy(path.join(templateRoot, ".project"), path.join(projectRoot, ".project")),
+                fse.ensureDir(path.join(projectRoot, "bin")),
+            ]);
 
             // replace the project name with user input project name
             const xml: string = await fse.readFile(projectFile, "utf8");
