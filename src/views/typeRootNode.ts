@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command, commands, SymbolInformation, TextDocument, ThemeIcon, Uri, workspace } from "vscode";
+import { Command, commands, DocumentSymbol, SymbolInformation, TextDocument, ThemeIcon, Uri, workspace } from "vscode";
 import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
 import { ITypeRootNodeData, TypeRootKind } from "../java/typeRootNodeData";
 import { Services } from "../services";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
+import { DocumentSymbolNode } from "./documentSymbolNode";
 import { ExplorerNode } from "./explorerNode";
 import { SymbolNode } from "./symbolNode";
 
@@ -16,7 +17,7 @@ export class TypeRootNode extends DataNode {
         super(nodeData, parent);
     }
 
-    protected loadData(): Thenable<SymbolInformation[]> {
+    protected loadData(): Thenable<SymbolInformation[] | DocumentSymbol[]> {
         return workspace.openTextDocument(Uri.parse(this.nodeData.uri)).then((doc) => {
             return this.getSymbols(doc);
         });
@@ -26,13 +27,24 @@ export class TypeRootNode extends DataNode {
         const data = <ITypeRootNodeData>this.nodeData;
         const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            data.symbolTree = this.buildSymbolTree(this.nodeData.children);
-            const directChildren = data.symbolTree.get(this.nodeData.name);
-            if (directChildren && directChildren.length) {
-                directChildren.forEach((symbolInfo) => {
-                    result.push(new SymbolNode(symbolInfo, this));
+            // if the element in children is DocumentSymbol
+            if (true || (this.nodeData.children && this.nodeData.children.length && this.nodeData.children[0].has("children"))) {
+                this.nodeData.children.forEach((symbolInfo: DocumentSymbol) => {
+                    result.push(new DocumentSymbolNode(symbolInfo, this));
                 });
+            } else {
+                // After DocumentSymbolProvider api change at
+                // https://github.com/eclipse/eclipse.jdt.ls/issues/780, the vscode.executeDocumentSymbolProvider
+                // will return DocumentSymbol[]
+                data.symbolTree = this.buildSymbolTree(this.nodeData.children);
+                const directChildren = data.symbolTree.get(this.nodeData.name);
+                if (directChildren && directChildren.length) {
+                    directChildren.forEach((symbolInfo) => {
+                        result.push(new SymbolNode(symbolInfo, this));
+                    });
+                }
             }
+
         }
         return result;
     }
@@ -49,7 +61,7 @@ export class TypeRootNode extends DataNode {
         return Settings.showOutline();
     }
 
-    private getSymbols(document: TextDocument): Thenable<SymbolInformation[]> {
+    private getSymbols(document: TextDocument): Thenable<SymbolInformation[] | DocumentSymbol[]> {
         return commands.executeCommand<SymbolInformation[]>(
             "vscode.executeDocumentSymbolProvider",
             document.uri,
