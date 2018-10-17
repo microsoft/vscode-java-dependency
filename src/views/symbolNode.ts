@@ -1,35 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command, SymbolInformation, SymbolKind, TreeItem, TreeItemCollapsibleState } from "vscode";
-import { Commands } from "../commands";
+import { Range, SymbolInformation, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { ITypeRootNodeData } from "../java/typeRootNodeData";
-import { Services } from "../services";
+import { BaseSymbolNode } from "./baseSymbolNode";
 import { ExplorerNode } from "./explorerNode";
 import { TypeRootNode } from "./typeRootNode";
 
-export class SymbolNode extends ExplorerNode {
-
-    private static _iconMap: Map<SymbolKind, string> = new Map([
-        [SymbolKind.Class, "Class"],
-        [SymbolKind.Interface, "Interface"],
-        [SymbolKind.Enum, "Enumerator"],
-        [SymbolKind.EnumMember, "EnumItem"],
-        [SymbolKind.Constant, "Constant"],
-        [SymbolKind.Method, "Method"],
-        [SymbolKind.Function, "Method"],
-        [SymbolKind.Constructor, "Method"],
-        [SymbolKind.Field, "Field"],
-        [SymbolKind.Property, "Property"],
-        [SymbolKind.Variable, "LocalVariable"],
-        [SymbolKind.Constant, "Constant"],
-
-    ]);
-
+export class SymbolNode extends BaseSymbolNode {
     private _children: SymbolInformation[];
 
-    constructor(public readonly symbolInfo: SymbolInformation, private parent: TypeRootNode) {
-        super(parent);
+    constructor(symbolInfo: SymbolInformation, parent: TypeRootNode) {
+        super(symbolInfo, parent);
     }
 
     public getChildren(): ExplorerNode[] | Thenable<ExplorerNode[]> {
@@ -56,21 +38,7 @@ export class SymbolNode extends ExplorerNode {
         }
     }
 
-    private get iconPath(): any {
-        if (SymbolNode._iconMap.has(this.symbolInfo.kind)) {
-            const iconFileName = SymbolNode._iconMap.get(this.symbolInfo.kind);
-            return {
-                light: Services.context.asAbsolutePath(`./images/symbols/${iconFileName}_16x.svg`),
-                dark: Services.context.asAbsolutePath(`./images/symbols/${iconFileName}_inverse_16x.svg`),
-            };
-        }
-    }
-
-    protected get command(): Command {
-        return {
-            title: "Go to outline",
-            command: Commands.VIEW_PACKAGE_OUTLINE,
-            arguments: [(this.getParent() as TypeRootNode).uri, this.symbolInfo.location.range],
-        };
+    protected get range(): Range {
+        return (<SymbolInformation>this.symbolInfo).location.range;
     }
 }
