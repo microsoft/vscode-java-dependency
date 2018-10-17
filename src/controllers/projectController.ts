@@ -54,7 +54,7 @@ export class ProjectController {
         const templateRoot: string = path.join(this.context.extensionPath, "templates");
         const projectFile: string = path.join(projectRoot, ".project");
         try {
-            fse.ensureDirSync(projectRoot);
+            await fse.ensureDir(projectRoot);
 
             await Promise.all([
                 fse.copy(path.join(templateRoot, "App.java.sample"), path.join(projectRoot, "src", "app", "App.java")),
