@@ -23,6 +23,7 @@
   "activationEvents": [
     "onLanguage:java",
     "workspaceContains:pom.xml",
+    "workspaceContains:.classpath",
     "workspaceContains:build.gradle",
     "onCommand:java.project.create"
   ],
