@@ -7,3 +7,5 @@ out/
 **/server
 **/*.vsix
 .vscode-test/
+vscode-java-*.vsix
+packages/
