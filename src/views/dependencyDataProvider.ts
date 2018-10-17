@@ -5,11 +5,11 @@ import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
     Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
+import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Telemetry } from "../telemetry";
-import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
@@ -24,9 +24,12 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     private _rootItems: ExplorerNode[] = null;
 
     constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, this.refresh, this));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OPEN_FILE, this.openFile, this));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE, this.goToOutline, this));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH,
+            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh())));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OPEN_FILE,
+            instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
+            instrumentOperation(Commands.VIEW_PACKAGE_OUTLINE, (_operationId, uri, range) => this.goToOutline(uri, range))));
     }
 
     public refresh() {
@@ -36,14 +39,12 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     public openFile(uri: string) {
         return workspace.openTextDocument(Uri.parse(uri)).then((res) => {
-            Telemetry.sendEvent("open source file");
             return window.showTextDocument(res);
         });
     }
 
     public goToOutline(uri: string, range: Range): Thenable<{}> {
         return this.openFile(uri).then((editor) => {
-            Telemetry.sendEvent("view package outline");
             editor.revealRange(range, TextEditorRevealType.Default);
             editor.selection = new Selection(range.start, range.start);
             return commands.executeCommand("workbench.action.focusActiveEditorGroup");
