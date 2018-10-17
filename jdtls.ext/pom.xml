@@ -4,7 +4,7 @@
     <groupId>com.microsoft.jdtls.ext</groupId>
     <artifactId>jdtls-ext-parent</artifactId>
     <name>${base.name} :: Parent</name>
-    <version>0.3.0</version>
+    <version>0.1.0</version>
    <packaging>pom</packaging>
     <properties>
         <base.name>Java Project Manager</base.name>
@@ -81,9 +81,9 @@
     </build>
     <repositories>
         <repository>
-            <id>oxygen</id>
+            <id>photon</id>
             <layout>p2</layout>
-            <url>http://download.eclipse.org/releases/oxygen</url>
+            <url>http://download.eclipse.org/releases/photon</url>
         </repository>
         <repository>
             <id>oss.sonatype.org</id>
@@ -95,12 +95,17 @@
         <repository>
             <id>JDT.LS</id>
             <layout>p2</layout>
-            <url>http://download.eclipse.org/jdtls/snapshots/repository/0.16.0.201804042215/</url>
+            <url>http://download.eclipse.org/jdtls/snapshots/repository/latest/</url>
         </repository>
         <repository>
             <id>LSP4J</id>
             <layout>p2</layout>
-            <url>http://download.eclipse.org/lsp4j/updates/releases/0.3.0/</url>
+            <url>http://download.eclipse.org/lsp4j/updates/releases/0.5.0/</url>
+        </repository>
+        <repository>
+            <id>JBOLL.TOOLS</id>
+            <layout>p2</layout>
+            <url>http://download.jboss.org/jbosstools/updates/m2e-extensions/m2e-apt/1.5.0-2018-05-16_00-46-30-H11</url>
         </repository>
     </repositories>
 </project>
