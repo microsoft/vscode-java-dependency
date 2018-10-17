@@ -6,3 +6,4 @@ out/
 **/lib
 **/server
 **/*.vsix
+.vscode-test/
