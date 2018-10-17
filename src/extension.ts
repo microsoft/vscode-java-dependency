@@ -10,7 +10,7 @@ import { Settings } from "./settings";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
 export async function activate(context: ExtensionContext): Promise<any> {
-    await initializeFromJsonFile(context.asAbsolutePath("./package.json"), true);
+    await initializeFromJsonFile(context.asAbsolutePath("./package.json"));
     return instrumentOperation("activation", activateExtension)(context);
 }
 
