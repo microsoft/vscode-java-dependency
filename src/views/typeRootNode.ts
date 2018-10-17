@@ -27,15 +27,16 @@ export class TypeRootNode extends DataNode {
         const data = <ITypeRootNodeData>this.nodeData;
         const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            // if the element in children is DocumentSymbol
-            if (true || (this.nodeData.children && this.nodeData.children.length && this.nodeData.children[0].has("children"))) {
+            // After DocumentSymbolProvider api change at
+            // https://github.com/eclipse/eclipse.jdt.ls/issues/780, the vscode.executeDocumentSymbolProvider
+            // will return DocumentSymbol[]
+            if (this.nodeData.children && this.nodeData.children.length && this.nodeData.children[0].hasOwnProperty("children")) {
+                // if the element in children is DocumentSymbol
                 this.nodeData.children.forEach((symbolInfo: DocumentSymbol) => {
                     result.push(new DocumentSymbolNode(symbolInfo, this));
                 });
             } else {
-                // After DocumentSymbolProvider api change at
-                // https://github.com/eclipse/eclipse.jdt.ls/issues/780, the vscode.executeDocumentSymbolProvider
-                // will return DocumentSymbol[]
+                // if the element in children is SymbolInformation
                 data.symbolTree = this.buildSymbolTree(this.nodeData.children);
                 const directChildren = data.symbolTree.get(this.nodeData.name);
                 if (directChildren && directChildren.length) {

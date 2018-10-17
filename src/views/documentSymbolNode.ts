@@ -41,8 +41,6 @@ export class DocumentSymbolNode extends ExplorerNode {
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this.symbolInfo) {
-            const parentData = <ITypeRootNodeData>(<TypeRootNode>this.getParent()).nodeData;
-
             const item = new TreeItem(this.symbolInfo.name,
                 (this.symbolInfo.children && this.symbolInfo.children.length) ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
             item.iconPath = this.iconPath;
