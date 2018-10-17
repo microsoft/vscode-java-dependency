@@ -13,24 +13,24 @@ package com.microsoft.jdtls.ext.core.model;
 
 public class TypeRootNode extends PackageNode {
 
-	/**
-	 * Kind constant for a source file.
-	 */
-	public final static int K_SOURCE = 1;
+    /**
+     * Kind constant for a source file.
+     */
+    public final static int K_SOURCE = 1;
 
-	/**
-	 * Kind constant for a binary type.
-	 */
-	public final static int K_BINARY = 2;
+    /**
+     * Kind constant for a binary type.
+     */
+    public final static int K_BINARY = 2;
 
-	private int entryKind;
+    private int entryKind;
 
-	public TypeRootNode(String name, String path, NodeKind kind, int entryKind) {
-		super(name, path, kind);
-		this.entryKind = entryKind;
-	}
+    public TypeRootNode(String name, String path, NodeKind kind, int entryKind) {
+        super(name, path, kind);
+        this.entryKind = entryKind;
+    }
 
-	public int getEntryType() {
-		return this.entryKind;
-	}
+    public int getEntryType() {
+        return this.entryKind;
+    }
 }

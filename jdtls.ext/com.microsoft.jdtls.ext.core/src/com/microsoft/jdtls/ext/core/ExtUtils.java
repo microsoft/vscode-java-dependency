@@ -21,24 +21,24 @@ import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 
 public final class ExtUtils {
 
-	private static final String JDT_SCHEME = "jdt";
+    private static final String JDT_SCHEME = "jdt";
 
-	private static final String CONTENTS_AUTHORITY = "jarentry";
+    private static final String CONTENTS_AUTHORITY = "jarentry";
 
-	public static String toUri(JarEntryFile jarEntryFile) {
-		IPackageFragmentRoot fragmentRoot = jarEntryFile.getPackageFragmentRoot();
-		try {
-			return new URI(JDT_SCHEME, CONTENTS_AUTHORITY, jarEntryFile.getFullPath().toPortableString(), fragmentRoot.getHandleIdentifier(), null).toASCIIString();
-		} catch (URISyntaxException e) {
-			JavaLanguageServerPlugin.logException("Error generating URI for jarentryfile ", e);
-			return null;
-		}
-	}
+    public static String toUri(JarEntryFile jarEntryFile) {
+        IPackageFragmentRoot fragmentRoot = jarEntryFile.getPackageFragmentRoot();
+        try {
+            return new URI(JDT_SCHEME, CONTENTS_AUTHORITY, jarEntryFile.getFullPath().toPortableString(), fragmentRoot.getHandleIdentifier(), null).toASCIIString();
+        } catch (URISyntaxException e) {
+            JavaLanguageServerPlugin.logException("Error generating URI for jarentryfile ", e);
+            return null;
+        }
+    }
 
-	public static IPath removeProjectSegment(String projectElementName, IPath path) {
-		if (projectElementName.equals(path.segment(0))) {
-			return path.removeFirstSegments(1).makeRelative();
-		}
-		return path;
-	}
+    public static IPath removeProjectSegment(String projectElementName, IPath path) {
+        if (projectElementName.equals(path.segment(0))) {
+            return path.removeFirstSegments(1).makeRelative();
+        }
+        return path;
+    }
 }

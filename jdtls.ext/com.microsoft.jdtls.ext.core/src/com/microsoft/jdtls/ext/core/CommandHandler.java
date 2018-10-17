@@ -19,20 +19,20 @@ import org.eclipse.jdt.ls.core.internal.IDelegateCommandHandler;
 
 public class CommandHandler implements IDelegateCommandHandler {
 
-	@Override
-	public Object executeCommand(String commandId, List<Object> arguments, IProgressMonitor monitor) throws Exception {
-		if (!StringUtils.isBlank(commandId)) {
-			switch (commandId) {
-				case "java.project.list":
-					return ProjectCommand.execute(arguments, monitor);
-				case "java.getPackageData":
-					return PackageCommand.getChildren(arguments, monitor);
-				case "java.resolvePath":
-					return PackageCommand.resolvePath(arguments, monitor);
-				default:
-					break;
-			}
-		}
-		throw new UnsupportedOperationException(String.format("Not supported commandId: '%s'.", commandId));
-	}
+    @Override
+    public Object executeCommand(String commandId, List<Object> arguments, IProgressMonitor monitor) throws Exception {
+        if (!StringUtils.isBlank(commandId)) {
+            switch (commandId) {
+                case "java.project.list":
+                    return ProjectCommand.execute(arguments, monitor);
+                case "java.getPackageData":
+                    return PackageCommand.getChildren(arguments, monitor);
+                case "java.resolvePath":
+                    return PackageCommand.resolvePath(arguments, monitor);
+                default:
+                    break;
+            }
+        }
+        throw new UnsupportedOperationException(String.format("Not supported commandId: '%s'.", commandId));
+    }
 }

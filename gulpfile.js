@@ -16,23 +16,23 @@ gulp.task('build_server', ()=>
   cp.execSync(mvnw()+ ' clean package', {cwd:server_dir, stdio:[0,1,2]} );
   
   return gulp.src(server_dir + '/com.microsoft.jdtls.ext.core/target/com.microsoft.jdtls.ext.core*.jar')
-		.pipe(gulp.dest('./server'))
+        .pipe(gulp.dest('./server'))
 });
 
 
 function isWin() {
-	return /^win/.test(process.platform);
+    return /^win/.test(process.platform);
 }
 
 function isMac() {
-	return /^darwin/.test(process.platform);
+    return /^darwin/.test(process.platform);
 }
 
 function isLinux() {
-	return /^linux/.test(process.platform);
+    return /^linux/.test(process.platform);
 }
 
 function mvnw() {
   return "mvn";
-	// return isWin()?"mvnw.cmd":"./mvnw";
+    // return isWin()?"mvnw.cmd":"./mvnw";
 }

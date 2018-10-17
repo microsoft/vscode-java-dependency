@@ -19,64 +19,64 @@ import com.microsoft.jdtls.ext.core.model.NodeKind;
  */
 public class PackageParams {
 
-	private NodeKind kind;
+    private NodeKind kind;
 
-	private String projectUri;
+    private String projectUri;
 
-	private String path;
+    private String path;
 
-	private String rootPath;
+    private String rootPath;
 
-	public PackageParams() {
-	}
+    public PackageParams() {
+    }
 
-	public PackageParams(NodeKind kind, String projectUri) {
-		this.kind = kind;
-		this.projectUri = projectUri;
-	}
+    public PackageParams(NodeKind kind, String projectUri) {
+        this.kind = kind;
+        this.projectUri = projectUri;
+    }
 
-	public PackageParams(NodeKind kind, String projectUri, String path) {
-		this.kind = kind;
-		this.projectUri = projectUri;
-		this.path = path;
-	}
+    public PackageParams(NodeKind kind, String projectUri, String path) {
+        this.kind = kind;
+        this.projectUri = projectUri;
+        this.path = path;
+    }
 
-	public PackageParams(NodeKind kind, String projectUri, String path, String rootPath) {
-		this.kind = kind;
-		this.projectUri = projectUri;
-		this.path = path;
-		this.rootPath = rootPath;
-	}
+    public PackageParams(NodeKind kind, String projectUri, String path, String rootPath) {
+        this.kind = kind;
+        this.projectUri = projectUri;
+        this.path = path;
+        this.rootPath = rootPath;
+    }
 
-	public NodeKind getKind() {
-		return kind;
-	}
+    public NodeKind getKind() {
+        return kind;
+    }
 
-	public void setKind(NodeKind kind) {
-		this.kind = kind;
-	}
+    public void setKind(NodeKind kind) {
+        this.kind = kind;
+    }
 
-	public String getProjectUri() {
-		return projectUri;
-	}
+    public String getProjectUri() {
+        return projectUri;
+    }
 
-	public void setProjectUri(String projectUri) {
-		this.projectUri = projectUri;
-	}
+    public void setProjectUri(String projectUri) {
+        this.projectUri = projectUri;
+    }
 
-	public String getPath() {
-		return path;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	public void setPath(String nodePath) {
-		this.path = nodePath;
-	}
+    public void setPath(String nodePath) {
+        this.path = nodePath;
+    }
 
-	public String getRootPath() {
-		return rootPath;
-	}
+    public String getRootPath() {
+        return rootPath;
+    }
 
-	public void setRootPath(String rootPath) {
-		this.rootPath = rootPath;
-	}
+    public void setRootPath(String rootPath) {
+        this.rootPath = rootPath;
+    }
 }

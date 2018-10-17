@@ -12,37 +12,37 @@
 package com.microsoft.jdtls.ext.core.model;
 
 public enum NodeKind {
-	WORKSPACE(1),
+    WORKSPACE(1),
 
-	PROJECT(2),
+    PROJECT(2),
 
-	CONTAINER(3),
+    CONTAINER(3),
 
-	PACKAGEROOT(4),
+    PACKAGEROOT(4),
 
-	PACKAGE(5),
+    PACKAGE(5),
 
-	TYPEROOT(6),
+    TYPEROOT(6),
 
-	Folder(7),
+    Folder(7),
 
-	FILE(8);
+    FILE(8);
 
-	private final int value;
+    private final int value;
 
-	NodeKind(int value) {
-		this.value = value;
-	}
+    NodeKind(int value) {
+        this.value = value;
+    }
 
-	public int getValue() {
-		return value;
-	}
+    public int getValue() {
+        return value;
+    }
 
-	public static NodeKind forValue(int value) {
-		NodeKind[] allValues = NodeKind.values();
-		if (value < 1 || value > allValues.length) {
-			throw new IllegalArgumentException("Illegal enum value: " + value);
-		}
-		return allValues[value - 1];
-	}
+    public static NodeKind forValue(int value) {
+        NodeKind[] allValues = NodeKind.values();
+        if (value < 1 || value > allValues.length) {
+            throw new IllegalArgumentException("Illegal enum value: " + value);
+        }
+        return allValues[value - 1];
+    }
 }

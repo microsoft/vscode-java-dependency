@@ -27,25 +27,25 @@ import com.microsoft.jdtls.ext.core.model.PackageNode;
 
 public final class ProjectCommand {
 
-	public static List<PackageNode> execute(List<Object> arguments, IProgressMonitor monitor) {
-		String workspaceUri = (String) arguments.get(0);
+    public static List<PackageNode> execute(List<Object> arguments, IProgressMonitor monitor) {
+        String workspaceUri = (String) arguments.get(0);
 
-		IProject[] projects = getWorkspaceRoot().getProjects();
-		ArrayList<PackageNode> children = new ArrayList<>();
-		List<IPath> paths = Arrays.asList(ResourceUtils.filePathFromURI(workspaceUri));
-		for (IProject project : projects) {
-			if (project.exists() && ResourceUtils.isContainedIn(project.getLocation(), paths)) {
-				PackageNode projectNode = new PackageNode(project.getName(), project.getFullPath().toPortableString(), NodeKind.PROJECT);
-				projectNode.setUri(project.getLocationURI().toString());
-				children.add(projectNode);
+        IProject[] projects = getWorkspaceRoot().getProjects();
+        ArrayList<PackageNode> children = new ArrayList<>();
+        List<IPath> paths = Arrays.asList(ResourceUtils.filePathFromURI(workspaceUri));
+        for (IProject project : projects) {
+            if (project.exists() && ResourceUtils.isContainedIn(project.getLocation(), paths)) {
+                PackageNode projectNode = new PackageNode(project.getName(), project.getFullPath().toPortableString(), NodeKind.PROJECT);
+                projectNode.setUri(project.getLocationURI().toString());
+                children.add(projectNode);
 
-			}
-		}
+            }
+        }
 
-		return children;
-	}
+        return children;
+    }
 
-	private static IWorkspaceRoot getWorkspaceRoot() {
-		return ResourcesPlugin.getWorkspace().getRoot();
-	}
+    private static IWorkspaceRoot getWorkspaceRoot() {
+        return ResourcesPlugin.getWorkspace().getRoot();
+    }
 }

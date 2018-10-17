@@ -21,62 +21,62 @@ import org.osgi.framework.ServiceReference;
 
 public class JdtlsExtActivator implements BundleActivator {
 
-	public static final String PLUGIN_ID = "org.eclipse.jdtls.ext.core";
+    public static final String PLUGIN_ID = "org.eclipse.jdtls.ext.core";
 
-	private static BundleContext context;
+    private static BundleContext context;
 
-	static BundleContext getContext() {
-		return context;
-	}
+    static BundleContext getContext() {
+        return context;
+    }
 
-	@Override
-	public void start(BundleContext bundleContext) throws Exception {
-		JdtlsExtActivator.context = bundleContext;
-	}
+    @Override
+    public void start(BundleContext bundleContext) throws Exception {
+        JdtlsExtActivator.context = bundleContext;
+    }
 
-	@Override
-	public void stop(BundleContext bundleContext) throws Exception {
-		JdtlsExtActivator.context = null;
-	}
+    @Override
+    public void stop(BundleContext bundleContext) throws Exception {
+        JdtlsExtActivator.context = null;
+    }
 
-	@SuppressWarnings("unchecked")
-	public static <T> T acquireService(Class<T> serviceInterface) {
-		ServiceReference<T> reference = (ServiceReference<T>) context.getServiceReference(serviceInterface.getName());
-		if (reference == null) {
-			return null;
-		}
-		T service = context.getService(reference);
-		if (service != null) {
-			context.ungetService(reference);
-		}
-		return service;
-	}
+    @SuppressWarnings("unchecked")
+    public static <T> T acquireService(Class<T> serviceInterface) {
+        ServiceReference<T> reference = (ServiceReference<T>) context.getServiceReference(serviceInterface.getName());
+        if (reference == null) {
+            return null;
+        }
+        T service = context.getService(reference);
+        if (service != null) {
+            context.ungetService(reference);
+        }
+        return service;
+    }
 
-	public static void log(IStatus status) {
-		if (context != null) {
-			Platform.getLog(context.getBundle()).log(status);
-		}
-	}
+    public static void log(IStatus status) {
+        if (context != null) {
+            Platform.getLog(context.getBundle()).log(status);
+        }
+    }
 
-	public static void log(CoreException e) {
-		log(e.getStatus());
-	}
+    public static void log(CoreException e) {
+        log(e.getStatus());
+    }
 
-	public static void logError(String message) {
-		if (context != null) {
-			log(new Status(IStatus.ERROR, context.getBundle().getSymbolicName(), message));
-		}
-	}
+    public static void logError(String message) {
+        if (context != null) {
+            log(new Status(IStatus.ERROR, context.getBundle().getSymbolicName(), message));
+        }
+    }
 
-	public static void logInfo(String message) {
-		if (context != null) {
-			log(new Status(IStatus.INFO, context.getBundle().getSymbolicName(), message));
-		}
-	}
+    public static void logInfo(String message) {
+        if (context != null) {
+            log(new Status(IStatus.INFO, context.getBundle().getSymbolicName(), message));
+        }
+    }
 
-	public static void logException(String message, Throwable ex) {
-		if (context != null) {
-			log(new Status(IStatus.ERROR, context.getBundle().getSymbolicName(), message, ex));
-		}
-	}
+    public static void logException(String message, Throwable ex) {
+        if (context != null) {
+            log(new Status(IStatus.ERROR, context.getBundle().getSymbolicName(), message, ex));
+        }
+    }
 }
