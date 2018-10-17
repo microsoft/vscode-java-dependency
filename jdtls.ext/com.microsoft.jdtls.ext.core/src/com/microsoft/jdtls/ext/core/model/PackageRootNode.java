@@ -13,14 +13,14 @@ package com.microsoft.jdtls.ext.core.model;
 
 public class PackageRootNode extends PackageNode {
 
-	private int entryKind;
+    private int entryKind;
 
-	public PackageRootNode(String name, String path, NodeKind kind, int entryKind) {
-		super(name, path, kind);
-		this.entryKind = entryKind;
-	}
+    public PackageRootNode(String name, String path, NodeKind kind, int entryKind) {
+        super(name, path, kind);
+        this.entryKind = entryKind;
+    }
 
-	public int getEntryType() {
-		return this.entryKind;
-	}
+    public int getEntryType() {
+        return this.entryKind;
+    }
 }

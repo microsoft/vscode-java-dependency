@@ -35,66 +35,66 @@ import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
  */
 public class JarFileContentProvider implements IContentProvider {
 
-	@Override
-	public String getContent(URI uri, IProgressMonitor monitor) throws CoreException {
-		return getContent(uri.getQuery(), uri.getPath().toString(), monitor);
-	}
+    @Override
+    public String getContent(URI uri, IProgressMonitor monitor) throws CoreException {
+        return getContent(uri.getQuery(), uri.getPath().toString(), monitor);
+    }
 
-	private String getContent(String rootId, String path, IProgressMonitor pm) {
-		try {
-			IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(rootId);
-			if (packageRoot == null) {
-				throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", rootId)));
-			}
-			if (packageRoot instanceof JarPackageFragmentRoot) {
-				Object[] resources = packageRoot.getNonJavaResources();
+    private String getContent(String rootId, String path, IProgressMonitor pm) {
+        try {
+            IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(rootId);
+            if (packageRoot == null) {
+                throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", rootId)));
+            }
+            if (packageRoot instanceof JarPackageFragmentRoot) {
+                Object[] resources = packageRoot.getNonJavaResources();
 
-				for (Object resource : resources) {
-					if (resource instanceof JarEntryFile) {
-						JarEntryFile file = (JarEntryFile) resource;
-						if (file.getFullPath().toPortableString().equals(path)) {
-							return readFileContent(file);
-						}
-					}
-					if (resource instanceof JarEntryDirectory) {
-						JarEntryDirectory directory = (JarEntryDirectory) resource;
-						JarEntryFile file = findFileInJar(directory, path);
-						if (file != null) {
-							return readFileContent(file);
-						}
-					}
-				}
-			}
-		} catch (CoreException e) {
-			JavaLanguageServerPlugin.logException("Problem get JarEntryFile content ", e);
-		}
-		return null;
-	}
+                for (Object resource : resources) {
+                    if (resource instanceof JarEntryFile) {
+                        JarEntryFile file = (JarEntryFile) resource;
+                        if (file.getFullPath().toPortableString().equals(path)) {
+                            return readFileContent(file);
+                        }
+                    }
+                    if (resource instanceof JarEntryDirectory) {
+                        JarEntryDirectory directory = (JarEntryDirectory) resource;
+                        JarEntryFile file = findFileInJar(directory, path);
+                        if (file != null) {
+                            return readFileContent(file);
+                        }
+                    }
+                }
+            }
+        } catch (CoreException e) {
+            JavaLanguageServerPlugin.logException("Problem get JarEntryFile content ", e);
+        }
+        return null;
+    }
 
-	private static JarEntryFile findFileInJar(JarEntryDirectory directory, String path) {
-		for (IJarEntryResource child : directory.getChildren()) {
-			if (child instanceof JarEntryFile && child.getFullPath().toPortableString().equals(path)) {
-				return (JarEntryFile) child;
-			}
-			if (child instanceof JarEntryDirectory) {
-				JarEntryFile file = findFileInJar((JarEntryDirectory) child, path);
-				if (file != null) {
-					return file;
-				}
-			}
-		}
-		return null;
-	}
+    private static JarEntryFile findFileInJar(JarEntryDirectory directory, String path) {
+        for (IJarEntryResource child : directory.getChildren()) {
+            if (child instanceof JarEntryFile && child.getFullPath().toPortableString().equals(path)) {
+                return (JarEntryFile) child;
+            }
+            if (child instanceof JarEntryDirectory) {
+                JarEntryFile file = findFileInJar((JarEntryDirectory) child, path);
+                if (file != null) {
+                    return file;
+                }
+            }
+        }
+        return null;
+    }
 
-	private static String readFileContent(JarEntryFile file) throws CoreException {
-		try (InputStream stream = (file.getContents())) {
-			return convertStreamToString(stream);
-		} catch (IOException e) {
-			throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, "Can't read file content: " + file.getFullPath()));
-		}
-	}
+    private static String readFileContent(JarEntryFile file) throws CoreException {
+        try (InputStream stream = (file.getContents())) {
+            return convertStreamToString(stream);
+        } catch (IOException e) {
+            throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, "Can't read file content: " + file.getFullPath()));
+        }
+    }
 
-	private static String convertStreamToString(InputStream inputStream) throws IOException {
-		return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-	}
+    private static String convertStreamToString(InputStream inputStream) throws IOException {
+        return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+    }
 }
