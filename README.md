@@ -15,8 +15,8 @@ A lightweight extension to provide additional Java project explorer features. It
 ## Requirements
 
 - JDK (version 1.8.0 or later)
-- VS Code (version 1.23.0 or later)
-- [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java) (version 0.14.0 or later)
+- VS Code (version 1.28.0 or later)
+- [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java) (version 0.32.0 or later)
 
 ## Contribution
 
