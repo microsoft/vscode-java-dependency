@@ -2,23 +2,32 @@
 // Licensed under the MIT license.
 
 import { commands, ExtensionContext } from "vscode";
+import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { ProjectController } from "./controllers/projectController";
 import { Services } from "./services";
 import { Settings } from "./settings";
-import { Telemetry } from "./telemetry";
-import { DependencyExplorer } from "./views/depedencyExplorer";
+import { DependencyExplorer } from "./views/dependencyExplorer";
 
-export function activate(context: ExtensionContext) {
-    Telemetry.sendEvent("activateExtension", {});
+export async function activate(context: ExtensionContext): Promise<any> {
+    await initializeFromJsonFile(context.asAbsolutePath("./package.json"));
+    return instrumentOperation("activation", activateExtension)(context);
+}
 
+function activateExtension(operationId: string, context: ExtensionContext) {
     commands.executeCommand("setContext", "extensionActivated", true);
 
     Services.initialize(context);
     Settings.initialize(context);
 
     const projectController: ProjectController = new ProjectController(context);
-    context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_CREATE, async () => { projectController.createJavaProject(); }));
+    const instrumented = instrumentOperation(Commands.JAVA_PROJECT_CREATE, () => projectController.createJavaProject());
+    context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_CREATE, instrumented));
 
     context.subscriptions.push(new DependencyExplorer(context));
+}
+
+// this method is called when your extension is deactivated
+export async function deactivate() {
+    await disposeTelemetryWrapper();
 }

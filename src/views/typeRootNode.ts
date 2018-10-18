@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { Command, commands, DocumentSymbol, SymbolInformation, TextDocument, ThemeIcon, Uri, workspace } from "vscode";
+import { createUuid, sendOperationEnd, sendOperationStart } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
 import { ITypeRootNodeData, TypeRootKind } from "../java/typeRootNodeData";
@@ -62,11 +63,23 @@ export class TypeRootNode extends DataNode {
         return Settings.showOutline();
     }
 
-    private getSymbols(document: TextDocument): Thenable<SymbolInformation[] | DocumentSymbol[]> {
-        return commands.executeCommand<SymbolInformation[]>(
-            "vscode.executeDocumentSymbolProvider",
-            document.uri,
-        );
+    private async getSymbols(document: TextDocument): Promise<SymbolInformation[] | DocumentSymbol[]> {
+        let error;
+        const operationId = createUuid();
+        const startAt: number = Date.now();
+        sendOperationStart(operationId, "vscode.executeDocumentSymbolProvider");
+        try {
+            return await commands.executeCommand<SymbolInformation[]>(
+                "vscode.executeDocumentSymbolProvider",
+                document.uri,
+            );
+        } catch (err) {
+            error = err;
+            throw err;
+        } finally {
+            const duration = Date.now() - startAt;
+            sendOperationEnd(operationId, "vscode.executeDocumentSymbolProvider", duration, error);
+        }
     }
 
     private buildSymbolTree(symbols: SymbolInformation[]): Map<string, SymbolInformation[]> {
