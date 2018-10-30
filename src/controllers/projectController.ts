@@ -54,11 +54,15 @@ export class ProjectController {
         const templateRoot: string = path.join(this.context.extensionPath, "templates");
         const projectFile: string = path.join(projectRoot, ".project");
         try {
+            let jdkSpecificTemplateRoot: string = path.join(templateRoot, `Java${javaVersion}`);
+            if (!await fse.pathExists(jdkSpecificTemplateRoot)) {
+                // fall back to 8
+                jdkSpecificTemplateRoot = path.join(templateRoot, `Java8`);
+            }
             await fse.ensureDir(projectRoot);
-
             await Promise.all([
                 fse.copy(path.join(templateRoot, "App.java.sample"), path.join(projectRoot, "src", "app", "App.java")),
-                fse.copy(path.join(templateRoot, `Java${javaVersion}`), projectRoot),
+                fse.copy(jdkSpecificTemplateRoot, projectRoot),
                 fse.copy(path.join(templateRoot, ".project"), path.join(projectRoot, ".project")),
                 fse.ensureDir(path.join(projectRoot, "bin")),
             ]);
