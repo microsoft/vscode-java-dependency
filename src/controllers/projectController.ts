@@ -55,7 +55,10 @@ export class ProjectController {
         const projectFile: string = path.join(projectRoot, ".project");
         try {
             await fse.ensureDir(projectRoot);
-
+            if (!await fse.pathExists(path.join(templateRoot, `Java${javaVersion}`))) {
+                // fall back to 8
+                javaVersion = 8;
+            }
             await Promise.all([
                 fse.copy(path.join(templateRoot, "App.java.sample"), path.join(projectRoot, "src", "app", "App.java")),
                 fse.copy(path.join(templateRoot, `Java${javaVersion}`), projectRoot),
