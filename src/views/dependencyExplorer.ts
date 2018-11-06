@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { ExtensionContext, ProviderResult, TextEditor, TreeView, Uri, window } from "vscode";
+import { ExtensionContext, ProviderResult, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
@@ -16,6 +16,8 @@ export class DependencyExplorer {
 
     private _dataProvider: DependencyDataProvider;
 
+    private _selectionWhenHidden: DataNode;
+
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
         this._dependencyViewer = window.createTreeView("javaDependencyExplorer", { treeDataProvider: this._dataProvider });
@@ -23,6 +25,13 @@ export class DependencyExplorer {
         window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
             if (textEditor && textEditor.document && textEditor.document.languageId === "java" && Settings.syncWithFolderExplorer()) {
                 this.reveal(textEditor.document.uri);
+            }
+        });
+
+        this._dependencyViewer.onDidChangeVisibility((e: TreeViewVisibilityChangeEvent) => {
+            if (e.visible && this._selectionWhenHidden) {
+                this._dependencyViewer.reveal(this._selectionWhenHidden);
+                this._selectionWhenHidden = undefined;
             }
         });
     }
@@ -56,7 +65,11 @@ export class DependencyExplorer {
             for (const c of children) {
                 if (c.path === paths[0].path) {
                     if (paths.length === 1) {
-                        this._dependencyViewer.reveal(c);
+                        if (this._dependencyViewer.visible) {
+                            this._dependencyViewer.reveal(c);
+                        } else {
+                            this._selectionWhenHidden = c;
+                        }
                     } else {
                         paths.shift();
                         this.revealPath(c, paths);
