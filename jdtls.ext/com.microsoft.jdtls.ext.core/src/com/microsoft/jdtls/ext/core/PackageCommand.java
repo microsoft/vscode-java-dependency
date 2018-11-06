@@ -10,6 +10,7 @@
  *******************************************************************************/
 package com.microsoft.jdtls.ext.core;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JarEntryDirectory;
@@ -118,29 +120,50 @@ public class PackageCommand {
 
         List<PackageNode> result = new ArrayList<>();
 
-        ICompilationUnit cu = JDTUtils.resolveCompilationUnit(typeRootUri);
-        if (cu != null) {
+        URI uri = JDTUtils.toURI(typeRootUri);
+        ITypeRoot typeRoot = null;
+        if ("jdt".equals(uri.getScheme())) {
+
+            typeRoot = JDTUtils.resolveClassFile(uri);
+        } else {
+            typeRoot = JDTUtils.resolveCompilationUnit(uri);
+        }
+        if (typeRoot != null) {
             // Add project node:
-            IProject proj = cu.getJavaProject().getProject();
+            IProject proj = typeRoot.getJavaProject().getProject();
             PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
             projectNode.setUri(proj.getLocationURI().toString());
             result.add(projectNode);
 
-            IPackageFragment packageFragment = (IPackageFragment) cu.getParent();
+            IPackageFragment packageFragment = (IPackageFragment) typeRoot.getParent();
             String packageName = packageFragment.isDefaultPackage() ? DEFAULT_PACKAGE_DISPLAYNAME : packageFragment.getElementName();
             PackageNode packageNode = new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
             IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getParent();
-            PackageNode rootNode = new PackageRootNode(
-                    ExtUtils.removeProjectSegment(cu.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
-                    pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+            PackageNode rootNode = null;
+            if (typeRoot instanceof IClassFile) {
+                rootNode = new PackageRootNode(pkgRoot.getElementName(), pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+            } else {
+                rootNode = new PackageRootNode(ExtUtils.removeProjectSegment(typeRoot.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
+                        pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+            }
+
+            // TODO: Let the client handle the display instead. Server side should always
+            // provide the container node.
+            if (typeRoot instanceof IClassFile) {
+                IClasspathEntry entry = pkgRoot.getRawClasspathEntry();
+                IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), typeRoot.getJavaProject());
+
+                PackageNode containerNode = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
+                        entry.getEntryKind());
+                result.add(containerNode);
+            }
             result.add(rootNode);
             result.add(packageNode);
 
-            PackageNode item = new TypeRootNode(cu.getElementName(), cu.getPath().toPortableString(), NodeKind.TYPEROOT, TypeRootNode.K_SOURCE);
-            item.setUri(JDTUtils.toURI(cu));
+            PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT, TypeRootNode.K_SOURCE);
+            item.setUri(JDTUtils.toUri(typeRoot));
             result.add(item);
         }
-
         return result;
     }
 
