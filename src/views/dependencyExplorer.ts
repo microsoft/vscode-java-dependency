@@ -23,7 +23,7 @@ export class DependencyExplorer {
         this._dependencyViewer = window.createTreeView("javaDependencyExplorer", { treeDataProvider: this._dataProvider });
 
         window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
-            if (textEditor && textEditor.document && textEditor.document.languageId === "java" && Settings.syncWithFolderExplorer()) {
+            if (textEditor && textEditor.document && Settings.syncWithFolderExplorer()) {
                 this.reveal(textEditor.document.uri);
             }
         });

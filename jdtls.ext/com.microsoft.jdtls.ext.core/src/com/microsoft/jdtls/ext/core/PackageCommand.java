@@ -20,6 +20,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -329,6 +330,11 @@ public class PackageCommand {
                 if (jarNode != null) {
                     result.add(jarNode);
                 }
+			} else if (root instanceof IFile) {
+				IFile file = (IFile) root;
+				PackageNode entry = new PackageNode(file.getName(), null, NodeKind.FILE);
+				entry.setUri(JDTUtils.getFileURI(file));
+				result.add(entry);
             }
         }
 
