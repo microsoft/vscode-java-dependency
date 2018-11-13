@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -73,7 +74,7 @@ public class PackageCommand {
         commands.put(NodeKind.CONTAINER, PackageCommand::getPackageFragmentRoots);
         commands.put(NodeKind.PACKAGEROOT, PackageCommand::getPackages);
         commands.put(NodeKind.PACKAGE, PackageCommand::getRootTypes);
-        commands.put(NodeKind.Folder, PackageCommand::getFolderChildren);
+		commands.put(NodeKind.FOLDER, PackageCommand::getFolderChildren);
     }
 
     /**
@@ -289,6 +290,12 @@ public class PackageCommand {
                         if (children != null) {
                             return convertToPackageNode(children);
                         }
+                    } else if (resource instanceof IFolder) {
+                        IFolder directory = (IFolder) resource;
+                        Object[] children = directory.members();
+                        if (children != null) {
+                            return convertToPackageNode(children);
+                        }
                     }
                 }
 
@@ -330,11 +337,16 @@ public class PackageCommand {
                 if (jarNode != null) {
                     result.add(jarNode);
                 }
-			} else if (root instanceof IFile) {
-				IFile file = (IFile) root;
-				PackageNode entry = new PackageNode(file.getName(), null, NodeKind.FILE);
-				entry.setUri(JDTUtils.getFileURI(file));
-				result.add(entry);
+            } else if (root instanceof IFile) {
+                IFile file = (IFile) root;
+                PackageNode entry = new PackageNode(file.getName(), null, NodeKind.FILE);
+                entry.setUri(JDTUtils.getFileURI(file));
+                result.add(entry);
+            } else if (root instanceof IFolder) {
+                IFolder folder = (IFolder) root;
+                PackageNode entry = new PackageNode(folder.getName(), null, NodeKind.FOLDER);
+                entry.setUri(JDTUtils.getFileURI(folder));
+                result.add(entry);
             }
         }
 
@@ -343,7 +355,7 @@ public class PackageCommand {
 
     private static PackageNode getJarEntryResource(JarEntryResource resource) {
         if (resource instanceof JarEntryDirectory) {
-            return new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.Folder);
+			return new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FOLDER);
         } else if (resource instanceof JarEntryFile) {
             PackageNode entry = new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FILE);
             entry.setUri(ExtUtils.toUri((JarEntryFile) resource));

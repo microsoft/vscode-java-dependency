@@ -24,7 +24,7 @@ public enum NodeKind {
 
     TYPEROOT(6),
 
-    Folder(7),
+	FOLDER(7),
 
     FILE(8);
 
