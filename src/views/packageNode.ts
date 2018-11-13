@@ -5,8 +5,8 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { TypeRootNode } from "./typeRootNode";
 import { FileNode } from "./fileNode";
+import { TypeRootNode } from "./typeRootNode";
 
 export class PackageNode extends DataNode {
     constructor(nodeData: INodeData, parent: DataNode, private _project: DataNode, private _rootNode: DataNode) {
