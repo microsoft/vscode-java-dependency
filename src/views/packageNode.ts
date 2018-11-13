@@ -6,6 +6,7 @@ import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { TypeRootNode } from "./typeRootNode";
+import { FileNode } from "./fileNode";
 
 export class PackageNode extends DataNode {
     constructor(nodeData: INodeData, parent: DataNode, private _project: DataNode, private _rootNode: DataNode) {
@@ -26,7 +27,11 @@ export class PackageNode extends DataNode {
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((nodeData) => {
-                result.push(new TypeRootNode(nodeData, this));
+                if (nodeData.kind === NodeKind.File) {
+                    result.push(new FileNode(nodeData, this));
+                } else {
+                    result.push(new TypeRootNode(nodeData, this));
+                }
             });
         }
         return result;
