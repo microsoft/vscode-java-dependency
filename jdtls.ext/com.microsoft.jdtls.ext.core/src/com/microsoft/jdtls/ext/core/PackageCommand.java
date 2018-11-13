@@ -76,7 +76,7 @@ public class PackageCommand {
         commands.put(NodeKind.CONTAINER, PackageCommand::getPackageFragmentRoots);
         commands.put(NodeKind.PACKAGEROOT, PackageCommand::getPackages);
         commands.put(NodeKind.PACKAGE, PackageCommand::getRootTypes);
-		commands.put(NodeKind.FOLDER, PackageCommand::getFolderChildren);
+        commands.put(NodeKind.FOLDER, PackageCommand::getFolderChildren);
     }
 
     /**
@@ -382,7 +382,7 @@ public class PackageCommand {
 
     private static PackageNode getJarEntryResource(JarEntryResource resource) {
         if (resource instanceof JarEntryDirectory) {
-			return new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FOLDER);
+            return new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FOLDER);
         } else if (resource instanceof JarEntryFile) {
             PackageNode entry = new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FILE);
             entry.setUri(ExtUtils.toUri((JarEntryFile) resource));
