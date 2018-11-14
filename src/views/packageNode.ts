@@ -5,6 +5,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
+import { FileNode } from "./fileNode";
 import { TypeRootNode } from "./typeRootNode";
 
 export class PackageNode extends DataNode {
@@ -26,7 +27,11 @@ export class PackageNode extends DataNode {
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((nodeData) => {
-                result.push(new TypeRootNode(nodeData, this));
+                if (nodeData.kind === NodeKind.File) {
+                    result.push(new FileNode(nodeData, this));
+                } else {
+                    result.push(new TypeRootNode(nodeData, this));
+                }
             });
         }
         return result;
