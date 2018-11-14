@@ -63,7 +63,7 @@ export class DependencyExplorer {
     private visitChildren(children: DataNode[], paths: INodeData[]): void {
         if (children && paths) {
             for (const c of children) {
-                if (c.path === paths[0].path && c.nodeData.name === paths[0].name) {
+                if (paths[0] && c.path === paths[0].path && c.nodeData.name === paths[0].name) {
                     if (paths.length === 1) {
                         if (this._dependencyViewer.visible) {
                             this._dependencyViewer.reveal(c);
