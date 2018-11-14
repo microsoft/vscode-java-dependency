@@ -15,13 +15,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJarEntryResource;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.core.JarEntryDirectory;
@@ -64,6 +67,24 @@ public class JarFileContentProvider implements IContentProvider {
                         }
                     }
                 }
+                // if the file exists in the java packages
+                String[] segments = StringUtils.split(path, "/");
+                String packageName = StringUtils.join(Arrays.asList(segments).subList(0, segments.length - 1), '.');
+                IPackageFragment packageFragment = packageRoot.getPackageFragment(packageName);
+                if (packageFragment != null && packageFragment.exists()) {
+
+                    Object[] objs = packageFragment.getNonJavaResources();
+                    for (Object obj : objs) {
+                        if (obj instanceof IJarEntryResource) {
+                            IJarEntryResource child = (IJarEntryResource) obj;
+                            if (child instanceof JarEntryFile && child.getFullPath().toPortableString().equals(path)) {
+                                return readFileContent((JarEntryFile) child);
+                            }
+                        }
+
+                    }
+                }
+
             }
         } catch (CoreException e) {
             JavaLanguageServerPlugin.logException("Problem get JarEntryFile content ", e);
