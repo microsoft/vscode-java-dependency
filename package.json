@@ -1,6 +1,6 @@
 {
   "name": "vscode-java-dependency",
-  "displayName": "Java Dependencies",
+  "displayName": "Java Dependency Viewer",
   "description": "Manage Java Dependencies in VSCode",
   "version": "0.1.0",
   "publisher": "vscjava",
