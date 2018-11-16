@@ -1,14 +1,22 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 48.2 (47327) - http://www.bohemiancoding.com/sketch -->
-    <title>Library</title>
-    <desc>Created with Sketch.</desc>
-    <defs></defs>
-    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="Library" fill="#C5C5C5">
-            <g id="Page-1" transform="translate(1.000000, 1.000000)">
-                <path d="M5,13 L9,13 L9,0.999 L5,0.999 L5,13 Z M6,3 L8,3 L8,2 L6,2 L6,3 Z M6,10 L8,10 L8,9 L6,9 L6,10 Z M6,12 L8,12 L8,11 L6,11 L6,12 Z M10,13 L14.001,13 L14.001,2 L10,2 L10,13 Z M11.001,5 L13.001,5 L13.001,3 L11.001,3 L11.001,5 Z M11.001,10 L13.001,10 L13.001,9 L11.001,9 L11.001,10 Z M11.001,12 L13.001,12 L13.001,11 L11.001,11 L11.001,12 Z M0,13 L4.001,13 L4.001,2 L0,2 L0,13 Z M1,5 L3.001,5 L3.001,3 L1,3 L1,5 Z M1,10 L3.001,10 L3.001,9 L1,9 L1,10 Z M1,12 L3.001,12 L3.001,11 L1,11 L1,12 Z" id="Fill-4"></path>
-            </g>
-        </g>
-    </g>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="图层_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 16 16" style="enable-background:new 0 0 16 16;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#F6F6F6;fill-opacity:0;}
+	.st1{fill:#2D2D30;}
+	.st2{fill:#C5C5C5;}
+</style>
+<path id="canvas" class="st0" d="M16,16H0V0h16V16z"/>
+<polygon id="iconBg" class="st1" points="11,2 11,1 5,1 5,2 0,2 0,15 16,15 16,2 "/>
+<path id="colorImportance" class="st2" d="M1,14h4V3H1V14z M11,14h4V3h-4V14z M6,14h4V2H6V14z"/>
+<rect x="2" y="12" class="st1" width="2" height="1"/>
+<rect x="2" y="10" class="st1" width="2" height="1"/>
+<rect x="2" y="4" class="st1" width="2" height="2"/>
+<rect x="12" y="12" class="st1" width="2" height="1"/>
+<rect x="12" y="10" class="st1" width="2" height="1"/>
+<rect x="12" y="4" class="st1" width="2" height="2"/>
+<rect x="7" y="12" class="st1" width="2" height="1"/>
+<rect x="7" y="10" class="st1" width="2" height="1"/>
+<rect x="7" y="3" class="st1" width="2" height="1"/>
 </svg>

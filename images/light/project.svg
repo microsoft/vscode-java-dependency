@@ -1,15 +1,39 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 48.2 (47327) - http://www.bohemiancoding.com/sketch -->
-    <title>Project folder</title>
-    <desc>Created with Sketch.</desc>
-    <defs></defs>
-    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="Project-folder">
-            <g id="Page-1" transform="translate(2.000000, 2.000000)">
-                <path d="M11.5807,3.5648 C11.8587,3.2858 11.9977,2.8848 11.9977,2.3608 L11.9977,-0.0002 L10.9927,-0.0002 L10.9927,2.3258 C10.9927,2.9228 10.7627,3.2208 10.3027,3.2208 C10.0887,3.2208 9.8947,3.1638 9.7227,3.0488 L9.7227,3.8768 C9.9227,3.9468 10.1397,3.9818 10.3747,3.9818 C10.9017,3.9818 11.3037,3.8428 11.5807,3.5648" id="Fill-6" fill="#F36406"></path>
-                <path d="M12.9981,2.3607 C12.9981,3.1567 12.7591,3.7997 12.2891,4.2717 C11.8171,4.7427 11.1741,4.9827 10.3741,4.9827 C10.0271,4.9827 9.6961,4.9277 9.3901,4.8187 L8.7221,4.5837 L8.7221,3.8767 L8.7221,3.0487 L8.7241,2.9997 L5.5081,2.9997 L6.0081,1.9997 L9.9931,1.9997 L9.9931,0.9997 L5.0081,0.9997 L4.0081,2.9997 L1.0041,2.9997 C0.4521,2.9997 0.0041,3.4477 0.0041,3.9997 L0.0041,10.9997 C0.0041,11.5517 0.4521,11.9997 1.0041,11.9997 L12.0001,11.9997 C12.5501,11.9997 13.0001,11.5497 13.0001,10.9997 L13.0001,2.3607 C13.0001,2.3577 12.9981,2.3607 12.9981,2.3607" id="Fill-8" fill="#DCB67A"></path>
-            </g>
-        </g>
-    </g>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="图层_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 16 16" style="enable-background:new 0 0 16 16;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:#F6F6F6;}
+	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#F36406;}
+	.st2{fill-rule:evenodd;clip-rule:evenodd;fill:#DCB67A;}
+</style>
+<g>
+	<defs>
+		<rect id="SVGID_1_" y="0" width="16" height="16"/>
+	</defs>
+	<clipPath id="SVGID_2_">
+		<use xlink:href="#SVGID_1_"  style="overflow:visible;"/>
+	</clipPath>
+</g>
+<polygon class="st0" points="6.4,2 5.4,4 1,4 1,15 16,15 16,2 15,2 15,1 12,1 12,2 "/>
+<g>
+	<defs>
+		<rect id="SVGID_3_" y="0" width="16" height="16"/>
+	</defs>
+	<clipPath id="SVGID_4_">
+		<use xlink:href="#SVGID_3_"  style="overflow:visible;"/>
+	</clipPath>
+</g>
+<path class="st1" d="M13.6,5.5C13.9,5.3,14,4.9,14,4.3V2h-1v2.3c0,0.6-0.2,0.9-0.7,0.9c-0.2,0-0.4-0.1-0.6-0.2v0.8
+	C11.9,5.9,12.1,6,12.4,6C12.9,6,13.3,5.8,13.6,5.5"/>
+<g>
+	<defs>
+		<rect id="SVGID_5_" y="0" width="16" height="16"/>
+	</defs>
+	<clipPath id="SVGID_6_">
+		<use xlink:href="#SVGID_5_"  style="overflow:visible;"/>
+	</clipPath>
+</g>
+<path class="st2" d="M14.3,6.3C13.8,6.7,13.2,7,12.4,7c-0.3,0-0.7-0.1-1-0.2l-0.7-0.2V5.9V5l0,0H7.5L8,4h4V3H7L6,5H2v9h13V4.3
+	c0,0,0,0,0,0C15,5.1,14.8,5.8,14.3,6.3z"/>
 </svg>
