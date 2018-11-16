@@ -5,13 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## 0.2.0 - 2018-11-19
+## Added:
+- Add the support for resource files under resource source folders like src/main/resources.
+
 ### Updated
 - Fix: The side bar keeps popping up when a new Java file opens. [#83](https://github.com/Microsoft/vscode-java-dependency/issues/83).
-- Fix: Files in 'src/main/resources/' do not display enhancement. [#79](https://github.com/Microsoft/vscode-java-dependency/issues/79).
 - Fix: No way to link a java class definition back to the project explorer. [#80](https://github.com/Microsoft/vscode-java-dependency/issues/80).
-- Update extension name
-- Update gif files in readme.md
-- Update npm dependencies including vscode-extension-telemetry & vscode-extension-telemetry-wrapper
 
 ## 0.1.0 - 2018-10-19
 ### Added
