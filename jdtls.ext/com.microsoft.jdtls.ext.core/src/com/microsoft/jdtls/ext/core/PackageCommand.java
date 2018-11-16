@@ -25,6 +25,7 @@ import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -125,12 +126,7 @@ public class PackageCommand {
         List<PackageNode> result = new ArrayList<>();
 
         URI uri = JDTUtils.toURI(typeRootUri);
-        ITypeRoot typeRoot = null;
-        if ("jdt".equals(uri.getScheme())) {
-            typeRoot = JDTUtils.resolveClassFile(uri);
-        } else {
-            typeRoot = JDTUtils.resolveCompilationUnit(uri);
-        }
+        ITypeRoot typeRoot = "jdt".equals(uri.getScheme()) ? JDTUtils.resolveClassFile(uri) : JDTUtils.resolveCompilationUnit(uri);
         if (typeRoot != null) {
             // Add project node:
             IProject proj = typeRoot.getJavaProject().getProject();
@@ -164,9 +160,86 @@ public class PackageCommand {
             PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT, TypeRootNode.K_SOURCE);
             item.setUri(JDTUtils.toUri(typeRoot));
             result.add(item);
+        } else {
+            // this is not a .java/.class file
+            IResource resource = JDTUtils.findResource(uri, ResourcesPlugin.getWorkspace().getRoot()::findFilesForLocationURI);
+            if (resource != null) {
+                IResource parent = resource.getParent();
+                IJavaElement parentJavaElement = JavaCore.create(parent);
+                if (parent instanceof IFolder && parentJavaElement instanceof IPackageFragment) {
+                    IPackageFragment packageFragment = (IPackageFragment) parentJavaElement;
+                    String packageName = packageFragment.isDefaultPackage() ? DEFAULT_PACKAGE_DISPLAYNAME : packageFragment.getElementName();
+                    PackageNode packageNode = new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+                    IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getParent();
+                    PackageNode rootNode = null;
+                    if (typeRoot instanceof IClassFile) {
+                        rootNode = new PackageRootNode(pkgRoot.getElementName(), pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+                    } else {
+                        rootNode = new PackageRootNode(
+                                ExtUtils.removeProjectSegment(packageFragment.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
+                                pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+                    }
+
+                    IProject proj = parentJavaElement.getJavaProject().getProject();
+                    PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
+                    projectNode.setUri(proj.getLocationURI().toString());
+                    result.add(projectNode);
+                    result.add(rootNode);
+                    result.add(packageNode);
+
+                    PackageNode item = new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FILE);
+                    item.setUri(JDTUtils.getFileURI(resource));
+                    result.add(item);
+                } else {
+                    return getParentListToProject(resource);
+                }
+            }
         }
 
         return result;
+    }
+
+
+    private static List<PackageNode> getParentListToProject(IResource element) throws JavaModelException {
+        List<PackageNode> nodeList = new ArrayList<>();
+        while (element != null) {
+            IJavaElement javaElement = JavaCore.create(element);
+            if (javaElement instanceof IPackageFragmentRoot) {
+                IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) javaElement;
+                IProject proj = element.getProject();
+
+                nodeList.add(0, new PackageRootNode(element.getProjectRelativePath().toPortableString(), pkgRoot.getPath().toPortableString(),
+                        NodeKind.PACKAGEROOT, pkgRoot.getKind()));
+
+                PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
+                projectNode.setUri(proj.getLocationURI().toString());
+                nodeList.add(0, projectNode);
+                return nodeList;
+            } else if (javaElement instanceof IPackageFragment) {
+                IPackageFragment packageFragment = (IPackageFragment) javaElement;
+                if (packageFragment.containsJavaResources() || packageFragment.getNonJavaResources().length > 0) {
+                    String packageName = packageFragment.isDefaultPackage() ? DEFAULT_PACKAGE_DISPLAYNAME : packageFragment.getElementName();
+                    PackageNode entry = new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+                    nodeList.add(0, entry);
+                }
+
+            } else if (javaElement == null) {
+                if (element instanceof IFile) {
+                    IFile file = (IFile) element;
+                    PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
+                    entry.setUri(JDTUtils.getFileURI(file));
+                    nodeList.add(0, entry);
+                } else if (element instanceof IFolder) {
+                    IFolder folder = (IFolder) element;
+                    PackageNode entry = new PackageNode(folder.getName(), folder.getFullPath().toPortableString(), NodeKind.FOLDER);
+                    entry.setUri(JDTUtils.getFileURI(folder));
+                    nodeList.add(0, entry);
+                }
+            }
+            element = element.getParent();
+        }
+
+        return nodeList;
     }
 
     /**
