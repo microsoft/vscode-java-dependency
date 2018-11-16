@@ -7,10 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## 0.2.0 - 2018-11-19
 ### Updated
 - Fix: The side bar keeps popping up when a new Java file opens. [#83](https://github.com/Microsoft/vscode-java-dependency/issues/83).
-- Fix: Files in 'src/main/resources/' do not display enhancement
-. [#79](https://github.com/Microsoft/vscode-java-dependency/issues/79).
-- Fix: No way to link a java class definition back to the project explorer
-. [#80](https://github.com/Microsoft/vscode-java-dependency/issues/80).
+- Fix: Files in 'src/main/resources/' do not display enhancement. [#79](https://github.com/Microsoft/vscode-java-dependency/issues/79).
+- Fix: No way to link a java class definition back to the project explorer. [#80](https://github.com/Microsoft/vscode-java-dependency/issues/80).
 - Update extension name
 - Update gif files in readme.md
 - Update npm dependencies including vscode-extension-telemetry & vscode-extension-telemetry-wrapper
