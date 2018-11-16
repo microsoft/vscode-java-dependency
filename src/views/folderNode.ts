@@ -33,6 +33,6 @@ export class FolderNode extends DataNode {
     }
 
     protected get iconPath(): ThemeIcon {
-        return ThemeIcon.Folder;
+        return ExplorerNode.resolveIconPath("folder");
     }
 }

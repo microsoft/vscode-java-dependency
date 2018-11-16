@@ -9,7 +9,7 @@ export abstract class ExplorerNode {
     public static resolveIconPath(fileName: string): { light: string; dark: string } {
         return {
             light: Services.context.asAbsolutePath(`./images/light/${fileName}.svg`),
-            dark: Services.context.asAbsolutePath(`./images/light/${fileName}.svg`),
+            dark: Services.context.asAbsolutePath(`./images/dark/${fileName}.svg`),
         };
     }
 
