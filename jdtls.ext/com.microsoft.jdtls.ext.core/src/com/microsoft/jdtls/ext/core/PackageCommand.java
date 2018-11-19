@@ -67,6 +67,8 @@ public class PackageCommand {
 
     private static final String DEFAULT_PACKAGE_DISPLAYNAME = "(default package)";
 
+    private static final String REFERENCED_LIBRARIES_PATH = "REFERENCED_LIBRARIES_PATH";
+
     private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapterFactory())
             .registerTypeAdapterFactory(new EnumTypeAdapterFactory()).create();
 
@@ -154,8 +156,13 @@ public class PackageCommand {
             if (typeRoot instanceof IClassFile) {
                 IClasspathEntry entry = pkgRoot.getRawClasspathEntry();
                 IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), typeRoot.getJavaProject());
-                PackageNode containerNode = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
-                        entry.getEntryKind());
+                PackageNode containerNode = null;
+                if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
+                    containerNode = new ContainerNode("ReferencedLibraries", REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
+                } else {
+                    containerNode = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
+                            entry.getEntryKind());
+                }
                 result.add(containerNode);
             }
             result.add(rootNode);
@@ -174,28 +181,19 @@ public class PackageCommand {
      */
     private static List<PackageNode> getContainers(PackageParams query, IProgressMonitor pm) {
         IJavaProject javaProject = getJavaProject(query.getProjectUri());
-
         if (javaProject != null) {
             try {
                 IClasspathEntry[] references = javaProject.getRawClasspath();
-                return Arrays.stream(references).map(entry -> {
-                    try {
-                        entry = JavaCore.getResolvedClasspathEntry(entry);
-                        IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
-                        // HACK: There is an initialization issue for the first container.
-                        if (container == null) {
-                            container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
-                        }
+                List<PackageNode> result = Arrays.stream(references).filter(entry -> entry.getEntryKind() != IClasspathEntry.CPE_LIBRARY)
+                        .map(entry -> getNodeFromClasspathEntry(entry, javaProject, NodeKind.CONTAINER)).filter(containerNode -> containerNode != null)
+                        .collect(Collectors.toList());
 
-                        if (container != null) {
-                            return new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
-                                    entry.getEntryKind());
-                        }
-                    } catch (CoreException e) {
-                        // Ignore it
-                    }
-                    return null;
-                }).filter(containerNode -> containerNode != null).collect(Collectors.toList());
+                List<IClasspathEntry> referenceLibraries = Arrays.stream(references).filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY)
+                        .collect(Collectors.toList());
+                if (referenceLibraries.size() > 0) {
+                    result.add(new ContainerNode("ReferencedLibraries", REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER));
+                }
+                return result;
             } catch (CoreException e) {
                 JdtlsExtActivator.logException("Problem load project library ", e);
             }
@@ -203,7 +201,46 @@ public class PackageCommand {
         return Collections.emptyList();
     }
 
+    /**
+     * Get the correspond node of classpath, it may be container or a package root
+     *
+     * @param classpathEntry
+     *            classpath
+     * @param javaProject
+     *            correspond java project
+     * @param nodeKind
+     *            could be CONTAINER or PACKAGEROOT(for referenced libraries)
+     * @return
+     */
+    private static PackageNode getNodeFromClasspathEntry(IClasspathEntry classpathEntry, IJavaProject javaProject, NodeKind nodeKind) {
+        try {
+            IClasspathEntry entry = JavaCore.getResolvedClasspathEntry(classpathEntry);
+            IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
+            // HACK: There is an initialization issue for the first container.
+            if (container == null) {
+                container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
+            }
+            if (container != null) {
+                switch (nodeKind) {
+                case CONTAINER:
+                    return new ContainerNode(container.getDescription(), container.getPath().toPortableString(), nodeKind, entry.getEntryKind());
+                case PACKAGEROOT:
+                    // Use package name as package root name
+                    String[] pathSegments = container.getPath().segments();
+                    return new PackageRootNode(pathSegments[pathSegments.length - 1], container.getPath().toPortableString(), nodeKind,
+                            IClasspathEntry.CPE_PROJECT);
+                default:
+                    return null;
+                }
+            }
+        } catch (CoreException e) {
+            // Ignore it
+        }
+        return null;
+    }
+
     private static List<PackageNode> getPackageFragmentRoots(PackageParams query, IProgressMonitor pm) {
+        ArrayList<PackageNode> children = new ArrayList<>();
         IJavaProject javaProject = getJavaProject(query.getProjectUri());
 
         if (javaProject != null) {
@@ -217,7 +254,6 @@ public class PackageCommand {
                     }
                 }
                 if (containerEntry != null) {
-                    ArrayList<PackageNode> children = new ArrayList<>();
                     IPackageFragmentRoot[] packageFragmentRoots = javaProject.findPackageFragmentRoots(containerEntry);
                     for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
                         String displayName = fragmentRoot.getElementName();
@@ -231,6 +267,13 @@ public class PackageCommand {
                             node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
                         }
                     }
+                    return children;
+                } else if (query.getPath().equals(REFERENCED_LIBRARIES_PATH)) {
+                    // Process referenced libraries
+                    List<PackageNode> classpaths = Arrays.stream(references).filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY)
+                            .map(classpath -> getNodeFromClasspathEntry(classpath, javaProject, NodeKind.PACKAGEROOT)).filter(entry -> entry != null)
+                            .collect(Collectors.toList());
+                    children.addAll(classpaths);
                     return children;
                 }
             } catch (CoreException e) {
@@ -274,7 +317,7 @@ public class PackageCommand {
                 if (packageFragment != null) {
                     IJavaElement[] types = packageFragment.getChildren();
                     Object[] nonJavaResources = packageFragment.getNonJavaResources();
-                    List<PackageNode> rootTypeNodes =  Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$")).map(typeRoot -> {
+                    List<PackageNode> rootTypeNodes = Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$")).map(typeRoot -> {
                         PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT,
                                 typeRoot instanceof IClassFile ? TypeRootNode.K_BINARY : TypeRootNode.K_SOURCE);
                         if (typeRoot instanceof ICompilationUnit) {
@@ -289,20 +332,20 @@ public class PackageCommand {
                     }
                     // when .java files and other .properties files are mixed up
                     rootTypeNodes.addAll(
-                        Arrays.stream(nonJavaResources).filter(resource -> resource instanceof IFile || resource instanceof JarEntryFile).map(resource -> {
-                            if (resource instanceof IFile) {
-                                IFile file = (IFile) resource;
-                                PackageNode item = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
-                                item.setUri(JDTUtils.getFileURI(file));
-                                return item;
-                            } else {
-                                JarEntryFile file = (JarEntryFile) resource;
-                                PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
-                                entry.setUri(ExtUtils.toUri((JarEntryFile) resource));
-                                return entry;
-                            }
+                            Arrays.stream(nonJavaResources).filter(resource -> resource instanceof IFile || resource instanceof JarEntryFile).map(resource -> {
+                                if (resource instanceof IFile) {
+                                    IFile file = (IFile) resource;
+                                    PackageNode item = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
+                                    item.setUri(JDTUtils.getFileURI(file));
+                                    return item;
+                                } else {
+                                    JarEntryFile file = (JarEntryFile) resource;
+                                    PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
+                                    entry.setUri(ExtUtils.toUri((JarEntryFile) resource));
+                                    return entry;
+                                }
 
-                    }).collect(Collectors.toList()));
+                            }).collect(Collectors.toList()));
                     return rootTypeNodes;
                 }
             } catch (CoreException e) {
