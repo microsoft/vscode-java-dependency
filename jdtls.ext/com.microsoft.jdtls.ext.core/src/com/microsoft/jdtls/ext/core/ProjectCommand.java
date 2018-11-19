@@ -32,7 +32,7 @@ public final class ProjectCommand {
 
         IProject[] projects = getWorkspaceRoot().getProjects();
         ArrayList<PackageNode> children = new ArrayList<>();
-        List<IPath> paths = Arrays.asList(ResourceUtils.filePathFromURI(workspaceUri));
+        List<IPath> paths = Arrays.asList(ResourceUtils.canonicalFilePathFromURI(workspaceUri));
         for (IProject project : projects) {
             if (project.exists() && ResourceUtils.isContainedIn(project.getLocation(), paths)) {
                 PackageNode projectNode = new PackageNode(project.getName(), project.getFullPath().toPortableString(), NodeKind.PROJECT);
