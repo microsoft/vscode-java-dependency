@@ -71,6 +71,9 @@ public class PackageCommand {
 
     private static final String REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries";
 
+    private static final ContainerNode REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH,
+            NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
+
     private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapterFactory())
             .registerTypeAdapterFactory(new EnumTypeAdapterFactory()).create();
 
@@ -165,7 +168,7 @@ public class PackageCommand {
                 IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), typeRoot.getJavaProject());
                 PackageNode containerNode = null;
                 if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
-                    containerNode = getReferencedLibrariesContainerNode();
+                    containerNode = REFERENCED_LIBRARIES_CONTAINER;
                 } else {
                     containerNode = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
                             entry.getEntryKind());
@@ -198,7 +201,7 @@ public class PackageCommand {
                 boolean isReferencedLibrariesExist = Arrays.stream(references)
                         .anyMatch(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE);
                 if (isReferencedLibrariesExist) {
-                    result.add(getReferencedLibrariesContainerNode());
+                    result.add(REFERENCED_LIBRARIES_CONTAINER);
                 }
                 return result;
             } catch (CoreException e) {
@@ -206,13 +209,6 @@ public class PackageCommand {
             }
         }
         return Collections.emptyList();
-    }
-
-    /**
-     * Get container node of referenced libraries
-     */
-    private static ContainerNode getReferencedLibrariesContainerNode() {
-        return new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
     }
 
     /**
