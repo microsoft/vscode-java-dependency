@@ -216,12 +216,12 @@ public class PackageCommand {
      * Get the correspond node of classpath, it may be container or a package root
      *
      * @param classpathEntry
-     *            classpath
+     *            classpath entry
      * @param javaProject
      *            correspond java project
      * @param nodeKind
      *            could be CONTAINER or PACKAGEROOT(for referenced libraries)
-     * @return
+     * @return correspond PackageNode of classpath entry
      */
     private static PackageNode getNodeFromClasspathEntry(IClasspathEntry classpathEntry, IJavaProject javaProject, NodeKind nodeKind) {
         try {
@@ -245,21 +245,24 @@ public class PackageCommand {
                 }
             }
         } catch (CoreException e) {
-            e.printStackTrace();
-            // Ignore it
+            JdtlsExtActivator.logException("Problems when convert classpath entry to package node ", e);
         }
         return null;
     }
 
+    /**
+     * Get correspond node of referenced variable
+     *
+     * @param classpathEntry
+     *            referenced cariable's classpath entry
+     * @return correspond package node
+     */
     private static PackageNode getNodeFromClasspathVariable(IClasspathEntry classpathEntry) {
         IClasspathEntry entry = JavaCore.getResolvedClasspathEntry(classpathEntry);
         String name = classpathEntry.getPath().toPortableString();
         String path = entry.getPath().toPortableString();
-        if (new File(path).isDirectory()) {
-            return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, IClasspathEntry.CPE_LIBRARY);
-        } else {
-            return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, IClasspathEntry.CPE_PROJECT);
-        }
+        boolean isDirectory = new File(path).isDirectory();
+        return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, isDirectory ? IClasspathEntry.CPE_LIBRARY : IClasspathEntry.CPE_PROJECT);
     }
 
     private static List<PackageNode> getPackageFragmentRoots(PackageParams query, IProgressMonitor pm) {
@@ -296,10 +299,10 @@ public class PackageCommand {
                     List<PackageNode> referLibs = Arrays.stream(references).filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY)
                             .map(classpath -> getNodeFromClasspathEntry(classpath, javaProject, NodeKind.PACKAGEROOT)).filter(entry -> entry != null)
                             .collect(Collectors.toList());
-                    List<PackageNode> referValues = Arrays.stream(references).filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE)
+                    List<PackageNode> referVariables = Arrays.stream(references).filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE)
                             .map(classpath -> getNodeFromClasspathVariable(classpath)).filter(entry -> entry != null).collect(Collectors.toList());
                     children.addAll(referLibs);
-                    children.addAll(referValues);
+                    children.addAll(referVariables);
                     return children;
                 }
             } catch (CoreException e) {
