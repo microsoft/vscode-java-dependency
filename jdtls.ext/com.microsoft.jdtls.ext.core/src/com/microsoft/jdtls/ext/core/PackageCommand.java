@@ -10,7 +10,6 @@
  *******************************************************************************/
 package com.microsoft.jdtls.ext.core;
 
-import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -209,6 +208,9 @@ public class PackageCommand {
         return Collections.emptyList();
     }
 
+    /**
+     * Get container node of referenced libraries
+     */
     private static ContainerNode getReferencedLibrariesContainerNode() {
         return new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
     }
@@ -262,8 +264,7 @@ public class PackageCommand {
         IClasspathEntry entry = JavaCore.getResolvedClasspathEntry(classpathEntry);
         String name = classpathEntry.getPath().toPortableString();
         String path = entry.getPath().toPortableString();
-        boolean isDirectory = new File(path).isDirectory();
-        return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, isDirectory ? IPackageFragmentRoot.K_SOURCE : IPackageFragmentRoot.K_BINARY);
+        return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, IPackageFragmentRoot.K_BINARY);
     }
 
     private static List<PackageNode> getPackageFragmentRoots(PackageParams query, IProgressMonitor pm) {
