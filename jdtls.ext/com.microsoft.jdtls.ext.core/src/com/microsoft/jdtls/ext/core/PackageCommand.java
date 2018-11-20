@@ -166,8 +166,7 @@ public class PackageCommand {
                 IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), typeRoot.getJavaProject());
                 PackageNode containerNode = null;
                 if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
-                    containerNode = new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER,
-                            IClasspathEntry.CPE_CONTAINER);
+                    containerNode = getReferencedLibrariesContainerNode();
                 } else {
                     containerNode = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER,
                             entry.getEntryKind());
@@ -197,12 +196,10 @@ public class PackageCommand {
                         .filter(entry -> entry.getEntryKind() != IClasspathEntry.CPE_LIBRARY && entry.getEntryKind() != IClasspathEntry.CPE_VARIABLE)
                         .map(entry -> getNodeFromClasspathEntry(entry, javaProject, NodeKind.CONTAINER)).filter(containerNode -> containerNode != null)
                         .collect(Collectors.toList());
-                List<IClasspathEntry> referenceLibraries = Arrays.stream(references)
-                        .filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE)
-                        .collect(Collectors.toList());
-                if (referenceLibraries.size() > 0) {
-                    result.add(new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER,
-                            IClasspathEntry.CPE_CONTAINER));
+                boolean isReferencedLibrariesExist = Arrays.stream(references)
+                        .anyMatch(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE);
+                if (isReferencedLibrariesExist) {
+                    result.add(getReferencedLibrariesContainerNode());
                 }
                 return result;
             } catch (CoreException e) {
@@ -210,6 +207,10 @@ public class PackageCommand {
             }
         }
         return Collections.emptyList();
+    }
+
+    private static ContainerNode getReferencedLibrariesContainerNode() {
+        return new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
     }
 
     /**
@@ -239,7 +240,7 @@ public class PackageCommand {
                     // Use package name as package root name
                     String[] pathSegments = container.getPath().segments();
                     return new PackageRootNode(pathSegments[pathSegments.length - 1], container.getPath().toPortableString(), nodeKind,
-                            IClasspathEntry.CPE_PROJECT);
+                            IPackageFragmentRoot.K_BINARY);
                 default:
                     return null;
                 }
@@ -262,7 +263,7 @@ public class PackageCommand {
         String name = classpathEntry.getPath().toPortableString();
         String path = entry.getPath().toPortableString();
         boolean isDirectory = new File(path).isDirectory();
-        return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, isDirectory ? IClasspathEntry.CPE_LIBRARY : IClasspathEntry.CPE_PROJECT);
+        return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, isDirectory ? IPackageFragmentRoot.K_SOURCE : IPackageFragmentRoot.K_BINARY);
     }
 
     private static List<PackageNode> getPackageFragmentRoots(PackageParams query, IProgressMonitor pm) {
