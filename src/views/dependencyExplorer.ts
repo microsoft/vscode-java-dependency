@@ -9,6 +9,7 @@ import { Utility } from "../utility";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
+import { PackageRootNode } from "./packageRootNode";
 
 export class DependencyExplorer {
 
@@ -49,7 +50,6 @@ export class DependencyExplorer {
         if (!current) {
             return;
         }
-
         const res = current.getChildren();
         if (Utility.isThenable(res)) {
             res.then((children: DataNode[]) => {
@@ -71,8 +71,23 @@ export class DependencyExplorer {
                             this._selectionWhenHidden = c;
                         }
                     } else {
-                        paths.shift();
-                        this.revealPath(c, paths);
+                        // Resove Hierarchical packages
+                        const node = paths.shift();
+                        if (Settings.isHierarchicalView() && c instanceof PackageRootNode) {
+                            const packageNode = paths.shift();
+                            const res = c.getChildren();
+                            if (Utility.isThenable(res)) {
+                                res.then(() => {
+                                    const correspondPackageNode = c.getPackageNodeFromNodeData(packageNode);
+                                    this.revealPath(correspondPackageNode, paths);
+                                });
+                            } else {
+                                const correspondPackageNode = c.getPackageNodeFromNodeData(packageNode);
+                                this.revealPath(correspondPackageNode, paths);
+                            }
+                        } else {
+                            this.revealPath(c, paths);
+                        }
                     }
                     break;
                 }

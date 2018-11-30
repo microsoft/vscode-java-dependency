@@ -28,5 +28,9 @@ export class Settings {
         return this._depdendencyConfig.get("syncWithFolderExplorer");
     }
 
+    public static isHierarchicalView(): boolean {
+        return this._depdendencyConfig.get("isHierarchicalView");
+    }
+
     private static _depdendencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
 }
