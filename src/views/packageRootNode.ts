@@ -24,22 +24,22 @@ export class PackageRootNode extends DataNode {
     }
 
     // Get correspond packageRootNode when revealPath
-    public getPackageNodeFromNodeData(classPackage: INodeData): PackageRootNode {
+    public async getPackageNodeFromNodeData(classPackage: INodeData): Promise<PackageRootNode> {
+        await this.getChildren();
         // tslint:disable-next-line:no-this-assignment
         let packageRootNode: PackageRootNode = this;
-        while (packageRootNode.packageTree === null || packageRootNode.packageTree.fullName !== classPackage.name) {
-            let noMatchPackage: boolean = true;
+        let existCorrespondPackageNode: boolean = false;
+        while (packageRootNode.packageTree === null ||
+            (packageRootNode.packageTree.fullName !== classPackage.name && existCorrespondPackageNode)) {
+            existCorrespondPackageNode = false;
             packageRootNode.createChildNodeList().forEach((child) => {
                 if (child instanceof PackageRootNode && classPackage.name.startsWith(child.packageTree.fullName)) {
                     packageRootNode = child;
-                    noMatchPackage = false;
+                    existCorrespondPackageNode = true;
                 }
             });
-            if (noMatchPackage) {
-                return null;
-            }
         }
-        return packageRootNode;
+        return existCorrespondPackageNode ? packageRootNode : null;
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -51,7 +51,6 @@ export class PackageRootNode extends DataNode {
         } else {
             return Jdtls.getPackageData({ kind: NodeKind.PackageRoot, projectUri: this._project.nodeData.uri, rootPath: this.nodeData.path });
         }
-
     }
 
     protected createFlatChildNodeList(): ExplorerNode[] {

@@ -74,17 +74,9 @@ export class DependencyExplorer {
                         // Resove Hierarchical packages
                         const node = paths.shift();
                         if (Settings.isHierarchicalView() && c instanceof PackageRootNode) {
-                            const packageNode = paths.shift();
-                            const res = c.getChildren();
-                            if (Utility.isThenable(res)) {
-                                res.then(() => {
-                                    const correspondPackageNode = c.getPackageNodeFromNodeData(packageNode);
-                                    this.revealPath(correspondPackageNode, paths);
-                                });
-                            } else {
-                                const correspondPackageNode = c.getPackageNodeFromNodeData(packageNode);
-                                this.revealPath(correspondPackageNode, paths);
-                            }
+                            const packageNodeData = paths.shift();
+                            c.getPackageNodeFromNodeData(packageNodeData)
+                                .then((correspondPackageNode) => { this.revealPath(correspondPackageNode, paths); });
                         } else {
                             this.revealPath(c, paths);
                         }
