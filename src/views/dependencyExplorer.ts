@@ -9,7 +9,7 @@ import { Utility } from "../utility";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
-import { PackageRootNode } from "./packageRootNode";
+import { HierarchicalNode } from "./hierarchicalNode";
 
 export class DependencyExplorer {
 
@@ -72,12 +72,11 @@ export class DependencyExplorer {
                         }
                     } else {
                         // Resove Hierarchical packages
-                        const node = paths.shift();
-                        if (Settings.isHierarchicalView() && c instanceof PackageRootNode) {
-                            const packageNodeData = paths.shift();
-                            c.getPackageNodeFromNodeData(packageNodeData)
-                                .then((correspondPackageNode) => { this.revealPath(correspondPackageNode, paths); });
+                        if (c instanceof HierarchicalNode && c.isHierarchicalView()) {
+                            c.revealPath(paths)
+                                .then((revealResult) => { this.revealPath(revealResult[0], revealResult[1]); });
                         } else {
+                            paths.shift();
                             this.revealPath(c, paths);
                         }
                     }

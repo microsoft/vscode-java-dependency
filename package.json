@@ -63,10 +63,11 @@
           "description": "Synchronize dependency viewer selection with folder explorer",
           "default": true
         },
-        "java.dependency.isHierarchicalView": {
-          "type": "boolean",
-          "description": "Switch whether package shows in hierarchical view",
-          "default": false
+        "java.dependency.packagePresentation": {
+          "type": "string",
+          "enum":["flat","hierarchical"],
+          "description": "Set the presentation model of packages",
+          "default": "flat"
         }
       }
     },
