@@ -9,10 +9,6 @@ export abstract class HierarchicalNode extends DataNode {
     public abstract revealPath(paths: INodeData[]): Promise<[ExplorerNode, INodeData[]]>;
 
     protected createChildNodeList(): ExplorerNode[] {
-        if (this.isHierarchicalView()) {
-            return this.createHierarchicalChildNodeList();
-        } else {
-            return this.createFlatChildNodeList();
-        }
+        return this.isHierarchicalView() ? this.createHierarchicalChildNodeList() : this.createFlatChildNodeList();
     }
 }
