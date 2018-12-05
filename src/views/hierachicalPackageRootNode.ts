@@ -15,14 +15,7 @@ import { TypeRootNode } from "./typeRootNode";
 
 export class HierachicalPackageRootNode extends PackageRootNode {
 
-    public static isHierarchicalView(): boolean {
-        return Settings.getPackagePresentation() === "hierarchical";
-    }
-
     public static async convertPaths(paths: INodeData[]): Promise<INodeData[]> {
-        if (!HierachicalPackageRootNode.isHierarchicalView()) {
-            return paths;
-        }
         const index = paths.findIndex((nodeData) => nodeData.kind === NodeKind.PackageRoot);
         const projectNodeData = paths.find((nodeData) => nodeData.kind === NodeKind.Project);
         const packageRootNodeData = paths[index];

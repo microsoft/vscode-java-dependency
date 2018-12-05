@@ -2,14 +2,13 @@
 // Licensed under the MIT license.
 
 import { ExtensionContext, ProviderResult, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
-import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
 import { Utility } from "../utility";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
-import { HierachicalPackageRootNode } from "./hierachicalPackageRootNode";
+import { PathProcesser } from "./pathProcesser";
 
 export class DependencyExplorer {
 
@@ -41,13 +40,7 @@ export class DependencyExplorer {
     }
 
     public reveal(uri: Uri): void {
-        Jdtls.resolvePath(uri.toString())
-            .then((paths: INodeData[]) => this.processPaths(paths))
-            .then((paths: INodeData[]) => this.revealPath(this._dataProvider, paths));
-    }
-
-    private processPaths(paths: INodeData[]): Promise<INodeData[]> {
-        return HierachicalPackageRootNode.convertPaths(paths);
+        PathProcesser.resolvePath(uri).then((paths: INodeData[]) => this.revealPath(this._dataProvider, paths));
     }
 
     private revealPath(current: { getChildren: (element?: ExplorerNode) => ProviderResult<ExplorerNode[]> }, paths: INodeData[]) {

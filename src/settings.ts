@@ -28,8 +28,8 @@ export class Settings {
         return this._depdendencyConfig.get("syncWithFolderExplorer");
     }
 
-    public static getPackagePresentation(): string {
-        return this._depdendencyConfig.get("packagePresentation");
+    public static isHierarchicalView(): boolean {
+        return this._depdendencyConfig.get("packagePresentation") === "hierarchical";
     }
 
     private static _depdendencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
