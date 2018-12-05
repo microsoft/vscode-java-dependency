@@ -1,4 +1,7 @@
-import { INodeData, NodeKind } from "../java/nodeData";
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
+import { INodeData, NodeKind } from "./nodeData";
 
 export class PackageTreeNode {
     public name: string;
