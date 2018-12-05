@@ -10,6 +10,7 @@ import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Telemetry } from "../telemetry";
+import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
@@ -65,6 +66,37 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     public getParent(element: ExplorerNode): ProviderResult<ExplorerNode> {
         return element.getParent();
+    }
+
+    public async getRootNodeByData(nodeData: INodeData): Promise<DataNode> {
+        // Server only return project nodes, so use get root projects function
+        const rootNodes: ExplorerNode[] = await this.getRootProjects();
+        return <DataNode>rootNodes.find((node: DataNode) => node.path === nodeData.path && node.nodeData.name === nodeData.name);
+    }
+
+    private async getRootProjects(): Promise<ExplorerNode[]> {
+        let result = new Array<ExplorerNode>();
+        const folders = workspace.workspaceFolders;
+        if (folders && folders.length) {
+            if (folders.length > 1) {
+                const workspaces = folders.map((folder) => new WorkspaceNode({
+                    name: folder.name,
+                    uri: folder.uri.toString(),
+                    kind: NodeKind.Workspace,
+                }, null));
+                // return projects of all workspaces
+                for (const singleworkspace of workspaces) {
+                    const projects = await singleworkspace.getChildren();
+                    result = result.concat(projects);
+                }
+            } else {
+                const projectsNodeData = await Jdtls.getProjects(folders[0].uri.toString());
+                projectsNodeData.forEach((project) => {
+                    result.push(new ProjectNode(project, null));
+                });
+            }
+        }
+        return result;
     }
 
     private getRootNodes(): Thenable<ExplorerNode[]> {

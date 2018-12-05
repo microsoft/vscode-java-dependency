@@ -20,10 +20,15 @@ export class HierachicalPackageRootSubNode extends DataNode {
         this.packageTree = packageTree;
     }
 
+    public get fullName() {
+        return this.packageTree.fullName;
+    }
+
     protected loadData(): Thenable<any[]> {
-        return Jdtls.getPackageData({
+        // Load data only when current node is a package
+        return this.packageTree.isPackage ? Jdtls.getPackageData({
             kind: NodeKind.Package, projectUri: this._project.nodeData.uri, path: this.packageTree.fullName, rootPath: this.nodeData.path,
-        });
+        }) : Promise.resolve([]);
     }
 
     protected get iconPath(): { light: string; dark: string } {

@@ -15,43 +15,17 @@ import { TypeRootNode } from "./typeRootNode";
 
 export class HierachicalPackageRootNode extends PackageRootNode {
 
-    public static async convertPaths(paths: INodeData[]): Promise<INodeData[]> {
-        const index = paths.findIndex((nodeData) => nodeData.kind === NodeKind.PackageRoot);
-        const projectNodeData = paths.find((nodeData) => nodeData.kind === NodeKind.Project);
-        const packageRootNodeData = paths[index];
-        const packageNodeData = paths[index + 1];
-        const packageRootNode = new HierachicalPackageRootNode(packageRootNodeData, null, new ProjectNode(projectNodeData, null));
-
-        const correspondDataNodes: INodeData[] = [];
-        let correspondNode = await packageRootNode.revealPath(packageNodeData);
-        while (correspondNode instanceof HierachicalPackageRootSubNode) {
-            correspondDataNodes.push({
-                name: correspondNode.nodeData.name,
-                moduleName: null,
-                path: correspondNode.nodeData.path,
-                uri: null,
-                kind: NodeKind.PackageRoot,
-                children: null,
-            });
-            correspondNode = correspondNode.getParent();
-        }
-        const result = paths.slice(null, index + 1).concat(correspondDataNodes.reverse(), paths.slice(index + 2));
-        return result;
-    }
-
     constructor(nodeData: INodeData, parent: DataNode, _project: ProjectNode) {
         super(nodeData, parent, _project);
     }
 
-    public async revealPath(packageNodeData: INodeData): Promise<ExplorerNode> {
-        await this.getChildren();
-        let packageTreeNode: PackageTreeNode = this.getPackageTree();
-        let result: DataNode = null;
-        while (packageTreeNode && packageTreeNode.fullName !== packageNodeData.name) {
-            packageTreeNode = packageTreeNode.childs.find((child) => packageNodeData.name.startsWith(child.fullName));
-            result = packageTreeNode ? new HierachicalPackageRootSubNode(packageTreeNode.getNodeDataFromPackageTreeNode(this.nodeData),
-                result, this._project, packageTreeNode) : null;
-        }
+    public async getCorrespondChildNodeWithNodeData(nodeData: INodeData): Promise<DataNode> {
+        let result: HierachicalPackageRootSubNode = null;
+        do {
+            const child: ExplorerNode[] = result ? await result.getChildren() : await this.getChildren();
+            result = <HierachicalPackageRootSubNode>child.find((node) => node instanceof HierachicalPackageRootSubNode
+                && nodeData.name.startsWith(node.fullName));
+        } while (result && result.fullName !== nodeData.name);
         return result;
     }
 

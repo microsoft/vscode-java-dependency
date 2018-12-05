@@ -32,6 +32,11 @@ export abstract class DataNode extends ExplorerNode {
         return this._nodeData.path;
     }
 
+    public async getCorrespondChildNodeWithNodeData(nodeData: INodeData): Promise<DataNode> {
+        const childs: ExplorerNode[] = await this.getChildren();
+        return <DataNode>childs.find((child: DataNode) => child.nodeData.name === nodeData.name && child.path === nodeData.path);
+    }
+
     public getChildren(): ProviderResult<ExplorerNode[]> {
         if (!this._nodeData.children) {
             return this.loadData().then((res) => {
