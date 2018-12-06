@@ -4,41 +4,24 @@
 import { INodeData, NodeKind } from "./nodeData";
 
 export class PackageTreeNode {
+
+    public static createEmptyRootNode(): PackageTreeNode {
+        return new PackageTreeNode("", "");
+    }
+
     public name: string;
     public fullName: string;
     public childs: PackageTreeNode[] = [];
     public isPackage: boolean = false;
 
-    constructor(packageName: string, parentName: string) {
-        const splitPackageName = packageName.split(".");
-        this.name = splitPackageName[0];
-        this.fullName = parentName === "" ? this.name : parentName + "." + this.name;
-        if (splitPackageName.length > 1) {
-            this.childs.push(new PackageTreeNode(packageName.substring(this.name.length + 1), this.fullName));
-        } else {
-            this.isPackage = true;
-        }
+    private constructor(name: string, parentFullName: string) {
+        this.name = name;
+        this.fullName = parentFullName === "" ? name : parentFullName + "." + name;
     }
 
     public addPackage(packageName: string): void {
-        const splitPackageName = packageName.split(".");
-        const firstSubName = splitPackageName[0];
-        const restname = packageName.substring(firstSubName.length + 1);
-
-        let contains: boolean = false;
-        this.childs.forEach((child) => {
-            if (child.name === firstSubName) {
-                if (restname === "") {
-                    child.isPackage = true;
-                } else {
-                    child.addPackage(restname);
-                }
-                contains = true;
-            }
-        });
-        if (!contains) {
-            this.childs.push(new PackageTreeNode(packageName, this.fullName));
-        }
+        const packages = packageName.split(".");
+        this.addSubPackage(packages);
     }
 
     public compressTree(): void {
@@ -62,5 +45,21 @@ export class PackageTreeNode {
             kind: NodeKind.PackageRoot,
             children: null,
         };
+    }
+
+    private addSubPackage(packages: string[]): void {
+        if (!packages.length) {
+            this.isPackage = true;
+            return;
+        }
+        const subPackageName = packages.shift();
+        const childNode = this.childs.find((child) => child.name === subPackageName);
+        if (childNode) {
+            childNode.addSubPackage(packages);
+        } else {
+            const newNode = new PackageTreeNode(subPackageName, this.fullName);
+            newNode.addSubPackage(packages);
+            this.childs.push(newNode);
+        }
     }
 }

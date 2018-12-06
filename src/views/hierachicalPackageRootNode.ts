@@ -57,7 +57,7 @@ export class HierachicalPackageRootNode extends PackageRootNode {
     }
 
     private getPackageTree(): PackageTreeNode {
-        const result: PackageTreeNode = new PackageTreeNode("", "");
+        const result: PackageTreeNode = PackageTreeNode.createEmptyRootNode();
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((child) => {
                 if (child.kind === NodeKind.Package) {
