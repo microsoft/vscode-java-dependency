@@ -12,7 +12,8 @@ export class Settings {
                 return;
             }
             const updatedConfig = workspace.getConfiguration("java.dependency");
-            if (updatedConfig.showOutline !== this._depdendencyConfig.showOutline) {
+            if (updatedConfig.showOutline !== this._depdendencyConfig.showOutline
+                || updatedConfig.packagePresentation !== this._depdendencyConfig.packagePresentation) {
                 commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
             }
             this._depdendencyConfig = updatedConfig;

@@ -66,7 +66,7 @@
         "java.dependency.packagePresentation": {
           "type": "string",
           "enum":["flat","hierarchical"],
-          "description": "Set the presentation model of packages",
+          "description": "Package presentation mode: flat or hierarchical",
           "default": "flat"
         }
       }
