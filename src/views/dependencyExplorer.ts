@@ -40,11 +40,8 @@ export class DependencyExplorer {
 
     public async reveal(uri: Uri): Promise<void> {
         const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-        // Get correspond project node from dataProvider
-        let node = await this._dataProvider.getRootNodeByData(paths.shift());
-        while (paths.length && node) {
-            node = await node.getCorrespondChildNodeWithNodeData(paths.shift());
-        }
+        const node = await this._dataProvider.revealPaths(paths);
+
         if (this._dependencyViewer.visible) {
             this._dependencyViewer.reveal(node);
         } else {

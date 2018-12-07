@@ -7,7 +7,7 @@ import { Telemetry } from "../telemetry";
 import { ExplorerNode } from "./explorerNode";
 
 export abstract class DataNode extends ExplorerNode {
-    constructor(private _nodeData: INodeData, parent: DataNode) {
+    constructor(protected _nodeData: INodeData, parent: DataNode) {
         super(parent);
     }
 
@@ -32,9 +32,11 @@ export abstract class DataNode extends ExplorerNode {
         return this._nodeData.path;
     }
 
-    public async getCorrespondChildNodeWithNodeData(nodeData: INodeData): Promise<DataNode> {
+    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+        const childNodeData = paths.shift();
         const childs: ExplorerNode[] = await this.getChildren();
-        return <DataNode>childs.find((child: DataNode) => child.nodeData.name === nodeData.name && child.path === nodeData.path);
+        const childNode = <DataNode>childs.find((child: DataNode) => child.nodeData.name === childNodeData.name && child.path === childNodeData.path);
+        return paths.length ? childNode.revealPaths(paths) : childNode;
     }
 
     public getChildren(): ProviderResult<ExplorerNode[]> {

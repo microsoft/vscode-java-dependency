@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { commands, ConfigurationChangeEvent, ExtensionContext, workspace, WorkspaceConfiguration } from "vscode";
+import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 
 export class Settings {
@@ -19,6 +20,14 @@ export class Settings {
             this._depdendencyConfig = updatedConfig;
 
         }));
+
+        const instrumented = instrumentOperation(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION, Settings.changePackageRepresentation);
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION, instrumented));
+    }
+
+    public static changePackageRepresentation(): void {
+        const representationSetting = Settings.isHierarchicalView() ? PackagePresentation.Flat : PackagePresentation.Hierarchical;
+        workspace.getConfiguration().update("java.dependency.packagePresentation", representationSetting, false);
     }
 
     public static showOutline(): boolean {
@@ -30,8 +39,13 @@ export class Settings {
     }
 
     public static isHierarchicalView(): boolean {
-        return this._depdendencyConfig.get("packagePresentation") === "hierarchical";
+        return this._depdendencyConfig.get("packagePresentation") === PackagePresentation.Hierarchical;
     }
 
     private static _depdendencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
+}
+
+enum PackagePresentation {
+    Flat = "flat",
+    Hierarchical = "hierarchical",
 }

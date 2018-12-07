@@ -5,12 +5,13 @@ import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
     Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Telemetry } from "../telemetry";
 import { DataNode } from "./dataNode";
+import { DependencyExplorer } from "./dependencyExplorer";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
@@ -68,35 +69,26 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return element.getParent();
     }
 
-    public async getRootNodeByData(nodeData: INodeData): Promise<DataNode> {
-        // Server only return project nodes, so use get root projects function
-        const rootNodes: ExplorerNode[] = await this.getRootProjects();
-        return <DataNode>rootNodes.find((node: DataNode) => node.path === nodeData.path && node.nodeData.name === nodeData.name);
+    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+        const projectNodeData = paths.shift();
+        const projects = await this.getRootProjects();
+        const correspondProject = <DataNode>projects.find((node: DataNode) =>
+            node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name);
+        return correspondProject.revealPaths(paths);
     }
 
     private async getRootProjects(): Promise<ExplorerNode[]> {
-        let result = new Array<ExplorerNode>();
-        const folders = workspace.workspaceFolders;
-        if (folders && folders.length) {
-            if (folders.length > 1) {
-                const workspaces = folders.map((folder) => new WorkspaceNode({
-                    name: folder.name,
-                    uri: folder.uri.toString(),
-                    kind: NodeKind.Workspace,
-                }, null));
-                // return projects of all workspaces
-                for (const singleworkspace of workspaces) {
-                    const projects = await singleworkspace.getChildren();
-                    result = result.concat(projects);
-                }
-            } else {
-                const projectsNodeData = await Jdtls.getProjects(folders[0].uri.toString());
-                projectsNodeData.forEach((project) => {
-                    result.push(new ProjectNode(project, null));
-                });
+        const rootElements = this._rootItems ? this._rootItems : await this.getChildren();
+        if (rootElements[0] instanceof ProjectNode) {
+            return rootElements;
+        } else {
+            let result = [];
+            for (const singleworkspace of rootElements) {
+                const projects = await singleworkspace.getChildren();
+                result = result.concat(projects);
             }
+            return result;
         }
-        return result;
     }
 
     private getRootNodes(): Thenable<ExplorerNode[]> {

@@ -47,6 +47,15 @@
           "dark": "images/dark/icon-refresh.svg",
           "light": "images/light/icon-refresh.svg"
         }
+      },
+      {
+        "command": "java.view.package.changeRepresentation",
+        "title": "Change package representation",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/package.svg",
+          "light": "images/light/package.svg"
+        }
       }
     ],
     "configuration": {
@@ -65,7 +74,10 @@
         },
         "java.dependency.packagePresentation": {
           "type": "string",
-          "enum":["flat","hierarchical"],
+          "enum": [
+            "flat",
+            "hierarchical"
+          ],
           "description": "Package presentation mode: flat or hierarchical",
           "default": "flat"
         }
@@ -75,6 +87,11 @@
       "view/title": [
         {
           "command": "java.view.package.refresh",
+          "when": "view == javaDependencyExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "java.view.package.changeRepresentation",
           "when": "view == javaDependencyExplorer",
           "group": "navigation@0"
         }

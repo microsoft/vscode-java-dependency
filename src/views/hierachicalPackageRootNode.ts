@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import { HierachicalPackageNodeData } from "../java/hierachicalPackageNodeData";
 import { INodeData, NodeKind } from "../java/nodeData";
-import { PackageTreeNode } from "../java/packageTreeNode";
-import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
 import { FolderNode } from "./folderNode";
-import { HierachicalPackageRootSubNode } from "./hierachicalPackageRootSubNode";
+import { HierachicalPackageNode } from "./hierachicalPackageNode";
 import { PackageRootNode } from "./packageRootNode";
 import { ProjectNode } from "./projectNode";
 import { TypeRootNode } from "./typeRootNode";
@@ -19,14 +18,12 @@ export class HierachicalPackageRootNode extends PackageRootNode {
         super(nodeData, parent, _project);
     }
 
-    public async getCorrespondChildNodeWithNodeData(nodeData: INodeData): Promise<DataNode> {
-        let result: HierachicalPackageRootSubNode = null;
-        do {
-            const child: ExplorerNode[] = result ? await result.getChildren() : await this.getChildren();
-            result = <HierachicalPackageRootSubNode>child.find((node) => node instanceof HierachicalPackageRootSubNode
-                && nodeData.name.startsWith(node.fullName));
-        } while (result && result.fullName !== nodeData.name);
-        return result;
+    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+        const hierachicalNodeData = paths[0];
+        const childs: ExplorerNode[] = await this.getChildren();
+        const childNode = <DataNode>childs.find((child: DataNode) =>
+            child instanceof HierachicalPackageNode && hierachicalNodeData.name.startsWith(child.nodeData.name));
+        return childNode.revealPaths(paths);
     }
 
     protected createChildNodeList(): ExplorerNode[] {
@@ -43,29 +40,22 @@ export class HierachicalPackageRootNode extends PackageRootNode {
                 }
             });
         }
-        const packageNodeList = this.getHierarchicalPackageNodes();
-        return packageNodeList.concat(result);
+        return this.getHierarchicalPackageNodes().concat(result);
     }
 
     protected getHierarchicalPackageNodes(): ExplorerNode[] {
-        const result = [];
-        const packageTree = this.getPackageTree();
-        packageTree.childs.forEach((childNode) => {
-            result.push(new HierachicalPackageRootSubNode(childNode.getNodeDataFromPackageTreeNode(this.nodeData), this, this._project, childNode));
-        });
-        return result;
+        return this.getHierarchicalPackageNodeData().children
+            .map((hierachicalChildrenNode) => new HierachicalPackageNode(hierachicalChildrenNode, this, this._project, this));
     }
 
-    private getPackageTree(): PackageTreeNode {
-        const result: PackageTreeNode = PackageTreeNode.createEmptyRootNode();
+    private getHierarchicalPackageNodeData(): HierachicalPackageNodeData {
         if (this.nodeData.children && this.nodeData.children.length) {
-            this.nodeData.children.forEach((child) => {
-                if (child.kind === NodeKind.Package) {
-                    result.addPackage(child.name);
-                }
-            });
+            const nodeDataList = this.nodeData.children
+                .filter((child) => child.kind === NodeKind.Package);
+            return HierachicalPackageNodeData.createHierachicalNodeDataByPackageList(nodeDataList);
+        } else {
+            // Return a empty hierachical node
+            return HierachicalPackageNodeData.createHierachicalNodeDataByPackageList([]);
         }
-        result.compressTree();
-        return result;
     }
 }
