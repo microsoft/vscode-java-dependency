@@ -5,13 +5,12 @@ import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
     Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
-import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Telemetry } from "../telemetry";
 import { DataNode } from "./dataNode";
-import { DependencyExplorer } from "./dependencyExplorer";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
