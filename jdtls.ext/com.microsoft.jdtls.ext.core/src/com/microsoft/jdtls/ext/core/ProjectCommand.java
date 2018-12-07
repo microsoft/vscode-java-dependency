@@ -26,6 +26,7 @@ import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 
 public final class ProjectCommand {
+    public static final String DEFAULT_PROJECT_NAME = "jdt.ls-java-project";
 
     public static List<PackageNode> execute(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
@@ -34,11 +35,10 @@ public final class ProjectCommand {
         ArrayList<PackageNode> children = new ArrayList<>();
         List<IPath> paths = Arrays.asList(ResourceUtils.filePathFromURI(workspaceUri));
         for (IProject project : projects) {
-            if (project.exists() && ResourceUtils.isContainedIn(project.getLocation(), paths)) {
+            if (project.exists() && !DEFAULT_PROJECT_NAME.equals(project.getName()) ) {
                 PackageNode projectNode = new PackageNode(project.getName(), project.getFullPath().toPortableString(), NodeKind.PROJECT);
                 projectNode.setUri(project.getLocationURI().toString());
                 children.add(projectNode);
-
             }
         }
 
