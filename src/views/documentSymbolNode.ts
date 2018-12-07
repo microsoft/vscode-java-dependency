@@ -34,6 +34,6 @@ export class DocumentSymbolNode extends BaseSymbolNode {
     }
 
     protected get range(): Range {
-        return (<DocumentSymbol>this.symbolInfo).range;
+        return (<DocumentSymbol>this.symbolInfo).selectionRange;
     }
 }
