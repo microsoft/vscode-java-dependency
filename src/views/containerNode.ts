@@ -5,7 +5,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { PackageRootNode } from "./packageRootNode";
+import { NodeFactory } from "./nodeFactory";
 import { ProjectNode } from "./projectNode";
 
 export class ContainerNode extends DataNode {
@@ -21,7 +21,7 @@ export class ContainerNode extends DataNode {
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((classpathNode) => {
-                result.push(new PackageRootNode(classpathNode, this, this._project));
+                result.push(NodeFactory.createPackageRootNode(classpathNode, this, this._project));
             });
         }
         return result;

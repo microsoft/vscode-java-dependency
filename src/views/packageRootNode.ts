@@ -14,7 +14,7 @@ import { TypeRootNode } from "./typeRootNode";
 
 export class PackageRootNode extends DataNode {
 
-    constructor(nodeData: INodeData, parent: DataNode, private _project: ProjectNode) {
+    constructor(nodeData: INodeData, parent: DataNode, protected _project: ProjectNode) {
         super(nodeData, parent);
     }
 

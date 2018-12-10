@@ -9,7 +9,7 @@ import { FileNode } from "./fileNode";
 import { TypeRootNode } from "./typeRootNode";
 
 export class PackageNode extends DataNode {
-    constructor(nodeData: INodeData, parent: DataNode, private _project: DataNode, private _rootNode: DataNode) {
+    constructor(nodeData: INodeData, parent: DataNode, protected _project: DataNode, protected _rootNode: DataNode) {
         super(nodeData, parent);
     }
 

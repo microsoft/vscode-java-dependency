@@ -10,6 +10,8 @@ export namespace Commands {
      */
     export const EXECUTE_WORKSPACE_COMMAND = "java.execute.workspaceCommand";
 
+    export const VIEW_PACKAGE_CHANGEREPRESENTATION = "java.view.package.changeRepresentation";
+
     export const VIEW_PACKAGE_REFRESH = "java.view.package.refresh";
 
     export const VIEW_PACKAGE_OPEN_FILE = "java.view.package.openFile";

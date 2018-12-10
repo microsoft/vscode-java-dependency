@@ -10,6 +10,7 @@ import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Telemetry } from "../telemetry";
+import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
@@ -65,6 +66,28 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     public getParent(element: ExplorerNode): ProviderResult<ExplorerNode> {
         return element.getParent();
+    }
+
+    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+        const projectNodeData = paths.shift();
+        const projects = await this.getRootProjects();
+        const correspondProject = <DataNode>projects.find((node: DataNode) =>
+            node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name);
+        return correspondProject.revealPaths(paths);
+    }
+
+    private async getRootProjects(): Promise<ExplorerNode[]> {
+        const rootElements = this._rootItems ? this._rootItems : await this.getChildren();
+        if (rootElements[0] instanceof ProjectNode) {
+            return rootElements;
+        } else {
+            let result = [];
+            for (const singleworkspace of rootElements) {
+                const projects = await singleworkspace.getChildren();
+                result = result.concat(projects);
+            }
+            return result;
+        }
     }
 
     private getRootNodes(): Thenable<ExplorerNode[]> {

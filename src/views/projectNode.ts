@@ -8,7 +8,7 @@ import { Telemetry } from "../telemetry";
 import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { PackageRootNode } from "./packageRootNode";
+import { NodeFactory } from "./nodeFactory";
 
 export class ProjectNode extends DataNode {
 
@@ -54,7 +54,7 @@ export class ProjectNode extends DataNode {
                 if (data.kind === NodeKind.Container) {
                     result.push(new ContainerNode(data, this, this));
                 } else if (data.kind === NodeKind.PackageRoot) {
-                    result.push(new PackageRootNode(data, this, this));
+                    result.push(NodeFactory.createPackageRootNode(data, this, this));
                 }
             });
         }
