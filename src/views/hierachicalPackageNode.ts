@@ -51,7 +51,7 @@ export class HierachicalPackageNode extends PackageNode {
             const childs: ExplorerNode[] = await this.getChildren();
             const childNode = <DataNode>childs.find((child: DataNode) =>
                 child instanceof HierachicalPackageNode && hierachicalNodeData.name.startsWith(child.nodeData.name));
-            return childNode.revealPaths(paths);
+            return childNode === null ? null : childNode.revealPaths(paths);
         }
     }
 

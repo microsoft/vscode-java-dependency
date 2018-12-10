@@ -23,7 +23,7 @@ export class HierachicalPackageRootNode extends PackageRootNode {
         const childs: ExplorerNode[] = await this.getChildren();
         const childNode = <DataNode>childs.find((child: DataNode) =>
             child instanceof HierachicalPackageNode && hierachicalNodeData.name.startsWith(child.nodeData.name));
-        return childNode.revealPaths(paths);
+        return childNode === null ? null : childNode.revealPaths(paths);
     }
 
     protected createChildNodeList(): ExplorerNode[] {
@@ -44,8 +44,9 @@ export class HierachicalPackageRootNode extends PackageRootNode {
     }
 
     protected getHierarchicalPackageNodes(): ExplorerNode[] {
-        return this.getHierarchicalPackageNodeData().children
-            .map((hierachicalChildrenNode) => new HierachicalPackageNode(hierachicalChildrenNode, this, this._project, this));
+        const hierachicalPackageNodeData = this.getHierarchicalPackageNodeData();
+        return hierachicalPackageNodeData === null ? [] : hierachicalPackageNodeData.children.map((hierachicalChildrenNode) =>
+            new HierachicalPackageNode(hierachicalChildrenNode, this, this._project, this));
     }
 
     private getHierarchicalPackageNodeData(): HierachicalPackageNodeData {
@@ -54,8 +55,7 @@ export class HierachicalPackageRootNode extends PackageRootNode {
                 .filter((child) => child.kind === NodeKind.Package);
             return HierachicalPackageNodeData.createHierachicalNodeDataByPackageList(nodeDataList);
         } else {
-            // Return a empty hierachical node
-            return HierachicalPackageNodeData.createHierachicalNodeDataByPackageList([]);
+            return null;
         }
     }
 }

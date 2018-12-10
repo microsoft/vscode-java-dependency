@@ -15,7 +15,6 @@ export class HierachicalPackageNodeData implements INodeData {
     public name: string;
     public children = [];
     public displayName: string;
-    public isPackage: boolean = false;
     private nodeData: INodeData = null;
 
     public get uri() {
@@ -34,6 +33,10 @@ export class HierachicalPackageNodeData implements INodeData {
         return this.nodeData ? this.nodeData.kind : NodeKind.Package;
     }
 
+    public get isPackage() {
+        return this.nodeData !== null;
+    }
+
     private constructor(displayName: string, parentName: string) {
         this.displayName = displayName;
         this.name = parentName === "" ? displayName : parentName + "." + displayName;
@@ -46,14 +49,13 @@ export class HierachicalPackageNodeData implements INodeData {
             this.name = this.name + "." + child.displayName;
             this.displayName = this.displayName + "." + child.displayName;
             this.children = child.children;
-            this.isPackage = child.isPackage;
+            this.nodeData = child.nodeData;
         }
         this.children.forEach((child) => child.compressTree());
     }
 
     private addSubPackage(packages: string[], nodeData: INodeData): void {
         if (!packages.length) {
-            this.isPackage = true;
             this.nodeData = nodeData;
             return;
         }
