@@ -31,13 +31,13 @@ public final class ProjectCommand {
     public static List<PackageNode> execute(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
         IPath workspacePath = ResourceUtils.canonicalFilePathFromURI(workspaceUri);
-        String workspaceProject = getWorkspaceInvisibleProjectName(workspacePath);
+        String invisibleProjectName = getWorkspaceInvisibleProjectName(workspacePath);
 
         IProject[] projects = getWorkspaceRoot().getProjects();
         ArrayList<PackageNode> children = new ArrayList<>();
         List<IPath> paths = Arrays.asList(workspacePath);
         for (IProject project : projects) {
-            if (project.exists() && (ResourceUtils.isContainedIn(project.getLocation(), paths) || Objects.equals(project.getName(), workspaceProject))) {
+            if (project.exists() && (ResourceUtils.isContainedIn(project.getLocation(), paths) || Objects.equals(project.getName(), invisibleProjectName))) {
                 PackageNode projectNode = new PackageNode(project.getName(), project.getFullPath().toPortableString(), NodeKind.PROJECT);
                 projectNode.setUri(project.getLocationURI().toString());
                 children.add(projectNode);
@@ -54,7 +54,6 @@ public final class ProjectCommand {
     // TODO Use ProjectUtils.getWorkspaceInvisibleProjectName directly when the language server is released.
     private static String getWorkspaceInvisibleProjectName(IPath workspacePath) {
         String fileName = workspacePath.toFile().getName();
-        String projectName = fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
-        return projectName;
+        return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
 }
