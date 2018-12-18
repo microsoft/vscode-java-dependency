@@ -1,6 +1,6 @@
 .vscode/**
 .vscode-test/**
-out/test/**
+out/**
 test/**
 src/**
 **/*.map
@@ -9,3 +9,6 @@ vscode/**
 tsconfig.json
 gulpfile.js
 .gitignore
+dist/**/*.map
+webpack.*.js
+node_modules

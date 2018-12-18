@@ -9,3 +9,4 @@ out/
 .vscode-test/
 vscode-java-*.vsix
 packages/
+dist
