@@ -113,9 +113,7 @@
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./scripts/download-vscode-for-system-tests && node ./scripts/install-vsix-dependencies redhat.java && node ./scripts/install-vsix-dependencies vscode-java-dependency-0.2.0.vsix && node ./scripts/run-vscode-tests",
     "build-server": "./node_modules/.bin/gulp build_server",
-    "vscode:prepublish": "tsc -p ./ && webpack --mode production",
-    "webpack": "webpack --mode development",
-    "webpack-dev": "webpack --mode development --watch"
+    "vscode:prepublish": "tsc -p ./ && webpack --mode production"
   },
   "extensionDependencies": [
     "redhat.java"
