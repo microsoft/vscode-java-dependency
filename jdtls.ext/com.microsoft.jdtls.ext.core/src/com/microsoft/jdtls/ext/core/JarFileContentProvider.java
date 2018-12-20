@@ -61,7 +61,7 @@ public class JarFileContentProvider implements IContentProvider {
                     }
                     if (resource instanceof JarEntryDirectory) {
                         JarEntryDirectory directory = (JarEntryDirectory) resource;
-                        JarEntryFile file = findFileInJar(directory, path);
+                        JarEntryFile file = ExtUtils.findFileInJar(directory, path);
                         if (file != null) {
                             return readFileContent(file);
                         }
@@ -92,20 +92,7 @@ public class JarFileContentProvider implements IContentProvider {
         return null;
     }
 
-    private static JarEntryFile findFileInJar(JarEntryDirectory directory, String path) {
-        for (IJarEntryResource child : directory.getChildren()) {
-            if (child instanceof JarEntryFile && child.getFullPath().toPortableString().equals(path)) {
-                return (JarEntryFile) child;
-            }
-            if (child instanceof JarEntryDirectory) {
-                JarEntryFile file = findFileInJar((JarEntryDirectory) child, path);
-                if (file != null) {
-                    return file;
-                }
-            }
-        }
-        return null;
-    }
+
 
     private static String readFileContent(JarEntryFile file) throws CoreException {
         try (InputStream stream = (file.getContents())) {
