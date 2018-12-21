@@ -22,6 +22,8 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -69,12 +71,7 @@ public final class ExtUtils {
         return uri != null && JDT_SCHEME.equals(uri.getScheme()) && CONTENTS_AUTHORITY.equals(uri.getAuthority());
     }
 
-    public static IJarEntryResource createJarResource(URI uri) throws JavaModelException {
-        String handleId = uri.getQuery();
-        IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(handleId);
-        String path = uri.getPath();
-
-        // if the file exists in the java packages
+    public static JarEntryFile findJarEntryFile(IPackageFragmentRoot packageRoot, String path) throws JavaModelException {
         String[] segments = StringUtils.split(path, "/");
         String packageName = StringUtils.join(Arrays.asList(segments).subList(0, segments.length - 1), '.');
         IPackageFragment packageFragment = packageRoot.getPackageFragment(packageName);
@@ -84,10 +81,9 @@ public final class ExtUtils {
                 if (obj instanceof IJarEntryResource) {
                     IJarEntryResource child = (IJarEntryResource) obj;
                     if (child instanceof JarEntryFile && child.getFullPath().toPortableString().equals(path)) {
-                        return child;
+                        return (JarEntryFile) child;
                     }
                 }
-
             }
         }
         Object[] resources = packageRoot.getNonJavaResources();
@@ -107,19 +103,19 @@ public final class ExtUtils {
         return null;
     }
 
-    public static JarEntryFile findFileInJar(JarEntryDirectory directory, String path) {
-        for (IJarEntryResource child : directory.getChildren()) {
-            if (child instanceof JarEntryFile && child.getFullPath().toPortableString().equals(path)) {
-                return (JarEntryFile) child;
-            }
-            if (child instanceof JarEntryDirectory) {
-                JarEntryFile file = findFileInJar((JarEntryDirectory) child, path);
-                if (file != null) {
-                    return file;
-                }
-            }
+    public static IJarEntryResource getJarEntryResource(URI uri) throws CoreException {
+        if (uri == null) {
+            throw new NullPointerException("Cannot get jar resource from null URI.");
         }
-        return null;
+        String handleId = uri.getQuery();
+        if (handleId == null) {
+            throw new NullPointerException("Invalid uri for a jar entry.");
+        }
+        IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(handleId);
+        if (packageRoot == null) {
+            throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", handleId)));
+        }
+        return findJarEntryFile(packageRoot, uri.getPath());
     }
 
     public static IPath removeProjectSegment(String projectElementName, IPath path) {
@@ -246,5 +242,20 @@ public final class ExtUtils {
         String name = classpathEntry.getPath().toPortableString();
         String path = entry.getPath().toPortableString();
         return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, IPackageFragmentRoot.K_BINARY);
+    }
+
+    private static JarEntryFile findFileInJar(JarEntryDirectory directory, String path) {
+        for (IJarEntryResource child : directory.getChildren()) {
+            if (child instanceof JarEntryFile && child.getFullPath().toPortableString().equals(path)) {
+                return (JarEntryFile) child;
+            }
+            if (child instanceof JarEntryDirectory) {
+                JarEntryFile file = findFileInJar((JarEntryDirectory) child, path);
+                if (file != null) {
+                    return file;
+                }
+            }
+        }
+        return null;
     }
 }

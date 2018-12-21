@@ -137,10 +137,7 @@ public class PackageCommand {
             item.setUri(JDTUtils.toUri(typeRoot));
             result.add(item);
         } else if (ExtUtils.isJarResourceUri(uri)) {
-
-            IJarEntryResource resource = ExtUtils.createJarResource(uri);
-
-
+            IJarEntryResource resource = ExtUtils.getJarEntryResource(uri);
             IPackageFragmentRoot pkgRoot = resource.getPackageFragmentRoot();
             result.add(ExtUtils.createNodeForProject(pkgRoot));
             result.add(ExtUtils.createNodeForVirtualContainer(resource.getPackageFragmentRoot()));
