@@ -53,8 +53,8 @@
         "title": "%contributes.commands.java.view.package.changeRepresentation%",
         "category": "Java",
         "icon": {
-          "dark": "images/dark/package.svg",
-          "light": "images/light/package.svg"
+          "dark": "images/dark/icon-hierarchical.svg",
+          "light": "images/light/icon-hierarchical.svg"
         }
       }
     ],
