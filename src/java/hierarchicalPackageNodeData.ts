@@ -3,10 +3,10 @@
 
 import { INodeData, NodeKind } from "./nodeData";
 
-export class HierachicalPackageNodeData implements INodeData {
+export class HierarchicalPackageNodeData implements INodeData {
 
-    public static createHierachicalNodeDataByPackageList(packageList: INodeData[]): HierachicalPackageNodeData {
-        const result = new HierachicalPackageNodeData("", "");
+    public static createHierarchicalNodeDataByPackageList(packageList: INodeData[]): HierarchicalPackageNodeData {
+        const result = new HierarchicalPackageNodeData("", "");
         packageList.forEach((nodeData) => result.addSubPackage(nodeData.name.split("."), nodeData));
         result.compressTree();
         return result;
@@ -62,9 +62,9 @@ export class HierachicalPackageNodeData implements INodeData {
         const subPackageDisplayName = packages.shift();
         const childNode = this.children.find((child) => child.displayName === subPackageDisplayName);
         if (childNode) {
-            childNode.addSubPackage(packages);
+            childNode.addSubPackage(packages, nodeData);
         } else {
-            const newNode = new HierachicalPackageNodeData(subPackageDisplayName, this.name);
+            const newNode = new HierarchicalPackageNodeData(subPackageDisplayName, this.name);
             newNode.addSubPackage(packages, nodeData);
             this.children.push(newNode);
         }

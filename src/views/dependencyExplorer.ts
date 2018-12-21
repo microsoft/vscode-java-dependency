@@ -33,6 +33,13 @@ export class DependencyExplorer {
                 this._selectionWhenHidden = undefined;
             }
         });
+
+        this._dataProvider.onDidChangeTreeData(() => {
+            const currentDocument = window.activeTextEditor.document.uri;
+            if (currentDocument) {
+                this.reveal(currentDocument);
+            }
+        });
     }
 
     public dispose(): void {

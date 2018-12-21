@@ -17,7 +17,7 @@ export class FileNode extends DataNode {
     }
 
     protected loadData(): Thenable<INodeData[]> {
-        return null;
+        return Promise.resolve(null);
     }
 
     protected createChildNodeList(): ExplorerNode[] {
