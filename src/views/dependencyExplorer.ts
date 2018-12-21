@@ -35,9 +35,8 @@ export class DependencyExplorer {
         });
 
         this._dataProvider.onDidChangeTreeData(() => {
-            const currentDocument = window.activeTextEditor.document.uri;
-            if (currentDocument) {
-                this.reveal(currentDocument);
+            if (window.activeTextEditor) {
+                this.reveal(window.activeTextEditor.document.uri);
             }
         });
     }
