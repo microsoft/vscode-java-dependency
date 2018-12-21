@@ -90,7 +90,7 @@ public class PackageCommand {
      */
     public static List<PackageNode> getChildren(List<Object> arguments, IProgressMonitor pm) throws CoreException {
         if (arguments == null || arguments.size() < 1) {
-            throw new IllegalArgumentException("Should have at least one arugment for getChildren");
+            throw new IllegalArgumentException("Should have at least one argument for getChildren");
         }
         PackageParams params = gson.fromJson(gson.toJson(arguments.get(0)), PackageParams.class);
         BiFunction<PackageParams, IProgressMonitor, List<PackageNode>> loader = commands.get(params.getKind());
@@ -113,7 +113,7 @@ public class PackageCommand {
      */
     public static List<PackageNode> resolvePath(List<Object> arguments, IProgressMonitor pm) throws CoreException {
         if (arguments == null || arguments.size() < 1) {
-            throw new IllegalArgumentException("Should have one arugment for resolvePath");
+            throw new IllegalArgumentException("Should have one argument for resolvePath");
         }
         String typeRootUri = (String) arguments.get(0);
         List<PackageNode> result = new ArrayList<>();
@@ -195,7 +195,7 @@ public class PackageCommand {
 
 
     /**
-     * Create the node list from buttom to top until project
+     * Create the node list from bottom to top until project
      *
      * @param element
      * @return
