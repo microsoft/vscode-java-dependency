@@ -1,29 +1,33 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { HierachicalPackageNodeData } from "../java/hierachicalPackageNodeData";
+import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
 import { FolderNode } from "./folderNode";
-import { HierachicalPackageNode } from "./hierachicalPackageNode";
+import { HierarchicalPackageNode } from "./hierarchicalPackageNode";
 import { PackageRootNode } from "./packageRootNode";
 import { ProjectNode } from "./projectNode";
 import { TypeRootNode } from "./typeRootNode";
 
-export class HierachicalPackageRootNode extends PackageRootNode {
+export class HierarchicalPackageRootNode extends PackageRootNode {
 
     constructor(nodeData: INodeData, parent: DataNode, _project: ProjectNode) {
         super(nodeData, parent, _project);
     }
 
     public async revealPaths(paths: INodeData[]): Promise<DataNode> {
-        const hierachicalNodeData = paths[0];
-        const childs: ExplorerNode[] = await this.getChildren();
-        const childNode = <DataNode>childs.find((child: DataNode) =>
-            child instanceof HierachicalPackageNode && hierachicalNodeData.name.startsWith(child.nodeData.name));
-        return childNode === null ? null : childNode.revealPaths(paths);
+        const hierarchicalNodeData = paths[0];
+        const children: ExplorerNode[] = await this.getChildren();
+        const childNode = <DataNode>children.find((child: DataNode) =>
+            hierarchicalNodeData.name.startsWith(child.nodeData.name + ".") || hierarchicalNodeData.name === child.nodeData.name);
+        // don't shift when child node is an hierarchical node, or it may lose data of package node
+        if (!(childNode instanceof HierarchicalPackageNode)) {
+            paths.shift();
+        }
+        return childNode ? (paths.length > 0 ? childNode.revealPaths(paths) : childNode) : null;
     }
 
     protected createChildNodeList(): ExplorerNode[] {
@@ -44,16 +48,16 @@ export class HierachicalPackageRootNode extends PackageRootNode {
     }
 
     protected getHierarchicalPackageNodes(): ExplorerNode[] {
-        const hierachicalPackageNodeData = this.getHierarchicalPackageNodeData();
-        return hierachicalPackageNodeData === null ? [] : hierachicalPackageNodeData.children.map((hierachicalChildrenNode) =>
-            new HierachicalPackageNode(hierachicalChildrenNode, this, this._project, this));
+        const hierarchicalPackageNodeData = this.getHierarchicalPackageNodeData();
+        return hierarchicalPackageNodeData === null ? [] : hierarchicalPackageNodeData.children.map((hierarchicalChildrenNode) =>
+            new HierarchicalPackageNode(hierarchicalChildrenNode, this, this._project, this));
     }
 
-    private getHierarchicalPackageNodeData(): HierachicalPackageNodeData {
+    private getHierarchicalPackageNodeData(): HierarchicalPackageNodeData {
         if (this.nodeData.children && this.nodeData.children.length) {
             const nodeDataList = this.nodeData.children
                 .filter((child) => child.kind === NodeKind.Package);
-            return HierachicalPackageNodeData.createHierachicalNodeDataByPackageList(nodeDataList);
+            return HierarchicalPackageNodeData.createHierarchicalNodeDataByPackageList(nodeDataList);
         } else {
             return null;
         }

@@ -73,7 +73,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         const projects = await this.getRootProjects();
         const correspondProject = <DataNode>projects.find((node: DataNode) =>
             node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name);
-        return correspondProject.revealPaths(paths);
+        return correspondProject ? correspondProject.revealPaths(paths) : null;
     }
 
     private async getRootProjects(): Promise<ExplorerNode[]> {
@@ -82,8 +82,8 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             return rootElements;
         } else {
             let result = [];
-            for (const singleworkspace of rootElements) {
-                const projects = await singleworkspace.getChildren();
+            for (const rootWorkspace of rootElements) {
+                const projects = await rootWorkspace.getChildren();
                 result = result.concat(projects);
             }
             return result;
