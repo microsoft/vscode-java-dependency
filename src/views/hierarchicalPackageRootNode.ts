@@ -27,7 +27,7 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
         if (!(childNode instanceof HierarchicalPackageNode)) {
             paths.shift();
         }
-        return childNode ? (paths.length > 0 ? childNode.revealPaths(paths) : childNode) : null;
+        return (childNode && paths.length > 0) ? childNode.revealPaths(paths) : childNode;
     }
 
     protected createChildNodeList(): ExplorerNode[] {

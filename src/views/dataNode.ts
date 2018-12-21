@@ -34,10 +34,10 @@ export abstract class DataNode extends ExplorerNode {
 
     public async revealPaths(paths: INodeData[]): Promise<DataNode> {
         const childNodeData = paths.shift();
-        const childs: ExplorerNode[] = await this.getChildren();
-        const childNode = childs ? <DataNode>childs.find((child: DataNode) =>
+        const children: ExplorerNode[] = await this.getChildren();
+        const childNode = children ? <DataNode>children.find((child: DataNode) =>
             child.nodeData.name === childNodeData.name && child.path === childNodeData.path) : undefined;
-        return childNode ?  (paths.length ? childNode.revealPaths(paths) : childNode) : null;
+        return (childNode && paths.length) ? childNode.revealPaths(paths) : childNode;
     }
 
     public getChildren(): ProviderResult<ExplorerNode[]> {
