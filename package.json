@@ -1,7 +1,7 @@
 {
   "name": "vscode-java-dependency",
   "displayName": "Java Dependency Viewer",
-  "description": "Manage Java Dependencies in VSCode",
+  "description": "%description%",
   "version": "0.2.0",
   "publisher": "vscjava",
   "preview": true,
@@ -36,12 +36,12 @@
     "commands": [
       {
         "command": "java.project.create",
-        "title": "Create Java Project",
+        "title": "%contributes.commands.java.project.create%",
         "category": "Java"
       },
       {
         "command": "java.view.package.refresh",
-        "title": "Refresh",
+        "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
         "icon": {
           "dark": "images/dark/icon-refresh.svg",
@@ -50,7 +50,7 @@
       },
       {
         "command": "java.view.package.changeRepresentation",
-        "title": "Change package representation",
+        "title": "%contributes.commands.java.view.package.changeRepresentation%",
         "category": "Java",
         "icon": {
           "dark": "images/dark/package.svg",
@@ -60,16 +60,16 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "Java Dependency Configuration",
+      "title": "%configuration.java.dependency.title%",
       "properties": {
         "java.dependency.showOutline": {
           "type": "boolean",
-          "description": "Enable show outline in the Java Dependency explorer",
+          "description": "%configuration.java.dependency.showOutline%",
           "default": true
         },
         "java.dependency.syncWithFolderExplorer": {
           "type": "boolean",
-          "description": "Synchronize dependency viewer selection with folder explorer",
+          "description": "%configuration.java.dependency.syncWithFolderExplorer%",
           "default": true
         },
         "java.dependency.packagePresentation": {
@@ -78,7 +78,7 @@
             "flat",
             "hierarchical"
           ],
-          "description": "Package presentation mode: flat or hierarchical",
+          "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
         }
       }
