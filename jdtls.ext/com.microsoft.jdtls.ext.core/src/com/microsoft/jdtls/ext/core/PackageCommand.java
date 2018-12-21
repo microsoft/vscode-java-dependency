@@ -118,20 +118,20 @@ public class PackageCommand {
         String typeRootUri = (String) arguments.get(0);
         List<PackageNode> result = new ArrayList<>();
         URI uri = JDTUtils.toURI(typeRootUri);
-        ITypeRoot typeRoot = "jdt".equals(uri.getScheme()) ? JDTUtils.resolveClassFile(uri) : JDTUtils.resolveCompilationUnit(uri);
+        ITypeRoot typeRoot = ExtUtils.JDT_SCHEME.equals(uri.getScheme()) ? JDTUtils.resolveClassFile(uri) : JDTUtils.resolveCompilationUnit(uri);
         if (typeRoot != null) {
             // Add project node:
-            result.add(ExtUtils.createNodeForProject(typeRoot));
+            result.add(PackageNode.createNodeForProject(typeRoot));
             IPackageFragment packageFragment = (IPackageFragment) typeRoot.getParent();
             IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getParent();
             // TODO: Let the client handle the display instead. Server side should always
             // provide the container node.
             boolean isClassFile = typeRoot instanceof IClassFile;
             if (isClassFile) {
-                result.add(ExtUtils.createNodeForVirtualContainer(pkgRoot));
+                result.add(PackageNode.createNodeForVirtualContainer(pkgRoot));
             }
-            result.add(ExtUtils.createNodeForPackageFragmentRoot(pkgRoot));
-            result.add(ExtUtils.createNodeForPackageFragment(packageFragment));
+            result.add(PackageNode.createNodeForPackageFragmentRoot(pkgRoot));
+            result.add(PackageNode.createNodeForPackageFragment(packageFragment));
 
             PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT, TypeRootNode.K_SOURCE);
             item.setUri(JDTUtils.toUri(typeRoot));
@@ -139,12 +139,12 @@ public class PackageCommand {
         } else if (ExtUtils.isJarResourceUri(uri)) {
             IJarEntryResource resource = ExtUtils.getJarEntryResource(uri);
             IPackageFragmentRoot pkgRoot = resource.getPackageFragmentRoot();
-            result.add(ExtUtils.createNodeForProject(pkgRoot));
-            result.add(ExtUtils.createNodeForVirtualContainer(resource.getPackageFragmentRoot()));
-            result.add(ExtUtils.createNodeForPackageFragmentRoot(pkgRoot));
+            result.add(PackageNode.createNodeForProject(pkgRoot));
+            result.add(PackageNode.createNodeForVirtualContainer(resource.getPackageFragmentRoot()));
+            result.add(PackageNode.createNodeForPackageFragmentRoot(pkgRoot));
             if (resource.getParent() instanceof IPackageFragment) {
                 IPackageFragment packageFragment = (IPackageFragment) resource.getParent();
-                result.add(ExtUtils.createNodeForPackageFragment(packageFragment));
+                result.add(PackageNode.createNodeForPackageFragment(packageFragment));
             } else {
                 int currentSize = result.size();
                 // visit back from file to the top folder
@@ -177,9 +177,9 @@ public class PackageCommand {
                             ExtUtils.removeProjectSegment(packageFragment.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
                             pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
 
-                    result.add(ExtUtils.createNodeForProject(packageFragment));
+                    result.add(PackageNode.createNodeForProject(packageFragment));
                     result.add(rootNode);
-                    result.add(ExtUtils.createNodeForPackageFragment(packageFragment));
+                    result.add(PackageNode.createNodeForPackageFragment(packageFragment));
 
                     PackageNode item = new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FILE);
                     item.setUri(JDTUtils.getFileURI(resource));
@@ -209,16 +209,16 @@ public class PackageCommand {
                 IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) javaElement;
                 nodeList.add(0, new PackageRootNode(element.getProjectRelativePath().toPortableString(), pkgRoot.getPath().toPortableString(),
                         NodeKind.PACKAGEROOT, pkgRoot.getKind()));
-                nodeList.add(0, ExtUtils.createNodeForProject(javaElement));
+                nodeList.add(0, PackageNode.createNodeForProject(javaElement));
                 return nodeList;
             } else if (javaElement instanceof IPackageFragment) {
                 IPackageFragment packageFragment = (IPackageFragment) javaElement;
                 if (packageFragment.containsJavaResources() || packageFragment.getNonJavaResources().length > 0) {
-                    nodeList.add(0, ExtUtils.createNodeForPackageFragment(packageFragment));
+                    nodeList.add(0, PackageNode.createNodeForPackageFragment(packageFragment));
                 }
 
             } else if (javaElement == null) {
-                PackageNode entry = ExtUtils.createNodeForResource(element);
+                PackageNode entry = PackageNode.createNodeForResource(element);
                 if (entry != null) {
                     nodeList.add(0, entry);
                 }
@@ -239,12 +239,13 @@ public class PackageCommand {
                 IClasspathEntry[] references = javaProject.getRawClasspath();
                 List<PackageNode> result = Arrays.stream(references)
                         .filter(entry -> entry.getEntryKind() != IClasspathEntry.CPE_LIBRARY && entry.getEntryKind() != IClasspathEntry.CPE_VARIABLE)
-                        .map(entry -> ExtUtils.getNodeFromClasspathEntry(entry, javaProject, NodeKind.CONTAINER)).filter(containerNode -> containerNode != null)
+                        .map(entry -> PackageNode.createNodeForClasspathEntry(entry, javaProject, NodeKind.CONTAINER))
+                        .filter(containerNode -> containerNode != null)
                         .collect(Collectors.toList());
                 boolean isReferencedLibrariesExist = Arrays.stream(references)
                         .anyMatch(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE);
                 if (isReferencedLibrariesExist) {
-                    result.add(ExtUtils.REFERENCED_LIBRARIES_CONTAINER);
+                    result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
                 }
                 return result;
             } catch (CoreException e) {
@@ -285,13 +286,15 @@ public class PackageCommand {
                         }
                     }
                     return children;
-                } else if (query.getPath().equals(ExtUtils.REFERENCED_LIBRARIES_PATH)) {
+                } else if (query.getPath().equals(PackageNode.REFERENCED_LIBRARIES_PATH)) {
                     // Process referenced libraries
                     List<PackageNode> referLibs = Arrays.stream(references).filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY)
-                            .map(classpath -> ExtUtils.getNodeFromClasspathEntry(classpath, javaProject, NodeKind.PACKAGEROOT)).filter(entry -> entry != null)
+                            .map(classpath -> PackageNode.createNodeForClasspathEntry(classpath, javaProject, NodeKind.PACKAGEROOT))
+                            .filter(entry -> entry != null)
                             .collect(Collectors.toList());
                     List<PackageNode> referVariables = Arrays.stream(references).filter(entry -> entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE)
-                            .map(classpath -> ExtUtils.getNodeFromClasspathVariable(classpath)).filter(entry -> entry != null).collect(Collectors.toList());
+                            .map(classpath -> PackageNode.createNodeForClasspathVariable(classpath)).filter(entry -> entry != null)
+                            .collect(Collectors.toList());
                     children.addAll(referLibs);
                     children.addAll(referVariables);
                     return children;
@@ -332,12 +335,12 @@ public class PackageCommand {
                             new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
                 }
                 IPackageFragment packageFragment = packageRoot
-                        .getPackageFragment(ExtUtils.DEFAULT_PACKAGE_DISPLAYNAME.equals(query.getPath()) ? "" : query.getPath());
+                        .getPackageFragment(PackageNode.DEFAULT_PACKAGE_DISPLAYNAME.equals(query.getPath()) ? "" : query.getPath());
                 if (packageFragment != null) {
                     IJavaElement[] types = packageFragment.getChildren();
                     Object[] nonJavaResources = packageFragment.getNonJavaResources();
                     List<PackageNode> rootTypeNodes = Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$"))
-                            .map(ExtUtils::createNodeForTypeRoot).collect(Collectors.toList());
+                            .map(PackageNode::createNodeForTypeRoot).collect(Collectors.toList());
                     if (nonJavaResources.length == 0) {
                         return rootTypeNodes;
                     }
@@ -426,7 +429,7 @@ public class PackageCommand {
         List<PackageNode> result = new ArrayList<>();
         for (Object root : rootContent) {
             if (root instanceof IPackageFragment) {
-                result.add(ExtUtils.createNodeForPackageFragment((IPackageFragment) root));
+                result.add(PackageNode.createNodeForPackageFragment((IPackageFragment) root));
             } else if (root instanceof IClassFile) {
                 IClassFile classFile = (IClassFile) root;
                 PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.TYPEROOT);
