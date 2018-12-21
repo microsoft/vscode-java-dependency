@@ -185,7 +185,7 @@ public class PackageCommand {
                     item.setUri(JDTUtils.getFileURI(resource));
                     result.add(item);
                 } else {
-                    return getParentListToProject(resource);
+                    return getParentAncestorNodes(resource);
                 }
             }
         }
@@ -195,13 +195,13 @@ public class PackageCommand {
 
 
     /**
-     * Create the node list from bottom to top until project
+     * Get the node list from bottom to top until project
      *
      * @param element
      * @return
      * @throws JavaModelException
      */
-    private static List<PackageNode> getParentListToProject(IResource element) throws JavaModelException {
+    private static List<PackageNode> getParentAncestorNodes(IResource element) throws JavaModelException {
         List<PackageNode> nodeList = new ArrayList<>();
         while (element != null) {
             IJavaElement javaElement = JavaCore.create(element);
