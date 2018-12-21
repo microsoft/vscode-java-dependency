@@ -71,8 +71,8 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     public async revealPaths(paths: INodeData[]): Promise<DataNode> {
         const projectNodeData = paths.shift();
         const projects = await this.getRootProjects();
-        const correspondProject = <DataNode>projects.find((node: DataNode) =>
-            node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name);
+        const correspondProject = projects ? <DataNode>projects.find((node: DataNode) =>
+            node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name) : undefined;
         return correspondProject ? correspondProject.revealPaths(paths) : null;
     }
 
