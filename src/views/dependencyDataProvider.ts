@@ -71,9 +71,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     public async revealPaths(paths: INodeData[]): Promise<DataNode> {
         const projectNodeData = paths.shift();
         const projects = await this.getRootProjects();
-        const correspondProject = <DataNode>projects.find((node: DataNode) =>
-            node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name);
-        return correspondProject.revealPaths(paths);
+        const project = projects ? <DataNode>projects.find((node: DataNode) =>
+            node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name) : undefined;
+        return project ? project.revealPaths(paths) : null;
     }
 
     private async getRootProjects(): Promise<ExplorerNode[]> {
@@ -82,8 +82,8 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             return rootElements;
         } else {
             let result = [];
-            for (const singleworkspace of rootElements) {
-                const projects = await singleworkspace.getChildren();
+            for (const rootWorkspace of rootElements) {
+                const projects = await rootWorkspace.getChildren();
                 result = result.concat(projects);
             }
             return result;
