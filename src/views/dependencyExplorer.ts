@@ -46,7 +46,7 @@ export class DependencyExplorer {
 
     public async reveal(uri: Uri): Promise<void> {
         const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-        if (paths.length === 0) {
+        if (!paths || paths.length === 0) {
             return;
         }
         const node = await this._dataProvider.revealPaths(paths);
