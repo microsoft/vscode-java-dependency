@@ -57,5 +57,4 @@ export class DependencyExplorer {
             this._selectionWhenHidden = node;
         }
     }
-
 }
