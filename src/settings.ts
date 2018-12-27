@@ -13,16 +13,40 @@ export class Settings {
                 return;
             }
             const updatedConfig = workspace.getConfiguration("java.dependency");
-            if (updatedConfig.showOutline !== this._depdendencyConfig.showOutline
-                || updatedConfig.packagePresentation !== this._depdendencyConfig.packagePresentation) {
+            if (updatedConfig.showOutline !== this._dependencyConfig.showOutline
+                || updatedConfig.packagePresentation !== this._dependencyConfig.packagePresentation
+                || (updatedConfig.syncWithFolderExplorer !== this._dependencyConfig.syncWithFolderExplorer
+                    && updatedConfig.syncWithFolderExplorer)) {
                 commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
             }
-            this._depdendencyConfig = updatedConfig;
+            this._dependencyConfig = updatedConfig;
 
         }));
 
-        const instrumented = instrumentOperation(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION, Settings.changePackageRepresentation);
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION, instrumented));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_SYNCWITHFOLDER,
+            instrumentOperation(Commands.VIEW_PACKAGE_SYNCWITHFOLDER, Settings.syncWithFolderCommand)));
+
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION,
+            instrumentOperation(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION, Settings.changePackageRepresentation)));
+
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW,
+            instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW, Settings.changeToFlatPackageView)));
+
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW,
+            instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW, Settings.changeToHierarchicalPackageView)));
+    }
+
+    public static syncWithFolderCommand(): void {
+        const syncWithFolder = Settings.syncWithFolderExplorer();
+        workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", !syncWithFolder, false);
+    }
+
+    public static changeToFlatPackageView(): void {
+        workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Flat, false);
+    }
+
+    public static changeToHierarchicalPackageView(): void {
+        workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Hierarchical, false);
     }
 
     public static changePackageRepresentation(): void {
@@ -31,18 +55,18 @@ export class Settings {
     }
 
     public static showOutline(): boolean {
-        return this._depdendencyConfig.get("showOutline");
+        return this._dependencyConfig.get("showOutline");
     }
 
     public static syncWithFolderExplorer(): boolean {
-        return this._depdendencyConfig.get("syncWithFolderExplorer");
+        return this._dependencyConfig.get("syncWithFolderExplorer");
     }
 
     public static isHierarchicalView(): boolean {
-        return this._depdendencyConfig.get("packagePresentation") === PackagePresentation.Hierarchical;
+        return this._dependencyConfig.get("packagePresentation") === PackagePresentation.Hierarchical;
     }
 
-    private static _depdendencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
+    private static _dependencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
 }
 
 enum PackagePresentation {
