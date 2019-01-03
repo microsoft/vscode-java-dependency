@@ -49,15 +49,6 @@
         }
       },
       {
-        "command": "java.view.package.changeRepresentation",
-        "title": "%contributes.commands.java.view.package.changeRepresentation%",
-        "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-hierarchical.svg",
-          "light": "images/light/icon-hierarchical.svg"
-        }
-      },
-      {
         "command": "java.view.package.changeToHierarchicalPackageView",
         "title": "%contributes.commands.java.view.package.changeToHierarchicalPackageView%",
         "category": "Java",
@@ -78,6 +69,15 @@
       {
         "command": "java.view.package.syncWithFolderExplorer",
         "title": "%contributes.commands.java.view.package.syncWithFolderExplorer%",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-unlink.svg",
+          "light": "images/light/icon-unlink.svg"
+        }
+      },
+      {
+        "command": "java.view.package.desyncWithFolderExplorer",
+        "title": "%contributes.commands.java.view.package.desyncWithFolderExplorer%",
         "category": "Java",
         "icon": {
           "dark": "images/dark/icon-link.svg",
@@ -129,7 +129,12 @@
         },
         {
           "command": "java.view.package.syncWithFolderExplorer",
-          "when": "view == javaDependencyExplorer",
+          "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer != true",
+          "group": "navigation@0"
+        },
+        {
+          "command": "java.view.package.desyncWithFolderExplorer",
+          "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer == true",
           "group": "navigation@0"
         }
       ]

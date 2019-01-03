@@ -10,13 +10,13 @@ export namespace Commands {
      */
     export const EXECUTE_WORKSPACE_COMMAND = "java.execute.workspaceCommand";
 
-    export const VIEW_PACKAGE_CHANGEREPRESENTATION = "java.view.package.changeRepresentation";
-
     export const VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW = "java.view.package.changeToFlatPackageView";
 
     export const VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW = "java.view.package.changeToHierarchicalPackageView";
 
     export const VIEW_PACKAGE_SYNCWITHFOLDER = "java.view.package.syncWithFolderExplorer";
+
+    export const VIEW_PACKAGE_DESYNCWITHFOLDER = "java.view.package.desyncWithFolderExplorer";
 
     export const VIEW_PACKAGE_REFRESH = "java.view.package.refresh";
 

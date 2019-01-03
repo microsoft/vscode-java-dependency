@@ -35,7 +35,7 @@ export class DependencyExplorer {
         });
 
         this._dataProvider.onDidChangeTreeData(() => {
-            if (window.activeTextEditor) {
+            if (window.activeTextEditor && Settings.syncWithFolderExplorer()) {
                 this.reveal(window.activeTextEditor.document.uri);
             }
         });

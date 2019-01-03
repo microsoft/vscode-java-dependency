@@ -17,17 +17,18 @@ export class Settings {
                 || updatedConfig.packagePresentation !== this._dependencyConfig.packagePresentation
                 || (updatedConfig.syncWithFolderExplorer !== this._dependencyConfig.syncWithFolderExplorer
                     && updatedConfig.syncWithFolderExplorer)) {
+                this._dependencyConfig = updatedConfig;
                 commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+            } else {
+                this._dependencyConfig = updatedConfig;
             }
-            this._dependencyConfig = updatedConfig;
-
         }));
 
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_SYNCWITHFOLDER,
             instrumentOperation(Commands.VIEW_PACKAGE_SYNCWITHFOLDER, Settings.syncWithFolderCommand)));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION,
-            instrumentOperation(Commands.VIEW_PACKAGE_CHANGEREPRESENTATION, Settings.changePackageRepresentation)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_DESYNCWITHFOLDER,
+            instrumentOperation(Commands.VIEW_PACKAGE_DESYNCWITHFOLDER, Settings.desyncWithFolderCommand)));
 
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW,
             instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW, Settings.changeToFlatPackageView)));
@@ -37,8 +38,11 @@ export class Settings {
     }
 
     public static syncWithFolderCommand(): void {
-        const syncWithFolder = Settings.syncWithFolderExplorer();
-        workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", !syncWithFolder, false);
+        workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", true, false);
+    }
+
+    public static desyncWithFolderCommand(): void {
+        workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", false, false);
     }
 
     public static changeToFlatPackageView(): void {
@@ -47,11 +51,6 @@ export class Settings {
 
     public static changeToHierarchicalPackageView(): void {
         workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Hierarchical, false);
-    }
-
-    public static changePackageRepresentation(): void {
-        const representationSetting = Settings.isHierarchicalView() ? PackagePresentation.Flat : PackagePresentation.Hierarchical;
-        workspace.getConfiguration().update("java.dependency.packagePresentation", representationSetting, false);
     }
 
     public static showOutline(): boolean {
