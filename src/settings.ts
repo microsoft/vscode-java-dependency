@@ -24,11 +24,11 @@ export class Settings {
             }
         }));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_SYNCWITHFOLDER,
-            instrumentOperation(Commands.VIEW_PACKAGE_SYNCWITHFOLDER, Settings.syncWithFolderCommand)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER,
+            instrumentOperation(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand)));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_DESYNCWITHFOLDER,
-            instrumentOperation(Commands.VIEW_PACKAGE_DESYNCWITHFOLDER, Settings.desyncWithFolderCommand)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER,
+            instrumentOperation(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER, Settings.unlinkWithFolderCommand)));
 
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW,
             instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW, Settings.changeToFlatPackageView)));
@@ -37,11 +37,11 @@ export class Settings {
             instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW, Settings.changeToHierarchicalPackageView)));
     }
 
-    public static syncWithFolderCommand(): void {
+    public static linkWithFolderCommand(): void {
         workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", true, false);
     }
 
-    public static desyncWithFolderCommand(): void {
+    public static unlinkWithFolderCommand(): void {
         workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", false, false);
     }
 

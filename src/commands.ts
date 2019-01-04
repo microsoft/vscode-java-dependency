@@ -14,9 +14,9 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW = "java.view.package.changeToHierarchicalPackageView";
 
-    export const VIEW_PACKAGE_SYNCWITHFOLDER = "java.view.package.syncWithFolderExplorer";
+    export const VIEW_PACKAGE_LINKWITHFOLDER = "java.view.package.linkWithFolderExplorer";
 
-    export const VIEW_PACKAGE_DESYNCWITHFOLDER = "java.view.package.desyncWithFolderExplorer";
+    export const VIEW_PACKAGE_UNLINKWITHFOLDER = "java.view.package.unlinkWithFolderExplorer";
 
     export const VIEW_PACKAGE_REFRESH = "java.view.package.refresh";
 

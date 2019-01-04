@@ -67,8 +67,8 @@
         }
       },
       {
-        "command": "java.view.package.syncWithFolderExplorer",
-        "title": "%contributes.commands.java.view.package.syncWithFolderExplorer%",
+        "command": "java.view.package.linkWithFolderExplorer",
+        "title": "%contributes.commands.java.view.package.linkWithFolderExplorer%",
         "category": "Java",
         "icon": {
           "dark": "images/dark/icon-unlink.svg",
@@ -76,8 +76,8 @@
         }
       },
       {
-        "command": "java.view.package.desyncWithFolderExplorer",
-        "title": "%contributes.commands.java.view.package.desyncWithFolderExplorer%",
+        "command": "java.view.package.unlinkWithFolderExplorer",
+        "title": "%contributes.commands.java.view.package.unlinkWithFolderExplorer%",
         "category": "Java",
         "icon": {
           "dark": "images/dark/icon-link.svg",
@@ -128,12 +128,12 @@
           "group": "navigation@1"
         },
         {
-          "command": "java.view.package.syncWithFolderExplorer",
+          "command": "java.view.package.linkWithFolderExplorer",
           "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer != true",
           "group": "navigation@0"
         },
         {
-          "command": "java.view.package.desyncWithFolderExplorer",
+          "command": "java.view.package.unlinkWithFolderExplorer",
           "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer == true",
           "group": "navigation@0"
         }
