@@ -49,12 +49,39 @@
         }
       },
       {
-        "command": "java.view.package.changeRepresentation",
-        "title": "%contributes.commands.java.view.package.changeRepresentation%",
+        "command": "java.view.package.changeToHierarchicalPackageView",
+        "title": "%contributes.commands.java.view.package.changeToHierarchicalPackageView%",
         "category": "Java",
         "icon": {
           "dark": "images/dark/icon-hierarchical.svg",
           "light": "images/light/icon-hierarchical.svg"
+        }
+      },
+      {
+        "command": "java.view.package.changeToFlatPackageView",
+        "title": "%contributes.commands.java.view.package.changeToFlatPackageView%",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-flat.svg",
+          "light": "images/light/icon-flat.svg"
+        }
+      },
+      {
+        "command": "java.view.package.linkWithFolderExplorer",
+        "title": "%contributes.commands.java.view.package.linkWithFolderExplorer%",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-unlink.svg",
+          "light": "images/light/icon-unlink.svg"
+        }
+      },
+      {
+        "command": "java.view.package.unlinkWithFolderExplorer",
+        "title": "%contributes.commands.java.view.package.unlinkWithFolderExplorer%",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-link.svg",
+          "light": "images/light/icon-link.svg"
         }
       }
     ],
@@ -88,11 +115,26 @@
         {
           "command": "java.view.package.refresh",
           "when": "view == javaDependencyExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "java.view.package.changeToHierarchicalPackageView",
+          "when": "view == javaDependencyExplorer && config.java.dependency.packagePresentation == flat",
           "group": "navigation@1"
         },
         {
-          "command": "java.view.package.changeRepresentation",
-          "when": "view == javaDependencyExplorer",
+          "command": "java.view.package.changeToFlatPackageView",
+          "when": "view == javaDependencyExplorer && config.java.dependency.packagePresentation != flat",
+          "group": "navigation@1"
+        },
+        {
+          "command": "java.view.package.linkWithFolderExplorer",
+          "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer != true",
+          "group": "navigation@0"
+        },
+        {
+          "command": "java.view.package.unlinkWithFolderExplorer",
+          "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer == true",
           "group": "navigation@0"
         }
       ]
