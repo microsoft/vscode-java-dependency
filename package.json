@@ -2,7 +2,7 @@
   "name": "vscode-java-dependency",
   "displayName": "Java Dependency Viewer",
   "description": "%description%",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "vscjava",
   "preview": true,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -31,7 +31,7 @@
   "main": "./dist/extension",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.3.0.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.4.0.jar"
     ],
     "commands": [
       {
@@ -153,7 +153,7 @@
     "compile": "tsc -watch -p ./",
     "watch": "webpack --mode development --watch --info-verbosity verbose",
     "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "node ./scripts/download-vscode-for-system-tests && node ./scripts/install-vsix-dependencies redhat.java && node ./scripts/install-vsix-dependencies vscode-java-dependency-0.3.0.vsix && node ./scripts/run-vscode-tests",
+    "test": "node ./scripts/download-vscode-for-system-tests && node ./scripts/install-vsix-dependencies redhat.java && node ./scripts/install-vsix-dependencies vscode-java-dependency-0.4.0.vsix && node ./scripts/run-vscode-tests",
     "build-server": "./node_modules/.bin/gulp build_server",
     "vscode:prepublish": "tsc -p ./ && webpack --mode production"
   },
@@ -174,7 +174,7 @@
     "ts-loader": "^5.3.1",
     "tslint": "^5.11.0",
     "typescript": "^3.1.6",
-    "vscode": "^1.1.22",
+    "vscode": "^1.1.33",
     "webpack": "^4.27.1",
     "webpack-cli": "^3.1.2"
   },
