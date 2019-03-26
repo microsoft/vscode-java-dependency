@@ -50,8 +50,8 @@ import org.eclipse.jdt.internal.core.JarEntryFile;
 import org.eclipse.jdt.internal.core.JarEntryResource;
 import org.eclipse.jdt.internal.core.JrtPackageFragmentRoot;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
-import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapterFactory;
-import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapterFactory;
+import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
+import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -60,11 +60,12 @@ import com.microsoft.jdtls.ext.core.model.PackageNode;
 import com.microsoft.jdtls.ext.core.model.PackageRootNode;
 import com.microsoft.jdtls.ext.core.model.TypeRootNode;
 
-@SuppressWarnings("deprecation")
 public class PackageCommand {
 
-    private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapterFactory())
-            .registerTypeAdapterFactory(new EnumTypeAdapterFactory()).create();
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapterFactory(new CollectionTypeAdapter.Factory())
+            .registerTypeAdapterFactory(new EnumTypeAdapter.Factory())
+            .create();
 
     private static final Map<NodeKind, BiFunction<PackageParams, IProgressMonitor, List<PackageNode>>> commands;
 

@@ -11,4 +11,6 @@ gulpfile.js
 .gitignore
 dist/**/*.map
 webpack.*.js
+tslint.json
 node_modules
+scripts
