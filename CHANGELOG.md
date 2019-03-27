@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## 0.4.0 - 2019-3-26
 ## Added:
 - Add sync command to synchronize/desynchronize dependency viewer selection with folder explorer [PR#140](https://github.com/Microsoft/vscode-java-dependency/pull/140).
+
 ## Updated:
 - Update package view icons [PR#138](https://github.com/Microsoft/vscode-java-dependency/pull/138)
 - Fix error when window.activeTextEditor is undefined [PR#136](https://github.com/Microsoft/vscode-java-dependency/pull/136).
