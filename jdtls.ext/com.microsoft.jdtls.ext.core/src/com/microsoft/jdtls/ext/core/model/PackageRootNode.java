@@ -11,9 +11,13 @@
 
 package com.microsoft.jdtls.ext.core.model;
 
+import java.util.Map;
+
 public class PackageRootNode extends PackageNode {
 
     private int entryKind;
+
+    private Map<String, String> attributes;
 
     public PackageRootNode(String name, String path, NodeKind kind, int entryKind) {
         super(name, path, kind);
@@ -22,5 +26,13 @@ public class PackageRootNode extends PackageNode {
 
     public int getEntryType() {
         return this.entryKind;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Map<String, String> getAttributes() {
+        return this.attributes;
     }
 }

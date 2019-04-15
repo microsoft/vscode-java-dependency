@@ -18,4 +18,6 @@ export enum PackageRootKind {
 
 export interface IPackageRootNodeData extends INodeData {
     entryKind: PackageRootKind;
+
+    attributes: Map<string, string>;
 }

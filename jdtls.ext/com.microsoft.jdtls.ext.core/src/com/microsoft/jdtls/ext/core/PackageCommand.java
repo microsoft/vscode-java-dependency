@@ -36,6 +36,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJarEntryResource;
 import org.eclipse.jdt.core.IJavaElement;
@@ -279,11 +280,20 @@ public class PackageCommand {
                         if (fragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
                             displayName = ExtUtils.removeProjectSegment(javaProject.getElementName(), fragmentRoot.getPath()).toPortableString();
                         }
-                        PackageNode node = new PackageRootNode(displayName, fragmentRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT,
+                        PackageRootNode node = new PackageRootNode(displayName, fragmentRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT,
                                 fragmentRoot.getKind());
                         children.add(node);
                         if (fragmentRoot instanceof JrtPackageFragmentRoot) {
                             node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
+                        }
+
+                        IClasspathEntry resolvedClasspathEntry = fragmentRoot.getResolvedClasspathEntry();
+                        if (resolvedClasspathEntry != null) {
+                            Map<String, String> attributes = new HashMap<>();
+                            for (IClasspathAttribute attribute : resolvedClasspathEntry.getExtraAttributes()) {
+                                attributes.put(attribute.getName(), attribute.getValue());
+                            }
+                            node.setAttributes(attributes);
                         }
                     }
                     return children;
