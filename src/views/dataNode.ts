@@ -3,7 +3,6 @@
 
 import { ProviderResult, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { INodeData } from "../java/nodeData";
-import { Telemetry } from "../telemetry";
 import { ExplorerNode } from "./explorerNode";
 
 export abstract class DataNode extends ExplorerNode {
@@ -43,9 +42,6 @@ export abstract class DataNode extends ExplorerNode {
     public getChildren(): ProviderResult<ExplorerNode[]> {
         if (!this._nodeData.children) {
             return this.loadData().then((res) => {
-                if (!res) {
-                    Telemetry.sendEvent("load data get undefined result", { node_kind: this._nodeData.kind.toString() });
-                }
                 this._nodeData.children = res;
                 return this.createChildNodeList();
             });

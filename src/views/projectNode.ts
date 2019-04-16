@@ -4,7 +4,6 @@
 import { ContainerEntryKind, IContainerNodeData } from "../java/containerNodeData";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
-import { Telemetry } from "../telemetry";
 import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
@@ -20,7 +19,7 @@ export class ProjectNode extends DataNode {
         let result: INodeData[] = [];
         return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
             if (!res) {
-                Telemetry.sendEvent("get children of project node return undefined");
+                return;
             }
             const sourceContainer: IContainerNodeData[] = [];
             res.forEach((node) => {
@@ -35,7 +34,7 @@ export class ProjectNode extends DataNode {
                 return Promise.all(sourceContainer.map((c) => Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this.uri, path: c.path })))
                     .then((rootPackages) => {
                         if (!rootPackages) {
-                            Telemetry.sendEvent("get children from container node return undefined");
+                            return;
                         }
                         result = result.concat(...rootPackages);
                         return result;
