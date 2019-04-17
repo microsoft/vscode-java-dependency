@@ -9,7 +9,6 @@ import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
-import { Telemetry } from "../telemetry";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
@@ -94,7 +93,6 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return new Promise((resolve, reject) => {
             this._rootItems = new Array<ExplorerNode>();
             const folders = workspace.workspaceFolders;
-            Telemetry.sendEvent("create workspace node(s)");
             if (folders && folders.length) {
                 if (folders.length > 1) {
                     folders.forEach((folder) => this._rootItems.push(new WorkspaceNode({

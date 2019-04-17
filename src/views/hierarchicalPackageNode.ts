@@ -4,7 +4,6 @@
 import { ProviderResult, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData";
 import { INodeData, NodeKind } from "../java/nodeData";
-import { Telemetry } from "../telemetry";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
@@ -30,9 +29,7 @@ export class HierarchicalPackageNode extends PackageNode {
 
     public getChildren(): ProviderResult<ExplorerNode[]> {
         return this.loadData().then((res) => {
-            if (!res) {
-                Telemetry.sendEvent("load data get undefined result", { node_kind: this.nodeData.kind.toString() });
-            } else {
+            if (!!res) {
                 // Combine hierarchical children and normal package node children
                 res.forEach((node) => this.nodeData.children.push(node));
             }

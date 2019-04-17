@@ -5,7 +5,6 @@ import * as fse from "fs-extra";
 import * as path from "path";
 import { commands, ExtensionContext, Uri, window, workspace } from "vscode";
 import * as xml2js from "xml2js";
-import { Telemetry } from "../telemetry";
 import { Utility } from "../utility";
 
 export class ProjectController {
@@ -13,7 +12,6 @@ export class ProjectController {
     }
 
     public async createJavaProject() {
-        Telemetry.sendEvent("create project start");
         const javaVersion: number = await this.getJavaVersion();
         if (!javaVersion) {
             return;
@@ -44,7 +42,6 @@ export class ProjectController {
             return;
         }
         if (await this.scaffoldJavaProject(basePath, projectName, javaVersion)) {
-            Telemetry.sendEvent("create project end successfully");
             return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), true);
         }
     }
@@ -76,7 +73,6 @@ export class ProjectController {
             await fse.writeFile(projectFile, newXml);
         } catch (error) {
             window.showErrorMessage(error.message);
-            Telemetry.sendEvent("scaffold java project exception", error);
             return;
         }
         return true;
@@ -93,7 +89,6 @@ export class ProjectController {
                     commands.executeCommand("vscode.open", error.openUrl);
                 }
             });
-            Telemetry.sendEvent("get java version exception", error);
             return;
         }
         return javaVersion;
