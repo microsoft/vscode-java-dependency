@@ -99,6 +99,11 @@
           "description": "%configuration.java.dependency.syncWithFolderExplorer%",
           "default": true
         },
+        "java.dependency.autoRefresh": {
+          "type": "boolean",
+          "description": "%configuration.java.dependency.autoRefresh%",
+          "default": true
+        },
         "java.dependency.packagePresentation": {
           "type": "string",
           "enum": [

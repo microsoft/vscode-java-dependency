@@ -10,5 +10,6 @@
   "configuration.java.dependency.title": "Java Dependency Configuration",
   "configuration.java.dependency.showOutline": "Enable show outline in the Java Dependency explorer",
   "configuration.java.dependency.syncWithFolderExplorer": "Synchronize dependency viewer selection with folder explorer",
+  "configuration.java.dependency.autoRefresh": "Synchronize dependency viewer with changes",
   "configuration.java.dependency.packagePresentation": "Package presentation mode: flat or hierarchical"
 }

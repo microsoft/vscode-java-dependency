@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, ConfigurationChangeEvent, ExtensionContext, workspace, WorkspaceConfiguration } from "vscode";
+import { commands, ConfigurationChangeEvent, ExtensionContext, workspace, WorkspaceConfiguration, window, DocumentHighlight, Disposable } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
+import { SyncHandler } from "./fileWather";
 
 export class Settings {
 
@@ -20,9 +21,13 @@ export class Settings {
                 this._dependencyConfig = updatedConfig;
                 commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
             } else {
+                if (updatedConfig.autoRefresh !== this._dependencyConfig.autoRefresh) {
+                    SyncHandler.updateFileWatcher(updatedConfig.autoRefresh);
+                }
                 this._dependencyConfig = updatedConfig;
             }
         }));
+        SyncHandler.updateFileWatcher(Settings.autoRefresh());
 
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER,
             instrumentOperation(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand)));
@@ -55,6 +60,10 @@ export class Settings {
 
     public static showOutline(): boolean {
         return this._dependencyConfig.get("showOutline");
+    }
+
+    public static autoRefresh(): boolean {
+        return this._dependencyConfig.get("autoRefresh");
     }
 
     public static syncWithFolderExplorer(): boolean {
