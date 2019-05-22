@@ -10,5 +10,6 @@
   "configuration.java.dependency.title": "Java 依赖管理配置",
   "configuration.java.dependency.showOutline": "在 Java 依赖项资源管理器中显示类成员大纲",
   "configuration.java.dependency.syncWithFolderExplorer": "在 Java 依赖项资源管理器中同步关联当前打开的文件",
+  "configuration.java.dependency.autoRefresh": "在 Java 依赖项资源管理器中自动同步修改",
   "configuration.java.dependency.packagePresentation": "Java 包显示方式: 平行显示或者分层显示"
 }

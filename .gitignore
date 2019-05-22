@@ -10,4 +10,4 @@ out/
 vscode-java-*.vsix
 packages/
 dist
-.settings
+**/.settings
