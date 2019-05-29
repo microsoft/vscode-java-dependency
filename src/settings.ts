@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, ConfigurationChangeEvent, ExtensionContext, workspace, WorkspaceConfiguration, window, DocumentHighlight, Disposable } from "vscode";
+import {
+    commands, ConfigurationChangeEvent, Disposable, DocumentHighlight, ExtensionContext,
+    window, workspace, WorkspaceConfiguration,
+} from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { SyncHandler } from "./fileWather";
