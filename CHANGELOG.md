@@ -4,6 +4,12 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 - 2019-6-11
+### Added
+- Add sync settings for dependency viewer [PR#156](https://github.com/microsoft/vscode-java-dependency/pull/156)
+### Updated:
+- Update the project template [PR#154](https://github.com/microsoft/vscode-java-dependency/pull/154)
+
 ## 0.4.0 - 2019-3-26
 ## Added:
 - Add sync command to synchronize/desynchronize dependency viewer selection with folder explorer [PR#140](https://github.com/Microsoft/vscode-java-dependency/pull/140).

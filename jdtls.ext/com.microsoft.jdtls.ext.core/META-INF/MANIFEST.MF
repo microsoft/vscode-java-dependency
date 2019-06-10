@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JDTLS EXT Core
 Bundle-SymbolicName: com.microsoft.jdtls.ext.core;singleton:=true
-Bundle-Version: 0.4.0
+Bundle-Version: 0.5.0
 Bundle-Activator: com.microsoft.jdtls.ext.core.JdtlsExtActivator
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
