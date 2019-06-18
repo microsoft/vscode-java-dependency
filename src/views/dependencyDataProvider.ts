@@ -9,6 +9,7 @@ import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
+import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
@@ -24,12 +25,19 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     private _rootItems: ExplorerNode[] = null;
 
     constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH,
-            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh())));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, () => this.refreshWithLog()));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OPEN_FILE,
             instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
             instrumentOperation(Commands.VIEW_PACKAGE_OUTLINE, (_operationId, uri, range) => this.goToOutline(uri, range))));
+    }
+
+    public refreshWithLog() {
+        if (Settings.autoRefresh()) {
+            this.refresh();
+        } else {
+            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh());
+        }
     }
 
     public refresh() {
