@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.5.1 - 2019-6-18
 ### Updated:
-- Send refresh telemetry only if auto-refresh is off [PR#165](https://github.com/microsoft/vscode-java-dependency/pull/165)
+- Fix telemetry issue.
 
 ## 0.5.0 - 2019-6-11
 ### Added
