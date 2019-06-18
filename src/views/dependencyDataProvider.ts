@@ -36,7 +36,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         if (Settings.autoRefresh()) {
             this.refresh();
         } else {
-            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh());
+            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh())();
         }
     }
 
