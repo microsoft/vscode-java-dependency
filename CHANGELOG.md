@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.5.1 - 2019-6-18
+### Updated:
+- Send refresh telemetry only if auto-refresh is off [PR#165](https://github.com/microsoft/vscode-java-dependency/pull/165)
+
 ## 0.5.0 - 2019-6-11
 ### Added
 - Add sync settings for dependency viewer [PR#156](https://github.com/microsoft/vscode-java-dependency/pull/156)
