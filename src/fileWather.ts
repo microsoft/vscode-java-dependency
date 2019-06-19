@@ -9,9 +9,9 @@ export class SyncHandler {
 
     public static updateFileWatcher(autoRefresh: boolean): void {
         if (autoRefresh) {
-            instrumentOperation(SyncHandler.ENABLE_AUTO_REFRESH, () => this.enableAutoRefresh());
+            instrumentOperation(SyncHandler.ENABLE_AUTO_REFRESH, () => this.enableAutoRefresh())();
         } else {
-            instrumentOperation(SyncHandler.DISABLE_AUTO_REFRESH, () => this.disableAutoRefresh());
+            instrumentOperation(SyncHandler.DISABLE_AUTO_REFRESH, () => this.disableAutoRefresh())();
         }
     }
 
