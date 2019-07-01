@@ -14,3 +14,6 @@ webpack.*.js
 tslint.json
 node_modules
 scripts
+
+# Ignore output of code sign
+server/*.md
