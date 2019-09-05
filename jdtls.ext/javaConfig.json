@@ -1,6 +1,0 @@
-{
-    "projects": [
-        "com.microsoft.jdtls.ext.core"
-    ],
-   "targetPlatform": "target.target"
-}
