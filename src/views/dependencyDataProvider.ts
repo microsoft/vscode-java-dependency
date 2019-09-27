@@ -121,22 +121,24 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     private getRootNodes(): Thenable<ExplorerNode[]> {
         return new Promise((resolve, reject) => {
-            this._rootItems = new Array<ExplorerNode>();
+            const rootItems = new Array<ExplorerNode>();
             const folders = workspace.workspaceFolders;
             if (folders && folders.length) {
                 if (folders.length > 1) {
-                    folders.forEach((folder) => this._rootItems.push(new WorkspaceNode({
+                    folders.forEach((folder) => rootItems.push(new WorkspaceNode({
                         name: folder.name,
                         uri: folder.uri.toString(),
                         kind: NodeKind.Workspace,
                     }, null)));
-                    resolve(this._rootItems);
+                    this._rootItems = rootItems;
+                    resolve(rootItems);
                 } else {
                     Jdtls.getProjects(folders[0].uri.toString()).then((result: INodeData[]) => {
                         result.forEach((project) => {
-                            this._rootItems.push(new ProjectNode(project, null));
+                            rootItems.push(new ProjectNode(project, null));
                         });
-                        resolve(this._rootItems);
+                        this._rootItems = rootItems;
+                        resolve(rootItems);
                     });
                 }
             } else {
