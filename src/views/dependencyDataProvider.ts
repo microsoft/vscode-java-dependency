@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import * as _ from "lodash";
 import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
     Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
@@ -23,6 +24,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     public onDidChangeTreeData: Event<null> = this._onDidChangeTreeData.event;
 
     private _rootItems: ExplorerNode[] = null;
+    private _refreshDelayTrigger: () => void;
 
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, () => this.refreshWithLog()));
@@ -30,6 +32,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
             instrumentOperation(Commands.VIEW_PACKAGE_OUTLINE, (_operationId, uri, range) => this.goToOutline(uri, range))));
+        this._refreshDelayTrigger = _.debounce(this.doRefresh.bind(this), 2000);
     }
 
     public refreshWithLog() {
@@ -41,8 +44,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     public refresh() {
-        this._rootItems = null;
-        this._onDidChangeTreeData.fire();
+        this._refreshDelayTrigger();
     }
 
     public openFile(uri: string) {
@@ -81,6 +83,11 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         const project = projects ? <DataNode>projects.find((node: DataNode) =>
             node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name) : undefined;
         return project ? project.revealPaths(paths) : null;
+    }
+
+    private doRefresh(): void {
+        this._rootItems = null;
+        this._onDidChangeTreeData.fire();
     }
 
     private async getRootProjects(): Promise<ExplorerNode[]> {

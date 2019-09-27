@@ -167,6 +167,7 @@
   ],
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
+    "@types/lodash": "^4.14.139",
     "@types/mocha": "^5.2.5",
     "@types/node": "^8.10.36",
     "@types/xml2js": "^0.4.3",
@@ -186,6 +187,7 @@
   "dependencies": {
     "find-java-home": "^0.2.0",
     "fs-extra": "^7.0.1",
+    "lodash": "^4.17.15",
     "vscode-extension-telemetry-wrapper": "^0.4.0",
     "xml2js": "^0.4.19"
   }
