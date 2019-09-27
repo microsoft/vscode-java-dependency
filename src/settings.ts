@@ -17,6 +17,9 @@ export class Settings {
                 return;
             }
             const updatedConfig = workspace.getConfiguration("java.dependency");
+            for (const listener of this._configurationListeners) {
+                listener(updatedConfig, this._dependencyConfig);
+            }
             if (updatedConfig.showOutline !== this._dependencyConfig.showOutline
                 || updatedConfig.packagePresentation !== this._dependencyConfig.packagePresentation
                 || (updatedConfig.syncWithFolderExplorer !== this._dependencyConfig.syncWithFolderExplorer
@@ -32,6 +35,8 @@ export class Settings {
         }));
         SyncHandler.updateFileWatcher(Settings.autoRefresh());
 
+        context.subscriptions.push({ dispose: () => { this._configurationListeners = []; } });
+
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER,
             instrumentOperation(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand)));
 
@@ -43,6 +48,10 @@ export class Settings {
 
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW,
             instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW, Settings.changeToHierarchicalPackageView)));
+    }
+
+    public static registerConfigurationListener(listener: Listener) {
+        this._configurationListeners.push(listener);
     }
 
     public static linkWithFolderCommand(): void {
@@ -77,10 +86,18 @@ export class Settings {
         return this._dependencyConfig.get("packagePresentation") === PackagePresentation.Hierarchical;
     }
 
+    public static refreshDelay(): number {
+        return this._dependencyConfig.get("refreshDelay");
+    }
+
     private static _dependencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
+
+    private static _configurationListeners: Listener[] = [];
 }
 
 enum PackagePresentation {
     Flat = "flat",
     Hierarchical = "hierarchical",
 }
+
+type Listener = (updatedConfig: WorkspaceConfiguration, dependencyConfig: WorkspaceConfiguration) => void;

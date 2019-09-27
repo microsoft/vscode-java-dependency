@@ -104,6 +104,11 @@
           "description": "%configuration.java.dependency.autoRefresh%",
           "default": true
         },
+        "java.dependency.refreshDelay": {
+          "type": "number",
+          "description": "%configuration.java.dependency.refreshDelay%",
+          "default": 2000
+        },
         "java.dependency.packagePresentation": {
           "type": "string",
           "enum": [
