@@ -45,6 +45,6 @@ export class SyncHandler {
     }
 
     private static refresh(): void {
-        commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+        commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
     }
 }
