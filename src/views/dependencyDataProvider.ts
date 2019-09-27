@@ -27,7 +27,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     private _refreshDelayTrigger: (() => void) & _.Cancelable;
 
     constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, () => this.refreshWithLog()));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean) => this.refreshWithLog(debounce)));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OPEN_FILE,
             instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
@@ -40,16 +40,20 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         this.setRefreshDelay();
     }
 
-    public refreshWithLog() {
+    public refreshWithLog(debounce?: boolean) {
         if (Settings.autoRefresh()) {
-            this.refresh();
+            this.refresh(debounce);
         } else {
-            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh())();
+            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh(debounce))();
         }
     }
 
-    public refresh() {
-        this._refreshDelayTrigger();
+    public refresh(debounce = false) {
+        if (debounce) {
+            this._refreshDelayTrigger();
+        } else { // Immediately refresh
+            this._refreshDelayTrigger.flush();
+        }
     }
 
     public setRefreshDelay(wait?: number) {
