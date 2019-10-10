@@ -2,7 +2,7 @@ import * as child_process from "child_process";
 import * as findJavaHome from "find-java-home";
 import * as fse from "fs-extra";
 import * as path from "path";
-import { Uri, workspace } from "vscode";
+import { Uri, window, workspace, WorkspaceFolder } from "vscode";
 import * as xml2js from "xml2js";
 
 export class Utility {
@@ -70,6 +70,21 @@ export class Utility {
                 return resolve(res);
             });
         });
+    }
+
+    public static getDefaultWorkspaceFolder(): WorkspaceFolder | undefined {
+        const workspaceFolders: WorkspaceFolder[] | undefined = workspace.workspaceFolders;
+        if (workspaceFolders === undefined) {
+            return undefined;
+        }
+        if (workspaceFolders.length === 1) {
+            return workspaceFolders[0];
+        }
+        if (window.activeTextEditor) {
+            const activeWorkspaceFolder: WorkspaceFolder | undefined = workspace.getWorkspaceFolder(window.activeTextEditor.document.uri);
+            return activeWorkspaceFolder;
+        }
+        return undefined;
     }
 
     private static openJDKDownload(reject, cause) {
