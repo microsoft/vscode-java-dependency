@@ -16,8 +16,9 @@ export class ProjectController {
         if (!javaVersion) {
             return;
         }
+        const workspaceFolder = Utility.getDefaultWorkspaceFolder();
         const location: Uri[] = await window.showOpenDialog({
-            defaultUri: workspace.rootPath ? Uri.file(workspace.rootPath) : undefined,
+            defaultUri: workspaceFolder && workspaceFolder.uri,
             canSelectFiles: false,
             canSelectFolders: true,
             openLabel: "Select the location",
