@@ -19,6 +19,8 @@ export class SyncHandler {
 
     private static javaFileSystemWatcher: FileSystemWatcher = null;
 
+    private static javaWorkspaceFolderWatcher: Disposable = null;
+
     private static ENABLE_AUTO_REFRESH = "java.view.package.enableAutoRefresh";
 
     private static DISABLE_AUTO_REFRESH = "java.view.package.disableAutoRefresh";
@@ -28,6 +30,9 @@ export class SyncHandler {
             if (event.document.languageId === "java") {
                 SyncHandler.refresh();
             }
+        });
+        SyncHandler.javaWorkspaceFolderWatcher = workspace.onDidChangeWorkspaceFolders((event) => {
+            SyncHandler.refresh();
         });
         SyncHandler.javaFileSystemWatcher = workspace.createFileSystemWatcher("**/*.{java}");
         SyncHandler.javaFileSystemWatcher.onDidChange(SyncHandler.refresh);
@@ -41,6 +46,9 @@ export class SyncHandler {
         }
         if (SyncHandler.javaFileSystemWatcher) {
             SyncHandler.javaFileSystemWatcher.dispose();
+        }
+        if (SyncHandler.javaWorkspaceFolderWatcher) {
+            SyncHandler.javaWorkspaceFolderWatcher.dispose();
         }
     }
 
