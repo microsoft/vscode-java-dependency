@@ -4,6 +4,14 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 -2019-10-15
+### Updated:
+- Fix: When edit java file, the dependency view failed to auto refresh because of uncaught NPE. [#176](https://github.com/microsoft/vscode-java-dependency/issues/176)
+- Fix: Replace deprecated workspace.rootPath api with workspaceFolder. [PR#184](https://github.com/microsoft/vscode-java-dependency/pull/184)
+- Fix: Click some tree node in the dependency view will throw icon not found error. [#161](https://github.com/microsoft/vscode-java-dependency/issues/161)
+- Fix: Add multiple roots to VS Code and the dependency view didn't list the full projects. [#162](https://github.com/microsoft/vscode-java-dependency/issues/162)
+- Enhancement: Apply debounce to the auto refresh mechanism to reduce the refresh frequency. [PR#183](https://github.com/microsoft/vscode-java-dependency/pull/183)
+
 ## 0.5.1 - 2019-6-18
 ### Updated:
 - Fix telemetry issue.
