@@ -4,7 +4,7 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## 0.6.0 -2019-10-15
+## 0.6.0 - 2019-10-16
 ### Updated:
 - Fix: When edit java file, the dependency view failed to auto refresh because of uncaught NPE. [#176](https://github.com/microsoft/vscode-java-dependency/issues/176)
 - Fix: Replace deprecated workspace.rootPath api with workspaceFolder. [PR#184](https://github.com/microsoft/vscode-java-dependency/pull/184)
