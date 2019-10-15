@@ -163,7 +163,6 @@
     "compile": "tsc -p . && webpack --config webpack.config.js",
     "watch": "webpack --mode development --watch --info-verbosity verbose",
     "test": "tsc -p . && node ./out/test/index.js",
-    "test-old": "node ./scripts/download-vscode-for-system-tests && node ./scripts/install-vsix-dependencies redhat.java && node ./scripts/install-vsix-dependencies vscode-java-dependency-0.6.0.vsix && node ./scripts/run-vscode-tests",
     "build-server": "./node_modules/.bin/gulp build_server",
     "vscode:prepublish": "tsc -p ./ && webpack --mode production"
   },
