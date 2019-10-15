@@ -11,7 +11,7 @@
             false
         ],
         "no-implicit-dependencies": [
-            true,
+            false,
             "dev"
         ],
         "no-empty": false,
@@ -40,7 +40,7 @@
             true,
             "log",
             "error"
-        ], 
+        ],
         "no-namespace": false
     }
 }
