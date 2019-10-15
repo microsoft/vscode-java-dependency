@@ -49,9 +49,8 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     public refresh(debounce = false) {
-        if (debounce) {
-            this._refreshDelayTrigger();
-        } else { // Immediately refresh
+        this._refreshDelayTrigger();
+        if (!debounce) { // Immediately refresh
             this._refreshDelayTrigger.flush();
         }
     }
