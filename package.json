@@ -160,10 +160,10 @@
     }
   },
   "scripts": {
-    "compile": "tsc -watch -p ./",
+    "compile": "tsc -p . && webpack --config webpack.config.js",
     "watch": "webpack --mode development --watch --info-verbosity verbose",
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "node ./scripts/download-vscode-for-system-tests && node ./scripts/install-vsix-dependencies redhat.java && node ./scripts/install-vsix-dependencies vscode-java-dependency-0.6.0.vsix && node ./scripts/run-vscode-tests",
+    "test": "tsc -p . && node ./out/test/index.js",
+    "test-old": "node ./scripts/download-vscode-for-system-tests && node ./scripts/install-vsix-dependencies redhat.java && node ./scripts/install-vsix-dependencies vscode-java-dependency-0.6.0.vsix && node ./scripts/run-vscode-tests",
     "build-server": "./node_modules/.bin/gulp build_server",
     "vscode:prepublish": "tsc -p ./ && webpack --mode production"
   },
@@ -172,11 +172,14 @@
   ],
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
+    "@types/glob": "^7.1.1",
     "@types/lodash": "^4.14.139",
     "@types/mocha": "^5.2.5",
     "@types/node": "^8.10.36",
+    "@types/vscode": "^1.28.0",
     "@types/xml2js": "^0.4.3",
     "cross-env": "^5.2.0",
+    "glob": "^7.1.4",
     "gulp": "^4.0.0",
     "gulp-copy": "^4.0.1",
     "gulp-tslint": "^8.1.3",
@@ -185,7 +188,7 @@
     "ts-loader": "^5.3.1",
     "tslint": "^5.11.0",
     "typescript": "^3.1.6",
-    "vscode": "^1.1.33",
+    "vscode-test": "^1.2.0",
     "webpack": "^4.27.1",
     "webpack-cli": "^3.3.9"
   },
