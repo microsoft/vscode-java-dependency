@@ -19,7 +19,7 @@ export class DependencyExplorer {
 
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
-        this._dependencyViewer = window.createTreeView("javaDependencyExplorer", { treeDataProvider: this._dataProvider });
+        this._dependencyViewer = window.createTreeView("javaDependencyExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
 
         window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
             if (textEditor && textEditor.document && Settings.syncWithFolderExplorer()) {
