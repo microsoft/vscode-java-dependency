@@ -1,14 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="图层_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 16 16" style="enable-background:new 0 0 16 16;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:#2D2D30;}
-	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#C5C5C5;}
-</style>
-<path class="st0" d="M7,0.7v1.4C3.6,2.6,1,5.5,1,9c0,3.7,2.9,6.7,6.5,7h1c3.6-0.2,6.5-3.3,6.5-7c0-0.5-0.1-1.1-0.2-1.6l-0.3-1.1
-	l-1.1,0.4l-1.9,0.8l-0.8,0.3L11,8.6c0,0.2,0,0.3,0,0.5c0,1.7-1.3,3-3,3c-1.7,0-3-1.3-3-3c0-1.3,0.8-2.4,2-2.8v1.1v2.1l1.6-1.4l4-3.3
-	L13.6,4l-0.9-0.8L8.7,0H7V0.7z"/>
-<path class="st1" d="M12,4L8,7.3V5C5.8,5,4,6.8,4,9c0,2.2,1.8,4,4,4c2.2,0,4-1.8,4-4c0-0.2,0-0.4-0.1-0.6l1.9-0.8
-	C13.9,8.1,14,8.5,14,9c0,3.3-2.7,6-6,6c-3.3,0-6-2.7-6-6c0-3.3,2.7-6,6-6V0.7L12,4z"/>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M5.56253 2.5158C3.46348 3.45013 2 5.55417 2 8.00002C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8.00002C14 5.32522 12.2497 3.05922 9.83199 2.28485L9.52968 3.23835C11.5429 3.88457 13 5.77213 13 8.00002C13 10.7614 10.7614 13 8 13C5.23858 13 3 10.7614 3 8.00002C3 6.31107 3.83742 4.8177 5.11969 3.91248L5.56253 2.5158Z" fill="#C5C5C5"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M5 3H2V2H5.5L6 2.5V6H5V3Z" fill="#C5C5C5"/>
 </svg>

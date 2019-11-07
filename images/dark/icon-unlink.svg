@@ -1,15 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 16 16" style="enable-background:new 0 0 16 16;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#252526;}
-	.st1{fill:#C5C5C5;}
-</style>
-<g id="outline">
-	<polyline class="st0" points="13,3 7.4,3 9.4,1 4.6,1 0.6,5 4.6,9 3,9 3,13 8.6,13 6.6,15 11.4,15 15.4,11 11.4,7 13,7 	"/>
-</g>
-<g id="iconBg">
-	<path class="st1" d="M14,11l-3,3H9l2-2H4v-2h7L9,8h2L14,11z M7,8L5,6h7V4H5l2-2H5L2,5l3,3H7z"/>
-</g>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M13.5 10.5L10.8536 7.85353L11.5607 7.14642L14.5607 10.1464V10.8535L11.5607 13.8535L10.8536 13.1464L13.5 10.5Z" fill="#C5C5C5"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.50001 5.49996L5.14645 8.14641L4.43935 8.85352L1.43935 5.85352L1.43935 5.14641L4.43935 2.14641L5.14645 2.85352L2.50001 5.49996Z" fill="#C5C5C5"/>
+<path d="M14 6V5H11.1513L10.645 6H14Z" fill="#C5C5C5"/>
+<path d="M2 5V6H7.29009L7.78516 5H2Z" fill="#C5C5C5"/>
+<path d="M14 11V10H8.64453L8.14453 11H14Z" fill="#C5C5C5"/>
+<path d="M2 10V11H4.78906L5.28906 10H2Z" fill="#C5C5C5"/>
+<path d="M4.90799 13L5.80199 13.448L10.802 3.448L9.90799 3L4.90799 13Z" fill="#C5C5C5"/>
 </svg>
