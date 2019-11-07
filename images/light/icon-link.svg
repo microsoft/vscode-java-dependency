@@ -1,18 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 16 16" style="enable-background:new 0 0 16 16;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#F6F6F6;}
-	.st1{fill:#424242;}
-</style>
-<rect id="canvas" class="st0" width="16" height="16"/>
-<g id="outline">
-	<polygon class="st0" points="11.4,7 13,7 13,3 7.4,3 9.4,1 4.6,1 0.6,5 4.6,9 3,9 3,13 8.6,13 6.6,15 11.4,15 15.4,11 	"/>
-</g>
-<g id="iconBg">
-	<g>
-		<path class="st1" d="M14,11l-3,3H9l2-2H4v-2h7L9,8h2L14,11z M7,8L5,6h7V4H5l2-2H5L2,5l3,3H7z"/>
-	</g>
-</g>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M13.5 10.5L10.8536 7.85353L11.5607 7.14642L14.5607 10.1464V10.8535L11.5607 13.8535L10.8536 13.1464L13.5 10.5Z" fill="#424242"/>
+<path d="M2 10H14V11H2V10Z" fill="#424242"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.50001 5.49996L5.14645 8.14641L4.43935 8.85352L1.43935 5.85352L1.43935 5.14641L4.43935 2.14641L5.14645 2.85352L2.50001 5.49996Z" fill="#424242"/>
+<path d="M2 5H14V6H2V5Z" fill="#424242"/>
 </svg>
