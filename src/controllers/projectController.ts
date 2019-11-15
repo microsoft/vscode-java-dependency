@@ -44,10 +44,8 @@ export class ProjectController {
             return;
         }
         if (await this.scaffoldJavaProject(basePath, projectName, javaVersion)) {
-            if (!workspace || _.isEmpty(workspace.workspaceFolders)) {
-                return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), false /*openInCurrentWindow*/);
-            }
-            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), true /*openInNewWindow*/);
+            const openInNewWindow = workspace && !_.isEmpty(workspace.workspaceFolders);
+            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), openInNewWindow);
         }
     }
 
