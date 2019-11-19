@@ -13,6 +13,9 @@ package com.microsoft.jdtls.ext.core.model;
 
 import java.util.Map;
 
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.JavaModelException;
+
 public class PackageRootNode extends PackageNode {
 
     private int entryKind;
@@ -25,8 +28,13 @@ public class PackageRootNode extends PackageNode {
         this.entryKind = entryKind;
     }
 
-    public PackageRootNode(String name, String path, NodeKind kind, int entryKind) {
-        this(name, path, null, kind, entryKind);
+    public PackageRootNode(IPackageFragmentRoot pkgRoot, String name, NodeKind kind) throws JavaModelException {
+        this(name, pkgRoot.getPath().toPortableString(), null, kind, pkgRoot.getKind());
+        if (pkgRoot.getResource() != null) {
+            this.setUri(pkgRoot.getResource().getLocationURI().toString());
+        } else {
+            this.setUri(pkgRoot.getPath().toFile().toURI().toString());
+        }
     }
 
     public int getEntryType() {

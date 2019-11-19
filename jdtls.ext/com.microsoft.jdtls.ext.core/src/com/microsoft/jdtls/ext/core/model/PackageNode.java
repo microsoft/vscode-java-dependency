@@ -134,11 +134,11 @@ public class PackageNode {
             if (entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
                 return createNodeForClasspathVariable(entry);
             } else {
-                return new PackageRootNode(pkgRoot.getElementName(), pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+                return new PackageRootNode(pkgRoot, pkgRoot.getElementName(), NodeKind.PACKAGEROOT);
             }
         } else {
-            return new PackageRootNode(ExtUtils.removeProjectSegment(pkgRoot.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
-                    pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+            return new PackageRootNode(pkgRoot,
+                    ExtUtils.removeProjectSegment(pkgRoot.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(), NodeKind.PACKAGEROOT);
         }
     }
 
@@ -182,8 +182,7 @@ public class PackageNode {
                         pathSegments[pathSegments.length - 1],
                         container.getPath().toPortableString(),
                         container.getPath().toFile().toURI().toString(),
-                        nodeKind, IPackageFragmentRoot.K_BINARY
-                    );
+                        nodeKind, IPackageFragmentRoot.K_BINARY);
                 }
                 return node;
             }
@@ -215,7 +214,8 @@ public class PackageNode {
         IClasspathEntry entry = JavaCore.getResolvedClasspathEntry(classpathEntry);
         String name = classpathEntry.getPath().toPortableString();
         String path = entry.getPath().toPortableString();
-        return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, IPackageFragmentRoot.K_BINARY);
+        String uri = entry.getPath().toFile().toURI().toString();
+        return new PackageRootNode(name, path, uri, NodeKind.PACKAGEROOT, IPackageFragmentRoot.K_BINARY);
     }
 
     public String getName() {
