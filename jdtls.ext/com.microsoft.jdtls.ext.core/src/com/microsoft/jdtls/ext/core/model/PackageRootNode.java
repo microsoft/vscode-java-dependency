@@ -19,9 +19,14 @@ public class PackageRootNode extends PackageNode {
 
     private Map<String, String> attributes;
 
-    public PackageRootNode(String name, String path, NodeKind kind, int entryKind) {
+    public PackageRootNode(String name, String path, String uri, NodeKind kind, int entryKind) {
         super(name, path, kind);
+        this.setUri(uri);
         this.entryKind = entryKind;
+    }
+
+    public PackageRootNode(String name, String path, NodeKind kind, int entryKind) {
+        this(name, path, null, kind, entryKind);
     }
 
     public int getEntryType() {
