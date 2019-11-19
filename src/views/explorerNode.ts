@@ -20,6 +20,10 @@ export abstract class ExplorerNode {
         return this._parent;
     }
 
+    public setParent(parent: ExplorerNode) {
+        this._parent = parent;
+    }
+
     protected get command(): Command {
         return undefined;
     }

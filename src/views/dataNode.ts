@@ -67,5 +67,5 @@ export abstract class DataNode extends ExplorerNode {
 
     protected abstract loadData(): Thenable<any[]>;
 
-    protected abstract createChildNodeList(): ExplorerNode[];
+    protected abstract createChildNodeList(): ProviderResult<ExplorerNode[]>;
 }

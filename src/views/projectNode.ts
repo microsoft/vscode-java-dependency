@@ -45,17 +45,24 @@ export class ProjectNode extends DataNode {
         });
     }
 
-    protected createChildNodeList(): ExplorerNode[] {
-
+    protected async createChildNodeList(): Promise<ExplorerNode[]> {
         const result = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            this.nodeData.children.forEach((data) => {
+            for (const data of this.nodeData.children) {
                 if (data.kind === NodeKind.Container) {
                     result.push(new ContainerNode(data, this, this));
                 } else if (data.kind === NodeKind.PackageRoot) {
-                    result.push(NodeFactory.createPackageRootNode(data, this, this));
+                    const node = NodeFactory.createPackageRootNode(data, this, this);
+                    if (!data.name) { // Extract the nodes of empty-name packge root out
+                        for (const child of await node.getChildren()) {
+                            child.setParent(this);
+                            result.push(child);
+                        }
+                    } else {
+                        result.push(node);
+                    }
                 }
-            });
+            }
         }
 
         result.sort((a: DataNode, b: DataNode) => {
