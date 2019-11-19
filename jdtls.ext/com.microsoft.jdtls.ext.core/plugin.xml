@@ -3,6 +3,7 @@
 <plugin>
 <extension point="org.eclipse.jdt.ls.core.delegateCommandHandler">
         <delegateCommandHandler class="com.microsoft.jdtls.ext.core.CommandHandler">
+            <command id="java.project.refreshLib"/>
             <command id="java.project.list"/>
             <command id="java.getPackageData"/>
             <command id="java.resolvePath" />
