@@ -51,6 +51,7 @@ import org.eclipse.jdt.internal.core.JarEntryFile;
 import org.eclipse.jdt.internal.core.JarEntryResource;
 import org.eclipse.jdt.internal.core.JrtPackageFragmentRoot;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
+import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 
@@ -278,7 +279,14 @@ public class PackageCommand {
                     for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
                         String displayName = fragmentRoot.getElementName();
                         if (fragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
-                            displayName = ExtUtils.removeProjectSegment(javaProject.getElementName(), fragmentRoot.getPath()).toPortableString();
+                            IPath relativePath = fragmentRoot.getPath();
+                            if (javaProject.getPath().isPrefixOf(relativePath)) {
+                                relativePath = relativePath.makeRelativeTo(javaProject.getPath());
+                            }
+                            if (ProjectUtils.WORKSPACE_LINK.equals(relativePath.segment(0))) {
+                                relativePath = relativePath.removeFirstSegments(1); // Remove the '_' prefix
+                            }
+                            displayName = relativePath.toPortableString();
                         }
                         PackageRootNode node = new PackageRootNode(displayName, fragmentRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT,
                                 fragmentRoot.getKind());
