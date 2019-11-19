@@ -439,7 +439,14 @@ public class PackageCommand {
         List<PackageNode> result = new ArrayList<>();
         for (Object root : rootContent) {
             if (root instanceof IPackageFragment) {
-                result.add(PackageNode.createNodeForPackageFragment((IPackageFragment) root));
+                IPackageFragment fragment = (IPackageFragment) root;
+                PackageNode entry = PackageNode.createNodeForPackageFragment(fragment);
+                if (fragment.getResource() != null) {
+                    entry.setUri(fragment.getResource().getLocationURI().toString());
+                } else {
+                    entry.setUri(fragment.getPath().toFile().toURI().toString());
+                }
+                result.add(entry);
             } else if (root instanceof IClassFile) {
                 IClassFile classFile = (IClassFile) root;
                 PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.TYPEROOT);
