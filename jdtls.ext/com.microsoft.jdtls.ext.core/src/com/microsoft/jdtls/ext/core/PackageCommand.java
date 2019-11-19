@@ -278,7 +278,14 @@ public class PackageCommand {
                     for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
                         String displayName = fragmentRoot.getElementName();
                         if (fragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
-                            displayName = ExtUtils.removeProjectSegment(javaProject.getElementName(), fragmentRoot.getPath()).toPortableString();
+                            IPath relativePath = fragmentRoot.getPath();
+                            if (javaProject.getPath().isPrefixOf(relativePath)) {
+                                relativePath = relativePath.makeRelativeTo(javaProject.getPath());
+                            }
+                            if (ProjectUtils.WORKSPACE_LINK.equals(relativePath.segment(0))) {
+                                relativePath = relativePath.removeFirstSegments(1); // Remove the '_' prefix
+                            }
+                            displayName = relativePath.toPortableString();
                         }
                         PackageRootNode node = new PackageRootNode(fragmentRoot, displayName, NodeKind.PACKAGEROOT);
                         node.setHandlerIdentifier(fragmentRoot.getHandleIdentifier());
