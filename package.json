@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.30.0"
+    "vscode": "^1.31.0"
   },
   "repository": {
     "type": "git",
@@ -83,6 +83,21 @@
           "dark": "images/dark/icon-link.svg",
           "light": "images/light/icon-link.svg"
         }
+      },
+      {
+        "command": "java.view.package.revealFileInOS",
+        "title": "%contributes.commands.java.view.package.revealFileInOS%",
+        "category": "Java"
+      },
+      {
+        "command": "java.view.package.copyFilePath",
+        "title": "%contributes.commands.java.view.package.copyFilePath%",
+        "category": "Java"
+      },
+      {
+        "command": "java.view.package.copyRelativeFilePath",
+        "title": "%contributes.commands.java.view.package.copyRelativeFilePath%",
+        "category": "Java"
       }
     ],
     "configuration": {
@@ -146,6 +161,23 @@
           "command": "java.view.package.unlinkWithFolderExplorer",
           "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer == true",
           "group": "navigation@0"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "java.view.package.revealFileInOS",
+          "when": "view == javaDependencyExplorer",
+          "group": "@1"
+        },
+        {
+          "command": "java.view.package.copyFilePath",
+          "when": "view == javaDependencyExplorer",
+          "group": "@2"
+        },
+        {
+          "command": "java.view.package.copyRelativeFilePath",
+          "when": "view == javaDependencyExplorer",
+          "group": "@2"
         }
       ]
     },

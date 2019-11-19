@@ -24,6 +24,12 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_OUTLINE = "java.view.package.outline";
 
+    export const VIEW_PACKAGE_REVEAL_FILE_OS = "java.view.package.revealFileInOS";
+
+    export const VIEW_PACKAGE_COPY_FILE_PATH = "java.view.package.copyFilePath";
+
+    export const VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH = "java.view.package.copyRelativeFilePath";
+
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
     export const JAVA_PROJECT_LIST = "java.project.list";
