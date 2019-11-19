@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 import {
-    commands, ConfigurationChangeEvent, Disposable, DocumentHighlight, ExtensionContext,
-    window, workspace, WorkspaceConfiguration,
+    commands, ConfigurationChangeEvent, ExtensionContext,
+    workspace, WorkspaceConfiguration,
 } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
@@ -73,6 +73,33 @@ export class Settings {
         workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Hierarchical, false);
     }
 
+    public static updateReferencedLibraries(setting: IReferencedLibraries): void {
+        let updateSetting: string[] | Partial<IReferencedLibraries> = {
+            include: setting.include,
+            exclude: setting.exclude.length > 0 ? setting.exclude : undefined,
+            sources: Object.keys(setting.sources).length > 0 ? setting.sources : undefined,
+        };
+        if (!updateSetting.exclude && !updateSetting.sources) {
+            updateSetting = setting.include;
+        }
+        workspace.getConfiguration().update("java.project.referencedLibraries", updateSetting);
+    }
+
+    public static referencedLibraries(): IReferencedLibraries {
+        const setting = workspace.getConfiguration("java.project").get<string[] | Partial<IReferencedLibraries>>("referencedLibraries");
+        const defaultSetting: IReferencedLibraries = { include: [], exclude: [], sources: {} };
+        if (Array.isArray(setting)) {
+            return { ...defaultSetting, include: setting };
+        } else {
+            return { ...defaultSetting, ...setting };
+        }
+    }
+
+    public static isDefaultReferencedLibraries(): boolean {
+        const setting = workspace.getConfiguration("java.project").inspect<string[] | Partial<IReferencedLibraries>>("referencedLibraries");
+        return setting.defaultValue && !setting.globalValue && !setting.workspaceValue && !setting.workspaceFolderValue;
+    }
+
     public static showOutline(): boolean {
         return this._dependencyConfig.get("showOutline");
     }
@@ -104,3 +131,9 @@ enum PackagePresentation {
 }
 
 type Listener = (updatedConfig: WorkspaceConfiguration, oldConfig: WorkspaceConfiguration) => void;
+
+export interface IReferencedLibraries {
+    include: string[];
+    exclude: string[];
+    sources: { [binary: string]: string };
+}
