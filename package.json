@@ -136,6 +136,20 @@
       }
     },
     "menus": {
+      "commandPalette": [
+        {
+          "command": "java.view.package.revealFileInOS",
+          "when": "never"
+        },
+        {
+          "command": "java.view.package.copyFilePath",
+          "when": "never"
+        },
+        {
+          "command": "java.view.package.copyRelativeFilePath",
+          "when": "never"
+        }
+      ],
       "view/title": [
         {
           "command": "java.view.package.refresh",
