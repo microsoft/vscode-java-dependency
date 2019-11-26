@@ -4,6 +4,7 @@
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
+import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
@@ -46,6 +47,16 @@ export class PackageRootNode extends DataNode {
         if (data.entryKind === PackageRootKind.K_BINARY) {
             return data.path;
         } else {
+            return undefined;
+        }
+    }
+
+    protected get contextValue(): string {
+        const data = <IPackageRootNodeData>this.nodeData;
+        if (data.entryKind === PackageRootKind.K_BINARY) {
+            const parent = <ContainerNode>this.getParent();
+            return `jar/${parent.name}`;
+        } else { // Currently PackageFolder does not use context value
             return undefined;
         }
     }

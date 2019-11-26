@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import * as _ from "lodash";
 import { ProviderResult, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { INodeData } from "../java/nodeData";
 import { ExplorerNode } from "./explorerNode";
@@ -16,6 +17,7 @@ export abstract class DataNode extends ExplorerNode {
             item.description = this.description;
             item.iconPath = this.iconPath;
             item.command = this.command;
+            item.contextValue = this.computeContextValue();
             return item;
         }
     }
@@ -30,6 +32,10 @@ export abstract class DataNode extends ExplorerNode {
 
     public get path() {
         return this._nodeData.path;
+    }
+
+    public get name() { // return name like `referenced-library`
+        return _.kebabCase(this._nodeData.name);
     }
 
     public async revealPaths(paths: INodeData[]): Promise<DataNode> {
@@ -50,6 +56,17 @@ export abstract class DataNode extends ExplorerNode {
         return this.createChildNodeList();
     }
 
+    protected computeContextValue(): string {
+        let contextValue = this.contextValue;
+        if (this.uri) {
+            contextValue = `${contextValue || ""}+uri`;
+        }
+        if (contextValue) {
+            contextValue = `java:${contextValue}`;
+        }
+        return contextValue;
+    }
+
     protected sort() {
         this.nodeData.children.sort((a: INodeData, b: INodeData) => {
             if (a.kind === b.kind) {
@@ -65,6 +82,10 @@ export abstract class DataNode extends ExplorerNode {
     }
 
     protected get description(): string | boolean {
+        return undefined;
+    }
+
+    protected get contextValue(): string {
         return undefined;
     }
 

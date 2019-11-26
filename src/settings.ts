@@ -16,23 +16,26 @@ export class Settings {
             if (!e.affectsConfiguration("java.dependency")) {
                 return;
             }
-            const updatedConfig = workspace.getConfiguration("java.dependency");
+            const oldConfig = this._dependencyConfig;
+            this._dependencyConfig = workspace.getConfiguration("java.dependency");
             for (const listener of this._configurationListeners) {
-                listener(updatedConfig, this._dependencyConfig);
-            }
-            if (updatedConfig.showOutline !== this._dependencyConfig.showOutline
-                || updatedConfig.packagePresentation !== this._dependencyConfig.packagePresentation
-                || (updatedConfig.syncWithFolderExplorer !== this._dependencyConfig.syncWithFolderExplorer
-                    && updatedConfig.syncWithFolderExplorer)) {
-                this._dependencyConfig = updatedConfig;
-                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
-            } else {
-                if (updatedConfig.autoRefresh !== this._dependencyConfig.autoRefresh) {
-                    SyncHandler.updateFileWatcher(updatedConfig.autoRefresh);
-                }
-                this._dependencyConfig = updatedConfig;
+                listener(this._dependencyConfig, oldConfig);
             }
         }));
+        this.registerConfigurationListener((updatedConfig, oldConfig) => {
+            if (updatedConfig.showOutline !== oldConfig.showOutline
+                || updatedConfig.packagePresentation !== oldConfig.packagePresentation
+                || (updatedConfig.syncWithFolderExplorer !== oldConfig.syncWithFolderExplorer
+                    && updatedConfig.syncWithFolderExplorer)) {
+                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+            }
+        });
+        this.registerConfigurationListener((updatedConfig, oldConfig) => {
+            if (updatedConfig.autoRefresh !== oldConfig.autoRefresh) {
+                SyncHandler.updateFileWatcher(updatedConfig.autoRefresh);
+            }
+        });
+
         SyncHandler.updateFileWatcher(Settings.autoRefresh());
 
         context.subscriptions.push({ dispose: () => { this._configurationListeners = []; } });
@@ -100,4 +103,4 @@ enum PackagePresentation {
     Hierarchical = "hierarchical",
 }
 
-type Listener = (updatedConfig: WorkspaceConfiguration, dependencyConfig: WorkspaceConfiguration) => void;
+type Listener = (updatedConfig: WorkspaceConfiguration, oldConfig: WorkspaceConfiguration) => void;
