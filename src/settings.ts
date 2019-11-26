@@ -17,10 +17,9 @@ export class Settings {
                 return;
             }
             const oldConfig = this._dependencyConfig;
-            const updatedConfig = workspace.getConfiguration("java.dependency");
-            this._dependencyConfig = updatedConfig;
+            this._dependencyConfig = workspace.getConfiguration("java.dependency");
             for (const listener of this._configurationListeners) {
-                listener(updatedConfig, oldConfig);
+                listener(this._dependencyConfig, oldConfig);
             }
         }));
         this.registerConfigurationListener((updatedConfig, oldConfig) => {
