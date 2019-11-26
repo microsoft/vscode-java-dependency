@@ -29,7 +29,6 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 
 import com.microsoft.jdtls.ext.core.ExtUtils;
@@ -165,16 +164,7 @@ public class PackageNode {
                 PackageNode node = null;
                 if (nodeKind == NodeKind.CONTAINER) {
                     node = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), nodeKind, entry.getEntryKind());
-                    switch (container.getKind()) {
-                    case IClasspathContainer.K_DEFAULT_SYSTEM: // JRE Container
-                    case IClasspathContainer.K_SYSTEM:
-                        node.setUri(JavaRuntime.getVMInstall(javaProject).getInstallLocation().toURI().toString());
-                        break;
-                    case IClasspathContainer.K_APPLICATION: // Plugin Container, Maven Container, etc
-                        break; // No good way to find out the root uri currently
-                    default: // Persistent container (e.g. /src/main/java)
-                        node.setUri(container.getPath().toFile().toURI().toString());
-                    }
+                    node.setUri(ExtUtils.getContainerURI(javaProject, container).toString());
                 } else if (nodeKind == NodeKind.PACKAGEROOT) { // ClasspathEntry for referenced jar files
                     // Use package name as package root name
                     String[] pathSegments = container.getPath().segments();
