@@ -180,17 +180,17 @@
       "view/item/context": [
         {
           "command": "java.view.package.revealFileInOS",
-          "when": "view == javaDependencyExplorer",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:.*?\\+uri/",
           "group": "@1"
         },
         {
           "command": "java.view.package.copyFilePath",
-          "when": "view == javaDependencyExplorer",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:.*?\\+uri/",
           "group": "@2"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
-          "when": "view == javaDependencyExplorer",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:.*?\\+uri/",
           "group": "@2"
         }
       ]
