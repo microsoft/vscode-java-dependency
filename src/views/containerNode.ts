@@ -27,6 +27,10 @@ export class ContainerNode extends DataNode {
         return result;
     }
 
+    protected get contextValue(): string {
+        return `container/${this.name}`;
+    }
+
     protected get iconPath(): { light: string, dark: string } {
         return ExplorerNode.resolveIconPath("library");
     }
