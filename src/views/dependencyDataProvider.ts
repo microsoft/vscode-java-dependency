@@ -32,8 +32,8 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
             instrumentOperation(Commands.VIEW_PACKAGE_OUTLINE, (_operationId, uri, range) => this.goToOutline(uri, range))));
-        Settings.registerConfigurationListener((updatedConfig, dependencyConfig) => {
-            if (updatedConfig.refreshDelay !== dependencyConfig.refreshDelay) {
+        Settings.registerConfigurationListener((updatedConfig, oldConfig) => {
+            if (updatedConfig.refreshDelay !== oldConfig.refreshDelay) {
                 this.setRefreshDelay(updatedConfig.refreshDelay);
             }
         });
