@@ -10,8 +10,8 @@ export namespace Jdtls {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_LIST, params);
     }
 
-    export function updateFilters(...params): Thenable<boolean> {
-        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_UPDATE_FILTERS, ...params);
+    export function updateFilters(params): Thenable<boolean> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_UPDATE_FILTERS, params);
     }
 
     export function getPackageData(params): Thenable<INodeData[]> {
