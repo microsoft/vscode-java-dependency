@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 import * as fse from "fs-extra";
-import * as micromatch from "micromatch";
 import * as _ from "lodash";
+import * as micromatch from "micromatch";
 import * as path from "path";
 import { commands, ConfigurationChangeEvent, Disposable, ExtensionContext, Uri, window, workspace } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
