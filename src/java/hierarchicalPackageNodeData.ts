@@ -18,15 +18,15 @@ export class HierarchicalPackageNodeData implements INodeData {
     private nodeData: INodeData = null;
 
     public get uri() {
-        return this.nodeData.uri;
+        return this.nodeData && this.nodeData.uri;
     }
 
     public get moduleName() {
-        return this.nodeData.moduleName;
+        return this.nodeData && this.nodeData.moduleName;
     }
 
     public get path() {
-        return this.nodeData.path;
+        return this.nodeData && this.nodeData.path;
     }
 
     public get kind() {

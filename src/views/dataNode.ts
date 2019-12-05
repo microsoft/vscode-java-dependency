@@ -14,6 +14,7 @@ export abstract class DataNode extends ExplorerNode {
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this._nodeData) {
             const item = new TreeItem(this._nodeData.name, this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
+            item.description = this.description;
             item.iconPath = this.iconPath;
             item.command = this.command;
             item.contextValue = this.computeContextValue();
@@ -78,6 +79,10 @@ export abstract class DataNode extends ExplorerNode {
 
     protected hasChildren(): boolean {
         return true;
+    }
+
+    protected get description(): string | boolean {
+        return undefined;
     }
 
     protected get contextValue(): string {
