@@ -42,6 +42,15 @@ export class PackageRootNode extends DataNode {
         return result;
     }
 
+    protected get description(): string | boolean {
+        const data = <IPackageRootNodeData>this.nodeData;
+        if (data.entryKind === PackageRootKind.K_BINARY) {
+            return data.path;
+        } else {
+            return undefined;
+        }
+    }
+
     protected get contextValue(): string {
         const data = <IPackageRootNodeData>this.nodeData;
         if (data.entryKind === PackageRootKind.K_BINARY) {
