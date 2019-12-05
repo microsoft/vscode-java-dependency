@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,18 +56,18 @@ public final class ProjectCommand {
 
     @SuppressWarnings("unchecked")
     public static boolean updateFilters(List<Object> arguments, IProgressMonitor monitor) throws Exception {
-        final List<String> patterns = (List<String>) arguments.get(0);
+        final Set<String> patterns = new HashSet<>((List<String>) arguments.get(0));
         final IProject[] projects = getWorkspaceRoot().getProjects();
         final Set<IProject> filterUpdated = new HashSet<>();
         for (final IProject project : projects) {
             if (!project.exists()) {
                 continue;
             }
-            final Set<String> filters = Arrays.stream(project.getFilters())
-                .map(filter -> (String) filter.getFileInfoMatcherDescription().getArguments())
-                .collect(Collectors.toSet());
-            for (final String pattern: patterns) {
-                if (filters.contains(pattern)) {
+            final Map<String, IResourceFilterDescription> filters = Arrays.stream(project.getFilters()).collect(Collectors.toMap(
+                filter -> (String) filter.getFileInfoMatcherDescription().getArguments(), filter -> filter
+            ));
+            for (final String pattern: patterns) { // Handle newly added filters
+                if (filters.containsKey(pattern)) {
                     continue;
                 }
                 project.createFilter(
@@ -75,6 +76,13 @@ public final class ProjectCommand {
                     IResourceFilterDescription.FOLDERS |
                     IResourceFilterDescription.INHERITABLE,
                     new FileInfoMatcherDescription("org.eclipse.core.resources.regexFilterMatcher", pattern), 0, monitor);
+                filterUpdated.add(project);
+            }
+            for (final String pattern: filters.keySet()) { // Handle deleted filters
+                if (patterns.contains(pattern)) {
+                    continue;
+                }
+                filters.get(pattern).delete(0, monitor);
                 filterUpdated.add(project);
             }
             if (filterUpdated.contains(project)) { // Refresh the hierachy if filter is updated
