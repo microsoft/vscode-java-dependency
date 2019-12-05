@@ -3,6 +3,7 @@
 
 import * as fse from "fs-extra";
 import * as micromatch from "micromatch";
+import * as _ from "lodash";
 import * as path from "path";
 import { commands, ConfigurationChangeEvent, Disposable, ExtensionContext, Uri, window, workspace } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
@@ -57,7 +58,8 @@ export class ProjectController implements Disposable {
             return;
         }
         if (await this.scaffoldJavaProject(basePath, projectName, javaVersion)) {
-            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), true);
+            const openInNewWindow = workspace && !_.isEmpty(workspace.workspaceFolders);
+            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), openInNewWindow);
         }
     }
 
