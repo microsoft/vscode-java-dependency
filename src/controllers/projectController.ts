@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as fse from "fs-extra";
+import * as _ from "lodash";
 import * as path from "path";
 import { commands, ExtensionContext, Uri, window, workspace } from "vscode";
 import * as xml2js from "xml2js";
@@ -43,7 +44,8 @@ export class ProjectController {
             return;
         }
         if (await this.scaffoldJavaProject(basePath, projectName, javaVersion)) {
-            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), true);
+            const openInNewWindow = workspace && !_.isEmpty(workspace.workspaceFolders);
+            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), openInNewWindow);
         }
     }
 
