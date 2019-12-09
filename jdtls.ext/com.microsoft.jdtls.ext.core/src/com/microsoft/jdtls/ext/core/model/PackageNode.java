@@ -11,6 +11,7 @@
 
 package com.microsoft.jdtls.ext.core.model;
 
+import java.net.URI;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
@@ -164,7 +165,8 @@ public class PackageNode {
                 PackageNode node = null;
                 if (nodeKind == NodeKind.CONTAINER) {
                     node = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), nodeKind, entry.getEntryKind());
-                    node.setUri(ExtUtils.getContainerURI(javaProject, container).toString());
+                    final URI containerURI = ExtUtils.getContainerURI(javaProject, container);
+                    node.setUri(containerURI != null ? containerURI.toString() : null);
                 } else if (nodeKind == NodeKind.PACKAGEROOT) { // ClasspathEntry for referenced jar files
                     // Use package name as package root name
                     String[] pathSegments = container.getPath().segments();
