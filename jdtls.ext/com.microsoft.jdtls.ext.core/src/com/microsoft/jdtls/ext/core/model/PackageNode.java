@@ -11,6 +11,7 @@
 
 package com.microsoft.jdtls.ext.core.model;
 
+import java.net.URI;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
@@ -133,11 +134,11 @@ public class PackageNode {
             if (entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
                 return createNodeForClasspathVariable(entry);
             } else {
-                return new PackageRootNode(pkgRoot.getElementName(), pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+                return new PackageRootNode(pkgRoot, pkgRoot.getElementName(), NodeKind.PACKAGEROOT);
             }
         } else {
-            return new PackageRootNode(ExtUtils.removeProjectSegment(pkgRoot.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
-                    pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+            return new PackageRootNode(pkgRoot,
+                    ExtUtils.removeProjectSegment(pkgRoot.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(), NodeKind.PACKAGEROOT);
         }
     }
 
@@ -161,17 +162,21 @@ public class PackageNode {
                 container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
             }
             if (container != null) {
-                switch (nodeKind) {
-                case CONTAINER:
-                    return new ContainerNode(container.getDescription(), container.getPath().toPortableString(), nodeKind, entry.getEntryKind());
-                case PACKAGEROOT:
+                PackageNode node = null;
+                if (nodeKind == NodeKind.CONTAINER) {
+                    node = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), nodeKind, entry.getEntryKind());
+                    final URI containerURI = ExtUtils.getContainerURI(javaProject, container);
+                    node.setUri(containerURI != null ? containerURI.toString() : null);
+                } else if (nodeKind == NodeKind.PACKAGEROOT) { // ClasspathEntry for referenced jar files
                     // Use package name as package root name
                     String[] pathSegments = container.getPath().segments();
-                    return new PackageRootNode(pathSegments[pathSegments.length - 1], container.getPath().toPortableString(), nodeKind,
-                            IPackageFragmentRoot.K_BINARY);
-                default:
-                    return null;
+                    node = new PackageRootNode(
+                        pathSegments[pathSegments.length - 1],
+                        container.getPath().toPortableString(),
+                        container.getPath().toFile().toURI().toString(),
+                        nodeKind, IPackageFragmentRoot.K_BINARY);
                 }
+                return node;
             }
         } catch (CoreException e) {
             JdtlsExtActivator.logException("Problems when convert classpath entry to package node ", e);
@@ -201,7 +206,8 @@ public class PackageNode {
         IClasspathEntry entry = JavaCore.getResolvedClasspathEntry(classpathEntry);
         String name = classpathEntry.getPath().toPortableString();
         String path = entry.getPath().toPortableString();
-        return new PackageRootNode(name, path, NodeKind.PACKAGEROOT, IPackageFragmentRoot.K_BINARY);
+        String uri = entry.getPath().toFile().toURI().toString();
+        return new PackageRootNode(name, path, uri, NodeKind.PACKAGEROOT, IPackageFragmentRoot.K_BINARY);
     }
 
     public String getName() {
