@@ -20,13 +20,16 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IJarEntryResource;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JarEntryDirectory;
 import org.eclipse.jdt.internal.core.JarEntryFile;
+import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 
 public final class ExtUtils {
@@ -102,6 +105,18 @@ public final class ExtUtils {
             return path.removeFirstSegments(1).makeRelative();
         }
         return path;
+    }
+
+    public static URI getContainerURI(IJavaProject javaProject, IClasspathContainer container) throws CoreException {
+        switch (container.getKind()) {
+        case IClasspathContainer.K_DEFAULT_SYSTEM: // JRE Container
+        case IClasspathContainer.K_SYSTEM:
+            return JavaRuntime.getVMInstall(javaProject).getInstallLocation().toURI();
+        case IClasspathContainer.K_APPLICATION: // Plugin Container, Maven Container, etc
+            return null; // TODO: find out a good way to detect these containers' uri
+        default: // Persistent container (e.g. /src/main/java)
+            return container.getPath().toFile().toURI();
+        }
     }
 
     private static JarEntryFile findFileInJar(JarEntryDirectory directory, String path) {

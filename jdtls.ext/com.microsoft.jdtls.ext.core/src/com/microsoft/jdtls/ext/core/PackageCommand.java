@@ -175,9 +175,9 @@ public class PackageCommand {
                     IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getParent();
                     PackageNode rootNode = null;
 
-                    rootNode = new PackageRootNode(
+                    rootNode = new PackageRootNode(pkgRoot,
                             ExtUtils.removeProjectSegment(packageFragment.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
-                            pkgRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT, pkgRoot.getKind());
+                            NodeKind.PACKAGEROOT);
 
                     result.add(PackageNode.createNodeForProject(packageFragment));
                     result.add(rootNode);
@@ -209,8 +209,8 @@ public class PackageCommand {
             IJavaElement javaElement = JavaCore.create(element);
             if (javaElement instanceof IPackageFragmentRoot) {
                 IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) javaElement;
-                nodeList.add(0, new PackageRootNode(element.getProjectRelativePath().toPortableString(), pkgRoot.getPath().toPortableString(),
-                        NodeKind.PACKAGEROOT, pkgRoot.getKind()));
+                nodeList.add(0, new PackageRootNode(pkgRoot,
+                        element.getProjectRelativePath().toPortableString(), NodeKind.PACKAGEROOT));
                 nodeList.add(0, PackageNode.createNodeForProject(javaElement));
                 return nodeList;
             } else if (javaElement instanceof IPackageFragment) {
@@ -280,8 +280,7 @@ public class PackageCommand {
                         if (fragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
                             displayName = ExtUtils.removeProjectSegment(javaProject.getElementName(), fragmentRoot.getPath()).toPortableString();
                         }
-                        PackageRootNode node = new PackageRootNode(displayName, fragmentRoot.getPath().toPortableString(), NodeKind.PACKAGEROOT,
-                                fragmentRoot.getKind());
+                        PackageRootNode node = new PackageRootNode(fragmentRoot, displayName, NodeKind.PACKAGEROOT);
                         children.add(node);
                         if (fragmentRoot instanceof JrtPackageFragmentRoot) {
                             node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
@@ -440,7 +439,14 @@ public class PackageCommand {
         List<PackageNode> result = new ArrayList<>();
         for (Object root : rootContent) {
             if (root instanceof IPackageFragment) {
-                result.add(PackageNode.createNodeForPackageFragment((IPackageFragment) root));
+                IPackageFragment fragment = (IPackageFragment) root;
+                PackageNode entry = PackageNode.createNodeForPackageFragment(fragment);
+                if (fragment.getResource() != null) {
+                    entry.setUri(fragment.getResource().getLocationURI().toString());
+                } else {
+                    entry.setUri(fragment.getPath().toFile().toURI().toString());
+                }
+                result.add(entry);
             } else if (root instanceof IClassFile) {
                 IClassFile classFile = (IClassFile) root;
                 PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.TYPEROOT);

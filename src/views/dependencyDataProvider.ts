@@ -28,6 +28,12 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean) => this.refreshWithLog(debounce)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS,
+            (node: INodeData) => commands.executeCommand("revealFileInOS", Uri.parse(node.uri))));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH,
+            (node: INodeData) => commands.executeCommand("copyFilePath", Uri.parse(node.uri))));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH,
+            (node: INodeData) => commands.executeCommand("copyRelativeFilePath", Uri.parse(node.uri))));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OPEN_FILE,
             instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
