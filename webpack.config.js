@@ -34,6 +34,9 @@ const config = {
             use: [{
                 loader: 'ts-loader',
             }]
+        }, {
+            test: /\.node$/,
+            loader: 'native-ext-loader',
         }]
     },
 }
