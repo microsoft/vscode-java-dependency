@@ -11,12 +11,19 @@ import { Commands } from "../commands";
 import { Utility } from "../utility";
 
 export class ProjectController implements Disposable {
+
+    private disposable: Disposable;
+
     public constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_CREATE,
-            instrumentOperation(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject())));
+        this.disposable = Disposable.from(
+            commands.registerCommand(Commands.JAVA_PROJECT_CREATE,
+                instrumentOperation(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject())),
+        );
     }
 
-    public dispose() {}
+    public dispose() {
+        this.disposable.dispose();
+    }
 
     public async createJavaProject() {
         const javaVersion: number = await this.getJavaVersion();

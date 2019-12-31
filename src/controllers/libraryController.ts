@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as chokidar from "chokidar";
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import { commands, Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
@@ -14,22 +13,21 @@ import { DataNode } from "../views/dataNode";
 
 export class LibraryController implements Disposable {
 
-    private libraryWatcher: chokidar.FSWatcher | undefined = undefined;
+    private disposable: Disposable;
 
     public constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_ADD_LIBRARIES,
-            instrumentOperation(Commands.JAVA_PROJECT_ADD_LIBRARIES, (operationId: string, node: DataNode) => this.addLibraries())));
-        context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_REMOVE_LIBRARY,
-            instrumentOperation(Commands.JAVA_PROJECT_REMOVE_LIBRARY, (operationId: string, node: DataNode) => this.removeLibrary(node.path))));
-        context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES,
-            instrumentOperation(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, (operationId: string, node: DataNode) => this.refreshLibraries())));
+        this.disposable = Disposable.from(
+            commands.registerCommand(Commands.JAVA_PROJECT_ADD_LIBRARIES,
+                instrumentOperation(Commands.JAVA_PROJECT_ADD_LIBRARIES, (operationId: string, node: DataNode) => this.addLibraries())),
+            commands.registerCommand(Commands.JAVA_PROJECT_REMOVE_LIBRARY,
+                instrumentOperation(Commands.JAVA_PROJECT_REMOVE_LIBRARY, (operationId: string, node: DataNode) => this.removeLibrary(node.path))),
+            commands.registerCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES,
+                instrumentOperation(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, (operationId: string, node: DataNode) => this.refreshLibraries())),
+        );
     }
 
     public dispose() {
-        if (this.libraryWatcher) {
-            this.libraryWatcher.close();
-            this.libraryWatcher = undefined;
-        }
+        this.disposable.dispose();
     }
 
     public async addLibraries(libraryGlobs?: string[]) {
