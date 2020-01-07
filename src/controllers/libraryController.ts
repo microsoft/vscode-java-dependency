@@ -39,7 +39,7 @@ export class LibraryController implements Disposable {
                 canSelectFiles: true,
                 canSelectFolders: true,
                 canSelectMany: true,
-                openLabel: "Select",
+                openLabel: "Select a jar file or directory to the project classpath",
             });
             if (!results) {
                 return;

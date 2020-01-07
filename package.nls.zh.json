@@ -1,8 +1,8 @@
 {
   "description": "在 VSCode 中管理 Java 依赖项",
   "contributes.commands.java.project.create": "创建 Java 项目",
-  "contributes.commands.java.project.addLibraries": "将一个 Jar 文件或一个目录添加到 Java 项目引用库",
-  "contributes.commands.java.project.removeLibrary": "将 Jar 文件从 Java 项目引用库移除",
+  "contributes.commands.java.project.addLibraries": "将一个 Jar 文件或一个目录添加到 Java 项目类路径中",
+  "contributes.commands.java.project.removeLibrary": "将该 Jar 文件从 Java 项目类路径中移除",
   "contributes.commands.java.view.package.refresh": "刷新",
   "contributes.commands.java.view.package.changeRepresentation": "更改包展示形式",
   "contributes.commands.java.view.package.changeToFlatPackageView":"将 Java 包显示方式切换为平行显示",

@@ -1,8 +1,8 @@
 {
   "description": "Manage Java Dependencies in VSCode",
   "contributes.commands.java.project.create": "Create Java Project",
-  "contributes.commands.java.project.addLibraries": "Add a jar file or a folder to project library reference",
-  "contributes.commands.java.project.removeLibrary": "Remove jar file from project library reference",
+  "contributes.commands.java.project.addLibraries": "Add a jar file or a folder to project classpath",
+  "contributes.commands.java.project.removeLibrary": "Remove jar file from project classpath",
   "contributes.commands.java.view.package.refresh": "Refresh",
   "contributes.commands.java.view.package.changeRepresentation": "Change package representation",
   "contributes.commands.java.view.package.changeToFlatPackageView":"Change to flat package representation",
