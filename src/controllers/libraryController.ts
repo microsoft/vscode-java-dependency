@@ -50,9 +50,6 @@ export class LibraryController implements Disposable {
             }));
         }
         const setting = Settings.referencedLibraries();
-        if (Settings.isDefaultReferencedLibraries()) {
-            setting.include = [];
-        }
         setting.include.push(...libraryGlobs);
         Settings.updateReferencedLibraries(setting);
     }

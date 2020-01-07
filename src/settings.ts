@@ -95,11 +95,6 @@ export class Settings {
         }
     }
 
-    public static isDefaultReferencedLibraries(): boolean {
-        const setting = workspace.getConfiguration("java.project").inspect<string[] | Partial<IReferencedLibraries>>("referencedLibraries");
-        return setting.defaultValue && !setting.globalValue && !setting.workspaceValue && !setting.workspaceFolderValue;
-    }
-
     public static showOutline(): boolean {
         return this._dependencyConfig.get("showOutline");
     }
