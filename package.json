@@ -231,7 +231,7 @@
         {
           "command": "java.project.addLibraries",
           "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries/",
-          "group": "inline@1"
+          "group": "inline@0"
         },
         {
           "command": "java.project.removeLibrary",
@@ -241,7 +241,7 @@
         {
           "command": "java.project.refreshLibraries",
           "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries/",
-          "group": "inline@0"
+          "group": "inline@1"
         }
       ]
     },

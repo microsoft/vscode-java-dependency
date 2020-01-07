@@ -73,14 +73,14 @@ export class Settings {
         workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Hierarchical, false);
     }
 
-    public static updateReferencedLibraries(setting: IReferencedLibraries): void {
+    public static updateReferencedLibraries(libraries: IReferencedLibraries): void {
         let updateSetting: string[] | Partial<IReferencedLibraries> = {
-            include: setting.include,
-            exclude: setting.exclude.length > 0 ? setting.exclude : undefined,
-            sources: Object.keys(setting.sources).length > 0 ? setting.sources : undefined,
+            include: libraries.include,
+            exclude: libraries.exclude.length > 0 ? libraries.exclude : undefined,
+            sources: Object.keys(libraries.sources).length > 0 ? libraries.sources : undefined,
         };
         if (!updateSetting.exclude && !updateSetting.sources) {
-            updateSetting = setting.include;
+            updateSetting = libraries.include;
         }
         workspace.getConfiguration().update("java.project.referencedLibraries", updateSetting);
     }
