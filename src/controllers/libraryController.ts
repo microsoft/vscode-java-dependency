@@ -49,7 +49,9 @@ export class LibraryController implements Disposable {
                 return;
             }
             libraryGlobs = await Promise.all(results.map(async (uri: Uri) => {
-                const uriPath = workspace.asRelativePath(uri);
+                // keep the param: `includeWorkspaceFolder` to false here
+                // since the multi-root is not supported well for invisible projects
+                const uriPath = workspace.asRelativePath(uri, false);
                 return (await fse.stat(uri.fsPath)).isDirectory() ? `${uriPath}/**/*.jar` : uriPath;
             }));
         }
@@ -62,7 +64,7 @@ export class LibraryController implements Disposable {
 
     public async removeLibrary(library: string) {
         const setting = Settings.referencedLibraries();
-        setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(library));
+        setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(library, false));
         Settings.updateReferencedLibraries(setting);
     }
 
