@@ -3,6 +3,7 @@
 
 import * as fse from "fs-extra";
 import * as _ from "lodash";
+import * as minimatch from "minimatch";
 import { commands, Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
@@ -20,7 +21,8 @@ export class LibraryController implements Disposable {
             commands.registerCommand(Commands.JAVA_PROJECT_ADD_LIBRARIES,
                 instrumentOperation(Commands.JAVA_PROJECT_ADD_LIBRARIES, (operationId: string, node: DataNode) => this.addLibraries())),
             commands.registerCommand(Commands.JAVA_PROJECT_REMOVE_LIBRARY,
-                instrumentOperation(Commands.JAVA_PROJECT_REMOVE_LIBRARY, (operationId: string, node: DataNode) => this.removeLibrary(node.path))),
+                instrumentOperation(Commands.JAVA_PROJECT_REMOVE_LIBRARY, (operationId: string, node: DataNode) =>
+                        this.removeLibrary(Uri.parse(node.uri).fsPath))),
             commands.registerCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES,
                 instrumentOperation(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, (operationId: string, node: DataNode) => this.refreshLibraries())),
         );
@@ -45,18 +47,28 @@ export class LibraryController implements Disposable {
                 return;
             }
             libraryGlobs = await Promise.all(results.map(async (uri: Uri) => {
-                const uriPath = workspace.asRelativePath(uri, false);
+                const uriPath = workspace.asRelativePath(uri);
                 return (await fse.stat(uri.fsPath)).isDirectory() ? `${uriPath}/**/*.jar` : uriPath;
             }));
         }
         const setting = Settings.referencedLibraries();
-        setting.include.push(...libraryGlobs);
+        const excludeSet = new Set<string>(setting.exclude);
+        for (const excludePattern of excludeSet) {
+            for (const includePatthern of libraryGlobs) {
+                if (minimatch(excludePattern, includePatthern)) {
+                    excludeSet.delete(excludePattern);
+                    break;
+                }
+            }
+        }
+        setting.include = this.updateSettingArray(setting.include, ...libraryGlobs);
+        setting.exclude = Array.from(excludeSet);
         Settings.updateReferencedLibraries(setting);
     }
 
     public async removeLibrary(library: string) {
         const setting = Settings.referencedLibraries();
-        setting.exclude.push(workspace.asRelativePath(library));
+        setting.exclude = this.updateSettingArray(setting.exclude, workspace.asRelativePath(library));
         Settings.updateReferencedLibraries(setting);
     }
 
@@ -65,5 +77,10 @@ export class LibraryController implements Disposable {
         if (workspaceFolder) {
             await Jdtls.refreshLibraries(workspaceFolder.uri.toString());
         }
+    }
+
+    private updateSettingArray(origin: string[], ...update: string[]): string[] {
+        origin.push(...update);
+        return _.uniq(origin);
     }
 }
