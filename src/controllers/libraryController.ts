@@ -51,18 +51,18 @@ export class LibraryController implements Disposable {
                 return (await fse.stat(uri.fsPath)).isDirectory() ? `${uriPath}/**/*.jar` : uriPath;
             }));
         }
+
         const setting = Settings.referencedLibraries();
-        const excludeSet = new Set<string>(setting.exclude);
-        for (const excludePattern of excludeSet) {
+        setting.exclude = setting.exclude.filter((pattern) => {
             for (const includePatthern of libraryGlobs) {
-                if (minimatch(excludePattern, includePatthern)) {
-                    excludeSet.delete(excludePattern);
-                    break;
+                if (minimatch(pattern, includePatthern)) {
+                    return false;
                 }
             }
-        }
+            return true;
+        });
+
         setting.include = this.updateSettingArray(setting.include, ...libraryGlobs);
-        setting.exclude = Array.from(excludeSet);
         Settings.updateReferencedLibraries(setting);
     }
 
