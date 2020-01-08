@@ -36,12 +36,14 @@ export class LibraryController implements Disposable {
         if (!libraryGlobs) {
             libraryGlobs = [];
             const workspaceFolder: WorkspaceFolder | undefined = Utility.getDefaultWorkspaceFolder();
+            const isWindows = process.platform.indexOf("win") === 0;
             const results: Uri[] | undefined = await window.showOpenDialog({
                 defaultUri: workspaceFolder && workspaceFolder.uri,
                 canSelectFiles: true,
-                canSelectFolders: true,
+                canSelectFolders: isWindows ? false : true,
                 canSelectMany: true,
-                openLabel: "Select a jar file or directory to the project classpath",
+                openLabel: isWindows ? "Select jar files" : "Select jar files or directories",
+                filters: { Library: ["jar"] },
             });
             if (!results) {
                 return;
@@ -53,22 +55,14 @@ export class LibraryController implements Disposable {
         }
 
         const setting = Settings.referencedLibraries();
-        setting.exclude = setting.exclude.filter((pattern) => {
-            for (const includePatthern of libraryGlobs) {
-                if (minimatch(pattern, includePatthern)) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        setting.include = this.updateSettingArray(setting.include, ...libraryGlobs);
+        setting.exclude = this.dedupAlreadyCoveredPattern(libraryGlobs, ...setting.exclude);
+        setting.include = this.updatePatternArray(setting.include, ...libraryGlobs);
         Settings.updateReferencedLibraries(setting);
     }
 
     public async removeLibrary(library: string) {
         const setting = Settings.referencedLibraries();
-        setting.exclude = this.updateSettingArray(setting.exclude, workspace.asRelativePath(library));
+        setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(library));
         Settings.updateReferencedLibraries(setting);
     }
 
@@ -79,7 +73,19 @@ export class LibraryController implements Disposable {
         }
     }
 
-    private updateSettingArray(origin: string[], ...update: string[]): string[] {
+    /**
+     * Check if the `update` patterns are already covered by `origin` patterns and return those uncovered
+     */
+    private dedupAlreadyCoveredPattern(origin: string[], ...update: string[]): string[] {
+        return update.filter((newPattern) => {
+            return !origin.some((originPattern) => {
+                return minimatch(newPattern, originPattern);
+            });
+        });
+    }
+
+    private updatePatternArray(origin: string[], ...update: string[]): string[] {
+        update = this.dedupAlreadyCoveredPattern(origin, ...update);
         origin.push(...update);
         return _.uniq(origin);
     }
