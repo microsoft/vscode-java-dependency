@@ -4,8 +4,8 @@
     <groupId>com.microsoft.jdtls.ext</groupId>
     <artifactId>jdtls-ext-parent</artifactId>
     <name>${base.name} :: Parent</name>
-    <version>0.6.0</version>
-   <packaging>pom</packaging>
+    <version>0.7.0</version>
+    <packaging>pom</packaging>
     <properties>
         <base.name>Java Project Manager</base.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

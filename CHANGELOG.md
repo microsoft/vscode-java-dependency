@@ -4,6 +4,16 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.7.0 - 2020-01-10
+### Added
+- Add `Collapse All` support in the `Java Dependencies` explorer. [PR#198](https://github.com/microsoft/vscode-java-dependency/pull/198)
+- Add file path as description for external jar files in the `Java Dependencies` explorer. [PR#209](https://github.com/microsoft/vscode-java-dependency/pull/209)
+- Add `Reveal in Explorer`, `Copy Path` and `Copy Relative Path` in the `Java Dependencies` explorer's right-click context menu. [#PR208](https://github.com/microsoft/vscode-java-dependency/pull/208)
+
+### Updated
+- Open newly created project in the current window when no workspace folder is opened. [#180](https://github.com/microsoft/vscode-java-dependency/issues/180)
+- Update the icons in the navigation bar of the `Java Dependencies` explorer. [#197](https://github.com/microsoft/vscode-java-dependency/issues/197)
+
 ## 0.6.0 - 2019-10-16
 ### Updated:
 - Fix: When edit java file, the dependency view failed to auto refresh because of uncaught NPE. [#176](https://github.com/microsoft/vscode-java-dependency/issues/176)
