@@ -58,7 +58,7 @@ export abstract class DataNode extends ExplorerNode {
 
     protected computeContextValue(): string {
         let contextValue = this.contextValue;
-        if (this.uri && Uri.parse(this.uri).scheme === "file") {
+        if (this.uri && this.uri.startsWith("file")) {
             contextValue = `${contextValue || ""}+uri`;
         }
         if (contextValue) {
