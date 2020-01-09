@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## 0.7.0 - 2020-01-10
 ### Added
 - Add `Collapse All` support in the `Java Dependencies` explorer. [PR#198](https://github.com/microsoft/vscode-java-dependency/pull/198)
-- Add file path as descirption for external jar files in the `Java Dependencies` explorer. [PR#209](https://github.com/microsoft/vscode-java-dependency/pull/209)
+- Add file path as description for external jar files in the `Java Dependencies` explorer. [PR#209](https://github.com/microsoft/vscode-java-dependency/pull/209)
 - Add `Reveal in Explorer`, `Copy Path` and `Copy Relative Path` in the `Java Dependencies` explorer's right-click context menu. [#PR208](https://github.com/microsoft/vscode-java-dependency/pull/208)
 
 ### Updated
