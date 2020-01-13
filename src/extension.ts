@@ -4,6 +4,7 @@
 import { commands, ExtensionContext } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
+import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { Services } from "./services";
 import { Settings } from "./settings";
@@ -20,10 +21,8 @@ function activateExtension(operationId: string, context: ExtensionContext) {
     Services.initialize(context);
     Settings.initialize(context);
 
-    const projectController: ProjectController = new ProjectController(context);
-    const instrumented = instrumentOperation(Commands.JAVA_PROJECT_CREATE, () => projectController.createJavaProject());
-    context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_CREATE, instrumented));
-
+    context.subscriptions.push(new ProjectController(context));
+    context.subscriptions.push(new LibraryController(context));
     context.subscriptions.push(new DependencyExplorer(context));
 }
 

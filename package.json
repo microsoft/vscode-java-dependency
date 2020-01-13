@@ -40,6 +40,33 @@
         "category": "Java"
       },
       {
+        "command": "java.project.addLibraries",
+        "title": "%contributes.commands.java.project.addLibraries%",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-add.svg",
+          "light": "images/light/icon-add.svg"
+        }
+      },
+      {
+        "command": "java.project.removeLibrary",
+        "title": "%contributes.commands.java.project.removeLibrary%",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-remove.svg",
+          "light": "images/light/icon-remove.svg"
+        }
+      },
+      {
+        "command": "java.project.refreshLibraries",
+        "title": "%contributes.commands.java.view.package.refresh%",
+        "category": "Java",
+        "icon": {
+          "dark": "images/dark/icon-refresh.svg",
+          "light": "images/light/icon-refresh.svg"
+        }
+      },
+      {
         "command": "java.view.package.refresh",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
@@ -148,6 +175,14 @@
         {
           "command": "java.view.package.copyRelativeFilePath",
           "when": "never"
+        },
+        {
+          "command": "java.project.removeLibrary",
+          "when": "never"
+        },
+        {
+          "command": "java.project.refreshLibraries",
+          "when": "never"
         }
       ],
       "view/title": [
@@ -192,6 +227,21 @@
           "command": "java.view.package.copyRelativeFilePath",
           "when": "view == javaDependencyExplorer && viewItem =~ /java:.*?\\+uri/",
           "group": "@2"
+        },
+        {
+          "command": "java.project.addLibraries",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries/",
+          "group": "inline@0"
+        },
+        {
+          "command": "java.project.removeLibrary",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:jar\/referenced-libraries/",
+          "group": "inline"
+        },
+        {
+          "command": "java.project.refreshLibraries",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries/",
+          "group": "inline@1"
         }
       ]
     },
@@ -219,6 +269,7 @@
     "@types/fs-extra": "^5.0.4",
     "@types/glob": "^7.1.1",
     "@types/lodash": "^4.14.139",
+    "@types/minimatch": "^3.0.3",
     "@types/mocha": "^5.2.5",
     "@types/node": "^8.10.36",
     "@types/vscode": "1.30.0",
@@ -241,6 +292,7 @@
     "find-java-home": "^0.2.0",
     "fs-extra": "^7.0.1",
     "lodash": "^4.17.15",
+    "minimatch": "^3.0.4",
     "vscode-extension-telemetry-wrapper": "^0.4.0",
     "xml2js": "^0.4.19"
   }

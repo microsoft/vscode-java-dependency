@@ -4,12 +4,25 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
-import { commands, ExtensionContext, Uri, window, workspace } from "vscode";
+import { commands, Disposable, ExtensionContext, Uri, window, workspace } from "vscode";
+import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import * as xml2js from "xml2js";
+import { Commands } from "../commands";
 import { Utility } from "../utility";
 
-export class ProjectController {
-    constructor(public readonly context: ExtensionContext) {
+export class ProjectController implements Disposable {
+
+    private disposable: Disposable;
+
+    public constructor(public readonly context: ExtensionContext) {
+        this.disposable = Disposable.from(
+            commands.registerCommand(Commands.JAVA_PROJECT_CREATE,
+                instrumentOperation(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject())),
+        );
+    }
+
+    public dispose() {
+        this.disposable.dispose();
     }
 
     public async createJavaProject() {

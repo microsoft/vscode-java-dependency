@@ -32,7 +32,15 @@ export namespace Commands {
 
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
+    export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
+
+    export const JAVA_PROJECT_REMOVE_LIBRARY = "java.project.removeLibrary";
+
+    export const JAVA_PROJECT_REFRESH_LIBRARIES = "java.project.refreshLibraries";
+
     export const JAVA_PROJECT_LIST = "java.project.list";
+
+    export const JAVA_PROJECT_REFRESH_LIB_SERVER = "java.project.refreshLib";
 
     export const JAVA_GETPACKAGEDATA = "java.getPackageData";
 

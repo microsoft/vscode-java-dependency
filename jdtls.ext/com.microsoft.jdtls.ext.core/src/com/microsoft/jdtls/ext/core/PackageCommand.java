@@ -51,6 +51,7 @@ import org.eclipse.jdt.internal.core.JarEntryFile;
 import org.eclipse.jdt.internal.core.JarEntryResource;
 import org.eclipse.jdt.internal.core.JrtPackageFragmentRoot;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
+import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 
@@ -246,7 +247,7 @@ public class PackageCommand {
                         .collect(Collectors.toList());
                 boolean isReferencedLibrariesExist = Arrays.stream(references)
                         .anyMatch(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE);
-                if (isReferencedLibrariesExist) {
+                if (isReferencedLibrariesExist || !ProjectUtils.isVisibleProject(javaProject.getProject())) {
                     result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
                 }
                 return result;

@@ -15,6 +15,12 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.core.runtime.jobs.IJobChangeListener;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
+import org.eclipse.jdt.ls.core.internal.JavaClientConnection;
+import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
+import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -25,6 +31,16 @@ public class JdtlsExtActivator implements BundleActivator {
 
     private static BundleContext context;
 
+    private static IJobChangeListener updateClasspathListener = new JobChangeAdapter() {
+        @Override
+        public void done(IJobChangeEvent event) {
+            if (event.getJob() instanceof UpdateClasspathJob) {
+                JavaClientConnection connection = JavaLanguageServerPlugin.getInstance().getClientConnection();
+                connection.executeClientCommand("java.view.package.refresh", /* debounce = */true);
+            }
+        }
+    };
+
     static BundleContext getContext() {
         return context;
     }
@@ -32,11 +48,13 @@ public class JdtlsExtActivator implements BundleActivator {
     @Override
     public void start(BundleContext bundleContext) throws Exception {
         JdtlsExtActivator.context = bundleContext;
+        UpdateClasspathJob.getInstance().addJobChangeListener(JdtlsExtActivator.updateClasspathListener);
     }
 
     @Override
     public void stop(BundleContext bundleContext) throws Exception {
         JdtlsExtActivator.context = null;
+        UpdateClasspathJob.getInstance().removeJobChangeListener(JdtlsExtActivator.updateClasspathListener);
     }
 
     @SuppressWarnings("unchecked")
