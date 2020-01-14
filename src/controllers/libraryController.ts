@@ -4,6 +4,7 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as minimatch from "minimatch";
+import * as path from "path";
 import { commands, Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
@@ -62,9 +63,19 @@ export class LibraryController implements Disposable {
         Settings.updateReferencedLibraries(setting);
     }
 
-    public async removeLibrary(library: string) {
+    public async removeLibrary(removalFsPath: string) {
         const setting = Settings.referencedLibraries();
-        setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(library, false));
+        const removedPaths = _.remove(setting.include, (include) => {
+            if (path.isAbsolute(include)) {
+                return Uri.file(include).fsPath === removalFsPath;
+            } else {
+                return include === workspace.asRelativePath(removalFsPath, false);
+            }
+        });
+        if (removedPaths.length === 0) {
+            // No duplicated item in include array, add it into the exclude field
+            setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(removalFsPath, false));
+        }
         Settings.updateReferencedLibraries(setting);
     }
 
