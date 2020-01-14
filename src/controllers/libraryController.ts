@@ -64,7 +64,13 @@ export class LibraryController implements Disposable {
 
     public async removeLibrary(library: string) {
         const setting = Settings.referencedLibraries();
-        setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(library, false));
+        const removedPaths = _.remove(setting.include, (include) => {
+            return Uri.file(include).fsPath === Uri.file(library).fsPath;
+        });
+        if (removedPaths.length === 0) {
+            // No duplicated item in include array, add it into the exclude field
+            setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(library, false));
+        }
         Settings.updateReferencedLibraries(setting);
     }
 
