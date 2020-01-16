@@ -2,7 +2,7 @@
   "name": "vscode-java-dependency",
   "displayName": "Java Dependency Viewer",
   "description": "%description%",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "publisher": "vscjava",
   "preview": true,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -31,7 +31,7 @@
   "main": "./dist/extension",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.7.0.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.8.0.jar"
     ],
     "commands": [
       {
