@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.8.0 - 2020-01-17
 ### Added
-- Supprt managing referenced libraries in the dependency explorer. [#174](https://github.com/microsoft/vscode-java-dependency/issues/174)
+- Support managing referenced libraries in the dependency explorer. [#174](https://github.com/microsoft/vscode-java-dependency/issues/174)
 
 ## 0.7.0 - 2020-01-10
 ### Added
