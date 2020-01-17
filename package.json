@@ -230,17 +230,17 @@
         },
         {
           "command": "java.project.addLibraries",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries/",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries$/",
           "group": "inline@0"
         },
         {
           "command": "java.project.removeLibrary",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:jar\/referenced-libraries/",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:jar\/referenced-libraries\\+uri$/",
           "group": "inline"
         },
         {
           "command": "java.project.refreshLibraries",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries/",
+          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries$/",
           "group": "inline@1"
         }
       ]

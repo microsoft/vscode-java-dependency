@@ -40,11 +40,14 @@ import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
  */
 public class PackageNode {
     private static final String REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries";
+    private static final String IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries (Read-only)";
 
     public static final String REFERENCED_LIBRARIES_PATH = "REFERENCED_LIBRARIES_PATH";
     public static final String DEFAULT_PACKAGE_DISPLAYNAME = "(default package)";
     public static final ContainerNode REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH,
             NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
+    public static final ContainerNode IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH,
+    NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
 
     /**
      * The name of the PackageNode
