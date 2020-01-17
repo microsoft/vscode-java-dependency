@@ -247,8 +247,11 @@ public class PackageCommand {
                         .collect(Collectors.toList());
                 boolean isReferencedLibrariesExist = Arrays.stream(references)
                         .anyMatch(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE);
-                if (isReferencedLibrariesExist || !ProjectUtils.isVisibleProject(javaProject.getProject())) {
+                // Invisble project will always have the referenced libraries entry
+                if (!ProjectUtils.isVisibleProject(javaProject.getProject())) {
                     result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
+                } else if (isReferencedLibrariesExist) {
+                    result.add(PackageNode.IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER);
                 }
                 return result;
             } catch (CoreException e) {
@@ -257,8 +260,6 @@ public class PackageCommand {
         }
         return Collections.emptyList();
     }
-
-
 
     private static List<PackageNode> getPackageFragmentRoots(PackageParams query, IProgressMonitor pm) {
         ArrayList<PackageNode> children = new ArrayList<>();
