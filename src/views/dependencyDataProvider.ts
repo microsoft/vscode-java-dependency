@@ -6,7 +6,7 @@ import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
     Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
@@ -28,19 +28,14 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean) => this.refreshWithLog(debounce)));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS,
-            instrumentOperation(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (_operationId, node: INodeData) =>
-                commands.executeCommand("revealFileInOS", Uri.parse(node.uri)))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH,
-            instrumentOperation(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (_operationId, node: INodeData) =>
-                commands.executeCommand("copyFilePath", Uri.parse(node.uri)))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH,
-            instrumentOperation(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (_operationId, node: INodeData) =>
-                commands.executeCommand("copyRelativeFilePath", Uri.parse(node.uri)))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OPEN_FILE,
-            instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
-            instrumentOperation(Commands.VIEW_PACKAGE_OUTLINE, (_operationId, uri, range) => this.goToOutline(uri, range))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node: INodeData) =>
+            commands.executeCommand("revealFileInOS", Uri.parse(node.uri))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node: INodeData) =>
+            commands.executeCommand("copyFilePath", Uri.parse(node.uri))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node: INodeData) =>
+            commands.executeCommand("copyRelativeFilePath", Uri.parse(node.uri))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OPEN_FILE, (uri) => this.openFile(uri)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OUTLINE, (uri, range) => this.goToOutline(uri, range)));
         Settings.registerConfigurationListener((updatedConfig, oldConfig) => {
             if (updatedConfig.refreshDelay !== oldConfig.refreshDelay) {
                 this.setRefreshDelay(updatedConfig.refreshDelay);
