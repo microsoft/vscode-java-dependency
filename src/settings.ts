@@ -5,7 +5,7 @@ import {
     commands, ConfigurationChangeEvent, ExtensionContext,
     workspace, WorkspaceConfiguration,
 } from "vscode";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { SyncHandler } from "./fileWather";
 
@@ -40,17 +40,15 @@ export class Settings {
 
         context.subscriptions.push({ dispose: () => { this._configurationListeners = []; } });
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER,
-            instrumentOperation(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER,
-            instrumentOperation(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER, Settings.unlinkWithFolderCommand)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER, Settings.unlinkWithFolderCommand));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW,
-            instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW, Settings.changeToFlatPackageView)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW,
+            Settings.changeToFlatPackageView));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW,
-            instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW, Settings.changeToHierarchicalPackageView)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW,
+            Settings.changeToHierarchicalPackageView));
     }
 
     public static registerConfigurationListener(listener: Listener) {
