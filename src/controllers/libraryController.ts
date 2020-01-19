@@ -5,8 +5,8 @@ import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as minimatch from "minimatch";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
+import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { Settings } from "../settings";
@@ -19,13 +19,11 @@ export class LibraryController implements Disposable {
 
     public constructor(public readonly context: ExtensionContext) {
         this.disposable = Disposable.from(
-            commands.registerCommand(Commands.JAVA_PROJECT_ADD_LIBRARIES,
-                instrumentOperation(Commands.JAVA_PROJECT_ADD_LIBRARIES, (operationId: string, node: DataNode) => this.addLibraries())),
-            commands.registerCommand(Commands.JAVA_PROJECT_REMOVE_LIBRARY,
-                instrumentOperation(Commands.JAVA_PROJECT_REMOVE_LIBRARY, (operationId: string, node: DataNode) =>
-                        this.removeLibrary(Uri.parse(node.uri).fsPath))),
-            commands.registerCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES,
-                instrumentOperation(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, (operationId: string, node: DataNode) => this.refreshLibraries())),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_ADD_LIBRARIES, () => this.addLibraries()),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REMOVE_LIBRARY, (node: DataNode) =>
+                this.removeLibrary(Uri.parse(node.uri).fsPath)),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, () =>
+                this.refreshLibraries()),
         );
     }
 

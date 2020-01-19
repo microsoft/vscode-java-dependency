@@ -5,7 +5,7 @@ import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
 import { commands, Disposable, ExtensionContext, Uri, window, workspace } from "vscode";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import * as xml2js from "xml2js";
 import { Commands } from "../commands";
 import { Utility } from "../utility";
@@ -16,8 +16,7 @@ export class ProjectController implements Disposable {
 
     public constructor(public readonly context: ExtensionContext) {
         this.disposable = Disposable.from(
-            commands.registerCommand(Commands.JAVA_PROJECT_CREATE,
-                instrumentOperation(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject())),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject()),
         );
     }
 
