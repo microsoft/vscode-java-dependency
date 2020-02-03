@@ -38,6 +38,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_REFRESH_LIBRARIES = "java.project.refreshLibraries";
 
+    export const JAVA_MAVEN_PROJECT_ADD_DEPENDENCY = "java.project.maven.addDependency";
+
     export const JAVA_PROJECT_LIST = "java.project.list";
 
     export const JAVA_PROJECT_REFRESH_LIB_SERVER = "java.project.refreshLib";

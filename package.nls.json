@@ -2,6 +2,7 @@
   "description": "Manage Java Dependencies in VSCode",
   "contributes.commands.java.project.create": "Create Java Project",
   "contributes.commands.java.project.addLibraries": "Add a jar file or a folder to project classpath",
+  "contributes.commands.java.project.maven.addDependency": "Add a new dependency to the Maven project",
   "contributes.commands.java.project.removeLibrary": "Remove jar file from project classpath",
   "contributes.commands.java.view.package.refresh": "Refresh",
   "contributes.commands.java.view.package.changeRepresentation": "Change package representation",

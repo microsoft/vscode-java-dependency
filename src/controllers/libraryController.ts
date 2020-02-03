@@ -5,12 +5,13 @@ import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as minimatch from "minimatch";
 import * as path from "path";
-import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
+import { commands, Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { Settings } from "../settings";
 import { Utility } from "../utility";
+import { ContainerNode } from "../views/containerNode";
 import { DataNode } from "../views/dataNode";
 
 export class LibraryController implements Disposable {
@@ -24,11 +25,22 @@ export class LibraryController implements Disposable {
                 this.removeLibrary(Uri.parse(node.uri).fsPath)),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, () =>
                 this.refreshLibraries()),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_MAVEN_PROJECT_ADD_DEPENDENCY, (node: ContainerNode) =>
+                this.addMavenDependency(node)),
         );
     }
 
     public dispose() {
         this.disposable.dispose();
+    }
+
+    public async addMavenDependency(node: ContainerNode) {
+        const pomPath: string = path.join(node.projectBasePath, "pom.xml");
+        if (await fse.pathExists(pomPath)) {
+            commands.executeCommand("maven.project.addDependency", { pomPath });
+        } else {
+            commands.executeCommand("maven.project.addDependency");
+        }
     }
 
     public async addLibraries(libraryGlobs?: string[]) {
