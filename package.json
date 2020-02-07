@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.31.0"
+    "vscode": "^1.42.0"
   },
   "repository": {
     "type": "git",
@@ -43,64 +43,43 @@
         "command": "java.project.addLibraries",
         "title": "%contributes.commands.java.project.addLibraries%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-add.svg",
-          "light": "images/light/icon-add.svg"
-        }
+        "icon": "$(add)"
       },
       {
         "command": "java.project.maven.addDependency",
         "title": "%contributes.commands.java.project.maven.addDependency%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-add.svg",
-          "light": "images/light/icon-add.svg"
-        }
+        "icon": "$(add)"
       },
       {
         "command": "java.project.removeLibrary",
         "title": "%contributes.commands.java.project.removeLibrary%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-remove.svg",
-          "light": "images/light/icon-remove.svg"
-        }
+        "icon": "$(remove)"
       },
       {
         "command": "java.project.refreshLibraries",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-refresh.svg",
-          "light": "images/light/icon-refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "java.view.package.refresh",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-refresh.svg",
-          "light": "images/light/icon-refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "java.view.package.changeToHierarchicalPackageView",
         "title": "%contributes.commands.java.view.package.changeToHierarchicalPackageView%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-hierarchical.svg",
-          "light": "images/light/icon-hierarchical.svg"
-        }
+        "icon": "$(list-tree)"
       },
       {
         "command": "java.view.package.changeToFlatPackageView",
         "title": "%contributes.commands.java.view.package.changeToFlatPackageView%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-flat.svg",
-          "light": "images/light/icon-flat.svg"
-        }
+        "icon": "$(list-flat)"
       },
       {
         "command": "java.view.package.linkWithFolderExplorer",
@@ -294,7 +273,7 @@
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^5.2.5",
     "@types/node": "^8.10.36",
-    "@types/vscode": "1.30.0",
+    "@types/vscode": "1.42.0",
     "@types/xml2js": "^0.4.3",
     "cross-env": "^5.2.0",
     "glob": "^7.1.4",
