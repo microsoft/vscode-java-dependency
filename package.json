@@ -262,7 +262,7 @@
         },
         {
           "command": "java.project.maven.addDependency",
-          "when": "view == javaDependencyExplorer && viewItem =~ /container\/maven-dependencies/",
+          "when": "view == javaDependencyExplorer && mavenEnabled && viewItem =~ /container\/maven-dependencies/",
           "group": "inline@0"
         }
       ]
