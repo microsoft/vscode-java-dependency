@@ -5,12 +5,12 @@ import { Range, SymbolInformation, TreeItem, TreeItemCollapsibleState } from "vs
 import { ITypeRootNodeData } from "../java/typeRootNodeData";
 import { BaseSymbolNode } from "./baseSymbolNode";
 import { ExplorerNode } from "./explorerNode";
-import { TypeRootNode } from "./typeRootNode";
+import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export class SymbolNode extends BaseSymbolNode {
     private _children: SymbolInformation[];
 
-    constructor(symbolInfo: SymbolInformation, parent: TypeRootNode) {
+    constructor(symbolInfo: SymbolInformation, parent: PrimaryTypeNode) {
         super(symbolInfo, parent);
     }
 
@@ -18,7 +18,7 @@ export class SymbolNode extends BaseSymbolNode {
         const res: ExplorerNode[] = [];
         if (this._children && this._children.length) {
             this._children.forEach((child) => {
-                res.push(new SymbolNode(child, this.getParent() as TypeRootNode));
+                res.push(new SymbolNode(child, this.getParent() as PrimaryTypeNode));
             });
         }
         return res;
@@ -26,7 +26,7 @@ export class SymbolNode extends BaseSymbolNode {
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this.symbolInfo) {
-            const parentData = <ITypeRootNodeData>(<TypeRootNode>this.getParent()).nodeData;
+            const parentData = <ITypeRootNodeData>(<PrimaryTypeNode>this.getParent()).nodeData;
             if (parentData && parentData.symbolTree) {
                 this._children = parentData.symbolTree.get(this.symbolInfo.name);
             }

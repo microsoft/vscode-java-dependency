@@ -4,7 +4,7 @@
 import { Command, DocumentSymbol, Range, SymbolInformation, SymbolKind, ThemeIcon } from "vscode";
 import { Commands } from "../commands";
 import { ExplorerNode } from "./explorerNode";
-import { TypeRootNode } from "./typeRootNode";
+import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export abstract class BaseSymbolNode extends ExplorerNode {
 
@@ -23,7 +23,7 @@ export abstract class BaseSymbolNode extends ExplorerNode {
         [SymbolKind.Variable, "variable"],
     ]);
 
-    constructor(public readonly symbolInfo: SymbolInformation | DocumentSymbol, private parent: TypeRootNode) {
+    constructor(public readonly symbolInfo: SymbolInformation | DocumentSymbol, parent: PrimaryTypeNode) {
         super(parent);
     }
 
@@ -39,7 +39,7 @@ export abstract class BaseSymbolNode extends ExplorerNode {
         return {
             title: "Go to outline",
             command: Commands.VIEW_PACKAGE_OUTLINE,
-            arguments: [(this.getParent() as TypeRootNode).uri, this.range],
+            arguments: [(this.getParent() as PrimaryTypeNode).uri, this.range],
         };
     }
 

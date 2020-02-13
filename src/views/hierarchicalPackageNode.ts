@@ -8,8 +8,8 @@ import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
 import { PackageNode } from "./packageNode";
+import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
-import { TypeRootNode } from "./typeRootNode";
 
 export class HierarchicalPackageNode extends PackageNode {
 
@@ -63,8 +63,10 @@ export class HierarchicalPackageNode extends PackageNode {
                     result.push(new FileNode(nodeData, this));
                 } else if (nodeData instanceof HierarchicalPackageNodeData) {
                     result.push(new HierarchicalPackageNode(nodeData, this, this._project, this._rootNode));
-                } else {
-                    result.push(new TypeRootNode(nodeData, this));
+                } else if (nodeData.kind === NodeKind.PrimaryType) {
+                    if (nodeData.metaData && nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
+                        result.push(new PrimaryTypeNode(nodeData, this));
+                    }
                 }
             });
         }

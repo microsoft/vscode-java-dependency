@@ -14,7 +14,7 @@
   "contributes.commands.java.view.package.copyFilePath": "Copy Path",
   "contributes.commands.java.view.package.copyRelativeFilePath": "Copy Relative Path",
   "configuration.java.dependency.title": "Java Dependency Configuration",
-  "configuration.java.dependency.showOutline": "Enable show outline in the Java Dependency explorer",
+  "configuration.java.dependency.showMembers": "Show the members in the explorer",
   "configuration.java.dependency.syncWithFolderExplorer": "Synchronize dependency viewer selection with folder explorer",
   "configuration.java.dependency.autoRefresh": "Synchronize dependency viewer with changes",
   "configuration.java.dependency.refreshDelay": "The delay time (ms) the auto refresh is invoked when changes are detected",
