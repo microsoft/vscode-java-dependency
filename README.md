@@ -27,7 +27,7 @@ A lightweight extension to provide additional Java project explorer features. It
 
 | Setting Name | Description | Default Value |
 |---|---|---|
-| `java.dependency.showOutline` | Specify whether to show the outline in the dependency viewer. | `true` |
+| `java.dependency.showMembers` | Specify whether to show the members in the dependency viewer. | `false` |
 | `java.dependency.syncWithFolderExplorer` | Specify whether to sync the folder with dependency viewer when browsering files.  | `true` |
 | `java.dependency.autoRefresh` | Specify whether to automatically sync the change from editor to the dependency viewer. | `true` |
 | `java.dependency.refreshDelay` | The delay time (ms) the auto refresh is invoked when changes are detected. | `2000ms` |

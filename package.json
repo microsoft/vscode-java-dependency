@@ -119,10 +119,10 @@
       "type": "object",
       "title": "%configuration.java.dependency.title%",
       "properties": {
-        "java.dependency.showOutline": {
+        "java.dependency.showMembers": {
           "type": "boolean",
-          "description": "%configuration.java.dependency.showOutline%",
-          "default": true
+          "description": "%configuration.java.dependency.showMembers%",
+          "default": false
         },
         "java.dependency.syncWithFolderExplorer": {
           "type": "boolean",
