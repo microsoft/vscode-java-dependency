@@ -5,6 +5,7 @@ import { Command, commands, DocumentSymbol, SymbolInformation, SymbolKind, TextD
 import { createUuid, sendOperationEnd, sendOperationStart } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { INodeData, TypeKind } from "../java/nodeData";
+import { Services } from "../services";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { DocumentSymbolNode } from "./documentSymbolNode";
@@ -47,14 +48,24 @@ export class PrimaryTypeNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string | ThemeIcon {
+    protected get iconPath(): any {
+        // TODO: Refactor to `ThemeIcon` after VS Code February released.
         switch (this.nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
             case TypeKind.Enum:
-                return new ThemeIcon("symbol-enum");
+                return {
+                    light: Services.context.asAbsolutePath(`./images/symbols/Enumerator_16x.svg`),
+                    dark: Services.context.asAbsolutePath(`./images/symbols/Enumerator_inverse_16x.svg`),
+                };
             case TypeKind.Interface:
-                return new ThemeIcon("symbol-interface");
+                return {
+                    light: Services.context.asAbsolutePath(`./images/symbols/Interface_16x.svg`),
+                    dark: Services.context.asAbsolutePath(`./images/symbols/Interface_inverse_16x.svg`),
+                };
             default:
-                return new ThemeIcon("symbol-class");
+                return {
+                    light: Services.context.asAbsolutePath(`./images/symbols/Class_16x.svg`),
+                    dark: Services.context.asAbsolutePath(`./images/symbols/Class_inverse_16x.svg`),
+                };
         }
     }
 
