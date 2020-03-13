@@ -41,6 +41,6 @@ export class PackageNode extends DataNode {
     }
 
     protected get iconPath(): ThemeIcon {
-        return new ThemeIcon("symbol-namespace");
+        return new ThemeIcon("symbol-package");
     }
 }

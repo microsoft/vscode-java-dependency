@@ -10,7 +10,7 @@ import { PrimaryTypeNode } from "./PrimaryTypeNode";
 export abstract class BaseSymbolNode extends ExplorerNode {
 
     private static _iconMap: Map<SymbolKind, string> = new Map([
-        [SymbolKind.Package, "namespace"],
+        [SymbolKind.Package, "package"],
         [SymbolKind.Class, "class"],
         [SymbolKind.Interface, "interface"],
         [SymbolKind.Enum, "enum"],

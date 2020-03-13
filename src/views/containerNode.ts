@@ -37,6 +37,6 @@ export class ContainerNode extends DataNode {
     }
 
     protected get iconPath(): ThemeIcon {
-        return new ThemeIcon("inbox");
+        return new ThemeIcon("files");
     }
 }

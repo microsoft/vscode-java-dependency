@@ -67,7 +67,7 @@ export class PackageRootNode extends DataNode {
     protected get iconPath(): ThemeIcon {
         const data = <IPackageRootNodeData>this.nodeData;
         if (data.entryKind === PackageRootKind.K_BINARY) {
-            return new ThemeIcon("archive");
+            return new ThemeIcon("file-zip");
         } else {
             return new ThemeIcon("file-submodule");
         }
