@@ -7,6 +7,7 @@ import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
+import { ThemeIcon } from "vscode";
 
 export class PackageNode extends DataNode {
     constructor(nodeData: INodeData, parent: DataNode, protected _project: DataNode, protected _rootNode: DataNode) {
@@ -39,7 +40,7 @@ export class PackageNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): { light: string; dark: string } {
-        return ExplorerNode.resolveIconPath("package");
+    protected get iconPath(): ThemeIcon {
+        return new ThemeIcon("symbol-namespace");
     }
 }
