@@ -3,10 +3,8 @@
 
 import { commands, Extension, ExtensionContext, extensions } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
-import { Commands } from "./commands";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
-import { Services } from "./services";
 import { Settings } from "./settings";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
@@ -18,7 +16,6 @@ export async function activate(context: ExtensionContext): Promise<any> {
 function activateExtension(operationId: string, context: ExtensionContext) {
     commands.executeCommand("setContext", "extensionActivated", true);
 
-    Services.initialize(context);
     Settings.initialize(context);
 
     setMavenEnabledContext();

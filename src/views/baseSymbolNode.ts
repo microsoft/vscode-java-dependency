@@ -3,7 +3,6 @@
 
 import { Command, DocumentSymbol, Range, SymbolInformation, SymbolKind, ThemeIcon } from "vscode";
 import { Commands } from "../commands";
-import { Services } from "../services";
 import { ExplorerNode } from "./explorerNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
 

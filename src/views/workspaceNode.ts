@@ -4,7 +4,6 @@
 import { ThemeIcon } from "vscode";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
-import { Services } from "../services";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
