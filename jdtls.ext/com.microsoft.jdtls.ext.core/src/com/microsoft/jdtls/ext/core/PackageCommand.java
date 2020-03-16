@@ -43,6 +43,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -60,7 +61,6 @@ import com.google.gson.GsonBuilder;
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 import com.microsoft.jdtls.ext.core.model.PackageRootNode;
-import com.microsoft.jdtls.ext.core.model.TypeRootNode;
 
 public class PackageCommand {
 
@@ -122,7 +122,7 @@ public class PackageCommand {
         List<PackageNode> result = new ArrayList<>();
         URI uri = JDTUtils.toURI(typeRootUri);
         ITypeRoot typeRoot = ExtUtils.JDT_SCHEME.equals(uri.getScheme()) ? JDTUtils.resolveClassFile(uri) : JDTUtils.resolveCompilationUnit(uri);
-        if (typeRoot != null) {
+        if (typeRoot != null && typeRoot.findPrimaryType() != null) {
             // Add project node:
             result.add(PackageNode.createNodeForProject(typeRoot));
             IPackageFragment packageFragment = (IPackageFragment) typeRoot.getParent();
@@ -135,10 +135,7 @@ public class PackageCommand {
             }
             result.add(PackageNode.createNodeForPackageFragmentRoot(pkgRoot));
             result.add(PackageNode.createNodeForPackageFragment(packageFragment));
-
-            PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT, TypeRootNode.K_SOURCE);
-            item.setUri(JDTUtils.toUri(typeRoot));
-            result.add(item);
+            result.add(PackageNode.createNodeForPrimaryType(typeRoot.findPrimaryType()));
         } else if (ExtUtils.isJarResourceUri(uri)) {
             IJarEntryResource resource = ExtUtils.getJarEntryResource(uri);
             IPackageFragmentRoot pkgRoot = resource.getPackageFragmentRoot();
@@ -349,10 +346,23 @@ public class PackageCommand {
                 IPackageFragment packageFragment = packageRoot
                         .getPackageFragment(PackageNode.DEFAULT_PACKAGE_DISPLAYNAME.equals(query.getPath()) ? "" : query.getPath());
                 if (packageFragment != null) {
-                    IJavaElement[] types = packageFragment.getChildren();
+                    List<IType> primaryTypes = new ArrayList<>();
+                    for (IJavaElement element : packageFragment.getChildren()) {
+                        if (element instanceof ITypeRoot) {
+                            // Filter out the inner class files
+                            if (element instanceof IClassFile && element.getElementName().contains("$")) {
+                                continue;
+                            }
+                            IType primaryType = ((ITypeRoot) element).findPrimaryType();
+                            if (primaryType != null) {
+                                primaryTypes.add(primaryType);
+                            }
+                        }
+                    }
                     Object[] nonJavaResources = packageFragment.getNonJavaResources();
-                    List<PackageNode> rootTypeNodes = Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$"))
-                            .map(PackageNode::createNodeForTypeRoot).collect(Collectors.toList());
+                    List<PackageNode> rootTypeNodes = primaryTypes.stream()
+                        .map(PackageNode::createNodeForPrimaryType)
+                        .collect(Collectors.toList());
                     if (nonJavaResources.length == 0) {
                         return rootTypeNodes;
                     }
@@ -451,7 +461,7 @@ public class PackageCommand {
                 result.add(entry);
             } else if (root instanceof IClassFile) {
                 IClassFile classFile = (IClassFile) root;
-                PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.TYPEROOT);
+                PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.PRIMARYTYPE);
                 entry.setUri(JDTUtils.toUri(classFile));
                 result.add(entry);
             } else if (root instanceof JarEntryResource) {

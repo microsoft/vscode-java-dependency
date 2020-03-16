@@ -23,7 +23,7 @@ export class Settings {
             }
         }));
         this.registerConfigurationListener((updatedConfig, oldConfig) => {
-            if (updatedConfig.showOutline !== oldConfig.showOutline
+            if (updatedConfig.showMembers !== oldConfig.showMembers
                 || updatedConfig.packagePresentation !== oldConfig.packagePresentation
                 || (updatedConfig.syncWithFolderExplorer !== oldConfig.syncWithFolderExplorer
                     && updatedConfig.syncWithFolderExplorer)) {
@@ -93,8 +93,8 @@ export class Settings {
         }
     }
 
-    public static showOutline(): boolean {
-        return this._dependencyConfig.get("showOutline");
+    public static showMembers(): boolean {
+        return this._dependencyConfig.get("showMembers");
     }
 
     public static autoRefresh(): boolean {

@@ -4,11 +4,11 @@
 import { DocumentSymbol, Range, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { BaseSymbolNode } from "./baseSymbolNode";
 import { ExplorerNode } from "./explorerNode";
-import { TypeRootNode } from "./typeRootNode";
+import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export class DocumentSymbolNode extends BaseSymbolNode {
 
-    constructor(symbolInfo: DocumentSymbol, parent: TypeRootNode) {
+    constructor(symbolInfo: DocumentSymbol, parent: PrimaryTypeNode) {
         super(symbolInfo, parent);
     }
 
@@ -16,7 +16,7 @@ export class DocumentSymbolNode extends BaseSymbolNode {
         const res: ExplorerNode[] = [];
         if (this.symbolInfo && (<DocumentSymbol>this.symbolInfo).children && (<DocumentSymbol>this.symbolInfo).children.length) {
             (<DocumentSymbol>this.symbolInfo).children.forEach((child) => {
-                res.push(new DocumentSymbolNode(child, this.getParent() as TypeRootNode));
+                res.push(new DocumentSymbolNode(child, this.getParent() as PrimaryTypeNode));
             });
         }
         return res;

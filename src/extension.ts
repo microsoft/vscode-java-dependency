@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, ExtensionContext } from "vscode";
+import { commands, Extension, ExtensionContext, extensions } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { LibraryController } from "./controllers/libraryController";
@@ -21,9 +21,19 @@ function activateExtension(operationId: string, context: ExtensionContext) {
     Services.initialize(context);
     Settings.initialize(context);
 
+    setMavenEnabledContext();
+
     context.subscriptions.push(new ProjectController(context));
     context.subscriptions.push(new LibraryController(context));
     context.subscriptions.push(new DependencyExplorer(context));
+}
+
+// determine if the add dependency shortcut will show or not
+function setMavenEnabledContext() {
+    const mavenExt: Extension<any> | undefined = extensions.getExtension("vscjava.vscode-maven");
+    if (mavenExt) {
+        commands.executeCommand("setContext", "mavenEnabled", true);
+    }
 }
 
 // this method is called when your extension is deactivated

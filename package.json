@@ -2,7 +2,7 @@
   "name": "vscode-java-dependency",
   "displayName": "Java Dependency Viewer",
   "description": "%description%",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "publisher": "vscjava",
   "preview": true,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.31.0"
+    "vscode": "^1.43.0"
   },
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
   "main": "./dist/extension",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.8.0.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.9.0.jar"
     ],
     "commands": [
       {
@@ -43,55 +43,43 @@
         "command": "java.project.addLibraries",
         "title": "%contributes.commands.java.project.addLibraries%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-add.svg",
-          "light": "images/light/icon-add.svg"
-        }
+        "icon": "$(add)"
+      },
+      {
+        "command": "java.project.maven.addDependency",
+        "title": "%contributes.commands.java.project.maven.addDependency%",
+        "category": "Java",
+        "icon": "$(add)"
       },
       {
         "command": "java.project.removeLibrary",
         "title": "%contributes.commands.java.project.removeLibrary%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-remove.svg",
-          "light": "images/light/icon-remove.svg"
-        }
+        "icon": "$(remove)"
       },
       {
         "command": "java.project.refreshLibraries",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-refresh.svg",
-          "light": "images/light/icon-refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "java.view.package.refresh",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-refresh.svg",
-          "light": "images/light/icon-refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "java.view.package.changeToHierarchicalPackageView",
         "title": "%contributes.commands.java.view.package.changeToHierarchicalPackageView%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-hierarchical.svg",
-          "light": "images/light/icon-hierarchical.svg"
-        }
+        "icon": "$(list-tree)"
       },
       {
         "command": "java.view.package.changeToFlatPackageView",
         "title": "%contributes.commands.java.view.package.changeToFlatPackageView%",
         "category": "Java",
-        "icon": {
-          "dark": "images/dark/icon-flat.svg",
-          "light": "images/light/icon-flat.svg"
-        }
+        "icon": "$(list-flat)"
       },
       {
         "command": "java.view.package.linkWithFolderExplorer",
@@ -131,10 +119,10 @@
       "type": "object",
       "title": "%configuration.java.dependency.title%",
       "properties": {
-        "java.dependency.showOutline": {
+        "java.dependency.showMembers": {
           "type": "boolean",
-          "description": "%configuration.java.dependency.showOutline%",
-          "default": true
+          "description": "%configuration.java.dependency.showMembers%",
+          "default": false
         },
         "java.dependency.syncWithFolderExplorer": {
           "type": "boolean",
@@ -174,6 +162,14 @@
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
+          "when": "never"
+        },
+        {
+          "command": "java.project.addLibraries",
+          "when": "never"
+        },
+        {
+          "command": "java.project.maven.addDependency",
           "when": "never"
         },
         {
@@ -242,6 +238,11 @@
           "command": "java.project.refreshLibraries",
           "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries$/",
           "group": "inline@1"
+        },
+        {
+          "command": "java.project.maven.addDependency",
+          "when": "view == javaDependencyExplorer && mavenEnabled && viewItem =~ /container\/maven-dependencies/",
+          "group": "inline@0"
         }
       ]
     },
@@ -272,7 +273,7 @@
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^5.2.5",
     "@types/node": "^8.10.36",
-    "@types/vscode": "1.30.0",
+    "@types/vscode": "1.43.0",
     "@types/xml2js": "^0.4.3",
     "cross-env": "^5.2.0",
     "glob": "^7.1.4",
