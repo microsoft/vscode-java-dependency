@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import { ThemeIcon } from "vscode";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Services } from "../services";
@@ -27,7 +28,7 @@ export class WorkspaceNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): string {
-        return Services.context.asAbsolutePath("./images/root-folder.svg");
+    protected get iconPath(): ThemeIcon {
+        return new ThemeIcon("root-folder");
     }
 }
