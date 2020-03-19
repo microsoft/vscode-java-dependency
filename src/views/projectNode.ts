@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import { ThemeIcon } from "vscode";
 import { ContainerEntryKind, IContainerNodeData } from "../java/containerNodeData";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
@@ -65,7 +66,7 @@ export class ProjectNode extends DataNode {
         return result;
     }
 
-    protected get iconPath(): { light: string; dark: string } {
-        return ExplorerNode.resolveIconPath("project");
+    protected get iconPath(): ThemeIcon {
+        return new ThemeIcon("project");
     }
 }

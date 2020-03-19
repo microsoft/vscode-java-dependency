@@ -3,14 +3,13 @@
 
 import { Command, DocumentSymbol, Range, SymbolInformation, SymbolKind, ThemeIcon } from "vscode";
 import { Commands } from "../commands";
-import { Services } from "../services";
 import { ExplorerNode } from "./explorerNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export abstract class BaseSymbolNode extends ExplorerNode {
 
     private static _iconMap: Map<SymbolKind, string> = new Map([
-        [SymbolKind.Package, "namespace"],
+        [SymbolKind.Package, "package"],
         [SymbolKind.Class, "class"],
         [SymbolKind.Interface, "interface"],
         [SymbolKind.Enum, "enum"],
