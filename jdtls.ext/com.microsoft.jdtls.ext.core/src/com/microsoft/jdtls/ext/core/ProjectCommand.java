@@ -42,6 +42,9 @@ public final class ProjectCommand {
         ArrayList<PackageNode> children = new ArrayList<>();
         List<IPath> paths = Arrays.asList(workspacePath);
         for (IProject project : projects) {
+            if (!ProjectUtils.isJavaProject(project)) {
+                continue;
+            }
             if (project.exists() && (ResourceUtils.isContainedIn(project.getLocation(), paths) || Objects.equals(project.getName(), invisibleProjectName))) {
                 PackageNode projectNode = new PackageNode(project.getName(), project.getFullPath().toPortableString(), NodeKind.PROJECT);
                 projectNode.setUri(project.getLocationURI().toString());
