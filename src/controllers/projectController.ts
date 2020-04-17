@@ -33,7 +33,7 @@ export class ProjectController implements Disposable {
         if (contextManager.getContextValue(Context.MAVEN_ENABLED)) {
             projectKinds.push({
                 label: BuildTool.Maven,
-                detail: "Use Maven as the build tool of your Java project",
+                detail: "Use Maven to manage your project",
             });
         }
         const choice: QuickPickItem | undefined = projectKinds.length === 1 ? projectKinds[0] :
@@ -42,6 +42,10 @@ export class ProjectController implements Disposable {
                 placeHolder: "Select the project build tool",
             },
         );
+
+        if (!choice) {
+            return;
+        }
 
         switch (choice.label) {
             case BuildTool.Maven:
