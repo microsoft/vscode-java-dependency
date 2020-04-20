@@ -40,6 +40,8 @@ export namespace Commands {
 
     export const JAVA_MAVEN_PROJECT_ADD_DEPENDENCY = "java.project.maven.addDependency";
 
+    export const JAVA_MAVEN_CREATE_PROJECT = "maven.archetype.generate";
+
     export const JAVA_PROJECT_LIST = "java.project.list";
 
     export const JAVA_PROJECT_REFRESH_LIB_SERVER = "java.project.refreshLib";
@@ -48,4 +50,5 @@ export namespace Commands {
 
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
+    export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
 }

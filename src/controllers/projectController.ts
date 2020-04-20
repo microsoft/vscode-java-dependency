@@ -4,10 +4,11 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, Uri, window, workspace } from "vscode";
+import { commands, Disposable, ExtensionContext, QuickPickItem, Uri, window, workspace } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
-import * as xml2js from "xml2js";
 import { Commands } from "../commands";
+import { Context } from "../constants";
+import { contextManager } from "../contextManager";
 import { Utility } from "../utility";
 
 export class ProjectController implements Disposable {
@@ -25,10 +26,40 @@ export class ProjectController implements Disposable {
     }
 
     public async createJavaProject() {
-        const javaVersion: number = await this.getJavaVersion();
-        if (!javaVersion) {
+        const projectKinds: QuickPickItem[] = [{
+            label: BuildTool.None,
+            detail: "A project without any build tools",
+        }];
+        if (contextManager.getContextValue(Context.MAVEN_ENABLED)) {
+            projectKinds.push({
+                label: BuildTool.Maven,
+                detail: "Use Maven to manage your project",
+            });
+        }
+        const choice: QuickPickItem | undefined = projectKinds.length === 1 ? projectKinds[0] :
+            await window.showQuickPick(projectKinds, {
+                ignoreFocusOut: true,
+                placeHolder: "Select the project build tool",
+            },
+        );
+
+        if (!choice) {
             return;
         }
+
+        switch (choice.label) {
+            case BuildTool.Maven:
+                await commands.executeCommand(Commands.JAVA_MAVEN_CREATE_PROJECT);
+                break;
+            case BuildTool.None:
+                await this.scaffoldSimpleProject();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private async scaffoldSimpleProject(): Promise<void> {
         const workspaceFolder = Utility.getDefaultWorkspaceFolder();
         const location: Uri[] = await window.showOpenDialog({
             defaultUri: workspaceFolder && workspaceFolder.uri,
@@ -39,73 +70,36 @@ export class ProjectController implements Disposable {
         if (!location || !location.length) {
             return;
         }
+
         const basePath: string = location[0].fsPath;
         const projectName: string = await window.showInputBox({
             prompt: "Input a java project name",
-            validateInput: (name: string): string => {
+            ignoreFocusOut: true,
+            validateInput: async (name: string): Promise<string> => {
                 if (name && !name.match(/^[^*~/\\]+$/)) {
                     return "Please input a valid project name";
                 }
-                if (name && fse.pathExistsSync(path.join(basePath, name))) {
+                if (name && await fse.pathExists(path.join(basePath, name))) {
                     return "A project with this name already exists.";
                 }
-                return null;
+                return "";
             },
         });
-        if (!projectName) {
-            return;
-        }
-        if (await this.scaffoldJavaProject(basePath, projectName, javaVersion)) {
-            const openInNewWindow = workspace && !_.isEmpty(workspace.workspaceFolders);
-            return commands.executeCommand("vscode.openFolder", Uri.file(path.join(basePath, projectName)), openInNewWindow);
-        }
-    }
-
-    private async scaffoldJavaProject(basePath: string, projectName: string, javaVersion: number): Promise<boolean> {
         const projectRoot: string = path.join(basePath, projectName);
-        const templateRoot: string = path.join(this.context.extensionPath, "templates");
-        const projectFile: string = path.join(projectRoot, ".project");
+        const templateRoot: string = path.join(this.context.extensionPath, "templates", "invisible-project");
         try {
-            let jdkSpecificTemplateRoot: string = path.join(templateRoot, `Java${javaVersion}`);
-            if (!await fse.pathExists(jdkSpecificTemplateRoot)) {
-                // fall back to 8
-                jdkSpecificTemplateRoot = path.join(templateRoot, `Java8`);
-            }
             await fse.ensureDir(projectRoot);
-            await Promise.all([
-                fse.copy(path.join(templateRoot, "App.java.sample"), path.join(projectRoot, "src", "app", "App.java")),
-                fse.copy(jdkSpecificTemplateRoot, projectRoot),
-                fse.copy(path.join(templateRoot, ".project"), path.join(projectRoot, ".project")),
-                fse.ensureDir(path.join(projectRoot, "bin")),
-            ]);
-
-            // replace the project name with user input project name
-            const xml: string = await fse.readFile(projectFile, "utf8");
-            const jsonObj: any = await Utility.parseXml(xml);
-            jsonObj.projectDescription.name = projectName;
-            const builder: xml2js.Builder = new xml2js.Builder();
-            const newXml: string = builder.buildObject(jsonObj);
-            await fse.writeFile(projectFile, newXml);
+            await fse.copy(templateRoot, projectRoot);
         } catch (error) {
             window.showErrorMessage(error.message);
             return;
         }
-        return true;
+        const openInNewWindow = workspace && !_.isEmpty(workspace.workspaceFolders);
+        await commands.executeCommand(Commands.VSCODE_OPEN_FOLDER, Uri.file(path.join(basePath, projectName)), openInNewWindow);
     }
+}
 
-    private async getJavaVersion(): Promise<number> {
-        let javaVersion: number;
-        try {
-            const javaHome: string = await Utility.checkJavaRuntime();
-            javaVersion = await Utility.checkJavaVersion(javaHome);
-        } catch (error) {
-            window.showErrorMessage(error.message, error.label).then((selection) => {
-                if (error.label && error.label === selection && error.openUrl) {
-                    commands.executeCommand("vscode.open", error.openUrl);
-                }
-            });
-            return;
-        }
-        return javaVersion;
-    }
+enum BuildTool {
+    Maven = "Maven",
+    None = "No build tools",
 }
