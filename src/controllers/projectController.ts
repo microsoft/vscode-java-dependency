@@ -90,6 +90,7 @@ export class ProjectController implements Disposable {
         try {
             await fse.ensureDir(projectRoot);
             await fse.copy(templateRoot, projectRoot);
+            await fse.ensureDir(path.join(projectRoot, 'lib'));
         } catch (error) {
             window.showErrorMessage(error.message);
             return;
