@@ -4,7 +4,7 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## 0.10.0 - 2020-04-30
+## 0.10.0 - 2020-05-10
 ### Changed
 - Migrate icons to [Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html). [PR#241](https://github.com/microsoft/vscode-java-dependency/pull/241), [PR#242](https://github.com/microsoft/vscode-java-dependency/pull/242)
 - The command `Create Java Project` now will allow users to create a Java project with Maven support (as long as the [Maven extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) is installed) or a project without any build tools. [#199](https://github.com/microsoft/vscode-java-dependency/issues/199), [#249](https://github.com/microsoft/vscode-java-dependency/issues/249)
