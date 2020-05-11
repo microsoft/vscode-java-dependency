@@ -7,6 +7,8 @@ import { Context } from "./constants";
 import { contextManager } from "./contextManager";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
+import { getExpService, init as initExpService } from "./ExperimentationService";
+import { expManager } from "./ExpManager";
 import { Settings } from "./settings";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
@@ -25,6 +27,9 @@ function activateExtension(_operationId: string, context: ExtensionContext) {
     context.subscriptions.push(new DependencyExplorer(context));
     context.subscriptions.push(contextManager);
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+
+    initExpService(context);
+    expManager.initialize(getExpService());
 }
 
 // determine if the add dependency shortcut will show or not

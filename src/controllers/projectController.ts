@@ -5,10 +5,11 @@ import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
 import { commands, Disposable, ExtensionContext, QuickPickItem, Uri, window, workspace } from "vscode";
-import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Context } from "../constants";
 import { contextManager } from "../contextManager";
+import { expManager } from "../ExpManager";
 import { Utility } from "../utility";
 
 export class ProjectController implements Disposable {
@@ -31,10 +32,16 @@ export class ProjectController implements Disposable {
             detail: "A project without any build tools",
         }];
         if (contextManager.getContextValue(Context.MAVEN_ENABLED)) {
-            projectKinds.push({
+            const isMavenDefault: boolean = await expManager.isFlightEnabled("defaultMaven");
+            const mavenItem: QuickPickItem = {
                 label: BuildTool.Maven,
                 detail: "Use Maven to manage your project",
-            });
+            };
+            if (isMavenDefault) {
+                projectKinds.unshift(mavenItem);
+            } else {
+                projectKinds.push(mavenItem);
+            }
         }
         const choice: QuickPickItem | undefined = projectKinds.length === 1 ? projectKinds[0] :
             await window.showQuickPick(projectKinds, {
@@ -45,6 +52,11 @@ export class ProjectController implements Disposable {
 
         if (!choice) {
             return;
+        }
+
+        if (projectKinds.length > 1) {
+            const chooseDefault: boolean = choice.label === projectKinds[0].label;
+            sendInfo("", {"project.create.chooseDefault": `${chooseDefault}`});
         }
 
         switch (choice.label) {
@@ -61,7 +73,7 @@ export class ProjectController implements Disposable {
 
     private async scaffoldSimpleProject(): Promise<void> {
         const workspaceFolder = Utility.getDefaultWorkspaceFolder();
-        const location: Uri[] = await window.showOpenDialog({
+        const location: Uri[] | undefined = await window.showOpenDialog({
             defaultUri: workspaceFolder && workspaceFolder.uri,
             canSelectFiles: false,
             canSelectFolders: true,
@@ -72,7 +84,7 @@ export class ProjectController implements Disposable {
         }
 
         const basePath: string = location[0].fsPath;
-        const projectName: string = await window.showInputBox({
+        const projectName: string | undefined = await window.showInputBox({
             prompt: "Input a java project name",
             ignoreFocusOut: true,
             validateInput: async (name: string): Promise<string> => {
@@ -85,6 +97,11 @@ export class ProjectController implements Disposable {
                 return "";
             },
         });
+
+        if (!projectName) {
+            return;
+        }
+
         const projectRoot: string = path.join(basePath, projectName);
         const templateRoot: string = path.join(this.context.extensionPath, "templates", "invisible-project");
         try {
