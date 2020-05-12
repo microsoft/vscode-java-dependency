@@ -291,6 +291,6 @@
     "lodash": "^4.17.15",
     "minimatch": "^3.0.4",
     "vscode-extension-telemetry-wrapper": "^0.7.1",
-    "vscode-tas-client": "0.0.702"
+    "vscode-tas-client": "0.0.659"
   }
 }

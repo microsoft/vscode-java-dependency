@@ -9,7 +9,7 @@ import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-t
 import { Commands } from "../commands";
 import { Context } from "../constants";
 import { contextManager } from "../contextManager";
-import { expManager } from "../ExpManager";
+import { getExpService } from "../ExperimentationService";
 import { Utility } from "../utility";
 
 export class ProjectController implements Disposable {
@@ -32,7 +32,7 @@ export class ProjectController implements Disposable {
             detail: "A project without any build tools",
         }];
         if (contextManager.getContextValue(Context.MAVEN_ENABLED)) {
-            const isMavenDefault: boolean = await expManager.isFlightEnabled("defaultMaven");
+            const isMavenDefault: boolean = await getExpService().isCachedFlightEnabled("defaultMaven");
             const mavenItem: QuickPickItem = {
                 label: BuildTool.Maven,
                 detail: "Use Maven to manage your project",
