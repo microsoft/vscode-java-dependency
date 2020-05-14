@@ -28,8 +28,8 @@ export function getExpService() {
     return expService;
 }
 
-export async function init(context: vscode.ExtensionContext): Promise<void> {
-    const packageJson: {} = await fse.readJSON(context.asAbsolutePath("package.json"));
+export function init(context: vscode.ExtensionContext): void {
+    const packageJson: {} = require("../package.json");
     // tslint:disable: no-string-literal
     const extensionName = `${packageJson["publisher"]}.${packageJson["name"]}`;
     const extensionVersion = packageJson["version"];

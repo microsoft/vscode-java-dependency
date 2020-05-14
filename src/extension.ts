@@ -27,7 +27,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(contextManager);
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
 
-    await initExpService(context);
+    initExpService(context);
 }
 
 // determine if the add dependency shortcut will show or not
