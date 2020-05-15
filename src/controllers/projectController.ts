@@ -32,7 +32,7 @@ export class ProjectController implements Disposable {
             detail: "A project without any build tools",
         }];
         if (contextManager.getContextValue(Context.MAVEN_ENABLED)) {
-            const isMavenDefault: boolean = await getExpService().isCachedFlightEnabled("defaultMaven");
+            const isMavenDefault: boolean = await getExpService()?.isCachedFlightEnabled("defaultMaven") || false;
             const mavenItem: QuickPickItem = {
                 label: BuildTool.Maven,
                 detail: "Use Maven to manage your project",
