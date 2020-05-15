@@ -7,6 +7,7 @@ import { Context } from "./constants";
 import { contextManager } from "./contextManager";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
+import { init as initExpService } from "./ExperimentationService";
 import { Settings } from "./settings";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
@@ -15,7 +16,7 @@ export async function activate(context: ExtensionContext): Promise<any> {
     return instrumentOperation("activation", activateExtension)(context);
 }
 
-function activateExtension(_operationId: string, context: ExtensionContext) {
+async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
     Settings.initialize(context);
     contextManager.initialize(context);
     setMavenExtensionState();
@@ -25,6 +26,8 @@ function activateExtension(_operationId: string, context: ExtensionContext) {
     context.subscriptions.push(new DependencyExplorer(context));
     context.subscriptions.push(contextManager);
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+
+    initExpService(context);
 }
 
 // determine if the add dependency shortcut will show or not
