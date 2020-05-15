@@ -2,7 +2,7 @@
   "name": "vscode-java-dependency",
   "displayName": "Java Dependency Viewer",
   "description": "%description%",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "publisher": "vscjava",
   "preview": true,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -31,7 +31,7 @@
   "main": "./dist/extension",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.10.0.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.10.1.jar"
     ],
     "commands": [
       {
@@ -290,7 +290,7 @@
     "fs-extra": "^7.0.1",
     "lodash": "^4.17.15",
     "minimatch": "^3.0.4",
-    "vscode-extension-telemetry-wrapper": "^0.7.1",
+    "vscode-extension-telemetry-wrapper": "0.8.0",
     "vscode-tas-client": "0.0.659"
   }
 }
