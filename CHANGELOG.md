@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.10.2
+### Added
+- Integrated the TAS client. [PR#260](https://github.com/microsoft/vscode-java-dependency/pull/260)
+
 ## 0.10.1
 ### Changed
 - Update the `vscode-extension-telemetry-wrapper` to `0.8.0`.
