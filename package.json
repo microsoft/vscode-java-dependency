@@ -1,7 +1,7 @@
 {
   "name": "vscode-java-dependency",
   "displayName": "Java Dependency Viewer",
-  "description": "%description%",
+  "description": "View Java Dependencies in Visual Studio Code",
   "version": "0.10.2",
   "publisher": "vscjava",
   "preview": true,
