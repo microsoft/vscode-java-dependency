@@ -21,7 +21,6 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -38,7 +37,6 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.launching.JavaRuntime;
-import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
@@ -99,7 +97,7 @@ public final class ProjectCommand {
         return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
 
-    public static List<PackageNode> getMainMethod(List<Object> arguments, IProgressMonitor monitor) throws JavaModelException {
+    public static List<PackageNode> getMainMethod(List<Object> arguments, IProgressMonitor monitor) {
         final List<PackageNode> res = new ArrayList<>();
         IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
