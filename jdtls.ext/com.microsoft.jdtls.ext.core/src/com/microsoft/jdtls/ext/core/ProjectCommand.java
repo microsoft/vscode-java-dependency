@@ -19,17 +19,36 @@ import java.util.Objects;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IModuleDescription;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.jdt.core.search.SearchMatch;
+import org.eclipse.jdt.core.search.SearchParticipant;
+import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
+import org.eclipse.jdt.ls.core.internal.managers.ProjectsManager;
 import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibraries;
 
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
+
 
 public final class ProjectCommand {
 
@@ -79,4 +98,79 @@ public final class ProjectCommand {
         String fileName = workspacePath.toFile().getName();
         return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
+
+    public static List<PackageNode> getMainMethod(List<Object> arguments, IProgressMonitor monitor) throws JavaModelException {
+        final List<PackageNode> res = new ArrayList<>();
+        IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
+        SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
+                IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH| SearchPattern.R_CASE_SENSITIVE);
+        SearchRequestor requestor = new SearchRequestor() {
+            @Override
+            public void acceptSearchMatch(SearchMatch match) {
+                Object element = match.getElement();
+                if (element instanceof IMethod) {
+                    IMethod method = (IMethod) element;
+                    try {
+                        if (method.isMainMethod()) {
+                            IResource resource = method.getResource();
+                            if (resource != null) {
+                                IProject project = resource.getProject();
+                                if (project != null) {
+                                    String mainClass = method.getDeclaringType().getFullyQualifiedName();
+                                    IJavaProject javaProject = getJavaProject(project);
+                                    if (javaProject != null) {
+                                        String moduleName = getModuleName(javaProject);
+                                        if (moduleName != null) {
+                                            mainClass = moduleName + "/" + mainClass;
+                                        }
+                                    }
+                                    String projectName = ProjectsManager.DEFAULT_PROJECT_NAME.equals(project.getName()) ? null : project.getName();
+                                    String filePath = null;
+                                    if (match.getResource() instanceof IFile) {
+                                        try {
+                                            filePath = match.getResource().getLocation().toOSString();
+                                        } catch (Exception ex) {
+                                                // ignore
+                                        }
+                                    }
+                                    res.add(new PackageNode(mainClass, filePath, NodeKind.FILE));
+                                }
+                            }
+                        }
+                    } catch (JavaModelException e) {
+                        // ignore
+                    }
+                }
+            }
+        };
+        SearchEngine searchEngine = new SearchEngine();
+        try {
+            searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()},
+                    scope, requestor, null /* progress monitor */);
+        } catch (Exception e) {
+            // ignore
+        }
+        return res;
+    }
+
+    public static String getModuleName(IJavaProject project) {
+        if (project == null || !JavaRuntime.isModularProject(project)) {
+            return null;
+        }
+        IModuleDescription module;
+        try {
+            module = project.getModuleDescription();
+        } catch (CoreException e) {
+            return null;
+        }
+        return module == null ? null : module.getElementName();
+    }
+
+    public static IJavaProject getJavaProject(IProject project) {
+        if (ProjectUtils.isJavaProject(project)) {
+            return JavaCore.create(project);
+        }
+        return null;
+    }
+
 }
