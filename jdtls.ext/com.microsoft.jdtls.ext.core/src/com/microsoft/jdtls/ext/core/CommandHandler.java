@@ -32,7 +32,7 @@ public class CommandHandler implements IDelegateCommandHandler {
                 case "java.resolvePath":
                     return PackageCommand.resolvePath(arguments, monitor);
                 case "java.project.getMainMethod":
-                    return ProjectCommand.getMainMethod(arguments, monitor);
+                    return ProjectCommand.getMainMethod(monitor);
                 default:
                     break;
             }

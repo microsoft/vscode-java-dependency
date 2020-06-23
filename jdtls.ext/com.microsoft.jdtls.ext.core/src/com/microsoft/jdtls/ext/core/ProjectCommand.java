@@ -97,7 +97,7 @@ public final class ProjectCommand {
         return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
 
-    public static List<PackageNode> getMainMethod(List<Object> arguments, IProgressMonitor monitor) {
+    public static List<PackageNode> getMainMethod(IProgressMonitor monitor) {
         final List<PackageNode> res = new ArrayList<>();
         IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
