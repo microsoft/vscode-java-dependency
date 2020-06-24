@@ -117,28 +117,22 @@ public final class ProjectCommand {
             @Override
             public void acceptSearchMatch(SearchMatch match) {
                 Object element = match.getElement();
-                if (element instanceof IMethod) {
-                    IMethod method = (IMethod) element;
-                    try {
-                        if (method.isMainMethod()) {
-                            IResource resource = method.getResource();
-                            if (resource == null) {
-                                return;
-                            }
-                            IJavaProject javaProject = method.getJavaProject();
-                            if (javaProject == null) {
-                                return;
-                            }
-                            String mainClass = method.getDeclaringType().getFullyQualifiedName();
-                            String filePath = null;
-                            if (match.getResource() instanceof IFile) {
-                                filePath = match.getResource().getLocation().toOSString();
-                            }
-                            res.add(new MainClassInfo(mainClass, filePath));
-                        }
-                    } catch (JavaModelException e) {
+                if (!(element instanceof IMethod)) {
+                    return;
+                }
+                IMethod method = (IMethod) element;
+                try {
+                    if (!method.isMainMethod() || method.getResource() == null || method.getJavaProject() == null) {
                         return;
                     }
+                    String mainClass = method.getDeclaringType().getFullyQualifiedName();
+                    String filePath = "";
+                    if (match.getResource() instanceof IFile) {
+                        filePath = match.getResource().getLocation().toOSString();
+                    }
+                    res.add(new MainClassInfo(mainClass, filePath));
+                } catch (JavaModelException e) {
+                    // ignore
                 }
             }
         };
@@ -146,7 +140,7 @@ public final class ProjectCommand {
         try {
             searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()},
                     scope, requestor, new NullProgressMonitor());
-        } catch (Exception e) {
+        } catch (CoreException e) {
             // ignore
         }
         return res;
