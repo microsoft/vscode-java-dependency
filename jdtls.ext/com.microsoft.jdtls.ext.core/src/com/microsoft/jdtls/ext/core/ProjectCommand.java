@@ -125,26 +125,19 @@ public final class ProjectCommand {
                             if (resource == null) {
                                 return;
                             }
-                            String mainClass = method.getDeclaringType().getFullyQualifiedName();
                             IJavaProject javaProject = method.getJavaProject();
-                            if (javaProject != null) {
-                                String moduleName = getModuleName(javaProject);
-                                if (moduleName != null) {
-                                    mainClass = moduleName + "/" + mainClass;
-                                }
+                            if (javaProject == null) {
+                                return;
                             }
+                            String mainClass = method.getDeclaringType().getFullyQualifiedName();
                             String filePath = null;
                             if (match.getResource() instanceof IFile) {
-                                try {
-                                    filePath = match.getResource().getLocation().toOSString();
-                                } catch (Exception ex) {
-                                    // ignore
-                                }
+                                filePath = match.getResource().getLocation().toOSString();
                             }
                             res.add(new MainClassInfo(mainClass, filePath));
                         }
                     } catch (JavaModelException e) {
-                        // ignore
+                        return;
                     }
                 }
             }
@@ -163,13 +156,12 @@ public final class ProjectCommand {
         if (project == null || !JavaRuntime.isModularProject(project)) {
             return null;
         }
-        IModuleDescription module;
         try {
-            module = project.getModuleDescription();
+            IModuleDescription module = project.getModuleDescription();
+            return module == null ? null : module.getElementName();
         } catch (CoreException e) {
             return null;
         }
-        return module == null ? null : module.getElementName();
     }
 
 }
