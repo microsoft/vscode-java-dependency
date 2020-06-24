@@ -24,6 +24,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.IMethod;
@@ -40,15 +41,25 @@ import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
-import org.eclipse.jdt.ls.core.internal.managers.ProjectsManager;
 import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibraries;
 
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 
-
 public final class ProjectCommand {
+
+    public static class MainClass {
+
+        public String name;
+
+        public String path;
+
+        public MainClass(String name, String path) {
+            this.name = name;
+            this.path = path;
+        }
+    }
 
     public static List<PackageNode> listProjects(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
@@ -97,11 +108,11 @@ public final class ProjectCommand {
         return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
 
-    public static List<PackageNode> getMainMethod(IProgressMonitor monitor) {
-        final List<PackageNode> res = new ArrayList<>();
+    public static List<MainClass> getMainMethod(IProgressMonitor monitor) {
+        final List<MainClass> res = new ArrayList<>();
         IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
-                IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH| SearchPattern.R_CASE_SENSITIVE);
+                IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE);
         SearchRequestor requestor = new SearchRequestor() {
             @Override
             public void acceptSearchMatch(SearchMatch match) {
@@ -111,29 +122,30 @@ public final class ProjectCommand {
                     try {
                         if (method.isMainMethod()) {
                             IResource resource = method.getResource();
-                            if (resource != null) {
-                                IProject project = resource.getProject();
-                                if (project != null) {
-                                    String mainClass = method.getDeclaringType().getFullyQualifiedName();
-                                    IJavaProject javaProject = getJavaProject(project);
-                                    if (javaProject != null) {
-                                        String moduleName = getModuleName(javaProject);
-                                        if (moduleName != null) {
-                                            mainClass = moduleName + "/" + mainClass;
-                                        }
-                                    }
-                                    String projectName = ProjectsManager.DEFAULT_PROJECT_NAME.equals(project.getName()) ? null : project.getName();
-                                    String filePath = null;
-                                    if (match.getResource() instanceof IFile) {
-                                        try {
-                                            filePath = match.getResource().getLocation().toOSString();
-                                        } catch (Exception ex) {
-                                                // ignore
-                                        }
-                                    }
-                                    res.add(new PackageNode(mainClass, filePath, NodeKind.FILE));
+                            if (resource == null) {
+                                return;
+                            }
+                            IProject project = resource.getProject();
+                            if (project == null) {
+                                return;
+                            }
+                            String mainClass = method.getDeclaringType().getFullyQualifiedName();
+                            IJavaProject javaProject = method.getJavaProject();
+                            if (javaProject != null) {
+                                String moduleName = getModuleName(javaProject);
+                                if (moduleName != null) {
+                                    mainClass = moduleName + "/" + mainClass;
                                 }
                             }
+                            String filePath = null;
+                            if (match.getResource() instanceof IFile) {
+                                try {
+                                    filePath = match.getResource().getLocation().toOSString();
+                                } catch (Exception ex) {
+                                    // ignore
+                                }
+                            }
+                            res.add(new MainClass(mainClass, filePath));
                         }
                     } catch (JavaModelException e) {
                         // ignore
@@ -144,7 +156,7 @@ public final class ProjectCommand {
         SearchEngine searchEngine = new SearchEngine();
         try {
             searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()},
-                    scope, requestor, null /* progress monitor */);
+                    scope, requestor, new NullProgressMonitor() /* progress monitor */);
         } catch (Exception e) {
             // ignore
         }
@@ -162,13 +174,6 @@ public final class ProjectCommand {
             return null;
         }
         return module == null ? null : module.getElementName();
-    }
-
-    public static IJavaProject getJavaProject(IProject project) {
-        if (ProjectUtils.isJavaProject(project)) {
-            return JavaCore.create(project);
-        }
-        return null;
     }
 
 }
