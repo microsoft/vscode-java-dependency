@@ -49,13 +49,13 @@ import com.microsoft.jdtls.ext.core.model.PackageNode;
 
 public final class ProjectCommand {
 
-    public static class MainClass {
+    public static class MainClassInfo {
 
         public String name;
 
         public String path;
 
-        public MainClass(String name, String path) {
+        public MainClassInfo(String name, String path) {
             this.name = name;
             this.path = path;
         }
@@ -108,8 +108,8 @@ public final class ProjectCommand {
         return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
 
-    public static List<MainClass> getMainMethod(IProgressMonitor monitor) {
-        final List<MainClass> res = new ArrayList<>();
+    public static List<MainClassInfo> getMainMethod(IProgressMonitor monitor) {
+        final List<MainClassInfo> res = new ArrayList<>();
         IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
                 IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE);
@@ -123,10 +123,6 @@ public final class ProjectCommand {
                         if (method.isMainMethod()) {
                             IResource resource = method.getResource();
                             if (resource == null) {
-                                return;
-                            }
-                            IProject project = resource.getProject();
-                            if (project == null) {
                                 return;
                             }
                             String mainClass = method.getDeclaringType().getFullyQualifiedName();
@@ -145,7 +141,7 @@ public final class ProjectCommand {
                                     // ignore
                                 }
                             }
-                            res.add(new MainClass(mainClass, filePath));
+                            res.add(new MainClassInfo(mainClass, filePath));
                         }
                     } catch (JavaModelException e) {
                         // ignore
@@ -156,7 +152,7 @@ public final class ProjectCommand {
         SearchEngine searchEngine = new SearchEngine();
         try {
             searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()},
-                    scope, requestor, new NullProgressMonitor() /* progress monitor */);
+                    scope, requestor, new NullProgressMonitor());
         } catch (Exception e) {
             // ignore
         }
