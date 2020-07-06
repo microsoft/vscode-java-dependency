@@ -1,5 +1,5 @@
 {
-  "description": "在 VSCode 中管理 Java 依赖项",
+  "description": "在 Visual Studio Code 中管理 Java 项目",
   "contributes.commands.java.project.create": "创建 Java 项目",
   "contributes.commands.java.project.addLibraries": "将一个 Jar 文件或一个目录添加到 Java 项目类路径中",
   "contributes.commands.java.project.maven.addDependency": "为该 Maven 项目增加依赖库",
