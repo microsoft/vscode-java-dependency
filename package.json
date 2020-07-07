@@ -1,7 +1,7 @@
 {
   "name": "vscode-java-dependency",
-  "displayName": "Java Dependency Viewer",
-  "description": "View Java Dependencies in Visual Studio Code",
+  "displayName": "Project Manager for Java",
+  "description": "%description%",
   "version": "0.10.2",
   "publisher": "vscjava",
   "preview": true,
@@ -184,64 +184,64 @@
       "view/title": [
         {
           "command": "java.view.package.refresh",
-          "when": "view == javaDependencyExplorer",
+          "when": "view == javaProjectExplorer",
           "group": "navigation@2"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
-          "when": "view == javaDependencyExplorer && config.java.dependency.packagePresentation == flat",
+          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation == flat",
           "group": "navigation@1"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
-          "when": "view == javaDependencyExplorer && config.java.dependency.packagePresentation != flat",
+          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation != flat",
           "group": "navigation@1"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
-          "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer != true",
+          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer != true",
           "group": "navigation@0"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
-          "when": "view == javaDependencyExplorer && config.java.dependency.syncWithFolderExplorer == true",
+          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer == true",
           "group": "navigation@0"
         }
       ],
       "view/item/context": [
         {
           "command": "java.view.package.revealFileInOS",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:.*?\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
           "group": "@1"
         },
         {
           "command": "java.view.package.copyFilePath",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:.*?\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
           "group": "@2"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:.*?\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
           "group": "@2"
         },
         {
           "command": "java.project.addLibraries",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:container\/referenced-libraries$/",
           "group": "inline@0"
         },
         {
           "command": "java.project.removeLibrary",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:jar\/referenced-libraries\\+uri$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:jar\/referenced-libraries\\+uri$/",
           "group": "inline"
         },
         {
           "command": "java.project.refreshLibraries",
-          "when": "view == javaDependencyExplorer && viewItem =~ /java:container\/referenced-libraries$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:container\/referenced-libraries$/",
           "group": "inline@1"
         },
         {
           "command": "java.project.maven.addDependency",
-          "when": "view == javaDependencyExplorer && mavenEnabled && viewItem =~ /container\/maven-dependencies/",
+          "when": "view == javaProjectExplorer && mavenEnabled && viewItem =~ /container\/maven-dependencies/",
           "group": "inline@0"
         }
       ]
@@ -249,8 +249,8 @@
     "views": {
       "explorer": [
         {
-          "id": "javaDependencyExplorer",
-          "name": "Java Dependencies",
+          "id": "javaProjectExplorer",
+          "name": "Java Projects",
           "when": "extensionActivated"
         }
       ]

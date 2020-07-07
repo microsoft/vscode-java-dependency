@@ -17,7 +17,7 @@ export class DependencyExplorer implements Disposable {
 
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
-        this._dependencyViewer = window.createTreeView("javaDependencyExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
+        this._dependencyViewer = window.createTreeView("javaProjectExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
 
         context.subscriptions.push(
             window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
