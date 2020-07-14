@@ -62,11 +62,11 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 
     initExpService(context);
 
-    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_SWITCH_SERVER_MODE, async () => {
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_SWITCH_SERVER_MODE, async () => {
         if (isSwitchingServer()) {
             return;
         }
-        await commands.executeCommand("java.server.mode.switch");
+        await commands.executeCommand(Commands.JAVA_SWITCH_SERVER_MODE, "Standard" /*mode*/);
     }));
 }
 

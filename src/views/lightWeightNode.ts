@@ -16,7 +16,7 @@ export class LightWeightNode extends ExplorerNode {
             label: "Click to load dependencies...",
             collapsibleState: TreeItemCollapsibleState.None,
             command: {
-                command: Commands.JAVA_SWITCH_SERVER_MODE,
+                command: Commands.JAVA_PROJECT_SWITCH_SERVER_MODE,
                 title: "Switch to Standard mode",
             },
             tooltip: "Switch the Java Language Server to Standard mode to show all the dependencies",

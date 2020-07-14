@@ -48,7 +48,12 @@ export namespace Commands {
 
     export const JAVA_GETPACKAGEDATA = "java.getPackageData";
 
-    export const JAVA_SWITCH_SERVER_MODE = "java.project.switch.server.mode";
+    export const JAVA_PROJECT_SWITCH_SERVER_MODE = "java.project.switch.server.mode";
+
+    /**
+     * command from VS Code Java to switch the language server mode
+     */
+    export const JAVA_SWITCH_SERVER_MODE = "java.server.mode.switch";
 
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
