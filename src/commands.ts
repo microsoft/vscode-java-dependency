@@ -48,6 +48,8 @@ export namespace Commands {
 
     export const JAVA_GETPACKAGEDATA = "java.getPackageData";
 
+    export const JAVA_SWITCH_SERVER_MODE = "java.project.switch.server.mode";
+
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
     export const VSCODE_OPEN_FOLDER = "vscode.openFolder";

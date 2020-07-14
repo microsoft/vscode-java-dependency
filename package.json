@@ -153,6 +153,26 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "java.view.package.refresh",
+          "when": "java:serverMode != LightWeight"
+        },
+        {
+          "command": "java.view.package.changeToHierarchicalPackageView",
+          "when": "java:serverMode != LightWeight"
+        },
+        {
+          "command": "java.view.package.changeToFlatPackageView",
+          "when": "java:serverMode != LightWeight"
+        },
+        {
+          "command": "java.view.package.linkWithFolderExplorer",
+          "when": "java:serverMode != LightWeight"
+        },
+        {
+          "command": "java.view.package.unlinkWithFolderExplorer",
+          "when": "java:serverMode != LightWeight"
+        },
+        {
           "command": "java.view.package.revealFileInOS",
           "when": "never"
         },
@@ -184,27 +204,27 @@
       "view/title": [
         {
           "command": "java.view.package.refresh",
-          "when": "view == javaProjectExplorer",
+          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
           "group": "navigation@2"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
-          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation == flat",
+          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation == flat && java:serverMode!= LightWeight",
           "group": "navigation@1"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
-          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation != flat",
+          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation != flat && java:serverMode!= LightWeight",
           "group": "navigation@1"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
-          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer != true",
+          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer != true && java:serverMode!= LightWeight",
           "group": "navigation@0"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
-          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer == true",
+          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer == true && java:serverMode!= LightWeight",
           "group": "navigation@0"
         }
       ],
