@@ -2,10 +2,10 @@
 // Licensed under the MIT license.
 
 import { Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
+import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
-import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
 
@@ -51,6 +51,10 @@ export class DependencyExplorer implements Disposable {
     }
 
     public async reveal(uri: Uri): Promise<void> {
+        if (!isStandardServerReady()) {
+            return;
+        }
+
         const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
         if (!paths || paths.length === 0) {
             return;
