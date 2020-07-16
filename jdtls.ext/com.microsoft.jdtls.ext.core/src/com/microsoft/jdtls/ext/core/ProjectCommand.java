@@ -11,28 +11,39 @@
 
 package com.microsoft.jdtls.ext.core;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+import java.util.zip.ZipFile;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IModuleDescription;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IModuleDescription;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.core.search.SearchMatch;
@@ -46,6 +57,12 @@ import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibrar
 
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
+import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
+import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
+
+import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.write;
+import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeArchive;
+
 
 public final class ProjectCommand {
 
@@ -60,6 +77,11 @@ public final class ProjectCommand {
             this.path = path;
         }
     }
+
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapterFactory(new CollectionTypeAdapter.Factory())
+            .registerTypeAdapterFactory(new EnumTypeAdapter.Factory())
+            .create();
 
     public static List<PackageNode> listProjects(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
@@ -108,7 +130,55 @@ public final class ProjectCommand {
         return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
 
-    public static List<MainClassInfo> getMainMethod(IProgressMonitor monitor) {
+    public static boolean exportJar(List<Object> arguments, IProgressMonitor monitor) {
+        if(arguments.size() < 3) {
+            return false;
+        }
+        String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
+        List<String> classpaths = gson.fromJson(gson.toJson(arguments.get(1)), new TypeToken<List<String>>(){}.getType());
+        String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        if(mainMethod.length() > 0) {
+            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,mainMethod);
+        }
+        try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)){
+            Set<String> fDirectories = new HashSet<>();
+            for(String classpath : classpaths){
+                if (classpath != null){
+                    if(classpath.endsWith(".jar")){
+                        ZipFile zip = new ZipFile(classpath);
+                        writeArchive(zip, true, true, target, fDirectories,monitor);
+                    }
+                    else {
+                        File folder = new File(classpath);
+                        recursiveFolder(folder, target, fDirectories, folder.getAbsolutePath().length() + 1);
+                    }
+                }
+            }
+        } catch (Exception e){
+            return false;
+        }
+        return true;
+    }
+
+    private static void recursiveFolder(File folder, JarOutputStream fJarOutputStream, Set<String> fDirectories, int len){
+        File[] files = folder.listFiles();
+        for(File file : files){
+            if(file.isDirectory()) {
+                recursiveFolder(file, fJarOutputStream, fDirectories, len);
+            } else if(file.isFile()) {
+                try {
+                    write(file, new Path(file.getAbsolutePath().substring(len)), true, true, fJarOutputStream, fDirectories);
+                }
+                catch (Exception e){
+                    // do nothing
+                }
+            }
+        }
+    }
+
+    public static List<MainClassInfo> getMainMethod(IProgressMonitor monitor) throws Exception{
         final List<MainClassInfo> res = new ArrayList<>();
         IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,

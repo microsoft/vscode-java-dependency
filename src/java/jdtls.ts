@@ -3,6 +3,7 @@
 
 import { commands } from "vscode";
 import { Commands } from "../commands";
+import { MainMethodInfo } from "../views/exportJarFile";
 import { INodeData } from "./nodeData";
 
 export namespace Jdtls {
@@ -20,5 +21,13 @@ export namespace Jdtls {
 
     export function resolvePath(params): Thenable<INodeData[]> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_RESOLVEPATH, params);
+    }
+
+    export function getMainMethod(): Thenable<MainMethodInfo[]> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINMETHOD);
+    }
+
+    export function exportJar(mainMethod, elements, destination): Thenable<boolean> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_EXPORTJAR, mainMethod, elements, destination);
     }
 }

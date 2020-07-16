@@ -69,4 +69,7 @@ export class ProjectNode extends DataNode {
     protected get iconPath(): ThemeIcon {
         return new ThemeIcon("project");
     }
+    protected get contextValue(): string {
+        return `project/${this.name}`;
+    }
 }

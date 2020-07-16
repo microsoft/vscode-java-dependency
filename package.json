@@ -105,6 +105,12 @@
         "category": "Java"
       },
       {
+        "command": "java.view.package.exportJar",
+        "title": "%contributes.commands.java.view.package.exportJar%",
+        "category": "Java",
+        "icon": "$(arrow-down)"
+      },
+      {
         "command": "java.view.package.copyFilePath",
         "title": "%contributes.commands.java.view.package.copyFilePath%",
         "category": "Java"
@@ -177,6 +183,10 @@
           "when": "never"
         },
         {
+          "command": "java.view.package.exportJar",
+          "when": "java:serverMode != LightWeight"
+        },
+        {
           "command": "java.view.package.copyFilePath",
           "when": "never"
         },
@@ -202,6 +212,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "java.view.package.exportJar",
+          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
+          "group": "navigation@3"
+        },
         {
           "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
@@ -246,23 +261,28 @@
         },
         {
           "command": "java.project.addLibraries",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:container\/referenced-libraries$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:container/referenced-libraries$/",
           "group": "inline@0"
         },
         {
           "command": "java.project.removeLibrary",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:jar\/referenced-libraries\\+uri$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:jar/referenced-libraries\\+uri$/",
           "group": "inline"
         },
         {
           "command": "java.project.refreshLibraries",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:container\/referenced-libraries$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:container/referenced-libraries$/",
           "group": "inline@1"
         },
         {
           "command": "java.project.maven.addDependency",
-          "when": "view == javaProjectExplorer && mavenEnabled && viewItem =~ /container\/maven-dependencies/",
+          "when": "view == javaProjectExplorer && mavenEnabled && viewItem =~ /container/maven-dependencies/",
           "group": "inline@0"
+        },
+        {
+          "command": "java.view.package.exportJar",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace.*?\\+uri/ && java:serverMode!= LightWeight",
+          "group": "inline"
         }
       ]
     },
