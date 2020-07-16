@@ -2,10 +2,10 @@
 // Licensed under the MIT license.
 
 import { Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
+import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
-import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
 
@@ -17,7 +17,7 @@ export class DependencyExplorer implements Disposable {
 
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
-        this._dependencyViewer = window.createTreeView("javaDependencyExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
+        this._dependencyViewer = window.createTreeView("javaProjectExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
 
         context.subscriptions.push(
             window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
@@ -51,6 +51,10 @@ export class DependencyExplorer implements Disposable {
     }
 
     public async reveal(uri: Uri): Promise<void> {
+        if (!isStandardServerReady()) {
+            return;
+        }
+
         const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
         if (!paths || paths.length === 0) {
             return;

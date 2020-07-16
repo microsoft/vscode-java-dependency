@@ -3,16 +3,18 @@
 
 import * as _ from "lodash";
 import {
-    commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
-    Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
+    commands, Event, EventEmitter, ExtensionContext, extensions, ProviderResult,
+    Range, Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
+import { isStandardServerReady, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
+import { LightWeightNode } from "./lightWeightNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
 
@@ -87,7 +89,19 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return element.getTreeItem();
     }
 
-    public getChildren(element?: ExplorerNode): ProviderResult<ExplorerNode[]> {
+    public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[]> {
+        if (isSwitchingServer()) {
+            await new Promise<void>((resolve: () => void): void => {
+                extensions.getExtension("redhat.java")!.exports.onDidServerModeChange(resolve);
+            });
+        }
+
+        if (!isStandardServerReady()) {
+            return [
+                new LightWeightNode(),
+            ];
+        }
+
         if (!this._rootItems || !element) {
             return this.getRootNodes();
         } else {
