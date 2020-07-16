@@ -63,7 +63,6 @@ import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.write;
 import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeArchive;
 
-
 public final class ProjectCommand {
 
     public static class MainClassInfo {
