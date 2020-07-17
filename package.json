@@ -37,7 +37,8 @@
       {
         "command": "java.project.create",
         "title": "%contributes.commands.java.project.create%",
-        "category": "Java"
+        "category": "Java",
+        "icon": "$(add)"
       },
       {
         "command": "java.project.addLibraries",
@@ -205,27 +206,32 @@
         {
           "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
-          "group": "navigation@2"
+          "group": "navigation@40"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
           "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation == flat && java:serverMode!= LightWeight",
-          "group": "navigation@1"
+          "group": "navigation@30"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
           "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation != flat && java:serverMode!= LightWeight",
-          "group": "navigation@1"
+          "group": "navigation@30"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
           "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer != true && java:serverMode!= LightWeight",
-          "group": "navigation@0"
+          "group": "navigation@20"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
           "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer == true && java:serverMode!= LightWeight",
-          "group": "navigation@0"
+          "group": "navigation@20"
+        },
+        {
+          "command": "java.project.create",
+          "when": "view == javaProjectExplorer",
+          "group": "navigation@10"
         }
       ],
       "view/item/context": [
