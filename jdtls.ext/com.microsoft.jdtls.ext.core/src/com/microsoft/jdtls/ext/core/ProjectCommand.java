@@ -26,7 +26,6 @@ import java.util.zip.ZipFile;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -60,7 +59,7 @@ import com.microsoft.jdtls.ext.core.model.PackageNode;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 
-import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.write;
+import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeFile;
 import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeArchive;
 
 public final class ProjectCommand {
@@ -134,7 +133,7 @@ public final class ProjectCommand {
             return false;
         }
         String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
-        List<String> classpaths = gson.fromJson(gson.toJson(arguments.get(1)), new TypeToken<List<String>>(){}.getType());
+        String[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), String[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
@@ -151,7 +150,7 @@ public final class ProjectCommand {
                     }
                     else {
                         File folder = new File(classpath);
-                        recursiveFolder(folder, target, fDirectories, folder.getAbsolutePath().length() + 1);
+                        writeFileRecursively(folder, target, fDirectories, folder.getAbsolutePath().length() + 1);
                     }
                 }
             }
@@ -161,14 +160,14 @@ public final class ProjectCommand {
         return true;
     }
 
-    private static void recursiveFolder(File folder, JarOutputStream fJarOutputStream, Set<String> fDirectories, int len){
+    private static void writeFileRecursively(File folder, JarOutputStream fJarOutputStream, Set<String> fDirectories, int len){
         File[] files = folder.listFiles();
         for(File file : files){
             if(file.isDirectory()) {
-                recursiveFolder(file, fJarOutputStream, fDirectories, len);
+                writeFileRecursively(file, fJarOutputStream, fDirectories, len);
             } else if(file.isFile()) {
                 try {
-                    write(file, new Path(file.getAbsolutePath().substring(len)), true, true, fJarOutputStream, fDirectories);
+                    writeFile(file, new Path(file.getAbsolutePath().substring(len)), true, true, fJarOutputStream, fDirectories);
                 }
                 catch (Exception e){
                     // do nothing

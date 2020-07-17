@@ -1,8 +1,10 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 import * as path from "path";
 import * as vscode from "vscode";
 import { instrumentOperation, sendInfo, sendOperationError, setErrorCode } from "vscode-extension-telemetry-wrapper";
 
-import * as anchor from "../anchor";
 import * as commands from "../commands";
 import * as lsPlugin from "../languageServerPlugin";
 import * as utility from "../utility";
@@ -29,10 +31,6 @@ export async function buildWorkspace(): Promise<boolean> {
 }
 
 async function handleBuildFailure(operationId: string, err: any): Promise<boolean> {
-    if (err instanceof utility.JavaExtensionNotEnabledError) {
-        utility.guideToInstallJavaExtension();
-        return false;
-    }
 
     const error: Error = new utility.UserError({
         message: "Build failed",
@@ -55,10 +53,8 @@ async function handleBuildFailure(operationId: string, err: any): Promise<boolea
         } else if (ans === "Fix...") {
             showFixSuggestions(operationId);
         }
-
         return false;
     }
-
     return false;
 }
 
@@ -72,9 +68,10 @@ function checkErrorsReportedByJavaExtension(): boolean {
             }
         }
     }
-
     return false;
 }
+
+export const BUILD_FAILED = "build-failed-do-you-want-to-continue";
 
 async function showFixSuggestions(operationId: string) {
     let buildFiles = [];
@@ -124,6 +121,6 @@ async function showFixSuggestions(operationId: string) {
     } else if (ans.label === "Open log file") {
         vscode.commands.executeCommand("java.open.serverLog");
     } else if (ans.label === "Troubleshooting guide") {
-        utility.openTroubleshootingPage("Build failed", anchor.BUILD_FAILED);
+        utility.openTroubleshootingPage("Build failed", BUILD_FAILED);
     }
 }

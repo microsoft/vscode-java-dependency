@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
-
+import { commands } from "vscode";
+import { getJavaExtension, JavaExtensionNotEnabledError } from "./utility";
 /**
  * Commonly used commands
  */
-import { commands } from "vscode";
-import { getJavaExtension, JavaExtensionNotEnabledError } from "./utility";
 export namespace Commands {
     /**
      * Execute Workspace Command
@@ -33,6 +32,7 @@ export namespace Commands {
     export const VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH = "java.view.package.copyRelativeFilePath";
 
     export const VIEW_PACKAGE_EXPORT_JAR = "java.view.package.exportJar";
+    
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
     export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
@@ -63,6 +63,7 @@ export namespace Commands {
     export const JAVA_PROJECT_GETMAINMETHOD = "java.project.getMainMethod";
 
     export const JAVA_PROJECT_EXPORTJAR = "java.project.exportJar";
+
     export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
 }
 
@@ -70,29 +71,7 @@ export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
 
 export const JAVA_EXECUTE_WORKSPACE_COMMAND = "java.execute.workspaceCommand";
 
-export const JAVA_RESOLVE_MAINMETHOD = "vscode.java.resolveMainMethod";
-
-export const JAVA_START_DEBUGSESSION = "vscode.java.startDebugSession";
-
-export const JAVA_RESOLVE_CLASSPATH = "vscode.java.resolveClasspath";
-
-export const JAVA_RESOLVE_MAINCLASS = "vscode.java.resolveMainClass";
-
-export const JAVA_VALIDATE_LAUNCHCONFIG = "vscode.java.validateLaunchConfig";
-
-export const JAVA_INFER_LAUNCH_COMMAND_LENGTH = "vscode.java.inferLaunchCommandLength";
-
-export const JAVA_CHECK_PROJECT_SETTINGS = "vscode.java.checkProjectSettings";
-
-export const JAVA_RESOLVE_ELEMENT_AT_SELECTION = "vscode.java.resolveElementAtSelection";
-
 export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
-
-export const JAVA_IS_ON_CLASSPATH = "vscode.java.isOnClasspath";
-
-export const JAVA_RESOLVE_JAVAEXECUTABLE = "vscode.java.resolveJavaExecutable";
-
-export const JAVA_FETCH_PLATFORM_SETTINGS = "vscode.java.fetchPlatformSettings";
 
 export function executeJavaLanguageServerCommand(...rest) {
     return executeJavaExtensionCommand(JAVA_EXECUTE_WORKSPACE_COMMAND, ...rest);

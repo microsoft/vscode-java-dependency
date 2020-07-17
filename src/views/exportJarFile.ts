@@ -1,4 +1,7 @@
-import { EOL } from "os";
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
+import { EOL, platform } from "os";
 import { basename, extname, join } from "path";
 import { CancellationToken, commands, Extension, extensions, MessageItem, MessageOptions,
          ProgressLocation, QuickInputButtons, Uri, window, workspace, WorkspaceFolder } from "vscode";
@@ -8,8 +11,6 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 
 import { buildWorkspace } from "./build";
-import { ElementPickNode } from "./elementPickNode";
-import { ProjectPickNode } from "./projectPickNode";
 import { QuickPickNode } from "./quickPickNode";
 import { WorkspaceNode } from "./workspaceNode";
 
@@ -50,18 +51,18 @@ export class ExportJarFile {
                     try {
                         switch (step) {
                             case SOLVE_PROJECT: {
-                                projectFolder = await this.solveProject(progress, token, pickSteps, node);
+                                projectFolder = await this.resolveProject(progress, token, pickSteps, node);
                                 rootNodes = await Jdtls.getProjects(projectFolder.uri.toString());
                                 step = SOLVE_MAINMETHOD;
                                 break;
                             }
                             case SOLVE_MAINMETHOD: {
-                                pickResult = await this.solveMainMethod(progress, token, pickSteps, projectFolder.uri.fsPath);
+                                pickResult = await this.resolveMainMethod(progress, token, pickSteps, projectFolder.uri.fsPath);
                                 step = GENERATE_JAR;
                                 break;
                             }
                             case GENERATE_JAR: {
-                                outputFileName = await this.writingJar(progress, token, pickSteps, rootNodes, pickResult, projectFolder.uri.fsPath);
+                                outputFileName = await this.generateJar(progress, token, pickSteps, rootNodes, pickResult, projectFolder.uri.fsPath);
                                 resolve(outputFileName);
                                 step = FINISH;
                                 break;
@@ -80,7 +81,7 @@ export class ExportJarFile {
         }).then((message) => { this.successMessage(message); }, () => {});
     }
 
-    private static solveProject(progress, token: CancellationToken, pickSteps: string[], node?: INodeData): Promise<WorkspaceFolder> {
+    private static resolveProject(progress, token: CancellationToken, pickSteps: string[], node?: INodeData): Promise<WorkspaceFolder> {
         return new Promise<WorkspaceFolder>((resolve, reject) => {
             if (token.isCancellationRequested) {
                 return reject();
@@ -99,12 +100,12 @@ export class ExportJarFile {
                 if (folders.length === 1) {
                     return resolve(folders[0]);
                 }
-                progress.report({ increment: 10, message: "Determining project..." });
-                const pickNodes: ProjectPickNode[] = [];
+                progress.report({ increment: 10, message: "Selecting project..." });
+                const pickNodes: QuickPickNode[] = [];
                 for (const folder of folders) {
-                    pickNodes.push(new ProjectPickNode(folder.name, folder.uri.fsPath, folder.uri.fsPath));
+                    pickNodes.push(new QuickPickNode(folder.name, folder.uri.fsPath, folder.uri.fsPath));
                 }
-                const pickBox = window.createQuickPick<ProjectPickNode>();
+                const pickBox = window.createQuickPick<QuickPickNode>();
                 pickBox.items = pickNodes;
                 pickBox.title = "Export Jar - Determine project";
                 pickBox.placeholder = "Select the project...";
@@ -131,8 +132,8 @@ export class ExportJarFile {
         });
     }
 
-    private static writingJar(progress, token: CancellationToken, pickSteps: string[], rootNodes: INodeData[],
-                              description: string, outputPath: string): Promise<string> {
+    private static generateJar(progress, token: CancellationToken, pickSteps: string[], rootNodes: INodeData[],
+            description: string, outputPath: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             if (token.isCancellationRequested) {
                 return reject();
@@ -140,7 +141,7 @@ export class ExportJarFile {
                 this.failMessage("No module found in this project");
                 return reject();
             }
-            progress.report({ increment: 10, message: "Solving classpaths..." });
+            progress.report({ increment: 10, message: "Resolving classpaths..." });
             let outClassPaths: string[];
             try {
                 outClassPaths = await this.generateOutClassPath(pickSteps, rootNodes, outputPath);
@@ -158,12 +159,12 @@ export class ExportJarFile {
         });
     }
 
-    private static solveMainMethod(progress, token: CancellationToken, pickSteps: string[], projectPath: string): Promise<string> {
+    private static resolveMainMethod(progress, token: CancellationToken, pickSteps: string[], projectPath: string): Promise<string> {
         return new Promise<string>(async (resolve, reject) => {
             if (token.isCancellationRequested) {
                 return reject();
             }
-            progress.report({ increment: 10, message: "Getting main classes..." });
+            progress.report({ increment: 10, message: "Resolving main classes..." });
             if (this.mainMethods === undefined || this.mainMethods.length === 0) {
                 return resolve("");
             }
@@ -209,7 +210,14 @@ export class ExportJarFile {
     }
 
     private static successMessage(outputFileName: string) {
-        const openInExplorer: Message = new Message("Reveal in File Explorer");
+        let openInExplorer: Message;
+        if(platform() === "win32") {
+            openInExplorer = new Message("Reveal in File Explorer");
+        } else if(platform() === "darwin") {
+            openInExplorer = new Message("Reveal in Finder");
+        } else {
+            openInExplorer = new Message("Open Containing Folder");
+        }
         window.showInformationMessage<Message>("Successfully exported jar to" + EOL + outputFileName,
             new Option(false), openInExplorer, new Message("Done", true)).then((messageResult) => {
                 if (messageResult === openInExplorer) {
@@ -224,17 +232,17 @@ export class ExportJarFile {
             const extensionApi: any = await extension?.activate();
             const outClassPaths: string[] = [];
             const setUris: Set<string> = new Set<string>();
-            const pickDependencies: ElementPickNode[] = [];
-            const pickedDependencies: ElementPickNode[] = [];
+            const pickDependencies: QuickPickNode[] = [];
+            const pickedDependencies: QuickPickNode[] = [];
             for (const rootNode of rootNodes) {
                 const modulePaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-                this.generateDependList(modulePaths.classpaths, setUris, pickDependencies, projectPath, true);
-                this.generateDependList(modulePaths.modulepaths, setUris, pickDependencies, projectPath, true);
+                this.generateDependencies(modulePaths.classpaths, setUris, pickDependencies, projectPath, true);
+                this.generateDependencies(modulePaths.modulepaths, setUris, pickDependencies, projectPath, true);
                 const modulePathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-                this.generateDependList(modulePathsTest.classpaths, setUris, pickDependencies, projectPath, false);
-                this.generateDependList(modulePathsTest.modulepaths, setUris, pickDependencies, projectPath, false);
+                this.generateDependencies(modulePathsTest.classpaths, setUris, pickDependencies, projectPath, false);
+                this.generateDependencies(modulePathsTest.modulepaths, setUris, pickDependencies, projectPath, false);
             }
-            const pickBox = window.createQuickPick<ElementPickNode>();
+            const pickBox = window.createQuickPick<QuickPickNode>();
             pickDependencies.sort((node1, node2) => {
                 if (node1.description !== node2.description) {
                     return node1.description.localeCompare(node2.description);
@@ -277,8 +285,8 @@ export class ExportJarFile {
         });
     }
 
-    private static generateDependList(paths: string[], setUris: Set<string>, pickDependencies: ElementPickNode[],
-                                      projectPath: string, isRuntime: boolean) {
+    private static generateDependencies(paths: string[], setUris: Set<string>, pickDependencies: QuickPickNode[],
+            projectPath: string, isRuntime: boolean) {
         paths.forEach((classpath: string) => {
             const extName = extname(classpath);
             const baseName = (extName === ".jar") ? basename(classpath) : classpath.substring(projectPath.length + 1);
@@ -286,7 +294,7 @@ export class ExportJarFile {
             const type = (extName === ".jar") ? "external" : "internal";
             if (!setUris.has(classpath)) {
                 setUris.add(classpath);
-                pickDependencies.push(new ElementPickNode(baseName, description, classpath, type, isRuntime));
+                pickDependencies.push(new QuickPickNode(baseName, description, classpath, type, isRuntime));
             }
         });
     }
