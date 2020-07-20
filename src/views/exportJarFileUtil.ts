@@ -30,7 +30,7 @@ export async function createJarFile(node?: INodeData) {
     }, (progress, token): Promise<string> => {
         return new Promise<string>(async (resolve, reject) => {
             token.onCancellationRequested(() => {
-                return reject();
+                return reject("User Cancelled.");
             });
             progress.report({ increment: 10, message: "Building workspace..." });
             if (await buildWorkspace() === false) {
@@ -40,7 +40,8 @@ export async function createJarFile(node?: INodeData) {
             const pickSteps: string[] = [];
             let step: string = SOLVE_PROJECT;
             let rootNodes: INodeData[] = [];
-            let projectFolder: WorkspaceFolder;
+            let projectFolder: string;
+            let projectUri: Uri;
             let pickResult: string;
             let outputFileName: string;
             while (step !== FINISH) {
@@ -48,17 +49,18 @@ export async function createJarFile(node?: INodeData) {
                     switch (step) {
                         case SOLVE_PROJECT: {
                             projectFolder = await resolveProject(progress, token, pickSteps, node);
-                            rootNodes = await Jdtls.getProjects(projectFolder.uri.toString());
+                            projectUri = Uri.parse(projectFolder);
+                            rootNodes = await Jdtls.getProjects(projectUri.toString());
                             step = SOLVE_MAINMETHOD;
                             break;
                         }
                         case SOLVE_MAINMETHOD: {
-                            pickResult = await resolveMainMethod(progress, token, pickSteps, projectFolder.uri.fsPath);
+                            pickResult = await resolveMainMethod(progress, token, pickSteps, projectUri.fsPath);
                             step = GENERATE_JAR;
                             break;
                         }
                         case GENERATE_JAR: {
-                            outputFileName = await generateJar(progress, token, pickSteps, rootNodes, pickResult, projectFolder.uri.fsPath);
+                            outputFileName = await generateJar(progress, token, pickSteps, rootNodes, pickResult, projectUri.fsPath);
                             resolve(outputFileName);
                             step = FINISH;
                             break;
@@ -69,40 +71,31 @@ export async function createJarFile(node?: INodeData) {
                         step = pickSteps.pop();
                         continue;
                     } else {
-                        return reject();
+                        return reject(err);
                     }
                 }
             }
         });
-    }).then((message) => { successMessage(message); });
+    }).then((message) => { successMessage(message); }, (err) => { failMessage(err); });
 }
 
-function resolveProject(progress, token: CancellationToken, pickSteps: string[], node?: INodeData): Promise<WorkspaceFolder | undefined> {
-    return new Promise<WorkspaceFolder>((resolve, reject) => {
+function resolveProject(progress, token: CancellationToken, pickSteps: string[], node?: INodeData): Promise<string | undefined> {
+    return new Promise<string | undefined>((resolve, reject) => {
         if (token.isCancellationRequested) {
-            return reject();
+            return reject("User Cancelled.");
+        }
+        if (node instanceof WorkspaceNode) {
+            return resolve(node.uri);
         }
         const folders = workspace.workspaceFolders;
-        if (node instanceof WorkspaceNode) {
-            if (folders === undefined) {
-                return reject();
-            }
-            folders.forEach((folder) => {
-                if (folder.uri.toString() === node.uri) {
-                    return resolve(folder);
-                }
-            });
-            return reject();
-        }
-        let projectFolder: WorkspaceFolder;
         if (folders && folders.length) {
             if (folders.length === 1) {
-                return resolve(folders[0]);
+                return resolve(folders[0].uri.toString());
             }
             progress.report({ increment: 10, message: "Selecting project..." });
             const pickNodes: JarQuickPickItem[] = [];
             for (const folder of folders) {
-                pickNodes.push(new JarQuickPickItem(folder.name, folder.uri.fsPath, folder.uri.fsPath));
+                pickNodes.push(new JarQuickPickItem(folder.name, folder.uri.fsPath, folder.uri.toString()));
             }
             const pickBox = window.createQuickPick<JarQuickPickItem>();
             pickBox.items = pickNodes;
@@ -111,12 +104,7 @@ function resolveProject(progress, token: CancellationToken, pickSteps: string[],
             pickBox.ignoreFocusOut = true;
             pickBox.onDidAccept(() => {
                 pickSteps.push(SOLVE_PROJECT);
-                folders.forEach((folder) => {
-                    if (folder.uri.fsPath === pickBox.selectedItems[0].uri) {
-                        projectFolder = folder;
-                    }
-                });
-                resolve(projectFolder);
+                resolve(pickBox.selectedItems[0].uri);
                 pickBox.dispose();
             });
             pickBox.onDidHide(() => {
@@ -125,20 +113,18 @@ function resolveProject(progress, token: CancellationToken, pickSteps: string[],
             });
             pickBox.show();
         } else {
-            failMessage("No project found");
-            return reject();
+            return reject("No workspace folder found.");
         }
     });
 }
 
 function generateJar(progress, token: CancellationToken, pickSteps: string[], rootNodes: INodeData[],
                      description: string, outputPath: string): Promise<string | undefined> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise<string | undefined>(async (resolve, reject) => {
         if (token.isCancellationRequested) {
-            return reject();
+            return reject("User Cancelled.");
         } else if (rootNodes === undefined) {
-            failMessage("No module found in this project");
-            return reject();
+            return reject("No project found.");
         }
         progress.report({ increment: 10, message: "Resolving classpaths..." });
         let outClassPaths: string[];
@@ -153,15 +139,15 @@ function generateJar(progress, token: CancellationToken, pickSteps: string[], ro
         if (exportResult === true) {
             resolve(outputFileName);
         } else {
-            reject();
+            reject("Export jar failed.");
         }
     });
 }
 
 function resolveMainMethod(progress, token: CancellationToken, pickSteps: string[], projectPath: string): Promise<string | undefined> {
-    return new Promise<string>(async (resolve, reject) => {
+    return new Promise<string | undefined>(async (resolve, reject) => {
         if (token.isCancellationRequested) {
-            return reject();
+            return reject("User Cancelled.");
         }
         progress.report({ increment: 10, message: "Resolving main classes..." });
         if (mainMethods === undefined || mainMethods.length === 0) {
@@ -226,7 +212,7 @@ function successMessage(outputFileName: string) {
 }
 
 async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[], projectPath: string): Promise<string[] | undefined> {
-    return new Promise<string[]>(async (resolve, reject) => {
+    return new Promise<string[] | undefined>(async (resolve, reject) => {
         const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
         const extensionApi: any = await extension?.activate();
         const outClassPaths: string[] = [];
@@ -240,6 +226,12 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
             const modulePathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
             generateDependencies(modulePathsTest.classpaths, setUris, pickDependencies, projectPath, false);
             generateDependencies(modulePathsTest.modulepaths, setUris, pickDependencies, projectPath, false);
+        }
+        if (pickDependencies.length === 0) {
+            return reject("No class path found.");
+        } else if (pickDependencies.length === 1) {
+            outClassPaths.push(pickDependencies[0].uri);
+            return resolve(outClassPaths);
         }
         const pickBox = window.createQuickPick<JarQuickPickItem>();
         pickDependencies.sort((node1, node2) => {
