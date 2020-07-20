@@ -27,6 +27,7 @@ export class ProjectController implements Disposable {
         const items: IProjectTypeQuickPick[] = projectTypes.map((type: IProjectType) => {
             return {
                 label: type.displayName,
+                description: type.description,
                 detail: type.metadata.extensionName ? `Provided by $(extensions) ${type.metadata.extensionName}` : type.detail,
                 metadata: type.metadata,
             };
@@ -49,6 +50,7 @@ export class ProjectController implements Disposable {
 
 interface IProjectType {
     displayName: string;
+    description?: string;
     detail?: string;
     metadata: IProjectTypeMetadata;
 }
@@ -88,7 +90,7 @@ async function ensureExtension(typeName: string, metaData: IProjectTypeMetadata)
 }
 
 async function promptInstallExtension(projectType: string, metaData: IProjectTypeMetadata): Promise<void> {
-    const choice: string | undefined = await window.showInformationMessage(`${metaData.extensionName} is required to create ${projectType} projects. Please re-run the command 'Java: Create Java Project' after the extension is installed.`, "Install");
+    const choice: string | undefined = await window.showInformationMessage(`${metaData.extensionName} is required to create ${projectType} projects. Please re-run the command 'Java: Create Java Project...' after the extension is installed.`, "Install");
     if (choice === "Install") {
         commands.executeCommand("workbench.extensions.installExtension", metaData.extensionId);
         // So far there is no API to query the extension's state, so we open the extension's homepage
@@ -104,7 +106,7 @@ async function scaffoldSimpleProject(): Promise<void> {
         defaultUri: workspaceFolder && workspaceFolder.uri,
         canSelectFiles: false,
         canSelectFolders: true,
-        openLabel: "Select the location",
+        openLabel: "Select the project location",
     });
     if (!location || !location.length) {
         return;
@@ -112,14 +114,14 @@ async function scaffoldSimpleProject(): Promise<void> {
 
     const basePath: string = location[0].fsPath;
     const projectName: string | undefined = await window.showInputBox({
-        prompt: "Input a java project name",
+        prompt: "Input a Java project name",
         ignoreFocusOut: true,
         validateInput: async (name: string): Promise<string> => {
             if (name && !name.match(/^[^*~/\\]+$/)) {
                 return "Please input a valid project name";
             }
             if (name && await fse.pathExists(path.join(basePath, name))) {
-                return "A project with this name already exists.";
+                return "A project with this name already exists";
             }
             return "";
         },
@@ -156,6 +158,7 @@ const projectTypes: IProjectType[] = [
     },
     {
         displayName: "Maven",
+        description: "create from archetype",
         metadata: {
             type: ProjectType.Maven,
             extensionId: "vscjava.vscode-maven",
@@ -183,7 +186,6 @@ const projectTypes: IProjectType[] = [
     },
     {
         displayName: "MicroProfile",
-        detail: "Provided by $(extensions) MicroProfile Starter",
         metadata: {
             type: ProjectType.MicroProfile,
             extensionId: "microprofile-community.mp-starter-vscode-ext",
