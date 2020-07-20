@@ -129,7 +129,7 @@ public final class ProjectCommand {
     }
 
     public static boolean exportJar(List<Object> arguments, IProgressMonitor monitor) {
-        if(arguments.size() < 3) {
+        if (arguments.size() < 3) {
             return false;
         }
         String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
@@ -137,16 +137,16 @@ public final class ProjectCommand {
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        if(mainMethod.length() > 0) {
+        if (mainMethod.length() > 0) {
             manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,mainMethod);
         }
-        try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)){
+        try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
             Set<String> fDirectories = new HashSet<>();
-            for(String classpath : classpaths){
-                if (classpath != null){
-                    if(classpath.endsWith(".jar")){
+            for (String classpath : classpaths) {
+                if (classpath != null) {
+                    if(classpath.endsWith(".jar")) {
                         ZipFile zip = new ZipFile(classpath);
-                        writeArchive(zip, true, true, target, fDirectories,monitor);
+                        writeArchive(zip, true, true, target, fDirectories, monitor);
                     }
                     else {
                         File folder = new File(classpath);
@@ -154,29 +154,29 @@ public final class ProjectCommand {
                     }
                 }
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
         return true;
     }
 
-    private static void writeFileRecursively(File folder, JarOutputStream fJarOutputStream, Set<String> fDirectories, int len){
+    private static void writeFileRecursively(File folder, JarOutputStream fJarOutputStream, Set<String> fDirectories, int len) {
         File[] files = folder.listFiles();
-        for(File file : files){
-            if(file.isDirectory()) {
+        for (File file : files) {
+            if (file.isDirectory()) {
                 writeFileRecursively(file, fJarOutputStream, fDirectories, len);
-            } else if(file.isFile()) {
+            } else if (file.isFile()) {
                 try {
                     writeFile(file, new Path(file.getAbsolutePath().substring(len)), true, true, fJarOutputStream, fDirectories);
                 }
-                catch (Exception e){
+                catch (Exception e) {
                     // do nothing
                 }
             }
         }
     }
 
-    public static List<MainClassInfo> getMainMethod(IProgressMonitor monitor) throws Exception{
+    public static List<MainClassInfo> getMainMethod(IProgressMonitor monitor) throws Exception {
         final List<MainClassInfo> res = new ArrayList<>();
         IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,

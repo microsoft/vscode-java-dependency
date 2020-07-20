@@ -4,7 +4,6 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { instrumentOperation, sendInfo, sendOperationError, setErrorCode } from "vscode-extension-telemetry-wrapper";
-
 import * as commands from "../commands";
 import * as lsPlugin from "../languageServerPlugin";
 import * as utility from "../utility";
@@ -37,7 +36,7 @@ async function handleBuildFailure(operationId: string, err: any): Promise<boolea
     });
     setErrorCode(error, Number(err));
     sendOperationError(operationId, "build", error);
-    if (err === lsPlugin.CompileWorkspaceStatus.WITHERROR || err === lsPlugin.CompileWorkspaceStatus.FAILED) {
+    if (err === lsPlugin.CompileWorkspaceStatus.Witherror || err === lsPlugin.CompileWorkspaceStatus.Failed) {
         if (checkErrorsReportedByJavaExtension()) {
             vscode.commands.executeCommand("workbench.actions.view.problems");
         }

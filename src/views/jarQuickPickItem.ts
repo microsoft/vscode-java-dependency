@@ -3,7 +3,7 @@
 
 import { QuickPickItem } from "vscode";
 
-export class QuickPickNode implements QuickPickItem {
+export class JarQuickPickItem implements QuickPickItem {
 
     public label: string;
     public description: string;

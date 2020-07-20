@@ -14,7 +14,7 @@ import { INodeData, NodeKind } from "../java/nodeData";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { ExportJarFile } from "./exportJarFile";
+import { createJarFile } from "./exportJarFileUtil";
 import { LightWeightNode } from "./lightWeightNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
@@ -31,8 +31,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean) => this.refreshWithLog(debounce)));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, (node: INodeData) =>
-            ExportJarFile.createJarFile(node)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, (node: INodeData) => createJarFile(node)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node: INodeData) =>
             commands.executeCommand("revealFileInOS", Uri.parse(node.uri))));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node: INodeData) =>
