@@ -328,7 +328,7 @@
   },
   "dependencies": {
     "fs-extra": "^7.0.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "minimatch": "^3.0.4",
     "vscode-extension-telemetry-wrapper": "0.8.0",
     "vscode-tas-client": "0.0.659"
