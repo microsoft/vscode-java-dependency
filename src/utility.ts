@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as vscode from "vscode";
-import { commands, Extension, extensions, ProgressLocation, Uri, window, workspace, WorkspaceFolder } from "vscode";
+import { commands, Extension, extensions, Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { setUserError } from "vscode-extension-telemetry-wrapper";
 import { logger, Type } from "./logger";
 const JAVA_EXTENSION_ID = "redhat.java";
@@ -63,7 +62,7 @@ interface ITroubleshootingMessage extends ILoggingMessage {
 }
 
 export function openTroubleshootingPage(message: string, anchor: string) {
-    vscode.commands.executeCommand("vscode.open", vscode.Uri.parse(anchor ? `${TROUBLESHOOTING_LINK}#${anchor}` : TROUBLESHOOTING_LINK));
+    commands.executeCommand("vscode.open", Uri.parse(anchor ? `${TROUBLESHOOTING_LINK}#${anchor}` : TROUBLESHOOTING_LINK));
     logger.log(Type.USAGEDATA, {
         troubleshooting: "yes",
         troubleshootingMessage: message,

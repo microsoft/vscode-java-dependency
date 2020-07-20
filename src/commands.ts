@@ -32,7 +32,7 @@ export namespace Commands {
     export const VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH = "java.view.package.copyRelativeFilePath";
 
     export const VIEW_PACKAGE_EXPORT_JAR = "java.view.package.exportJar";
-    
+
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
     export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";

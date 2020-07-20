@@ -133,7 +133,7 @@ export class ExportJarFile {
     }
 
     private static generateJar(progress, token: CancellationToken, pickSteps: string[], rootNodes: INodeData[],
-            description: string, outputPath: string): Promise<string> {
+                               description: string, outputPath: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             if (token.isCancellationRequested) {
                 return reject();
@@ -211,9 +211,9 @@ export class ExportJarFile {
 
     private static successMessage(outputFileName: string) {
         let openInExplorer: Message;
-        if(platform() === "win32") {
+        if (platform() === "win32") {
             openInExplorer = new Message("Reveal in File Explorer");
-        } else if(platform() === "darwin") {
+        } else if (platform() === "darwin") {
             openInExplorer = new Message("Reveal in Finder");
         } else {
             openInExplorer = new Message("Open Containing Folder");
@@ -286,7 +286,7 @@ export class ExportJarFile {
     }
 
     private static generateDependencies(paths: string[], setUris: Set<string>, pickDependencies: QuickPickNode[],
-            projectPath: string, isRuntime: boolean) {
+                                        projectPath: string, isRuntime: boolean) {
         paths.forEach((classpath: string) => {
             const extName = extname(classpath);
             const baseName = (extName === ".jar") ? basename(classpath) : classpath.substring(projectPath.length + 1);
