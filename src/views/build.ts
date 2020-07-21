@@ -4,8 +4,8 @@
 import { basename } from "path";
 import { commands, DiagnosticSeverity, languages, Uri, window } from "vscode";
 import { instrumentOperation, sendInfo, sendOperationError, setErrorCode } from "vscode-extension-telemetry-wrapper";
-import { CompileWorkspaceStatus, resolveBuildFiles} from "../java/jdtls";
 import { executeJavaExtensionCommand, JAVA_BUILD_WORKSPACE } from "../commands";
+import { CompileWorkspaceStatus, resolveBuildFiles } from "../java/jdtls";
 import { UserError } from "../utility";
 
 export async function buildWorkspace(): Promise<boolean> {
