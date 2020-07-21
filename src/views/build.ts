@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as path from "path";
-import * as vscode from "vscode";
+import { basename } from "path";
+import { commands, DiagnosticSeverity, languages, Uri, window } from "vscode";
 import { instrumentOperation, sendInfo, sendOperationError, setErrorCode } from "vscode-extension-telemetry-wrapper";
-import * as commands from "../commands";
-import * as lsPlugin from "../languageServerPlugin";
-import * as utility from "../utility";
+import { CompileWorkspaceStatus, resolveBuildFiles} from "../java/jdtls";
+import { executeJavaExtensionCommand, JAVA_BUILD_WORKSPACE } from "../commands";
+import { UserError } from "../utility";
 
 export async function buildWorkspace(): Promise<boolean> {
     const buildResult = await instrumentOperation("build", async (operationId: string) => {
         let error;
         try {
-            await commands.executeJavaExtensionCommand(commands.JAVA_BUILD_WORKSPACE, false);
+            await executeJavaExtensionCommand(JAVA_BUILD_WORKSPACE, false);
         } catch (err) {
             error = err;
         }
@@ -31,17 +31,17 @@ export async function buildWorkspace(): Promise<boolean> {
 
 async function handleBuildFailure(operationId: string, err: any): Promise<boolean> {
 
-    const error: Error = new utility.UserError({
+    const error: Error = new UserError({
         message: "Build failed",
     });
     setErrorCode(error, Number(err));
     sendOperationError(operationId, "build", error);
-    if (err === lsPlugin.CompileWorkspaceStatus.Witherror || err === lsPlugin.CompileWorkspaceStatus.Failed) {
+    if (err === CompileWorkspaceStatus.Witherror || err === CompileWorkspaceStatus.Failed) {
         if (checkErrorsReportedByJavaExtension()) {
-            vscode.commands.executeCommand("workbench.actions.view.problems");
+            commands.executeCommand("workbench.actions.view.problems");
         }
 
-        const ans = await vscode.window.showErrorMessage("Build failed, do you want to continue?",
+        const ans = await window.showErrorMessage("Build failed, do you want to continue?",
             "Proceed", "Fix...", "Cancel");
         sendInfo(operationId, {
             operationName: "build",
@@ -58,11 +58,11 @@ async function handleBuildFailure(operationId: string, err: any): Promise<boolea
 }
 
 function checkErrorsReportedByJavaExtension(): boolean {
-    const problems = vscode.languages.getDiagnostics() || [];
+    const problems = languages.getDiagnostics() || [];
     for (const problem of problems) {
-        const fileName = path.basename(problem[0].fsPath || "");
+        const fileName = basename(problem[0].fsPath || "");
         if (fileName.endsWith(".java") || fileName === "pom.xml" || fileName.endsWith(".gradle")) {
-            if (problem[1].filter((diagnostic) => diagnostic.severity === vscode.DiagnosticSeverity.Error).length) {
+            if (problem[1].filter((diagnostic) => diagnostic.severity === DiagnosticSeverity.Error).length) {
                 return true;
             }
         }
@@ -70,12 +70,10 @@ function checkErrorsReportedByJavaExtension(): boolean {
     return false;
 }
 
-export const BUILD_FAILED = "build-failed-do-you-want-to-continue";
-
 async function showFixSuggestions(operationId: string) {
     let buildFiles = [];
     try {
-        buildFiles = await lsPlugin.resolveBuildFiles();
+        buildFiles = await resolveBuildFiles();
     } catch (error) {
         // do nothing
     }
@@ -95,12 +93,8 @@ async function showFixSuggestions(operationId: string) {
         label: "Open log file",
         detail: "Open log file to view more details for the build errors",
     });
-    pickitems.push({
-        label: "Troubleshooting guide",
-        detail: "Find more detail about the troubleshooting steps",
-    });
 
-    const ans = await vscode.window.showQuickPick(pickitems, {
+    const ans = await window.showQuickPick(pickitems, {
         placeHolder: "Please fix the errors in PROBLEMS first, then try the fix suggestions below.",
     });
     sendInfo(operationId, {
@@ -112,14 +106,12 @@ async function showFixSuggestions(operationId: string) {
     }
 
     if (ans.label === "Clean workspace cache") {
-        vscode.commands.executeCommand("java.clean.workspace");
+        commands.executeCommand("java.clean.workspace");
     } else if (ans.label === "Update project configuration") {
         for (const buildFile of buildFiles) {
-            await vscode.commands.executeCommand("java.projectConfiguration.update", vscode.Uri.parse(buildFile));
+            await commands.executeCommand("java.projectConfiguration.update", Uri.parse(buildFile));
         }
     } else if (ans.label === "Open log file") {
-        vscode.commands.executeCommand("java.open.serverLog");
-    } else if (ans.label === "Troubleshooting guide") {
-        utility.openTroubleshootingPage("Build failed", BUILD_FAILED);
+        commands.executeCommand("java.open.serverLog");
     }
 }

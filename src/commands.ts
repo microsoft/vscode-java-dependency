@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 import { commands } from "vscode";
-import { getJavaExtension, JavaExtensionNotEnabledError } from "./utility";
 /**
  * Commonly used commands
  */
@@ -79,12 +78,5 @@ export function executeJavaLanguageServerCommand(...rest) {
 
 export async function executeJavaExtensionCommand(commandName: string, ...rest) {
     // TODO: need to handle error and trace telemetry
-    const javaExtension = getJavaExtension();
-    if (!javaExtension) {
-        throw new JavaExtensionNotEnabledError(`Cannot execute command ${commandName}, VS Code Java Extension is not enabled.`);
-    }
-    if (!javaExtension.isActive) {
-        await javaExtension.activate();
-    }
     return commands.executeCommand(commandName, ...rest);
 }

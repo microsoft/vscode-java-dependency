@@ -9,13 +9,15 @@ import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { buildWorkspace } from "./build";
-import { JarQuickPickItem } from "./jarQuickPickItem";
+import { IJarQuickPickItem } from "./IJarQuickPickItem";
 import { WorkspaceNode } from "./workspaceNode";
 
-const SOLVE_PROJECT = "solve project";
-const SOLVE_MAINMETHOD = "solve mainmethod";
-const GENERATE_JAR = "generate jar";
-const FINISH = "finish";
+enum ExportSteps{
+    ResolveProject = "RESOLVEPROJECT",
+    ResolveMainMethod = "RESOLVEMAINMETHOD",
+    GenerateJar = "GENERATEJAR",
+    Finish = "FINISH"
+}
 
 let mainMethods: MainMethodInfo[];
 
@@ -38,31 +40,31 @@ export async function createJarFile(node?: INodeData) {
             }
             mainMethods = await Jdtls.getMainMethod();
             const pickSteps: string[] = [];
-            let step: string = SOLVE_PROJECT;
+            let step: string = ExportSteps.ResolveProject;
             let rootNodes: INodeData[] = [];
             let projectFolder: string;
             let projectUri: Uri;
             let pickResult: string;
             let outputFileName: string;
-            while (step !== FINISH) {
+            while (step !== ExportSteps.Finish) {
                 try {
                     switch (step) {
-                        case SOLVE_PROJECT: {
+                        case ExportSteps.ResolveProject: {
                             projectFolder = await resolveProject(progress, token, pickSteps, node);
                             projectUri = Uri.parse(projectFolder);
                             rootNodes = await Jdtls.getProjects(projectUri.toString());
-                            step = SOLVE_MAINMETHOD;
+                            step = ExportSteps.ResolveMainMethod;
                             break;
                         }
-                        case SOLVE_MAINMETHOD: {
+                        case ExportSteps.ResolveMainMethod: {
                             pickResult = await resolveMainMethod(progress, token, pickSteps, projectUri.fsPath);
-                            step = GENERATE_JAR;
+                            step = ExportSteps.GenerateJar;
                             break;
                         }
-                        case GENERATE_JAR: {
+                        case ExportSteps.GenerateJar: {
                             outputFileName = await generateJar(progress, token, pickSteps, rootNodes, pickResult, projectUri.fsPath);
                             resolve(outputFileName);
-                            step = FINISH;
+                            step = ExportSteps.Finish;
                             break;
                         }
                     }
@@ -93,17 +95,22 @@ function resolveProject(progress, token: CancellationToken, pickSteps: string[],
                 return resolve(folders[0].uri.toString());
             }
             progress.report({ increment: 10, message: "Selecting project..." });
-            const pickNodes: JarQuickPickItem[] = [];
+            const pickNodes: IJarQuickPickItem[] = [];
             for (const folder of folders) {
-                pickNodes.push(new JarQuickPickItem(folder.name, folder.uri.fsPath, folder.uri.toString()));
+                const JarQuickPickItem: IJarQuickPickItem = {
+                    label: folder.name,
+                    description: folder.uri.fsPath,
+                    uri: folder.uri.toString()
+                }
+                pickNodes.push(JarQuickPickItem);
             }
-            const pickBox = window.createQuickPick<JarQuickPickItem>();
+            const pickBox = window.createQuickPick<IJarQuickPickItem>();
             pickBox.items = pickNodes;
             pickBox.title = "Export Jar - Determine project";
             pickBox.placeholder = "Select the project...";
             pickBox.ignoreFocusOut = true;
             pickBox.onDidAccept(() => {
-                pickSteps.push(SOLVE_PROJECT);
+                pickSteps.push(ExportSteps.ResolveProject);
                 resolve(pickBox.selectedItems[0].uri);
                 pickBox.dispose();
             });
@@ -154,17 +161,25 @@ function resolveMainMethod(progress, token: CancellationToken, pickSteps: string
             return resolve("");
         }
         progress.report({ increment: 30, message: "Determining main class..." });
-        const pickNodes: JarQuickPickItem[] = [];
+        const pickNodes: IJarQuickPickItem[] = [];
         for (const mainMethod of mainMethods) {
             if (Uri.file(mainMethod.path).fsPath.includes(projectPath)) {
-                pickNodes.push(new JarQuickPickItem(getName(mainMethod), mainMethod.name));
+                const JarQuickPickItem: IJarQuickPickItem = {
+                    label: getName(mainMethod),
+                    description: mainMethod.name
+                }
+                pickNodes.push(JarQuickPickItem);
             }
         }
         if (pickNodes.length === 0) {
             return resolve("");
         } else {
-            const pickBox = window.createQuickPick<JarQuickPickItem>();
-            pickNodes.push(new JarQuickPickItem("No main class", ""));
+            const pickBox = window.createQuickPick<IJarQuickPickItem>();
+            const noMainClassItem: IJarQuickPickItem = {
+                label: "No main class",
+                description: ""
+            }
+            pickNodes.push(noMainClassItem);
             pickBox.items = pickNodes;
             pickBox.title = "Export Jar - Determine main class";
             pickBox.placeholder = "Select the main class...";
@@ -177,7 +192,7 @@ function resolveMainMethod(progress, token: CancellationToken, pickSteps: string
                 }
             });
             pickBox.onDidAccept(() => {
-                pickSteps.push(SOLVE_MAINMETHOD);
+                pickSteps.push(ExportSteps.ResolveMainMethod);
                 resolve(pickBox.selectedItems[0].description);
                 pickBox.dispose();
             });
@@ -217,8 +232,8 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
         const extensionApi: any = await extension?.activate();
         const outClassPaths: string[] = [];
         const setUris: Set<string> = new Set<string>();
-        const pickDependencies: JarQuickPickItem[] = [];
-        const pickedDependencies: JarQuickPickItem[] = [];
+        const pickDependencies: IJarQuickPickItem[] = [];
+        const pickedDependencies: IJarQuickPickItem[] = [];
         for (const rootNode of rootNodes) {
             const modulePaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
             generateDependencies(modulePaths.classpaths, setUris, pickDependencies, projectPath, true);
@@ -233,7 +248,7 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
             outClassPaths.push(pickDependencies[0].uri);
             return resolve(outClassPaths);
         }
-        const pickBox = window.createQuickPick<JarQuickPickItem>();
+        const pickBox = window.createQuickPick<IJarQuickPickItem>();
         pickDependencies.sort((node1, node2) => {
             if (node1.description !== node2.description) {
                 return node1.description.localeCompare(node2.description);
@@ -276,7 +291,7 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
     });
 }
 
-function generateDependencies(paths: string[], setUris: Set<string>, pickDependencies: JarQuickPickItem[],
+function generateDependencies(paths: string[], setUris: Set<string>, pickDependencies: IJarQuickPickItem[],
                               projectPath: string, isRuntime: boolean) {
     paths.forEach((classpath: string) => {
         const extName = extname(classpath);
@@ -285,7 +300,14 @@ function generateDependencies(paths: string[], setUris: Set<string>, pickDepende
         const type = (extName === ".jar") ? "external" : "internal";
         if (!setUris.has(classpath)) {
             setUris.add(classpath);
-            pickDependencies.push(new JarQuickPickItem(baseName, description, classpath, type, isRuntime));
+            const JarQuickPickItem: IJarQuickPickItem = {
+                label: baseName,
+                description: description,
+                uri: classpath,
+                type: type,
+                picked: isRuntime
+            }
+            pickDependencies.push(JarQuickPickItem);
         }
     });
 }

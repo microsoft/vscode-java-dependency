@@ -1,11 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, Extension, extensions, Uri, window, workspace, WorkspaceFolder } from "vscode";
+import { window, workspace, WorkspaceFolder } from "vscode";
 import { setUserError } from "vscode-extension-telemetry-wrapper";
-import { logger, Type } from "./logger";
-const JAVA_EXTENSION_ID = "redhat.java";
-const TROUBLESHOOTING_LINK = "https://github.com/Microsoft/vscode-java-debug/blob/master/Troubleshooting.md";
 
 export class Utility {
 
@@ -24,17 +21,6 @@ export class Utility {
         return undefined;
     }
 
-}
-
-export function getJavaExtension(): Extension<any> {
-    return extensions.getExtension(JAVA_EXTENSION_ID);
-}
-
-export class JavaExtensionNotEnabledError extends Error {
-    constructor(message) {
-        super(message);
-        setUserError(this);
-    }
 }
 
 export class UserError extends Error {
@@ -61,10 +47,9 @@ interface ITroubleshootingMessage extends ILoggingMessage {
     anchor?: string;
 }
 
-export function openTroubleshootingPage(message: string, anchor: string) {
-    commands.executeCommand("vscode.open", Uri.parse(anchor ? `${TROUBLESHOOTING_LINK}#${anchor}` : TROUBLESHOOTING_LINK));
-    logger.log(Type.USAGEDATA, {
-        troubleshooting: "yes",
-        troubleshootingMessage: message,
-    });
+export enum Type {
+    EXCEPTION = "exception",
+    USAGEDATA = "usageData",
+    USAGEERROR = "usageError",
+    ACTIVATEEXTENSION = "activateExtension", // TODO: Activation belongs to usage data, remove this category.
 }
