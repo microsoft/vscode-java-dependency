@@ -41,7 +41,7 @@ export class ProjectController implements Disposable {
         }
 
         if (choice.metadata.type === ProjectType.NoBuildTool) {
-            await scaffoldSimpleProject();
+            await scaffoldSimpleProject(this.context);
         } else if (choice.metadata.createCommandId) {
             await commands.executeCommand(choice.metadata.createCommandId);
         }
@@ -100,7 +100,7 @@ async function promptInstallExtension(projectType: string, metaData: IProjectTyp
     }
 }
 
-async function scaffoldSimpleProject(): Promise<void> {
+async function scaffoldSimpleProject(context: ExtensionContext): Promise<void> {
     const workspaceFolder = Utility.getDefaultWorkspaceFolder();
     const location: Uri[] | undefined = await window.showOpenDialog({
         defaultUri: workspaceFolder && workspaceFolder.uri,
@@ -132,7 +132,7 @@ async function scaffoldSimpleProject(): Promise<void> {
     }
 
     const projectRoot: string = path.join(basePath, projectName);
-    const templateRoot: string = path.join(this.context.extensionPath, "templates", "invisible-project");
+    const templateRoot: string = path.join(context.extensionPath, "templates", "invisible-project");
     try {
         await fse.ensureDir(projectRoot);
         await fse.copy(templateRoot, projectRoot);
