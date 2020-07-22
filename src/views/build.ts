@@ -4,15 +4,15 @@
 import { basename } from "path";
 import { commands, DiagnosticSeverity, languages, Uri, window } from "vscode";
 import { instrumentOperation, sendInfo, sendOperationError, setErrorCode } from "vscode-extension-telemetry-wrapper";
-import { executeJavaExtensionCommand, JAVA_BUILD_WORKSPACE } from "../commands";
-import { CompileWorkspaceStatus, resolveBuildFiles } from "../java/jdtls";
+import { Commands, executeJavaExtensionCommand } from "../commands";
+import { Jdtls } from "../java/jdtls";
 import { UserError } from "../utility";
 
 export async function buildWorkspace(): Promise<boolean> {
     const buildResult = await instrumentOperation("build", async (operationId: string) => {
         let error;
         try {
-            await executeJavaExtensionCommand(JAVA_BUILD_WORKSPACE, false);
+            await executeJavaExtensionCommand(Commands.JAVA_BUILD_WORKSPACE, false);
         } catch (err) {
             error = err;
         }
@@ -36,7 +36,7 @@ async function handleBuildFailure(operationId: string, err: any): Promise<boolea
     });
     setErrorCode(error, Number(err));
     sendOperationError(operationId, "build", error);
-    if (err === CompileWorkspaceStatus.Witherror || err === CompileWorkspaceStatus.Failed) {
+    if (err === Jdtls.CompileWorkspaceStatus.Witherror || err === Jdtls.CompileWorkspaceStatus.Failed) {
         if (checkErrorsReportedByJavaExtension()) {
             commands.executeCommand("workbench.actions.view.problems");
         }
@@ -73,7 +73,7 @@ function checkErrorsReportedByJavaExtension(): boolean {
 async function showFixSuggestions(operationId: string) {
     let buildFiles = [];
     try {
-        buildFiles = await resolveBuildFiles();
+        buildFiles = await Jdtls.resolveBuildFiles();
     } catch (error) {
         // do nothing
     }

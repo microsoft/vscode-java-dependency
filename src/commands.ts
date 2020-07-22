@@ -64,16 +64,14 @@ export namespace Commands {
     export const JAVA_PROJECT_EXPORTJAR = "java.project.exportJar";
 
     export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
+
+    export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
+
+    export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
 }
 
-export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
-
-export const JAVA_EXECUTE_WORKSPACE_COMMAND = "java.execute.workspaceCommand";
-
-export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
-
 export function executeJavaLanguageServerCommand(...rest) {
-    return executeJavaExtensionCommand(JAVA_EXECUTE_WORKSPACE_COMMAND, ...rest);
+    return executeJavaExtensionCommand(Commands.EXECUTE_WORKSPACE_COMMAND, ...rest);
 }
 
 export async function executeJavaExtensionCommand(commandName: string, ...rest) {

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { commands } from "vscode";
-import { Commands, executeJavaLanguageServerCommand, JAVA_RESOLVE_BUILD_FILES } from "../commands";
+import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { MainMethodInfo } from "../views/exportJarFileUtil";
 import { INodeData } from "./nodeData";
 
@@ -30,15 +30,15 @@ export namespace Jdtls {
     export function exportJar(mainMethod: string, elements: string[], destination: string): Thenable<boolean> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_EXPORTJAR, mainMethod, elements, destination);
     }
-}
 
-export enum CompileWorkspaceStatus {
-    Failed = 0,
-    Succeed = 1,
-    Witherror = 2,
-    Cancelled = 3,
-}
+    export enum CompileWorkspaceStatus {
+        Failed = 0,
+        Succeed = 1,
+        Witherror = 2,
+        Cancelled = 3,
+    }
 
-export function resolveBuildFiles(): Promise<string[]> {
-    return <Promise<string[]>>executeJavaLanguageServerCommand(JAVA_RESOLVE_BUILD_FILES);
+    export function resolveBuildFiles(): Promise<string[]> {
+        return <Promise<string[]>>executeJavaLanguageServerCommand(Commands.JAVA_RESOLVE_BUILD_FILES);
+    }
 }
