@@ -179,16 +179,20 @@ public final class ProjectCommand {
     }
 
     public static List<MainClassInfo> getMainMethod(List<Object> arguments, IProgressMonitor monitor) throws Exception {
-        String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
-        IJavaProject javaProject = PackageCommand.getJavaProject(mainMethod);
-        IPackageFragmentRoot[] packages = javaProject.getAllPackageFragmentRoots();
+        List<PackageNode> projectList = listProjects(arguments, monitor);
+        final List<MainClassInfo> res = new ArrayList<>();
         List<IJavaElement> searchRoots = new ArrayList<>();
-        for (IPackageFragmentRoot packageFragmentRoot : packages) {
-            if (!packageFragmentRoot.isExternal()) {
-                searchRoots.add(packageFragmentRoot);
+        if (projectList.size() == 0) {
+            return res;
+        }
+        for (PackageNode project : projectList) {
+            IJavaProject javaProject = PackageCommand.getJavaProject(project.getUri());
+            for (IPackageFragmentRoot packageFragmentRoot : javaProject.getAllPackageFragmentRoots()) {
+                if (!packageFragmentRoot.isExternal()) {
+                    searchRoots.add(packageFragmentRoot);
+                }
             }
         }
-        final List<MainClassInfo> res = new ArrayList<>();
         IJavaSearchScope scope = SearchEngine.createJavaSearchScope(searchRoots.toArray(IJavaElement[]::new));
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
                 IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE);
