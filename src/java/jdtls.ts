@@ -3,7 +3,7 @@
 
 import { commands } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
-import { MainMethodInfo } from "../views/exportJarFileUtil";
+import { MainMethodInfo } from "../exportJarFileCommand";
 import { INodeData } from "./nodeData";
 
 export namespace Jdtls {

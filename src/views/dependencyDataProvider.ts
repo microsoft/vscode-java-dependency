@@ -8,13 +8,13 @@ import {
 } from "vscode";
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
+import { createJarFile } from "../exportJarFileCommand";
 import { isStandardServerReady, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { createJarFile } from "./exportJarFileUtil";
 import { LightWeightNode } from "./lightWeightNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";

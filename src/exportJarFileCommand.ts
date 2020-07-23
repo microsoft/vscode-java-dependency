@@ -5,11 +5,11 @@ import { EOL, platform } from "os";
 import { basename, extname, join } from "path";
 import { CancellationToken, commands, Extension, extensions, ProgressLocation,
          QuickInputButtons, QuickPick, QuickPickItem, Uri, window, workspace } from "vscode";
-import { isStandardServerReady } from "../extension";
-import { Jdtls } from "../java/jdtls";
-import { INodeData } from "../java/nodeData";
 import { buildWorkspace } from "./build";
-import { WorkspaceNode } from "./workspaceNode";
+import { isStandardServerReady } from "./extension";
+import { Jdtls } from "./java/jdtls";
+import { INodeData } from "./java/nodeData";
+import { WorkspaceNode } from "./views/workspaceNode";
 
 enum ExportSteps {
     ResolveProject = "RESOLVEPROJECT",
@@ -37,7 +37,6 @@ export async function createJarFile(node?: INodeData) {
             if (await buildWorkspace() === false) {
                 return reject();
             }
-            mainMethods = await Jdtls.getMainMethod();
             const pickSteps: string[] = [];
             let step: string = ExportSteps.ResolveProject;
             let rootNodes: INodeData[] = [];
@@ -152,6 +151,7 @@ function resolveMainMethod(progress, token: CancellationToken, pickSteps: string
             return reject("User Cancelled.");
         }
         progress.report({ increment: 10, message: "Resolving main classes..." });
+        mainMethods = await Jdtls.getMainMethod();
         if (mainMethods === undefined || mainMethods.length === 0) {
             return resolve("");
         }

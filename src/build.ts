@@ -4,9 +4,9 @@
 import { basename } from "path";
 import { commands, DiagnosticSeverity, languages, Uri, window } from "vscode";
 import { instrumentOperation, sendInfo, sendOperationError, setErrorCode } from "vscode-extension-telemetry-wrapper";
-import { Commands, executeJavaExtensionCommand } from "../commands";
-import { Jdtls } from "../java/jdtls";
-import { UserError } from "../utility";
+import { Commands, executeJavaExtensionCommand } from "./commands";
+import { Jdtls } from "./java/jdtls";
+import { UserError } from "./utility";
 
 export async function buildWorkspace(): Promise<boolean> {
     const buildResult = await instrumentOperation("build", async (operationId: string) => {
