@@ -38,9 +38,11 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IModuleDescription;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
@@ -176,9 +178,18 @@ public final class ProjectCommand {
         }
     }
 
-    public static List<MainClassInfo> getMainMethod(IProgressMonitor monitor) throws Exception {
+    public static List<MainClassInfo> getMainMethod(List<Object> arguments, IProgressMonitor monitor) throws Exception {
+        String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
+        IJavaProject javaProject = PackageCommand.getJavaProject(mainMethod);
+        IPackageFragmentRoot[] packages = javaProject.getAllPackageFragmentRoots();
+        List<IJavaElement> searchRoots = new ArrayList<>();
+        for (IPackageFragmentRoot packageFragmentRoot : packages) {
+            if (!packageFragmentRoot.isExternal()) {
+                searchRoots.add(packageFragmentRoot);
+            }
+        }
         final List<MainClassInfo> res = new ArrayList<>();
-        IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
+        IJavaSearchScope scope = SearchEngine.createJavaSearchScope(searchRoots.toArray(IJavaElement[]::new));
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
                 IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE);
         SearchRequestor requestor = new SearchRequestor() {

@@ -18,10 +18,13 @@ enum ExportSteps {
     Finish = "FINISH",
 }
 
+let isExportingJar: boolean = false;
+
 export async function createJarFile(node?: INodeData) {
-    if (!isStandardServerReady()) {
+    if (!isStandardServerReady() || isExportingJar) {
         return;
     }
+    isExportingJar = true;
     window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar... ",
@@ -29,7 +32,7 @@ export async function createJarFile(node?: INodeData) {
     }, (progress, token): Promise<string> => {
         return new Promise<string>(async (resolve, reject) => {
             token.onCancellationRequested(() => {
-                return reject("User Cancelled.");
+                return reject();
             });
             progress.report({ increment: 10, message: "Building workspace..." });
             if (await buildWorkspace() === false) {
@@ -53,7 +56,7 @@ export async function createJarFile(node?: INodeData) {
                             break;
                         }
                         case ExportSteps.ResolveMainMethod: {
-                            selectedMainMethod = await resolveMainMethod(progress, token, pickSteps, projectUri.fsPath);
+                            selectedMainMethod = await resolveMainMethod(progress, token, pickSteps, projectUri.toString());
                             step = ExportSteps.GenerateJar;
                             break;
                         }
@@ -74,13 +77,19 @@ export async function createJarFile(node?: INodeData) {
                 }
             }
         });
-    }).then((message) => { successMessage(message); }, (err) => { failMessage(err); });
+    }).then((message) => {
+        successMessage(message);
+        isExportingJar = false;
+    }, (err) => {
+        failMessage(err);
+        isExportingJar = false;
+     });
 }
 
 function resolveProject(progress, token: CancellationToken, pickSteps: string[], node?: INodeData): Promise<string | undefined> {
     return new Promise<string | undefined>((resolve, reject) => {
         if (token.isCancellationRequested) {
-            return reject("User Cancelled.");
+            return reject();
         }
         if (node instanceof WorkspaceNode) {
             return resolve(node.uri);
@@ -121,7 +130,7 @@ function generateJar(progress, token: CancellationToken, pickSteps: string[], ro
                      selectedMainMethod: string, outputPath: string): Promise<string | undefined> {
     return new Promise<string | undefined>(async (resolve, reject) => {
         if (token.isCancellationRequested) {
-            return reject("User Cancelled.");
+            return reject();
         } else if (rootNodes === undefined) {
             return reject("No project found.");
         }
@@ -146,23 +155,21 @@ function generateJar(progress, token: CancellationToken, pickSteps: string[], ro
 function resolveMainMethod(progress, token: CancellationToken, pickSteps: string[], projectPath: string): Promise<string | undefined> {
     return new Promise<string | undefined>(async (resolve, reject) => {
         if (token.isCancellationRequested) {
-            return reject("User Cancelled.");
+            return reject();
         }
         progress.report({ increment: 10, message: "Resolving main classes..." });
-        const mainMethods: MainMethodInfo[] = await Jdtls.getMainMethod();
+        const mainMethods: MainMethodInfo[] = await Jdtls.getMainMethod(projectPath);
         if (mainMethods === undefined || mainMethods.length === 0) {
             return resolve("");
         }
-        progress.report({ increment: 30, message: "Determining main class..." });
+        progress.report({ increment: 30, message: "" });
         const pickNodes: IJarQuickPickItem[] = [];
         for (const mainMethod of mainMethods) {
-            if (Uri.file(mainMethod.path).fsPath.includes(projectPath)) {
-                const jarQuickPickItem: IJarQuickPickItem = {
-                    label: getName(mainMethod),
-                    description: mainMethod.name,
-                };
-                pickNodes.push(jarQuickPickItem);
-            }
+            const jarQuickPickItem: IJarQuickPickItem = {
+                label: getName(mainMethod),
+                description: mainMethod.name,
+            };
+            pickNodes.push(jarQuickPickItem);
         }
         if (pickNodes.length === 0) {
             return resolve("");

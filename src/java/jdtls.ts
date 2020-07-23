@@ -23,8 +23,8 @@ export namespace Jdtls {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_RESOLVEPATH, params);
     }
 
-    export function getMainMethod(): Thenable<MainMethodInfo[]> {
-        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINMETHOD);
+    export function getMainMethod(params: string): Thenable<MainMethodInfo[]> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINMETHOD, params);
     }
 
     export function exportJar(mainMethod: string, elements: string[], destination: string): Thenable<boolean> {
