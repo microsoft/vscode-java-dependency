@@ -18,8 +18,6 @@ enum ExportSteps {
     Finish = "FINISH",
 }
 
-let mainMethods: MainMethodInfo[];
-
 export async function createJarFile(node?: INodeData) {
     if (!isStandardServerReady()) {
         return;
@@ -102,7 +100,7 @@ function resolveProject(progress, token: CancellationToken, pickSteps: string[],
                 };
                 pickNodes.push(jarQuickPickItem);
             }
-            const pickBox = createPickBox("Export Jar - Determine project", "Select the project...", pickNodes, false, pickSteps.length);
+            const pickBox = createPickBox("Export Jar - Determine project", "Select the project...", pickNodes, pickSteps.length > 0);
             pickBox.onDidAccept(() => {
                 pickSteps.push(ExportSteps.ResolveProject);
                 resolve(pickBox.selectedItems[0].uri);
@@ -151,7 +149,7 @@ function resolveMainMethod(progress, token: CancellationToken, pickSteps: string
             return reject("User Cancelled.");
         }
         progress.report({ increment: 10, message: "Resolving main classes..." });
-        mainMethods = await Jdtls.getMainMethod();
+        const mainMethods: MainMethodInfo[] = await Jdtls.getMainMethod();
         if (mainMethods === undefined || mainMethods.length === 0) {
             return resolve("");
         }
@@ -174,7 +172,7 @@ function resolveMainMethod(progress, token: CancellationToken, pickSteps: string
                 description: "",
             };
             pickNodes.push(noMainClassItem);
-            const pickBox = createPickBox("Export Jar - Determine main class", "Select the main class...", pickNodes, false, pickSteps.length);
+            const pickBox = createPickBox("Export Jar - Determine main class", "Select the main class...", pickNodes, pickSteps.length > 0);
             pickBox.onDidTriggerButton((item) => {
                 if (item === QuickInputButtons.Back) {
                     reject(InputFlowAction.back);
@@ -222,15 +220,15 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
         const extensionApi: any = await extension?.activate();
         const outClassPaths: string[] = [];
         const setUris: Set<string> = new Set<string>();
-        let pickDependencies: IJarQuickPickItem[] = [];
+        const pickDependencies: IJarQuickPickItem[] = [];
         const pickedDependencies: IJarQuickPickItem[] = [];
         for (const rootNode of rootNodes) {
             const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-            pickDependencies = pickDependencies.concat(generateDependencies(classPaths.classpaths, setUris, projectPath, true));
-            pickDependencies = pickDependencies.concat(generateDependencies(classPaths.modulepaths, setUris, projectPath, true));
+            pickDependencies.push(...generateDependencies(classPaths.classpaths, setUris, projectPath, true));
+            pickDependencies.push(...generateDependencies(classPaths.modulepaths, setUris, projectPath, true));
             const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-            pickDependencies = pickDependencies.concat(generateDependencies(classPathsTest.classpaths, setUris, projectPath, false));
-            pickDependencies = pickDependencies.concat(generateDependencies(classPathsTest.modulepaths, setUris, projectPath, false));
+            pickDependencies.push(...generateDependencies(classPathsTest.classpaths, setUris, projectPath, false));
+            pickDependencies.push(...generateDependencies(classPathsTest.modulepaths, setUris, projectPath, false));
         }
         if (pickDependencies.length === 0) {
             return reject("No class path found.");
@@ -252,7 +250,7 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
                 pickedDependencies.push(pickDependency);
             }
         }
-        const pickBox = createPickBox("Export Jar - Determine elements", "Select the elements...", pickDependencies, true, pickSteps.length);
+        const pickBox = createPickBox("Export Jar - Determine elements", "Select the elements...", pickDependencies, pickSteps.length > 0, true);
         pickBox.selectedItems = pickedDependencies;
         pickBox.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
@@ -276,14 +274,14 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
 }
 
 function createPickBox(title: string, placeholder: string, items: IJarQuickPickItem[],
-                       canSelectMany: boolean, pickStepLength: number): QuickPick<IJarQuickPickItem> {
+                       backBtnEnabled: boolean, canSelectMany: boolean = false): QuickPick<IJarQuickPickItem> {
     const pickBox = window.createQuickPick<IJarQuickPickItem>();
     pickBox.title = title;
     pickBox.placeholder = placeholder;
     pickBox.canSelectMany = canSelectMany;
     pickBox.items = items;
     pickBox.ignoreFocusOut = true;
-    pickBox.buttons = pickStepLength > 0 ? [(QuickInputButtons.Back)] : [];
+    pickBox.buttons = backBtnEnabled ? [(QuickInputButtons.Back)] : [];
     return pickBox;
 }
 
@@ -329,9 +327,6 @@ class InputFlowAction {
 }
 
 interface IJarQuickPickItem extends QuickPickItem {
-    label: string;
-    description: string;
     uri?: string;
     type?: string;
-    picked?: boolean;
 }
