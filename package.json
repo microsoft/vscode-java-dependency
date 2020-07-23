@@ -216,7 +216,7 @@
         {
           "command": "java.view.package.exportJar",
           "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
-          "group": "navigation@3"
+          "group": "navigation@50"
         },
         {
           "command": "java.view.package.refresh",

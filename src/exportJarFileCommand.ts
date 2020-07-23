@@ -224,11 +224,11 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
         const pickedDependencies: IJarQuickPickItem[] = [];
         for (const rootNode of rootNodes) {
             const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-            pickDependencies.push(...generateDependencies(classPaths.classpaths, setUris, projectPath, true));
-            pickDependencies.push(...generateDependencies(classPaths.modulepaths, setUris, projectPath, true));
+            pickDependencies.push(...generateDependencies(classPaths.classpaths, setUris, projectPath, true),
+                ...generateDependencies(classPaths.modulepaths, setUris, projectPath, true));
             const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-            pickDependencies.push(...generateDependencies(classPathsTest.classpaths, setUris, projectPath, false));
-            pickDependencies.push(...generateDependencies(classPathsTest.modulepaths, setUris, projectPath, false));
+            pickDependencies.push(...generateDependencies(classPathsTest.classpaths, setUris, projectPath, false),
+                ...generateDependencies(classPathsTest.modulepaths, setUris, projectPath, false));
         }
         if (pickDependencies.length === 0) {
             return reject("No class path found.");
