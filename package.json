@@ -215,7 +215,7 @@
       "view/title": [
         {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight && workspaceFolderCount != 0",
           "group": "navigation@50"
         },
         {
@@ -287,7 +287,7 @@
         },
         {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace.*?\\+uri/ && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && workspaceFolderCount != 0 && viewItem =~ /java:workspace.*?\\+uri/ && java:serverMode!= LightWeight",
           "group": "inline"
         }
       ]
