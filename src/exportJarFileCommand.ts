@@ -91,7 +91,7 @@ async function resolveProject(pickSteps: string[], node?: INodeData): Promise<st
         return folders[0].uri.toString();
     }
     const pickNodes: IJarQuickPickItem[] = [];
-    for await (const folder of folders) {
+    for (const folder of folders) {
         const jarQuickPickItem: IJarQuickPickItem = {
             label: folder.name,
             description: folder.uri.fsPath,
@@ -118,8 +118,7 @@ async function generateJar(pickSteps: string[], rootNodes: INodeData[],
                            selectedMainMethod: string, outputPath: string): Promise<string | undefined> {
     let outClassPaths: string[];
     outClassPaths = await generateOutClassPath(pickSteps, rootNodes, outputPath);
-    const outputFilePath = join(outputPath, basename(outputPath) + ".jar");
-    await window.withProgress({
+    const outputFilePath = await window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar : Generating jar...",
         cancellable: true,
@@ -128,9 +127,10 @@ async function generateJar(pickSteps: string[], rootNodes: INodeData[],
             token.onCancellationRequested(() => {
                 return reject();
             });
-            const exportResult = await Jdtls.exportJar(basename(selectedMainMethod), outClassPaths, outputFilePath);
+            const destPath = join(outputPath, basename(outputPath) + ".jar");
+            const exportResult = await Jdtls.exportJar(basename(selectedMainMethod), outClassPaths, destPath);
             if (exportResult === true) {
-                resolve(outputFilePath);
+                resolve(destPath);
             } else {
                 reject(new Error("Export jar failed."));
             }
@@ -140,25 +140,23 @@ async function generateJar(pickSteps: string[], rootNodes: INodeData[],
 }
 
 async function resolveMainMethod(pickSteps: string[], projectPath: string): Promise<string | undefined> {
-    let mainMethods: MainMethodInfo[] = [];
-    await window.withProgress({
+    const mainMethods: MainMethodInfo[] = await window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar : Resolving main classes...",
         cancellable: true,
     }, (progress, token) => {
-        return new Promise<string>(async (resolve, reject) => {
+        return new Promise<MainMethodInfo[] | undefined>(async (resolve, reject) => {
             token.onCancellationRequested(() => {
                 return reject();
             });
-            mainMethods = await Jdtls.getMainMethod(projectPath);
-            resolve();
+            resolve(await Jdtls.getMainMethod(projectPath));
         });
     });
     if (mainMethods === undefined || mainMethods.length === 0) {
         return "";
     }
     const pickNodes: IJarQuickPickItem[] = [];
-    for await (const mainMethod of mainMethods) {
+    for (const mainMethod of mainMethods) {
         const jarQuickPickItem: IJarQuickPickItem = {
             label: getName(mainMethod),
             description: mainMethod.name,
@@ -218,26 +216,26 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
     const extensionApi: any = await extension?.activate();
     const outClassPaths: string[] = [];
     const setUris: Set<string> = new Set<string>();
-    const pickDependencies: IJarQuickPickItem[] = [];
     const pickedDependencies: IJarQuickPickItem[] = [];
-    await window.withProgress({
+    const pickDependencies: IJarQuickPickItem[] = await window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar : Resolving classpaths...",
         cancellable: true,
     }, (progress, token) => {
-        return new Promise<string>(async (resolve, reject) => {
+        return new Promise<IJarQuickPickItem[]>(async (resolve, reject) => {
             token.onCancellationRequested(() => {
                 return reject();
             });
-            for await (const rootNode of rootNodes) {
+            const pickTemp: IJarQuickPickItem[] = [];
+            for (const rootNode of rootNodes) {
                 const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-                pickDependencies.push(...generateDependencies(classPaths.classpaths, setUris, projectPath, true),
+                pickTemp.push(...generateDependencies(classPaths.classpaths, setUris, projectPath, true),
                     ...generateDependencies(classPaths.modulepaths, setUris, projectPath, true));
                 const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-                pickDependencies.push(...generateDependencies(classPathsTest.classpaths, setUris, projectPath, false),
+                pickTemp.push(...generateDependencies(classPathsTest.classpaths, setUris, projectPath, false),
                     ...generateDependencies(classPathsTest.modulepaths, setUris, projectPath, false));
             }
-            resolve();
+            resolve(pickTemp);
         });
     });
     if (pickDependencies.length === 0) {
