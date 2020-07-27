@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import { existsSync } from "fs";
 import { EOL, platform } from "os";
 import { basename, extname, join } from "path";
 import { commands, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPick, QuickPickItem, Uri, window, workspace } from "vscode";
@@ -296,6 +297,9 @@ function createPickBox(title: string, placeholder: string, items: IJarQuickPickI
 function generateDependencies(paths: string[], setUris: Set<string>, projectPath: string, isRuntime: boolean): IJarQuickPickItem[] {
     const pickDependencies: IJarQuickPickItem[] = [];
     for (const classpath of paths) {
+        if (!existsSync(classpath)) {
+            continue;
+        }
         const extName = extname(classpath);
         const baseName = (extName === ".jar") ? basename(classpath) : classpath.substring(projectPath.length + 1);
         const descriptionValue = (isRuntime) ? "Runtime" : "Test";
