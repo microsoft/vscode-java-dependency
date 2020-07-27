@@ -44,7 +44,7 @@ export async function createJarFile(node?: INodeData) {
                         projectUri = Uri.parse(projectFolder);
                         rootNodes = await Jdtls.getProjects(projectUri.toString());
                         if (rootNodes === undefined) {
-                            throw new Error("No project found. Please make sure your project folder is open.");
+                            throw new Error("No project found. Please make sure your project folder is opened.");
                         }
                         step = ExportSteps.ResolveMainMethod;
                         break;
@@ -86,7 +86,7 @@ async function resolveProject(pickSteps: string[], node?: INodeData): Promise<st
         return node.uri;
     }
     const folders = workspace.workspaceFolders;
-    // Need not to check folders.length for the workspaceFolderCount has been checked in package.json
+    // Guarded by workspaceFolderCount != 0 in package.json
     if (folders.length === 1) {
         return folders[0].uri.toString();
     }
