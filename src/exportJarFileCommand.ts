@@ -12,7 +12,7 @@ import { INodeData } from "./java/nodeData";
 import { WorkspaceNode } from "./views/workspaceNode";
 
 enum ExportSteps {
-    ResolveProject = "RESOLVEPROJECT",
+    ResolveWorkspace = "RESOLVEWORKSPACE",
     ResolveMainMethod = "RESOLVEMAINMETHOD",
     GenerateJar = "GENERATEJAR",
     Finish = "FINISH",
@@ -25,24 +25,23 @@ export async function createJarFile(node?: INodeData) {
         return;
     }
     isExportingJar = true;
-    const pickSteps: string[] = [];
-    let step: string = ExportSteps.ResolveProject;
-    let rootNodes: INodeData[] = [];
-    let projectFolder: string;
-    let projectUri: Uri;
-    let selectedMainMethod: string;
-    let outputFilePath: string;
     return new Promise<string>(async (resolve, reject) => {
+        const pickSteps: string[] = [];
+        let step: string = ExportSteps.ResolveWorkspace;
+        let selectedMainMethod: string;
+        let workspaceUri: Uri;
+        let rootNodes: INodeData[] = [];
         if (await buildWorkspace() === false) {
             return reject();
         }
         while (step !== ExportSteps.Finish) {
             try {
                 switch (step) {
-                    case ExportSteps.ResolveProject: {
-                        projectFolder = await resolveProject(pickSteps, node);
-                        projectUri = Uri.parse(projectFolder);
-                        rootNodes = await Jdtls.getProjects(projectUri.toString());
+                    case ExportSteps.ResolveWorkspace: {
+                        let workspaceFolder: string;
+                        workspaceFolder = await resolveWorkspaceFolder(pickSteps, node);
+                        workspaceUri = Uri.parse(workspaceFolder);
+                        rootNodes = await Jdtls.getProjects(workspaceUri.toString());
                         if (rootNodes === undefined) {
                             throw new Error("No project found. Please make sure your project folder is opened.");
                         }
@@ -50,12 +49,13 @@ export async function createJarFile(node?: INodeData) {
                         break;
                     }
                     case ExportSteps.ResolveMainMethod: {
-                        selectedMainMethod = await resolveMainMethod(pickSteps, projectUri.toString());
+                        selectedMainMethod = await resolveMainMethod(pickSteps, workspaceUri.toString());
                         step = ExportSteps.GenerateJar;
                         break;
                     }
                     case ExportSteps.GenerateJar: {
-                        outputFilePath = await generateJar(pickSteps, rootNodes, selectedMainMethod, projectUri.fsPath);
+                        let outputFilePath: string;
+                        outputFilePath = await generateJar(pickSteps, rootNodes, selectedMainMethod, workspaceUri.fsPath);
                         resolve(outputFilePath);
                         step = ExportSteps.Finish;
                         break;
@@ -81,7 +81,7 @@ export async function createJarFile(node?: INodeData) {
     });
 }
 
-async function resolveProject(pickSteps: string[], node?: INodeData): Promise<string | undefined> {
+async function resolveWorkspaceFolder(pickSteps: string[], node?: INodeData): Promise<string | undefined> {
     if (node instanceof WorkspaceNode) {
         return node.uri;
     }
@@ -90,19 +90,19 @@ async function resolveProject(pickSteps: string[], node?: INodeData): Promise<st
     if (folders.length === 1) {
         return folders[0].uri.toString();
     }
-    const pickNodes: IJarQuickPickItem[] = [];
+    const pickItems: IJarQuickPickItem[] = [];
     for (const folder of folders) {
         const jarQuickPickItem: IJarQuickPickItem = {
             label: folder.name,
             description: folder.uri.fsPath,
             uri: folder.uri.toString(),
         };
-        pickNodes.push(jarQuickPickItem);
+        pickItems.push(jarQuickPickItem);
     }
     return new Promise<string | undefined>((resolve, reject) => {
-        const pickBox = createPickBox("Export Jar : Determine project", "Select the project...", pickNodes, pickSteps.length > 0);
+        const pickBox = createPickBox("Export Jar : Determine workspace", "Select the workspace...", pickItems, pickSteps.length > 0);
         pickBox.onDidAccept(() => {
-            pickSteps.push(ExportSteps.ResolveProject);
+            pickSteps.push(ExportSteps.ResolveWorkspace);
             resolve(pickBox.selectedItems[0].uri);
             pickBox.dispose();
         });
@@ -118,7 +118,7 @@ async function generateJar(pickSteps: string[], rootNodes: INodeData[],
                            selectedMainMethod: string, outputPath: string): Promise<string | undefined> {
     let outClassPaths: string[];
     outClassPaths = await generateOutClassPath(pickSteps, rootNodes, outputPath);
-    const outputFilePath = await window.withProgress({
+    return window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar : Generating jar...",
         cancellable: true,
@@ -136,7 +136,6 @@ async function generateJar(pickSteps: string[], rootNodes: INodeData[],
             }
         });
     });
-    return outputFilePath;
 }
 
 async function resolveMainMethod(pickSteps: string[], projectPath: string): Promise<string | undefined> {
@@ -216,8 +215,8 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
     const extensionApi: any = await extension?.activate();
     const outClassPaths: string[] = [];
     const setUris: Set<string> = new Set<string>();
-    const pickedDependencies: IJarQuickPickItem[] = [];
-    const pickDependencies: IJarQuickPickItem[] = await window.withProgress({
+    const pickedDependencyItems: IJarQuickPickItem[] = [];
+    const pickDependencyItems: IJarQuickPickItem[] = await window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar : Resolving classpaths...",
         cancellable: true,
@@ -226,25 +225,25 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
             token.onCancellationRequested(() => {
                 return reject();
             });
-            const pickTemp: IJarQuickPickItem[] = [];
+            const pickItems: IJarQuickPickItem[] = [];
             for (const rootNode of rootNodes) {
                 const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-                pickTemp.push(...generateDependencies(classPaths.classpaths, setUris, projectPath, true),
+                pickItems.push(...generateDependencies(classPaths.classpaths, setUris, projectPath, true),
                     ...generateDependencies(classPaths.modulepaths, setUris, projectPath, true));
                 const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-                pickTemp.push(...generateDependencies(classPathsTest.classpaths, setUris, projectPath, false),
+                pickItems.push(...generateDependencies(classPathsTest.classpaths, setUris, projectPath, false),
                     ...generateDependencies(classPathsTest.modulepaths, setUris, projectPath, false));
             }
-            resolve(pickTemp);
+            resolve(pickItems);
         });
     });
-    if (pickDependencies.length === 0) {
+    if (pickDependencyItems.length === 0) {
         throw new Error("No class path found. Please make sure your project is valid.");
-    } else if (pickDependencies.length === 1) {
-        outClassPaths.push(pickDependencies[0].uri);
+    } else if (pickDependencyItems.length === 1) {
+        outClassPaths.push(pickDependencyItems[0].uri);
         return outClassPaths;
     }
-    pickDependencies.sort((node1, node2) => {
+    pickDependencyItems.sort((node1, node2) => {
         if (node1.description !== node2.description) {
             return node1.description.localeCompare(node2.description);
         }
@@ -253,14 +252,14 @@ async function generateOutClassPath(pickSteps: string[], rootNodes: INodeData[],
         }
         return node1.label.localeCompare(node2.label);
     });
-    for (const pickDependency of pickDependencies) {
+    for (const pickDependency of pickDependencyItems) {
         if (pickDependency.picked) {
-            pickedDependencies.push(pickDependency);
+            pickedDependencyItems.push(pickDependency);
         }
     }
     return new Promise<string[] | undefined>(async (resolve, reject) => {
-        const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements...", pickDependencies, pickSteps.length > 0, true);
-        pickBox.selectedItems = pickedDependencies;
+        const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements...", pickDependencyItems, pickSteps.length > 0, true);
+        pickBox.selectedItems = pickedDependencyItems;
         pickBox.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
                 reject(InputFlowAction.back);
