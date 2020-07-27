@@ -100,7 +100,7 @@ async function resolveWorkspaceFolder(pickSteps: string[], node?: INodeData): Pr
         pickItems.push(jarQuickPickItem);
     }
     return new Promise<string | undefined>((resolve, reject) => {
-        const pickBox = createPickBox("Export Jar : Determine workspace", "Select the workspace...", pickItems, pickSteps.length > 0);
+        const pickBox = createPickBox("Export Jar : Determine project", "Select the project...", pickItems, pickSteps.length > 0);
         pickBox.onDidAccept(() => {
             pickSteps.push(ExportSteps.ResolveWorkspace);
             resolve(pickBox.selectedItems[0].uri);
