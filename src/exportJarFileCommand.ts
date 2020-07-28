@@ -27,20 +27,19 @@ export async function createJarFile(node?: INodeData) {
     }
     isExportingJar = true;
     return new Promise<string>(async (resolve, reject) => {
-        const pickSteps: string[] = [];
-        let step: string = ExportSteps.ResolveWorkspace;
-        let selectedMainMethod: string;
-        let workspaceUri: Uri;
-        let projectList: INodeData[] = [];
         if (await buildWorkspace() === false) {
             return reject();
         }
+        const pickSteps: string[] = [];
+        let step: string = ExportSteps.ResolveWorkspace;
         while (step !== ExportSteps.Finish) {
+            let selectedMainMethod: string;
+            let workspaceUri: Uri;
+            let projectList: INodeData[] = [];
             try {
                 switch (step) {
                     case ExportSteps.ResolveWorkspace: {
-                        let workspaceFolder: string;
-                        workspaceFolder = await resolveWorkspaceFolder(pickSteps, node);
+                        const workspaceFolder: string = await resolveWorkspaceFolder(pickSteps, node);
                         workspaceUri = Uri.parse(workspaceFolder);
                         projectList = await Jdtls.getProjects(workspaceUri.toString());
                         if (projectList === undefined) {
@@ -55,9 +54,7 @@ export async function createJarFile(node?: INodeData) {
                         break;
                     }
                     case ExportSteps.GenerateJar: {
-                        let outputFilePath: string;
-                        outputFilePath = await generateJar(pickSteps, projectList, selectedMainMethod, workspaceUri.fsPath);
-                        resolve(outputFilePath);
+                        resolve(await generateJar(pickSteps, projectList, selectedMainMethod, workspaceUri.fsPath));
                         step = ExportSteps.Finish;
                         break;
                     }
@@ -117,8 +114,7 @@ async function resolveWorkspaceFolder(pickSteps: string[], node?: INodeData): Pr
 
 async function generateJar(pickSteps: string[], projectList: INodeData[],
                            selectedMainMethod: string, outputPath: string): Promise<string | undefined> {
-    let elements: string[];
-    elements = await generateElements(pickSteps, projectList, outputPath);
+    const elements: string[] = await generateElements(pickSteps, projectList, outputPath);
     return window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar : Generating jar...",
@@ -214,9 +210,6 @@ function successMessage(outputFileName: string) {
 async function generateElements(pickSteps: string[], projectList: INodeData[], projectPath: string): Promise<string[] | undefined> {
     const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
     const extensionApi: any = await extension?.activate();
-    const elements: string[] = [];
-    const uriSet: Set<string> = new Set<string>();
-    const pickedDependencyItems: IJarQuickPickItem[] = [];
     const dependencyItems: IJarQuickPickItem[] = await window.withProgress({
         location: ProgressLocation.Window,
         title: "Exporting Jar : Resolving classpaths...",
@@ -227,6 +220,7 @@ async function generateElements(pickSteps: string[], projectList: INodeData[], p
                 return reject();
             });
             const pickItems: IJarQuickPickItem[] = [];
+            const uriSet: Set<string> = new Set<string>();
             for (const rootNode of projectList) {
                 const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
                 pickItems.push(...generateDependencies(classPaths.classpaths, uriSet, projectPath, true),
@@ -238,6 +232,7 @@ async function generateElements(pickSteps: string[], projectList: INodeData[], p
             resolve(pickItems);
         });
     });
+    const elements: string[] = [];
     if (dependencyItems.length === 0) {
         throw new Error("No classpath found. Please make sure your project is valid.");
     } else if (dependencyItems.length === 1) {
@@ -253,6 +248,7 @@ async function generateElements(pickSteps: string[], projectList: INodeData[], p
         }
         return node1.label.localeCompare(node2.label);
     });
+    const pickedDependencyItems: IJarQuickPickItem[] = [];
     for (const pickDependency of dependencyItems) {
         if (pickDependency.picked) {
             pickedDependencyItems.push(pickDependency);
