@@ -60,7 +60,7 @@ export async function createJarFile(node?: INodeData) {
                     }
                 }
             } catch (err) {
-                if (err === InputFlowAction.back) {
+                if (err === QuickInputButtons.Back) {
                     step = pickSteps.pop();
                     continue;
                 } else if (err instanceof Error) {
@@ -165,7 +165,7 @@ async function resolveMainMethod(pickSteps: string[], projectPath: string): Prom
         const pickBox = createPickBox("Export Jar : Determine main class", "Select the main class...", pickItems, pickSteps.length > 0);
         pickBox.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
-                reject(InputFlowAction.back);
+                reject(item);
                 pickBox.dispose();
             }
         });
@@ -256,7 +256,7 @@ async function generateElements(pickSteps: string[], projectList: INodeData[], p
         pickBox.selectedItems = pickedDependencyItems;
         pickBox.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
-                reject(InputFlowAction.back);
+                reject(item);
                 pickBox.dispose();
             }
         });
@@ -324,10 +324,6 @@ class ClasspathResult {
 export class MainMethodInfo {
     public name: string;
     public path: string;
-}
-
-class InputFlowAction {
-    public static back = new InputFlowAction();
 }
 
 interface IJarQuickPickItem extends QuickPickItem {
