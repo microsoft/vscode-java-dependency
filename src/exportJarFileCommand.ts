@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { existsSync } from "fs";
+import { pathExists } from "fs-extra";
 import { EOL, platform } from "os";
 import { basename, extname, join } from "path";
 import { commands, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPick, QuickPickItem, Uri, window, workspace } from "vscode";
@@ -220,11 +220,11 @@ async function generateElements(pickSteps: string[], projectList: INodeData[], p
             const uriSet: Set<string> = new Set<string>();
             for (const rootNode of projectList) {
                 const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-                pickItems.push(...parseDependencyItems(classPaths.classpaths, uriSet, projectPath, true),
-                    ...parseDependencyItems(classPaths.modulepaths, uriSet, projectPath, true));
+                pickItems.push(...await parseDependencyItems(classPaths.classpaths, uriSet, projectPath, true),
+                    ...await parseDependencyItems(classPaths.modulepaths, uriSet, projectPath, true));
                 const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-                pickItems.push(...parseDependencyItems(classPathsTest.classpaths, uriSet, projectPath, false),
-                    ...parseDependencyItems(classPathsTest.modulepaths, uriSet, projectPath, false));
+                pickItems.push(...await parseDependencyItems(classPathsTest.classpaths, uriSet, projectPath, false),
+                    ...await parseDependencyItems(classPathsTest.modulepaths, uriSet, projectPath, false));
             }
             resolve(pickItems);
         });
@@ -287,10 +287,10 @@ function createPickBox(title: string, placeholder: string, items: IJarQuickPickI
     return pickBox;
 }
 
-function parseDependencyItems(paths: string[], uriSet: Set<string>, projectPath: string, isRuntime: boolean): IJarQuickPickItem[] {
+async function parseDependencyItems(paths: string[], uriSet: Set<string>, projectPath: string, isRuntime: boolean): Promise<IJarQuickPickItem[]> {
     const dependencyItems: IJarQuickPickItem[] = [];
     for (const classpath of paths) {
-        if (!existsSync(classpath)) {
+        if (await pathExists(classpath) === false) {
             continue;
         }
         const extName = extname(classpath);
