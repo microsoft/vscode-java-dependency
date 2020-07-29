@@ -30,7 +30,7 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH = "java.view.package.copyRelativeFilePath";
 
-    export const VIEW_PACKAGE_GENERATE_JAR = "java.view.package.generateJar";
+    export const VIEW_PACKAGE_EXPORT_JAR = "java.view.package.exportJar";
 
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
@@ -61,7 +61,7 @@ export namespace Commands {
 
     export const JAVA_PROJECT_GETMAINMETHOD = "java.project.getMainMethod";
 
-    export const JAVA_PROJECT_EXPORTJAR = "java.project.exportJar";
+    export const JAVA_PROJECT_GENERATEJAR = "java.project.generateJar";
 
     export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
 

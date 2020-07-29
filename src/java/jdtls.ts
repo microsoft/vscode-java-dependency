@@ -3,7 +3,7 @@
 
 import { commands } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
-import { MainMethodInfo } from "../exportJarFileCommand";
+import { MainMethodInfo } from "../exportJarSteps/ResolveMainMethodStep";
 import { INodeData } from "./nodeData";
 
 export namespace Jdtls {
@@ -28,7 +28,7 @@ export namespace Jdtls {
     }
 
     export function exportJar(mainMethod: string, elements: string[], destination: string): Thenable<boolean> {
-        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_EXPORTJAR, mainMethod, elements, destination);
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR, mainMethod, elements, destination);
     }
 
     export enum CompileWorkspaceStatus {

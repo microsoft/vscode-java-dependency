@@ -8,7 +8,7 @@
             <command id="java.getPackageData"/>
             <command id="java.resolvePath" />
             <command id="java.project.getMainMethod" />
-            <command id="java.project.exportJar" />
+            <command id="java.project.generateJar" />
         </delegateCommandHandler>
     </extension>
     <extension
