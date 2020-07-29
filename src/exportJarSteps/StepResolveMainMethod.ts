@@ -2,28 +2,27 @@
 // Licensed under the MIT license.
 
 import { ProgressLocation, QuickInputButtons, window } from "vscode";
-import { GenerateSettings } from "../exportJarFileCommand";
+import { StepMetadata, steps } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
-import { ExportSteps, IStep } from "./IStep";
+import { IStep } from "./IStep";
 import { createPickBox, IJarQuickPickItem } from "./utility";
 
-export class ResolveMainMethodStep implements IStep {
+export class StepResolveMainMethod implements IStep {
 
     private static getName(data: MainMethodInfo) {
         return data.name.substring(data.name.lastIndexOf(".") + 1);
     }
 
-    public exportStep;
-
-    constructor() {
-        this.exportStep = ExportSteps.ResolveMainMethod;
+    public async execute(stepMetadata: StepMetadata): Promise<IStep> {
+        if (await this.resolveMainMethod(stepMetadata) === true) {
+            steps.currentStep += 1;
+        } else {
+            steps.currentStep -= 1;
+        }
+        return steps.stepsList[steps.currentStep];
     }
 
-    public async execute(lastStep: IStep | undefined, generateSettings: GenerateSettings): Promise<ExportSteps> {
-        return await this.resolveMainMethod(lastStep, generateSettings) ? ExportSteps.GenerateJar : lastStep.exportStep;
-    }
-
-    private async resolveMainMethod(lastStep: IStep | undefined, generateSettings: GenerateSettings): Promise<boolean> {
+    private async resolveMainMethod(stepMetadata: StepMetadata): Promise<boolean> {
         const mainMethods: MainMethodInfo[] = await window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving main classes...",
@@ -33,17 +32,17 @@ export class ResolveMainMethodStep implements IStep {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                resolve(await Jdtls.getMainMethod(generateSettings.workspaceUri.toString()));
+                resolve(await Jdtls.getMainMethod(stepMetadata.workspaceUri.toString()));
             });
         });
         if (mainMethods === undefined || mainMethods.length === 0) {
-            generateSettings.selectedMainMethod = "";
+            stepMetadata.selectedMainMethod = "";
             return true;
         }
         const pickItems: IJarQuickPickItem[] = [];
         for (const mainMethod of mainMethods) {
             pickItems.push({
-                label: ResolveMainMethodStep.getName(mainMethod),
+                label: StepResolveMainMethod.getName(mainMethod),
                 description: mainMethod.name,
             });
         }
@@ -52,7 +51,8 @@ export class ResolveMainMethodStep implements IStep {
         };
         pickItems.push(noMainClassItem);
         return new Promise<boolean>(async (resolve, reject) => {
-            const pickBox = createPickBox("Export Jar : Determine main class", "Select the main class", pickItems, lastStep !== undefined);
+            const pickBox = createPickBox("Export Jar : Determine main class", "Select the main class",
+                pickItems, stepMetadata.isPickedWorkspace);
             pickBox.onDidTriggerButton((item) => {
                 if (item === QuickInputButtons.Back) {
                     resolve(false);
@@ -60,7 +60,7 @@ export class ResolveMainMethodStep implements IStep {
                 }
             });
             pickBox.onDidAccept(() => {
-                generateSettings.selectedMainMethod = pickBox.selectedItems[0].description;
+                stepMetadata.selectedMainMethod = pickBox.selectedItems[0].description;
                 resolve(true);
                 pickBox.dispose();
             });

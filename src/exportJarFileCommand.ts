@@ -1,29 +1,35 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { pathExists } from "fs-extra";
 import { EOL, platform } from "os";
-import { basename, extname, join } from "path";
-import { commands, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPick, QuickPickItem, Uri, window, workspace } from "vscode";
+import { commands, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { buildWorkspace } from "./build";
-import { GenerateJarStep } from "./exportJarSteps/GenerateJarStep";
-import { ExportSteps, IStep } from "./exportJarSteps/IStep";
-import { ResolveMainMethodStep } from "./exportJarSteps/ResolveMainMethodStep";
-import { ResolveWorkspaceStep } from "./exportJarSteps/ResolveWorkspaceStep";
+import { IStep } from "./exportJarSteps/IStep";
+import { StepGenerateJar } from "./exportJarSteps/StepGenerateJar";
+import { StepResolveMainMethod } from "./exportJarSteps/StepResolveMainMethod";
+import { StepResolveWorkspace } from "./exportJarSteps/StepResolveWorkspace";
 import { isStandardServerReady } from "./extension";
-import { Jdtls } from "./java/jdtls";
 import { INodeData } from "./java/nodeData";
 
 let isExportingJar: boolean = false;
 
-export class GenerateSettings {
+export class StepMetadata {
     public entry?: INodeData;
     public workspaceUri?: Uri;
+    public isPickedWorkspace: boolean;
     public projectList?: INodeData[];
     public selectedMainMethod?: string;
     public outputPath?: string;
     public elements: string[];
+}
+
+export namespace steps {
+    export const stepResolveWorkspace: StepResolveWorkspace = new StepResolveWorkspace();
+    export const stepResolveMainMethod: StepResolveMainMethod = new StepResolveMainMethod();
+    export const stepGenerateJar: StepGenerateJar = new StepGenerateJar();
+    export let currentStep: number = 0;
+    export const stepsList: IStep[] = [stepResolveWorkspace, stepResolveMainMethod, stepGenerateJar];
 }
 
 export async function createJarFile(node?: INodeData) {
@@ -35,31 +41,15 @@ export async function createJarFile(node?: INodeData) {
         if (await buildWorkspace() === false) {
             return reject();
         }
-        const pickSteps: string[] = [];
-        let step: ExportSteps = ExportSteps.ResolveWorkspace;
-        const resolveWorkspaceStep: ResolveWorkspaceStep = new ResolveWorkspaceStep();
-        const resolveMainMethodStep: ResolveMainMethodStep = new ResolveMainMethodStep();
-        const generateJarStep: GenerateJarStep = new GenerateJarStep();
-        const generateSettings: GenerateSettings = {
+        let step: IStep = steps.stepsList[steps.currentStep];
+        const stepMetadata: StepMetadata = {
             entry: node,
+            isPickedWorkspace: false,
             elements: [],
         };
-        while (step !== ExportSteps.Finish) {
+        while (steps.currentStep < steps.stepsList.length) {
             try {
-                switch (step) {
-                    case ExportSteps.ResolveWorkspace: {
-                        step = await resolveWorkspaceStep.execute(undefined, generateSettings);
-                        break;
-                    }
-                    case ExportSteps.ResolveMainMethod: {
-                        step = await resolveMainMethodStep.execute(resolveWorkspaceStep, generateSettings);
-                        break;
-                    }
-                    case ExportSteps.GenerateJar: {
-                        step = await generateJarStep.execute(resolveMainMethodStep, generateSettings);
-                        break;
-                    }
-                }
+                step = await step.execute(stepMetadata);
             } catch (err) {
                 if (err instanceof Error) {
                     return reject(err.message);
@@ -68,7 +58,7 @@ export async function createJarFile(node?: INodeData) {
                 }
             }
         }
-        resolve(generateSettings.outputPath);
+        resolve(stepMetadata.outputPath);
     }).then((message) => {
         successMessage(message);
         isExportingJar = false;

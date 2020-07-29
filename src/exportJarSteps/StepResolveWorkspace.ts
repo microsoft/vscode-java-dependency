@@ -2,40 +2,34 @@
 // Licensed under the MIT license.
 
 import { Uri, workspace } from "vscode";
-import { GenerateSettings } from "../exportJarFileCommand";
+import { StepMetadata, steps } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { WorkspaceNode } from "../views/workspaceNode";
-import { ExportSteps, IStep } from "./IStep";
+import { IStep } from "./IStep";
 import { createPickBox, IJarQuickPickItem } from "./utility";
 
-export class ResolveWorkspaceStep implements IStep {
+export class StepResolveWorkspace implements IStep {
 
-    public exportStep;
-
-    constructor() {
-        this.exportStep = ExportSteps.ResolveWorkspace;
-    }
-
-    public async execute(lastStep: IStep | undefined, generateSettings: GenerateSettings): Promise<ExportSteps> {
-        await this.resolveWorkspaceFolder(lastStep, generateSettings, generateSettings.entry);
-        generateSettings.projectList = await Jdtls.getProjects(generateSettings.workspaceUri.toString());
-        if (generateSettings.projectList === undefined) {
+    public async execute(stepMetadata: StepMetadata): Promise<IStep> {
+        await this.resolveWorkspaceFolder(stepMetadata, stepMetadata.entry);
+        stepMetadata.projectList = await Jdtls.getProjects(stepMetadata.workspaceUri.toString());
+        if (stepMetadata.projectList === undefined) {
             throw new Error("No project found. Please make sure your project folder is opened.");
         }
-        return ExportSteps.ResolveMainMethod;
+        steps.currentStep += 1;
+        return steps.stepsList[steps.currentStep];
     }
 
-    private async resolveWorkspaceFolder(lastStep: IStep | undefined, generateSettings: GenerateSettings,
-                                         node?: INodeData): Promise<boolean> {
+    private async resolveWorkspaceFolder(stepMetadata: StepMetadata, node?: INodeData): Promise<boolean> {
         if (node instanceof WorkspaceNode) {
-            generateSettings.workspaceUri = Uri.parse(node.uri);
+            stepMetadata.workspaceUri = Uri.parse(node.uri);
             return true;
         }
         const folders = workspace.workspaceFolders;
         // Guarded by workspaceFolderCount != 0 in package.json
         if (folders.length === 1) {
-            generateSettings.workspaceUri = Uri.parse(folders[0].uri.toString());
+            stepMetadata.workspaceUri = Uri.parse(folders[0].uri.toString());
             return true;
         }
         const pickItems: IJarQuickPickItem[] = [];
@@ -46,10 +40,11 @@ export class ResolveWorkspaceStep implements IStep {
                 uri: folder.uri.toString(),
             });
         }
+        stepMetadata.isPickedWorkspace = true;
         return new Promise<boolean>((resolve, reject) => {
-            const pickBox = createPickBox("Export Jar : Determine project", "Select the project", pickItems, lastStep !== undefined);
+            const pickBox = createPickBox("Export Jar : Determine project", "Select the project", pickItems, false);
             pickBox.onDidAccept(() => {
-                generateSettings.workspaceUri = Uri.parse(pickBox.selectedItems[0].uri);
+                stepMetadata.workspaceUri = Uri.parse(pickBox.selectedItems[0].uri);
                 resolve(true);
                 pickBox.dispose();
             });

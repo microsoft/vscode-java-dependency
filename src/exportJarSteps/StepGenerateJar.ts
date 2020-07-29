@@ -2,29 +2,26 @@
 // Licensed under the MIT license.
 
 import { pathExists } from "fs-extra";
-import { EOL, platform } from "os";
 import { basename, extname, join } from "path";
 import { Extension, extensions, ProgressLocation, QuickInputButtons, window } from "vscode";
-import { GenerateSettings } from "../exportJarFileCommand";
+import { StepMetadata, steps } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
-import { INodeData } from "../java/nodeData";
-import { ExportSteps, IStep } from "./IStep";
+import { IStep } from "./IStep";
 import { createPickBox, IJarQuickPickItem } from "./utility";
 
-export class GenerateJarStep implements IStep {
+export class StepGenerateJar implements IStep {
 
-    public exportStep: ExportSteps;
-
-    constructor() {
-        this.exportStep = ExportSteps.GenerateJar;
+    public async execute(stepMetadata: StepMetadata): Promise<IStep | undefined> {
+        if (await this.generateJar(stepMetadata) === true) {
+            steps.currentStep += 1;
+            return undefined;
+        }
+        steps.currentStep -= 1;
+        return steps.stepsList[steps.currentStep];
     }
 
-    public async execute(lastStep: IStep | undefined, generateSettings: GenerateSettings): Promise<ExportSteps> {
-        return await this.generateJar(lastStep, generateSettings) ? ExportSteps.Finish : lastStep.exportStep;
-    }
-
-    private async generateJar(lastStep: IStep | undefined, generateSettings: GenerateSettings): Promise<boolean> {
-        if (await this.generateElements(lastStep, generateSettings) === false) {
+    private async generateJar(stepMetadata: StepMetadata): Promise<boolean> {
+        if (await this.generateElements(stepMetadata) === false) {
             return false;
         }
         return window.withProgress({
@@ -36,10 +33,10 @@ export class GenerateJarStep implements IStep {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                const destPath = join(generateSettings.workspaceUri.fsPath, basename(generateSettings.workspaceUri.fsPath) + ".jar");
-                const exportResult = await Jdtls.exportJar(basename(generateSettings.selectedMainMethod), generateSettings.elements, destPath);
+                const destPath = join(stepMetadata.workspaceUri.fsPath, basename(stepMetadata.workspaceUri.fsPath) + ".jar");
+                const exportResult = await Jdtls.exportJar(basename(stepMetadata.selectedMainMethod), stepMetadata.elements, destPath);
                 if (exportResult === true) {
-                    generateSettings.outputPath = destPath;
+                    stepMetadata.outputPath = destPath;
                     resolve(true);
                 } else {
                     reject(new Error("Export jar failed."));
@@ -48,7 +45,7 @@ export class GenerateJarStep implements IStep {
         });
     }
 
-    private async generateElements(lastStep: IStep | undefined, generateSettings: GenerateSettings): Promise<boolean> {
+    private async generateElements(stepMetadata: StepMetadata): Promise<boolean> {
         const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
         const extensionApi: any = await extension?.activate();
         const dependencyItems: IJarQuickPickItem[] = await window.withProgress({
@@ -62,13 +59,13 @@ export class GenerateJarStep implements IStep {
                 });
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
-                for (const rootNode of generateSettings.projectList) {
+                for (const rootNode of stepMetadata.projectList) {
                     const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-                    pickItems.push(...await this.parseDependencyItems(classPaths.classpaths, uriSet, generateSettings.workspaceUri.fsPath, true),
-                        ...await this.parseDependencyItems(classPaths.modulepaths, uriSet, generateSettings.workspaceUri.fsPath, true));
+                    pickItems.push(...await this.parseDependencyItems(classPaths.classpaths, uriSet, stepMetadata.workspaceUri.fsPath, true),
+                        ...await this.parseDependencyItems(classPaths.modulepaths, uriSet, stepMetadata.workspaceUri.fsPath, true));
                     const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-                    pickItems.push(...await this.parseDependencyItems(classPathsTest.classpaths, uriSet, generateSettings.workspaceUri.fsPath, false),
-                        ...await this.parseDependencyItems(classPathsTest.modulepaths, uriSet, generateSettings.workspaceUri.fsPath, false));
+                    pickItems.push(...await this.parseDependencyItems(classPathsTest.classpaths, uriSet, stepMetadata.workspaceUri.fsPath, false),
+                        ...await this.parseDependencyItems(classPathsTest.modulepaths, uriSet, stepMetadata.workspaceUri.fsPath, false));
                 }
                 resolve(pickItems);
             });
@@ -76,7 +73,7 @@ export class GenerateJarStep implements IStep {
         if (dependencyItems.length === 0) {
             throw new Error("No classpath found. Please make sure your project is valid.");
         } else if (dependencyItems.length === 1) {
-            generateSettings.elements.push(dependencyItems[0].uri);
+            stepMetadata.elements.push(dependencyItems[0].uri);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
@@ -95,7 +92,7 @@ export class GenerateJarStep implements IStep {
             }
         }
         return new Promise<boolean>(async (resolve, reject) => {
-            const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements", dependencyItems, lastStep !== undefined, true);
+            const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements", dependencyItems, true, true);
             pickBox.selectedItems = pickedDependencyItems;
             pickBox.onDidTriggerButton((item) => {
                 if (item === QuickInputButtons.Back) {
@@ -105,7 +102,7 @@ export class GenerateJarStep implements IStep {
             });
             pickBox.onDidAccept(() => {
                 for (const item of pickBox.selectedItems) {
-                    generateSettings.elements.push(item.uri);
+                    stepMetadata.elements.push(item.uri);
                 }
                 resolve(true);
                 pickBox.dispose();
