@@ -97,7 +97,7 @@ async function resolveWorkspaceFolder(pickSteps: string[], node?: INodeData): Pr
         });
     }
     return new Promise<string | undefined>((resolve, reject) => {
-        const pickBox = createPickBox("Export Jar : Determine project", "Select the project...", pickItems, pickSteps.length > 0);
+        const pickBox = createPickBox("Export Jar : Determine project", "Select the project", pickItems, pickSteps.length > 0);
         pickBox.onDidAccept(() => {
             pickSteps.push(ExportSteps.ResolveWorkspace);
             resolve(pickBox.selectedItems[0].uri);
@@ -162,7 +162,7 @@ async function resolveMainMethod(pickSteps: string[], projectPath: string): Prom
     };
     pickItems.push(noMainClassItem);
     return new Promise<string | undefined>(async (resolve, reject) => {
-        const pickBox = createPickBox("Export Jar : Determine main class", "Select the main class...", pickItems, pickSteps.length > 0);
+        const pickBox = createPickBox("Export Jar : Determine main class", "Select the main class", pickItems, pickSteps.length > 0);
         pickBox.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
                 reject(item);
@@ -252,7 +252,7 @@ async function generateElements(pickSteps: string[], projectList: INodeData[], p
         }
     }
     return new Promise<string[] | undefined>(async (resolve, reject) => {
-        const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements...", dependencyItems, pickSteps.length > 0, true);
+        const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements", dependencyItems, pickSteps.length > 0, true);
         pickBox.selectedItems = pickedDependencyItems;
         pickBox.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
