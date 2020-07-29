@@ -106,8 +106,8 @@
         "category": "Java"
       },
       {
-        "command": "java.view.package.exportJar",
-        "title": "%contributes.commands.java.view.package.exportJar%",
+        "command": "java.view.package.generateJar",
+        "title": "%contributes.commands.java.view.package.generateJar%",
         "category": "Java",
         "icon": "$(arrow-down)"
       },
@@ -184,7 +184,7 @@
           "when": "never"
         },
         {
-          "command": "java.view.package.exportJar",
+          "command": "java.view.package.generateJar",
           "when": "java:serverMode != LightWeight"
         },
         {
@@ -214,7 +214,7 @@
       ],
       "view/title": [
         {
-          "command": "java.view.package.exportJar",
+          "command": "java.view.package.generateJar",
           "when": "view == javaProjectExplorer && java:serverMode!= LightWeight && workspaceFolderCount != 0",
           "group": "navigation@50"
         },
@@ -286,7 +286,7 @@
           "group": "inline@0"
         },
         {
-          "command": "java.view.package.exportJar",
+          "command": "java.view.package.generateJar",
           "when": "view == javaProjectExplorer && viewItem =~ /java:workspace.*?\\+uri/ && java:serverMode!= LightWeight",
           "group": "inline"
         }

@@ -11,7 +11,7 @@
   "contributes.commands.java.view.package.linkWithFolderExplorer":"Synchronize dependency viewer selection with folder explorer",
   "contributes.commands.java.view.package.unlinkWithFolderExplorer":"Desynchronize dependency viewer selection with folder explorer",
   "contributes.commands.java.view.package.revealFileInOS": "Reveal in Explorer",
-  "contributes.commands.java.view.package.exportJar": "Export Jar...",
+  "contributes.commands.java.view.package.generateJar": "Export Jar...",
   "contributes.commands.java.view.package.copyFilePath": "Copy Path",
   "contributes.commands.java.view.package.copyRelativeFilePath": "Copy Relative Path",
   "configuration.java.dependency.title": "Java Dependency Configuration",
