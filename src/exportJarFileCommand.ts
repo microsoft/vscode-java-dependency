@@ -34,7 +34,6 @@ const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarSte
     [ExportJarStep.ResolveWorkspace, new ResolveWorkspaceExecutor()],
     [ExportJarStep.ResolveMainMethod, new ResolveMainMethodExecutor()],
     [ExportJarStep.GenerateJar, new GenerateJarExecutor()],
-    [ExportJarStep.Finish, new FinishStep()],
 ]);
 
 export async function createJarFile(node?: INodeData) {
