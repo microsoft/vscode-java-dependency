@@ -3,25 +3,23 @@
 
 import { pathExists } from "fs-extra";
 import { basename, extname, join } from "path";
-import { Extension, extensions, ProgressLocation, QuickInputButtons, window } from "vscode";
-import { StepMetadata, steps } from "../exportJarFileCommand";
+import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPick, window } from "vscode";
+import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
-import { IStep } from "./IStep";
+import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { createPickBox, IJarQuickPickItem } from "./utility";
 
-export class StepGenerateJar implements IStep {
+export class GenerateJarExecutor implements IExportJarStepExecutor {
 
-    public async execute(stepMetadata: StepMetadata): Promise<IStep | undefined> {
-        if (await this.generateJar(stepMetadata) === true) {
-            steps.currentStep += 1;
-            return undefined;
+    public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
+        if (await this.generateJar(stepMetadata)) {
+            return ExportJarStep.Finish;
         }
-        steps.currentStep -= 1;
-        return steps.stepsList[steps.currentStep];
+        return ExportJarStep.ResolveMainMethod;
     }
 
-    private async generateJar(stepMetadata: StepMetadata): Promise<boolean> {
-        if (await this.generateElements(stepMetadata) === false) {
+    private async generateJar(stepMetadata: IStepMetadata): Promise<boolean> {
+        if (!(await this.generateElements(stepMetadata))) {
             return false;
         }
         return window.withProgress({
@@ -37,15 +35,15 @@ export class StepGenerateJar implements IStep {
                 const exportResult = await Jdtls.exportJar(basename(stepMetadata.selectedMainMethod), stepMetadata.elements, destPath);
                 if (exportResult === true) {
                     stepMetadata.outputPath = destPath;
-                    resolve(true);
+                    return resolve(true);
                 } else {
-                    reject(new Error("Export jar failed."));
+                    return reject(new Error("Export jar failed."));
                 }
             });
         });
     }
 
-    private async generateElements(stepMetadata: StepMetadata): Promise<boolean> {
+    private async generateElements(stepMetadata: IStepMetadata): Promise<boolean> {
         const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
         const extensionApi: any = await extension?.activate();
         const dependencyItems: IJarQuickPickItem[] = await window.withProgress({
@@ -67,7 +65,7 @@ export class StepGenerateJar implements IStep {
                     pickItems.push(...await this.parseDependencyItems(classPathsTest.classpaths, uriSet, stepMetadata.workspaceUri.fsPath, false),
                         ...await this.parseDependencyItems(classPathsTest.modulepaths, uriSet, stepMetadata.workspaceUri.fsPath, false));
                 }
-                resolve(pickItems);
+                return resolve(pickItems);
             });
         });
         if (dependencyItems.length === 0) {
@@ -91,28 +89,37 @@ export class StepGenerateJar implements IStep {
                 pickedDependencyItems.push(item);
             }
         }
-        return new Promise<boolean>(async (resolve, reject) => {
-            const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements", dependencyItems, true, true);
+        const disposables: Disposable[] = [];
+        let pickBox: QuickPick<IJarQuickPickItem>;
+        const result = await new Promise<boolean>(async (resolve, reject) => {
+            pickBox = createPickBox("Export Jar : Determine elements", "Select the elements", dependencyItems, true, true);
             pickBox.selectedItems = pickedDependencyItems;
-            pickBox.onDidTriggerButton((item) => {
-                if (item === QuickInputButtons.Back) {
-                    resolve(false);
-                    pickBox.dispose();
-                }
-            });
-            pickBox.onDidAccept(() => {
-                for (const item of pickBox.selectedItems) {
-                    stepMetadata.elements.push(item.uri);
-                }
-                resolve(true);
-                pickBox.dispose();
-            });
-            pickBox.onDidHide(() => {
-                reject();
-                pickBox.dispose();
-            });
+            disposables.push(
+                pickBox.onDidTriggerButton((item) => {
+                    if (item === QuickInputButtons.Back) {
+                        return resolve(false);
+                    }
+                }),
+                pickBox.onDidAccept(() => {
+                    for (const item of pickBox.selectedItems) {
+                        stepMetadata.elements.push(item.uri);
+                    }
+                    return resolve(true);
+                }),
+                pickBox.onDidHide(() => {
+                    return reject();
+                }),
+            );
+            disposables.push(pickBox);
             pickBox.show();
         });
+        for (const d of disposables) {
+            d.dispose();
+        }
+        if (pickBox !== undefined) {
+            pickBox.dispose();
+        }
+        return result;
     }
 
     private async parseDependencyItems(paths: string[], uriSet: Set<string>, projectPath: string, isRuntime: boolean): Promise<IJarQuickPickItem[]> {

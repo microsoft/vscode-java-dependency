@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { QuickInputButtons, QuickPick, QuickPickItem, window } from "vscode";
-import { IStep } from "./IStep";
+import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 
 export interface IJarQuickPickItem extends QuickPickItem {
     uri?: string;

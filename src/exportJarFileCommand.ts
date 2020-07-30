@@ -5,31 +5,30 @@ import { EOL, platform } from "os";
 import { commands, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { buildWorkspace } from "./build";
-import { IStep } from "./exportJarSteps/IStep";
-import { StepGenerateJar } from "./exportJarSteps/StepGenerateJar";
-import { StepResolveMainMethod } from "./exportJarSteps/StepResolveMainMethod";
-import { StepResolveWorkspace } from "./exportJarSteps/StepResolveWorkspace";
+import { GenerateJarExecutor } from "./exportJarSteps/GenerateJarExecutor";
+import { FinishStep, IExportJarStepExecutor } from "./exportJarSteps/IExportJarStepExecutor";
+import { ResolveMainMethodExecutor } from "./exportJarSteps/ResolveMainMethodExecutor";
+import { ResolveWorkspaceExecutor } from "./exportJarSteps/ResolveWorkspaceExecutor";
 import { isStandardServerReady } from "./extension";
 import { INodeData } from "./java/nodeData";
 
 let isExportingJar: boolean = false;
 
-export class StepMetadata {
-    public entry?: INodeData;
-    public workspaceUri?: Uri;
-    public isPickedWorkspace: boolean;
-    public projectList?: INodeData[];
-    public selectedMainMethod?: string;
-    public outputPath?: string;
-    public elements: string[];
+export interface IStepMetadata {
+    entry?: INodeData;
+    workspaceUri?: Uri;
+    isPickedWorkspace: boolean;
+    projectList?: INodeData[];
+    selectedMainMethod?: string;
+    outputPath?: string;
+    elements: string[];
 }
 
-export namespace steps {
-    export const stepResolveWorkspace: StepResolveWorkspace = new StepResolveWorkspace();
-    export const stepResolveMainMethod: StepResolveMainMethod = new StepResolveMainMethod();
-    export const stepGenerateJar: StepGenerateJar = new StepGenerateJar();
-    export let currentStep: number = 0;
-    export const stepsList: IStep[] = [stepResolveWorkspace, stepResolveMainMethod, stepGenerateJar];
+export enum ExportJarStep {
+    ResolveWorkspace = "RESOLVEWORKSPACE",
+    ResolveMainMethod = "RESOLVEMAINMETHOD",
+    GenerateJar = "GENERATEJAR",
+    Finish = "FINISH",
 }
 
 export async function createJarFile(node?: INodeData) {
@@ -37,28 +36,32 @@ export async function createJarFile(node?: INodeData) {
         return;
     }
     isExportingJar = true;
+    const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map();
+    stepMap.set(ExportJarStep.ResolveWorkspace, new ResolveWorkspaceExecutor());
+    stepMap.set(ExportJarStep.ResolveMainMethod, new ResolveMainMethodExecutor());
+    stepMap.set(ExportJarStep.GenerateJar, new GenerateJarExecutor());
+    stepMap.set(ExportJarStep.Finish, new FinishStep());
     return new Promise<string>(async (resolve, reject) => {
         if (await buildWorkspace() === false) {
             return reject();
         }
-        let step: IStep = steps.stepsList[steps.currentStep];
-        const stepMetadata: StepMetadata = {
+        let step: ExportJarStep = ExportJarStep.ResolveWorkspace;
+        const stepMetadata: IStepMetadata = {
             entry: node,
             isPickedWorkspace: false,
             elements: [],
         };
-        while (steps.currentStep < steps.stepsList.length) {
+        while (step !== ExportJarStep.Finish) {
             try {
-                step = await step.execute(stepMetadata);
+                step = await stepMap.get(step).execute(stepMetadata);
             } catch (err) {
-                if (err instanceof Error) {
-                    return reject(err.message);
-                } else {
-                    return reject(err);
+                if (err === undefined) {
+                    return reject();
                 }
+                return reject(`${err}`);
             }
         }
-        resolve(stepMetadata.outputPath);
+        return resolve(stepMetadata.outputPath);
     }).then((message) => {
         successMessage(message);
         isExportingJar = false;

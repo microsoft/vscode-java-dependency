@@ -1,27 +1,26 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Uri, workspace } from "vscode";
-import { StepMetadata, steps } from "../exportJarFileCommand";
+import { Disposable, QuickPick, Uri, workspace } from "vscode";
+import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { WorkspaceNode } from "../views/workspaceNode";
-import { IStep } from "./IStep";
+import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { createPickBox, IJarQuickPickItem } from "./utility";
 
-export class StepResolveWorkspace implements IStep {
+export class ResolveWorkspaceExecutor implements IExportJarStepExecutor {
 
-    public async execute(stepMetadata: StepMetadata): Promise<IStep> {
+    public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
         await this.resolveWorkspaceFolder(stepMetadata, stepMetadata.entry);
         stepMetadata.projectList = await Jdtls.getProjects(stepMetadata.workspaceUri.toString());
         if (stepMetadata.projectList === undefined) {
             throw new Error("No project found. Please make sure your project folder is opened.");
         }
-        steps.currentStep += 1;
-        return steps.stepsList[steps.currentStep];
+        return ExportJarStep.ResolveMainMethod;
     }
 
-    private async resolveWorkspaceFolder(stepMetadata: StepMetadata, node?: INodeData): Promise<boolean> {
+    private async resolveWorkspaceFolder(stepMetadata: IStepMetadata, node?: INodeData): Promise<boolean> {
         if (node instanceof WorkspaceNode) {
             stepMetadata.workspaceUri = Uri.parse(node.uri);
             return true;
@@ -41,18 +40,27 @@ export class StepResolveWorkspace implements IStep {
             });
         }
         stepMetadata.isPickedWorkspace = true;
-        return new Promise<boolean>((resolve, reject) => {
-            const pickBox = createPickBox("Export Jar : Determine project", "Select the project", pickItems, false);
-            pickBox.onDidAccept(() => {
-                stepMetadata.workspaceUri = Uri.parse(pickBox.selectedItems[0].uri);
-                resolve(true);
-                pickBox.dispose();
-            });
-            pickBox.onDidHide(() => {
-                reject();
-                pickBox.dispose();
-            });
+        const disposables: Disposable[] = [];
+        let pickBox: QuickPick<IJarQuickPickItem>;
+        const result = await new Promise<boolean>((resolve, reject) => {
+            pickBox = createPickBox("Export Jar : Determine project", "Select the project", pickItems, false);
+            disposables.push(
+                pickBox.onDidAccept(() => {
+                    stepMetadata.workspaceUri = Uri.parse(pickBox.selectedItems[0].uri);
+                    return resolve(true);
+                }),
+                pickBox.onDidHide(() => {
+                    return reject();
+                }),
+            );
             pickBox.show();
         });
+        for (const d of disposables) {
+            d.dispose();
+        }
+        if (pickBox !== undefined) {
+            pickBox.dispose();
+        }
+        return result;
     }
 }
