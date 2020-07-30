@@ -30,4 +30,7 @@ export class WorkspaceNode extends DataNode {
     protected get iconPath(): ThemeIcon {
         return new ThemeIcon("root-folder");
     }
+    protected get contextValue(): string {
+        return `workspace/${this.name}`;
+    }
 }

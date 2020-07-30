@@ -106,6 +106,12 @@
         "category": "Java"
       },
       {
+        "command": "java.view.package.exportJar",
+        "title": "%contributes.commands.java.view.package.exportJar%",
+        "category": "Java",
+        "icon": "$(arrow-down)"
+      },
+      {
         "command": "java.view.package.copyFilePath",
         "title": "%contributes.commands.java.view.package.copyFilePath%",
         "category": "Java"
@@ -178,6 +184,10 @@
           "when": "never"
         },
         {
+          "command": "java.view.package.exportJar",
+          "when": "java:serverMode != LightWeight"
+        },
+        {
           "command": "java.view.package.copyFilePath",
           "when": "never"
         },
@@ -203,6 +213,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "java.view.package.exportJar",
+          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight && workspaceFolderCount != 0",
+          "group": "navigation@50"
+        },
         {
           "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
@@ -269,6 +284,11 @@
           "command": "java.project.maven.addDependency",
           "when": "view == javaProjectExplorer && mavenEnabled && viewItem =~ /container\/maven-dependencies/",
           "group": "inline@0"
+        },
+        {
+          "command": "java.view.package.exportJar",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace.*?\\+uri/ && java:serverMode!= LightWeight",
+          "group": "inline"
         }
       ]
     },

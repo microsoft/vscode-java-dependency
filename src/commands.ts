@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
-
+import { commands } from "vscode";
 /**
  * Commonly used commands
  */
@@ -30,6 +30,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH = "java.view.package.copyRelativeFilePath";
 
+    export const VIEW_PACKAGE_EXPORT_JAR = "java.view.package.exportJar";
+
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
     export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
@@ -57,5 +59,22 @@ export namespace Commands {
 
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
+    export const JAVA_PROJECT_GETMAINMETHOD = "java.project.getMainMethod";
+
+    export const JAVA_PROJECT_GENERATEJAR = "java.project.generateJar";
+
     export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
+
+    export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
+
+    export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
+}
+
+export function executeJavaLanguageServerCommand(...rest) {
+    return executeJavaExtensionCommand(Commands.EXECUTE_WORKSPACE_COMMAND, ...rest);
+}
+
+export async function executeJavaExtensionCommand(commandName: string, ...rest) {
+    // TODO: need to handle error and trace telemetry
+    return commands.executeCommand(commandName, ...rest);
 }

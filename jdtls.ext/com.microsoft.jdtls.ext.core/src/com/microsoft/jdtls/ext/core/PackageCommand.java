@@ -526,7 +526,7 @@ public class PackageCommand {
         return null;
     }
 
-    private static IJavaProject getJavaProject(String projectUri) {
+    public static IJavaProject getJavaProject(String projectUri) {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         IContainer[] containers = root.findContainersForLocationURI(JDTUtils.toURI(projectUri));
 

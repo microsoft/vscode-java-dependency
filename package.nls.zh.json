@@ -11,6 +11,7 @@
   "contributes.commands.java.view.package.linkWithFolderExplorer":"开启 Java 依赖项资源管理器与当前浏览文件的关联",
   "contributes.commands.java.view.package.unlinkWithFolderExplorer":"关闭 Java 依赖项资源管理器与当前浏览文件的关联",
   "contributes.commands.java.view.package.revealFileInOS": "打开所在的文件夹",
+  "contributes.commands.java.view.package.exportJar": "导出到 Jar 文件...",
   "contributes.commands.java.view.package.copyFilePath": "复制路径",
   "contributes.commands.java.view.package.copyRelativeFilePath": "复制相对路径",
   "configuration.java.dependency.title": "Java 依赖管理配置",
