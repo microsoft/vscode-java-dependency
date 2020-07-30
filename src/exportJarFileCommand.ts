@@ -6,7 +6,7 @@ import { commands, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { buildWorkspace } from "./build";
 import { GenerateJarExecutor } from "./exportJarSteps/GenerateJarExecutor";
-import { FinishStep, IExportJarStepExecutor } from "./exportJarSteps/IExportJarStepExecutor";
+import { IExportJarStepExecutor } from "./exportJarSteps/IExportJarStepExecutor";
 import { ResolveMainMethodExecutor } from "./exportJarSteps/ResolveMainMethodExecutor";
 import { ResolveWorkspaceExecutor } from "./exportJarSteps/ResolveWorkspaceExecutor";
 import { isStandardServerReady } from "./extension";
