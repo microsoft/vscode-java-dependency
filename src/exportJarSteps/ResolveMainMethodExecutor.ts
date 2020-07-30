@@ -49,35 +49,35 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
         };
         pickItems.push(noMainClassItem);
         const disposables: Disposable[] = [];
-        let pickBox: QuickPick<IJarQuickPickItem>;
-        const result = await new Promise<boolean>(async (resolve, reject) => {
-            pickBox = createPickBox("Export Jar : Determine main class", "Select the main class",
-                pickItems, stepMetadata.isPickedWorkspace);
-            disposables.push(
-                pickBox.onDidTriggerButton((item) => {
-                    if (item === QuickInputButtons.Back) {
-                        return resolve(false);
-                    }
-                }),
-                pickBox.onDidAccept(() => {
-                    stepMetadata.selectedMainMethod = pickBox.selectedItems[0].description;
-                    return resolve(true);
-                }),
-                pickBox.onDidHide(() => {
-                    return reject();
-                }),
-            );
-            pickBox.show();
-        });
-        for (const d of disposables) {
-            d.dispose();
-        }
-        if (pickBox !== undefined) {
-            pickBox.dispose();
+        let result: boolean = false;
+        try {
+            result = await new Promise<boolean>(async (resolve, reject) => {
+                const pickBox = createPickBox("Export Jar : Determine main class", "Select the main class",
+                    pickItems, stepMetadata.isPickedWorkspace);
+                disposables.push(
+                    pickBox.onDidTriggerButton((item) => {
+                        if (item === QuickInputButtons.Back) {
+                            return resolve(false);
+                        }
+                    }),
+                    pickBox.onDidAccept(() => {
+                        stepMetadata.selectedMainMethod = pickBox.selectedItems[0].description;
+                        return resolve(true);
+                    }),
+                    pickBox.onDidHide(() => {
+                        return reject();
+                    }),
+                );
+                disposables.push(pickBox);
+                pickBox.show();
+            });
+        } finally {
+            for (const d of disposables) {
+                d.dispose();
+            }
         }
         return result;
     }
-
 }
 
 export class MainMethodInfo {

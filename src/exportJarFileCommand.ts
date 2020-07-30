@@ -12,8 +12,6 @@ import { ResolveWorkspaceExecutor } from "./exportJarSteps/ResolveWorkspaceExecu
 import { isStandardServerReady } from "./extension";
 import { INodeData } from "./java/nodeData";
 
-let isExportingJar: boolean = false;
-
 export interface IStepMetadata {
     entry?: INodeData;
     workspaceUri?: Uri;
@@ -31,16 +29,19 @@ export enum ExportJarStep {
     Finish = "FINISH",
 }
 
+let isExportingJar: boolean = false;
+const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarStep, IExportJarStepExecutor>([
+    [ExportJarStep.ResolveWorkspace, new ResolveWorkspaceExecutor()],
+    [ExportJarStep.ResolveMainMethod, new ResolveMainMethodExecutor()],
+    [ExportJarStep.GenerateJar, new GenerateJarExecutor()],
+    [ExportJarStep.Finish, new FinishStep()],
+]);
+
 export async function createJarFile(node?: INodeData) {
     if (!isStandardServerReady() || isExportingJar) {
         return;
     }
     isExportingJar = true;
-    const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map();
-    stepMap.set(ExportJarStep.ResolveWorkspace, new ResolveWorkspaceExecutor());
-    stepMap.set(ExportJarStep.ResolveMainMethod, new ResolveMainMethodExecutor());
-    stepMap.set(ExportJarStep.GenerateJar, new GenerateJarExecutor());
-    stepMap.set(ExportJarStep.Finish, new FinishStep());
     return new Promise<string>(async (resolve, reject) => {
         if (await buildWorkspace() === false) {
             return reject();
@@ -55,10 +56,7 @@ export async function createJarFile(node?: INodeData) {
             try {
                 step = await stepMap.get(step).execute(stepMetadata);
             } catch (err) {
-                if (err === undefined) {
-                    return reject();
-                }
-                return reject(`${err}`);
+                return err ? reject(`${err}`) : reject();
             }
         }
         return resolve(stepMetadata.outputPath);
