@@ -1,6 +1,6 @@
-# Java Dependency Viewer
+# Project Manager for Java
 
-> View Java dependencies in Visual Studio Code
+> Manage Java projects in Visual Studio Code
 
 [![Travis CI](https://travis-ci.org/Microsoft/vscode-java-dependency.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-java-dependency)
 
@@ -8,18 +8,22 @@
 
 A lightweight extension to provide additional Java project explorer features. It works with [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java) to provide the following features:
 
-* Dependency viewer
+* Project View
 
-![viewer](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/project-dependency.gif)
+![project-view](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/project-explorer.png)
 
-* Create simple Java Project
+* Create Java Projects
 
-![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/create-project.gif)
+![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/create-project.png)
+
+* Export Jar
+
+![export jar](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/export-jar.png)
 
 ## Requirements
 
-- JDK (version 1.8.0 or later)
-- VS Code (version 1.28.0 or later)
+- JDK (version 11 or later)
+- VS Code (version 1.44.0 or later)
 - [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java) (version 0.32.0 or later)
 
 
@@ -38,7 +42,7 @@ A lightweight extension to provide additional Java project explorer features. It
 ### Build
 * Prerequirement
     - Node.js
-    - Java SDK 1.8.0 or above
+    - Java SDK 11 or above
 
 * Go to root folder:
 ```
