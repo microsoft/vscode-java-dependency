@@ -13,12 +13,7 @@ class ExperimentationTelemetry implements IExperimentationTelemetry {
     }
 
     public postEvent(eventName: string, props: Map<string, string>): void {
-        const data: any = {};
-        data.__event_name__ = eventName;
-        for (const [property, value] of props) {
-            data[property] = value;
-        }
-        sendInfo("", data);
+        // do nothing
     }
 }
 

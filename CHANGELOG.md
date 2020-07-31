@@ -4,6 +4,15 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.11.0
+### Added
+- Export jar file from workspace folder. [PR#271](https://github.com/microsoft/vscode-java-dependency/pull/271)
+- A unified entry to create new Java projects. [PR#276](https://github.com/microsoft/vscode-java-dependency/pull/276)
+- Adopt APIs in LightWeight mode. [PR#272](https://github.com/microsoft/vscode-java-dependency/pull/272)
+
+### Changed
+- Extension is renamed to `Project Manager for Java`. [#248](https://github.com/microsoft/vscode-java-dependency/issues/248)
+
 ## 0.10.2
 ### Added
 - Integrated the TAS client. [PR#260](https://github.com/microsoft/vscode-java-dependency/pull/260)
