@@ -3,7 +3,7 @@
 
 import { pathExists } from "fs-extra";
 import { basename, extname, join } from "path";
-import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPick, window } from "vscode";
+import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, Uri, window } from "vscode";
 import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
@@ -129,7 +129,8 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 continue;
             }
             const extName = extname(classpath);
-            const baseName = (extName === ".jar") ? basename(classpath) : classpath.substring(projectPath.length + 1);
+            const baseName = Uri.parse(classpath).fsPath.startsWith(Uri.parse(projectPath).fsPath) ?
+                classpath.substring(projectPath.length + 1) : basename(classpath);
             const descriptionValue = (isRuntime) ? "Runtime" : "Test";
             const typeValue = (extName === ".jar") ? "external" : "internal";
             if (!uriSet.has(classpath)) {

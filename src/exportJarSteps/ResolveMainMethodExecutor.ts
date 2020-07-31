@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Disposable, ProgressLocation, QuickInputButtons, QuickPick, window } from "vscode";
+import { Disposable, ProgressLocation, QuickInputButtons, window } from "vscode";
 import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";

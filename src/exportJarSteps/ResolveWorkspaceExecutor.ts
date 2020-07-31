@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Disposable, QuickPick, Uri, workspace } from "vscode";
+import { Disposable, Uri, workspace } from "vscode";
 import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
