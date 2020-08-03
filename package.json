@@ -124,7 +124,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "%configuration.java.dependency.title%",
+      "title": "Java Project Manager",
       "properties": {
         "java.dependency.showMembers": {
           "type": "boolean",
