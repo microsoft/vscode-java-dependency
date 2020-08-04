@@ -32,7 +32,8 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     return reject();
                 });
                 const destPath = join(stepMetadata.workspaceUri.fsPath, basename(stepMetadata.workspaceUri.fsPath) + ".jar");
-                const exportResult = await Jdtls.exportJar(basename(stepMetadata.selectedMainMethod), stepMetadata.elements, destPath);
+                const mainMethod = (stepMetadata.selectedMainMethod === undefined) ? "" : basename(stepMetadata.selectedMainMethod);
+                const exportResult = await Jdtls.exportJar(mainMethod, stepMetadata.elements, destPath);
                 if (exportResult === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
