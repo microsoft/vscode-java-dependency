@@ -31,9 +31,9 @@ A lightweight extension to provide additional Java project explorer features. It
 
 | Setting Name | Description | Default Value |
 |---|---|---|
-| `java.dependency.showMembers` | Specify whether to show the members in the dependency viewer. | `false` |
-| `java.dependency.syncWithFolderExplorer` | Specify whether to sync the folder with dependency viewer when browsering files.  | `true` |
-| `java.dependency.autoRefresh` | Specify whether to automatically sync the change from editor to the dependency viewer. | `true` |
+| `java.dependency.showMembers` | Specify whether to show the members in the Java Projects explorer. | `false` |
+| `java.dependency.syncWithFolderExplorer` | Specify whether to sync the folder with Java Projects explorer when browsing files.  | `true` |
+| `java.dependency.autoRefresh` | Specify whether to automatically sync the change from editor to the Java Projects explorer. | `true` |
 | `java.dependency.refreshDelay` | The delay time (ms) the auto refresh is invoked when changes are detected. | `2000ms` |
 | `java.dependency.packagePresentation` | Specify how to display the package. Supported values are: `flat`, `hierarchical`.| `flat` |
 
