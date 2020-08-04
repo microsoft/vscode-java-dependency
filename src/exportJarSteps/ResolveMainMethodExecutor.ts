@@ -46,6 +46,7 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
         }
         const noMainClassItem: IJarQuickPickItem = {
             label: "<without main class>",
+            description: "",
         };
         pickItems.push(noMainClassItem);
         const disposables: Disposable[] = [];
