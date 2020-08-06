@@ -7,7 +7,7 @@ import {
 } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
-import { SyncHandler } from "./fileWather";
+import { syncHandler } from "./syncHandler";
 
 export class Settings {
 
@@ -28,15 +28,12 @@ export class Settings {
                 || (updatedConfig.syncWithFolderExplorer !== oldConfig.syncWithFolderExplorer
                     && updatedConfig.syncWithFolderExplorer)) {
                 commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
-            }
-        });
-        this.registerConfigurationListener((updatedConfig, oldConfig) => {
-            if (updatedConfig.autoRefresh !== oldConfig.autoRefresh) {
-                SyncHandler.updateFileWatcher(updatedConfig.autoRefresh);
+            } else if (updatedConfig.autoRefresh !== oldConfig.autoRefresh) {
+                syncHandler.updateFileWatcher(updatedConfig.autoRefresh);
             }
         });
 
-        SyncHandler.updateFileWatcher(Settings.autoRefresh());
+        syncHandler.updateFileWatcher(Settings.autoRefresh());
 
         context.subscriptions.push({ dispose: () => { this._configurationListeners = []; } });
 
