@@ -17,7 +17,7 @@ A lightweight extension to provide additional Java project explorer features. It
 ![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/create-project.png)
 
 * Export Jar
-    - Note: For Spring Boot projects, please use the build tool to build the executable jar, for example: `mvn package`.
+> Note: For Spring Boot projects, please use the build tool to build the executable jar, for example: `mvn package`.
 
 ![export jar](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/master/images/export-jar.png)
 
