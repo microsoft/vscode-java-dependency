@@ -48,7 +48,7 @@ export class Trie {
         return currentNode;
     }
 
-    public findAncestorNodeWithData(fsPath: string): TrieNode | undefined {
+    public findFirstAncestorNodeWithData(fsPath: string): TrieNode | undefined {
         let currentNode: TrieNode = this.root;
         let res: TrieNode | undefined;
         const segments: string[] = fsPath.split(path.sep);

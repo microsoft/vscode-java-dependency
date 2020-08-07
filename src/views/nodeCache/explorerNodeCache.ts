@@ -22,7 +22,7 @@ class ExplorerNodeCache {
      */
     public findBestMatchNodeByUri(uri: Uri): DataNode | undefined {
         const parentDir = path.dirname(uri.fsPath);
-        const ancestor: TrieNode = this.mutableNodeCache.findAncestorNodeWithData(parentDir);
+        const ancestor: TrieNode = this.mutableNodeCache.findFirstAncestorNodeWithData(parentDir);
         return ancestor?.value;
     }
 
