@@ -22,6 +22,10 @@ export interface INodeData {
     name: string;
     moduleName?: string;
     path?: string;
+    /**
+     * returned from Java side using `IJavaElement.getHandlerIdentifier();`
+     */
+    handlerIdentifier?: string;
     uri?: string;
     kind: NodeKind;
     children?: any[];

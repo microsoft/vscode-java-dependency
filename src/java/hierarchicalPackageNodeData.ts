@@ -37,6 +37,10 @@ export class HierarchicalPackageNodeData implements INodeData {
         return this.nodeData !== null;
     }
 
+    public get handlerIdentifier() {
+        return this.nodeData.handlerIdentifier;
+    }
+
     private constructor(displayName: string, parentName: string) {
         this.displayName = displayName;
         this.name = parentName === "" ? displayName : parentName + "." + displayName;

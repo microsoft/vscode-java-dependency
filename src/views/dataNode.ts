@@ -34,6 +34,10 @@ export abstract class DataNode extends ExplorerNode {
         return this._nodeData.path;
     }
 
+    public get handlerIdentifier() {
+        return this._nodeData.handlerIdentifier;
+    }
+
     public get name() { // return name like `referenced-library`
         return _.kebabCase(this._nodeData.name);
     }

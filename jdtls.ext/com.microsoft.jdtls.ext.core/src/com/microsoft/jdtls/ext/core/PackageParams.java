@@ -25,9 +25,19 @@ public class PackageParams {
 
     private String path;
 
+    private String handlerIdentifier;
+
     private String rootPath;
 
     public PackageParams() {
+    }
+
+    public String getHandlerIdentifier() {
+        return handlerIdentifier;
+    }
+
+    public void setHandlerIdentifier(String handlerIdentifier) {
+        this.handlerIdentifier = handlerIdentifier;
     }
 
     public PackageParams(NodeKind kind, String projectUri) {

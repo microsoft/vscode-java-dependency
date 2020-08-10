@@ -20,6 +20,7 @@ export class PackageNode extends DataNode {
             projectUri: this._project.nodeData.uri,
             path: this.nodeData.name,
             rootPath: this._rootNode.path,
+            handlerIdentifier: this.nodeData.handlerIdentifier,
         });
     }
 
