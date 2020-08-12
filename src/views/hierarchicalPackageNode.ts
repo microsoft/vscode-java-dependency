@@ -27,9 +27,12 @@ export class HierarchicalPackageNode extends PackageNode {
 
     public getChildren(): ProviderResult<ExplorerNode[]> {
         return this.loadData().then((res) => {
-            if (!!res) {
-                // Combine hierarchical children and normal package node children
-                res.forEach((node) => this.nodeData.children.push(node));
+            if (res) {
+                if (this.nodeData?.children) {
+                    this.nodeData.children.push(...res);
+                } else {
+                    this.nodeData.children = res;
+                }
             }
             return this.createChildNodeList();
         });
