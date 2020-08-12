@@ -6,8 +6,10 @@ import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
+import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
+import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 
 export class DependencyExplorer implements Disposable {
 
@@ -55,11 +57,14 @@ export class DependencyExplorer implements Disposable {
             return;
         }
 
-        const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-        if (!paths || paths.length === 0) {
-            return;
+        let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
+        if (!node) {
+            const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
+            if (!paths || paths.length === 0) {
+                return;
+            }
+            node = await this._dataProvider.revealPaths(paths);
         }
-        const node = await this._dataProvider.revealPaths(paths);
 
         if (this._dependencyViewer.visible) {
             this._dependencyViewer.reveal(node);

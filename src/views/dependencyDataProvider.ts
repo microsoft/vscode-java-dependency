@@ -16,23 +16,25 @@ import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { LightWeightNode } from "./lightWeightNode";
+import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
 
 export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
-    private _onDidChangeTreeData: EventEmitter<null> = new EventEmitter<null>();
+    private _onDidChangeTreeData: EventEmitter<ExplorerNode | null | undefined> = new EventEmitter<ExplorerNode | null | undefined>();
 
     // tslint:disable-next-line:member-ordering
-    public onDidChangeTreeData: Event<null> = this._onDidChangeTreeData.event;
+    public onDidChangeTreeData: Event<ExplorerNode | null | undefined> = this._onDidChangeTreeData.event;
 
     private _rootItems: ExplorerNode[] = null;
-    private _refreshDelayTrigger: (() => void) & _.Cancelable;
+    private _refreshDelayTrigger: ((element?: ExplorerNode) => void) & _.Cancelable;
 
     constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean) => this.refreshWithLog(debounce)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
+            this.refreshWithLog(debounce, element)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, (node: INodeData) => createJarFile(node)));
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node?: INodeData) =>
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node: INodeData) =>
             commands.executeCommand("revealFileInOS", Uri.parse(node.uri))));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node: INodeData) =>
             commands.executeCommand("copyFilePath", Uri.parse(node.uri))));
@@ -48,16 +50,16 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         this.setRefreshDelay();
     }
 
-    public refreshWithLog(debounce?: boolean) {
+    public refreshWithLog(debounce?: boolean, element?: ExplorerNode) {
         if (Settings.autoRefresh()) {
-            this.refresh(debounce);
+            this.refresh(debounce, element);
         } else {
-            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh(debounce))();
+            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh(debounce, element))();
         }
     }
 
-    public refresh(debounce = false) {
-        this._refreshDelayTrigger();
+    public refresh(debounce = false, element?: ExplorerNode) {
+        this._refreshDelayTrigger(element);
         if (!debounce) { // Immediately refresh
             this._refreshDelayTrigger.flush();
         }
@@ -70,7 +72,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         if (this._refreshDelayTrigger) {
             this._refreshDelayTrigger.cancel();
         }
-        this._refreshDelayTrigger = _.debounce(() => this.doRefresh(), wait);
+        this._refreshDelayTrigger = _.debounce(this.doRefresh, wait);
     }
 
     public openFile(uri: string) {
@@ -107,7 +109,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         if (!this._rootItems || !element) {
             return this.getRootNodes();
         } else {
-            return element.getChildren();
+            const children: ExplorerNode[] = await element.getChildren();
+            explorerNodeCache.saveNodes(children);
+            return children;
         }
     }
 
@@ -123,9 +127,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return project ? project.revealPaths(paths) : null;
     }
 
-    private doRefresh(): void {
-        this._rootItems = null;
-        this._onDidChangeTreeData.fire();
+    private doRefresh(element?: ExplorerNode): void {
+        explorerNodeCache.removeNodeChildren(element);
+        this._onDidChangeTreeData.fire(element);
     }
 
     private async getRootProjects(): Promise<ExplorerNode[]> {
