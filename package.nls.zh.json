@@ -14,6 +14,8 @@
   "contributes.commands.java.view.package.exportJar": "导出到 Jar 文件...",
   "contributes.commands.java.view.package.copyFilePath": "复制路径",
   "contributes.commands.java.view.package.copyRelativeFilePath": "复制相对路径",
+  "contributes.commands.java.view.package.newJavaClass": "创建 Java 类",
+  "contributes.commands.java.view.package.newPackage": "创建包",
   "configuration.java.dependency.showMembers": "在 Java 项目管理器中显示成员",
   "configuration.java.dependency.syncWithFolderExplorer": "在 Java 项目管理器中同步关联当前打开的文件",
   "configuration.java.dependency.autoRefresh": "在 Java 项目管理器中自动同步修改",
