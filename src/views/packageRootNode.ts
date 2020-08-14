@@ -21,7 +21,12 @@ export class PackageRootNode extends DataNode {
     }
 
     protected loadData(): Thenable<INodeData[]> {
-        return Jdtls.getPackageData({ kind: NodeKind.PackageRoot, projectUri: this._project.nodeData.uri, rootPath: this.nodeData.path });
+        return Jdtls.getPackageData({
+            kind: NodeKind.PackageRoot,
+            projectUri: this._project.nodeData.uri,
+            rootPath: this.nodeData.path,
+            handlerIdentifier: this.nodeData.handlerIdentifier,
+        });
     }
 
     protected createChildNodeList(): ExplorerNode[] {
@@ -69,11 +74,11 @@ export class PackageRootNode extends DataNode {
 
     protected get iconPath(): ThemeIcon {
         const data = <IPackageRootNodeData>this.nodeData;
-        if (data.entryKind === PackageRootKind.K_BINARY) {
-            return new ThemeIcon("file-zip");
-        } else {
+        if (data.moduleName || data.entryKind === PackageRootKind.K_SOURCE) {
             return new ThemeIcon("file-submodule");
         }
+        // K_BINARY node
+        return new ThemeIcon("file-zip");
     }
 }
 

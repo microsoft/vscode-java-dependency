@@ -86,7 +86,7 @@ public final class ProjectCommand {
     public static List<PackageNode> listProjects(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
         IPath workspacePath = ResourceUtils.canonicalFilePathFromURI(workspaceUri);
-        String invisibleProjectName = getWorkspaceInvisibleProjectName(workspacePath);
+        String invisibleProjectName = ProjectUtils.getWorkspaceInvisibleProjectName(workspacePath);
 
         IProject[] projects = getWorkspaceRoot().getProjects();
         ArrayList<PackageNode> children = new ArrayList<>();
@@ -96,12 +96,10 @@ public final class ProjectCommand {
                 continue;
             }
             if (project.exists() && (ResourceUtils.isContainedIn(project.getLocation(), paths) || Objects.equals(project.getName(), invisibleProjectName))) {
-                PackageNode projectNode = new PackageNode(project.getName(), project.getFullPath().toPortableString(), NodeKind.PROJECT);
-                projectNode.setUri(project.getLocationURI().toString());
+                PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
                 children.add(projectNode);
             }
         }
-
         return children;
     }
 
@@ -115,19 +113,13 @@ public final class ProjectCommand {
             UpdateClasspathJob.getInstance().updateClasspath(JavaCore.create(project), libraries);
             return true;
         } catch (Exception e) {
-            JavaLanguageServerPlugin.logException("Exception occured during waiting for classpath to be updated", e);
+            JavaLanguageServerPlugin.logException("Exception occurred during waiting for classpath to be updated", e);
             return false;
         }
     }
 
     private static IWorkspaceRoot getWorkspaceRoot() {
         return ResourcesPlugin.getWorkspace().getRoot();
-    }
-
-    // TODO Use ProjectUtils.getWorkspaceInvisibleProjectName directly when the language server is released.
-    private static String getWorkspaceInvisibleProjectName(IPath workspacePath) {
-        String fileName = workspacePath.toFile().getName();
-        return fileName + "_" + Integer.toHexString(workspacePath.toPortableString().hashCode());
     }
 
     public static boolean exportJar(List<Object> arguments, IProgressMonitor monitor) {

@@ -84,6 +84,11 @@ public class PackageNode {
     private String path;
 
     /**
+     * The handlerIdentifier
+     */
+    private String handlerIdentifier;
+
+    /**
      * The URI value of the PackageNode
      */
     private String uri;
@@ -107,6 +112,20 @@ public class PackageNode {
 
     }
 
+    public PackageNode(String name, String path, NodeKind kind) {
+        this.name = name;
+        this.path = path;
+        this.kind = kind;
+    }
+
+    public String getHandlerIdentifier() {
+        return handlerIdentifier;
+    }
+
+    public void setHandlerIdentifier(String handlerIdentifier) {
+        this.handlerIdentifier = handlerIdentifier;
+    }
+
     public Map<String, Object> getMetaData() {
         return metaData;
     }
@@ -116,12 +135,6 @@ public class PackageNode {
             this.metaData = new HashMap<>();
         }
         this.metaData.put(key, value);
-    }
-
-    public PackageNode(String name, String path, NodeKind kind) {
-        this.name = name;
-        this.path = path;
-        this.kind = kind;
     }
 
     public static PackageNode createNodeForProject(IJavaElement javaElement) {
@@ -148,7 +161,9 @@ public class PackageNode {
 
     public static PackageNode createNodeForPackageFragment(IPackageFragment packageFragment) {
         String packageName = packageFragment.isDefaultPackage() ? DEFAULT_PACKAGE_DISPLAYNAME : packageFragment.getElementName();
-        return new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+        PackageNode fragmentNode = new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+        fragmentNode.setHandlerIdentifier(packageFragment.getHandleIdentifier());
+        return fragmentNode;
     }
 
     public static PackageNode createNodeForVirtualContainer(IPackageFragmentRoot pkgRoot) throws JavaModelException {
