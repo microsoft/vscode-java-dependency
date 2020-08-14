@@ -64,8 +64,11 @@ export class PackageRootNode extends DataNode {
         if (data.entryKind === PackageRootKind.K_BINARY) {
             const parent = <ContainerNode>this.getParent();
             return `jar/${parent.name}`;
-        } else { // Currently PackageFolder does not use context value
-            return undefined;
+        } else if (!resourceRoots.includes(this._nodeData.name)) {
+            // APIs in JDT does not have a consistent result telling whether a package root
+            // is a source root or resource root, so we hard code some common resources root
+            // here as a workaround.
+            return `packageRoot/${this.name}`;
         }
     }
 
@@ -78,3 +81,5 @@ export class PackageRootNode extends DataNode {
         return new ThemeIcon("file-zip");
     }
 }
+
+const resourceRoots: string[] = ["src/main/resources", "src/test/resources"];

@@ -4,6 +4,7 @@
 import { ThemeIcon } from "vscode";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
+import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
@@ -43,5 +44,12 @@ export class PackageNode extends DataNode {
 
     protected get iconPath(): ThemeIcon {
         return new ThemeIcon("symbol-package");
+    }
+
+    protected get contextValue(): string {
+        const parentData = <IPackageRootNodeData> this._rootNode.nodeData;
+        if (parentData.entryKind === PackageRootKind.K_SOURCE) {
+            return `package/${this.name}`;
+        }
     }
 }
