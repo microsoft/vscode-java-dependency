@@ -40,8 +40,9 @@ export async function newJavaClass(node: DataNode): Promise<void> {
 }
 
 function getNewFilePath(basePath: string, className: string): string {
-    const indexOfJavaExt: number = className.lastIndexOf(".java");
-    className = className.substring(0, indexOfJavaExt > 0 ? indexOfJavaExt : undefined).trim();
+    if (className.endsWith(".java")) {
+        className = className.substr(0, className.length - ".java".length);
+    }
     return path.join(basePath, ...className.split(".")) + ".java";
 }
 
