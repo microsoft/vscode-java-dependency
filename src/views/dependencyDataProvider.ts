@@ -10,13 +10,12 @@ import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-
 import { Commands } from "../commands";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
 import { createJarFile } from "../exportJarFileCommand";
-import { isStandardServerReady, isSwitchingServer } from "../extension";
+import { isLightWeightMode, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { LightWeightNode } from "./lightWeightNode";
 import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
@@ -97,16 +96,14 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[]> {
+        if (isLightWeightMode()) {
+            return [];
+        }
+
         if (isSwitchingServer()) {
             await new Promise<void>((resolve: () => void): void => {
                 extensions.getExtension("redhat.java")!.exports.onDidServerModeChange(resolve);
             });
-        }
-
-        if (!isStandardServerReady()) {
-            return [
-                new LightWeightNode(),
-            ];
         }
 
         if (!this._rootItems || !element) {
