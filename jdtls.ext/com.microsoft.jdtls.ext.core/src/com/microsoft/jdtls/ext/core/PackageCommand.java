@@ -440,6 +440,8 @@ public class PackageCommand {
                 result.add(child);
             } else if (fragment.getNonJavaResources().length > 0) { // some package has non-java files
                 result.add(fragment);
+            } else if (!fragment.hasSubpackages()) {
+                result.add(fragment);
             }
         }
         Object[] nonJavaResources = root.getNonJavaResources();

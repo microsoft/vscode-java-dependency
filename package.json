@@ -120,6 +120,16 @@
         "command": "java.view.package.copyRelativeFilePath",
         "title": "%contributes.commands.java.view.package.copyRelativeFilePath%",
         "category": "Java"
+      },
+      {
+        "command": "java.view.package.newJavaClass",
+        "title": "%contributes.commands.java.view.package.newJavaClass%",
+        "category": "Java"
+      },
+      {
+        "command": "java.view.package.newPackage",
+        "title": "%contributes.commands.java.view.package.newPackage%",
+        "category": "Java"
       }
     ],
     "configuration": {
@@ -210,6 +220,14 @@
         {
           "command": "java.project.refreshLibraries",
           "when": "never"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "never"
+        },
+        {
+          "command": "java.view.package.newPackage",
+          "when": "never"
         }
       ],
       "view/title": [
@@ -253,17 +271,27 @@
         {
           "command": "java.view.package.revealFileInOS",
           "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
-          "group": "@1"
+          "group": "path@10"
         },
         {
           "command": "java.view.package.copyFilePath",
           "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
-          "group": "@2"
+          "group": "path@20"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
           "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
-          "group": "@2"
+          "group": "path@25"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot).*\\+uri/",
+          "group": "new@10"
+        },
+        {
+          "command": "java.view.package.newPackage",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot).*\\+uri/",
+          "group": "new@20"
         },
         {
           "command": "java.project.addLibraries",

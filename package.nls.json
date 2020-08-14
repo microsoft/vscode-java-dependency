@@ -14,6 +14,8 @@
   "contributes.commands.java.view.package.exportJar": "Export Jar...",
   "contributes.commands.java.view.package.copyFilePath": "Copy Path",
   "contributes.commands.java.view.package.copyRelativeFilePath": "Copy Relative Path",
+  "contributes.commands.java.view.package.newJavaClass": "New Java Class",
+  "contributes.commands.java.view.package.newPackage": "New Package",
   "configuration.java.dependency.showMembers": "Show the members in the explorer",
   "configuration.java.dependency.syncWithFolderExplorer": "Synchronize Java Projects explorer selection with folder explorer",
   "configuration.java.dependency.autoRefresh": "Synchronize Java Projects explorer with changes",
