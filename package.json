@@ -332,7 +332,7 @@
     "viewsWelcome": [
       {
         "view": "javaProjectExplorer",
-        "contents": "No projects listed because the Java Language Server is currently running in [LightWeight Mode](https://aka.ms/vscode-java-lightweight). To show projects, click on the button to switch to Standard Mode.\n[Switch to Standard Mode](command:java.server.mode.switch?%5B%22Standard%22,true%5D)",
+        "contents": "No projects are listed because the Java Language Server is currently running in [LightWeight Mode](https://aka.ms/vscode-java-lightweight). To show projects, click on the button to switch to Standard Mode.\n[Switch to Standard Mode](command:java.server.mode.switch?%5B%22Standard%22,true%5D)",
         "when": "java:serverMode == LightWeight"
       }
     ]
