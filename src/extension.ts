@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { commands, Event, Extension, ExtensionContext, extensions, Uri } from "vscode";
-import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { Context } from "./constants";
 import { contextManager } from "./contextManager";
@@ -63,13 +63,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
 
     initExpService(context);
-
-    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_SWITCH_SERVER_MODE, async () => {
-        if (isSwitchingServer()) {
-            return;
-        }
-        await commands.executeCommand(Commands.JAVA_SWITCH_SERVER_MODE, "Standard" /*mode*/);
-    }));
 }
 
 // determine if the add dependency shortcut will show or not
@@ -96,15 +89,25 @@ export function isStandardServerReady(): boolean {
         return true;
     }
 
-    if (serverMode !== "Standard") {
+    if (serverMode !== LanguageServerMode.Standard) {
         return false;
     }
 
     return true;
 }
 
+export function isLightWeightMode(): boolean {
+    return serverMode === LanguageServerMode.LightWeight;
+}
+
 export function isSwitchingServer(): boolean {
-    return serverMode === "Hybrid";
+    return serverMode === LanguageServerMode.Hybrid;
 }
 
 let serverMode: string | undefined;
+
+const enum LanguageServerMode {
+    LightWeight = "LightWeight",
+    Standard = "Standard",
+    Hybrid = "Hybrid",
+}
