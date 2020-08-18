@@ -15,7 +15,13 @@ export class FolderNode extends DataNode {
     }
 
     protected loadData(): Thenable<INodeData[]> {
-        return Jdtls.getPackageData({ kind: NodeKind.Folder, projectUri: this._project.uri, path: this.path, rootPath: this._rootNode.path });
+        return Jdtls.getPackageData({
+            kind: NodeKind.Folder,
+            projectUri: this._project.uri,
+            path: this.path,
+            rootPath: this._rootNode.path,
+            handlerIdentifier: this._rootNode.handlerIdentifier,
+        });
     }
 
     protected createChildNodeList(): ExplorerNode[] {
