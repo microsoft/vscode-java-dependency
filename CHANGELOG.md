@@ -4,6 +4,17 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.12.0
+### Added
+- Support creating new packages and types. [#78](https://github.com/microsoft/vscode-java-dependency/issues/78)
+
+### Changed
+- Reduce unnecessary refreshes when editing a Java file. [#283](https://github.com/microsoft/vscode-java-dependency/issues/78)
+- Adopt welcome view for Project explorer in LightWeight mode. [PR#300](https://github.com/microsoft/vscode-java-dependency/pull/300)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.12.0+is%3Aclosed)
+
 ## 0.11.0
 ### Added
 - Export jar file from workspace folder. [PR#271](https://github.com/microsoft/vscode-java-dependency/pull/271)
