@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.12.0
 ### Added
-- Support create new packages & types. [#78](https://github.com/microsoft/vscode-java-dependency/issues/78)
+- Support create new packages and types. [#78](https://github.com/microsoft/vscode-java-dependency/issues/78)
 
 ### Changed
 - Reduce unnecessary refreshes when editing a Java file. [#283](https://github.com/microsoft/vscode-java-dependency/issues/78)
