@@ -27,7 +27,9 @@ class ExplorerNodeCache {
     }
 
     public saveNode(node: ExplorerNode): void {
-        if (node instanceof DataNode && node.uri) {
+        // default package has the same uri as the root package,
+        // we skip default package and store the root package here.
+        if (node instanceof DataNode && node.uri && node.name !== "default-package") {
             this.mutableNodeCache.insert(node);
         }
     }
