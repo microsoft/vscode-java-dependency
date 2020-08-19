@@ -232,39 +232,43 @@
       ],
       "view/title": [
         {
-          "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight && workspaceFolderCount != 0",
-          "group": "navigation@50"
-        },
-        {
+          "command": "java.project.create",
+          "when": "view == javaProjectExplorer",
+          "group": "navigation@10"
+        },{
           "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
-          "group": "navigation@40"
+          "group": "navigation@20"
+        },
+        {
+          "command": "java.view.package.exportJar",
+          "when": "view == javaProjectExplorer && java:serverMode != LightWeight && workspaceFolderCount != 0",
+          "group": "navigation@30"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
           "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation == flat && java:serverMode!= LightWeight",
-          "group": "navigation@30"
+          "group": "overflow_10@10"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
           "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation != flat && java:serverMode!= LightWeight",
-          "group": "navigation@30"
+          "group": "overflow_10@10"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
           "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer != true && java:serverMode!= LightWeight",
-          "group": "navigation@20"
+          "group": "overflow_10@20"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
           "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer == true && java:serverMode!= LightWeight",
-          "group": "navigation@20"
+          "group": "overflow_10@20"
         },
         {
-          "command": "java.project.create",
-          "when": "view == javaProjectExplorer",
-          "group": "navigation@10"
+          "command": "java.workspace.compile",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
+          "group": "overflow_20@10"
         }
       ],
       "view/item/context": [
