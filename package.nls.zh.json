@@ -5,6 +5,8 @@
   "contributes.commands.java.project.maven.addDependency": "为该 Maven 项目增加依赖库",
   "contributes.commands.java.project.removeLibrary": "将该 Jar 文件从 Java 项目类路径中移除",
   "contributes.commands.java.view.package.refresh": "刷新",
+  "contributes.commands.java.project.build.workspace": "构建工作空间",
+  "contributes.commands.java.project.clean.workspace": "清理工作空间",
   "contributes.commands.java.view.package.changeToFlatPackageView":"平行显示",
   "contributes.commands.java.view.package.changeToHierarchicalPackageView":"层级显示",
   "contributes.commands.java.view.package.linkWithFolderExplorer":"启用编辑器关联",

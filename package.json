@@ -65,6 +65,14 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "java.project.build.workspace",
+        "title": "%contributes.commands.java.project.build.workspace%"
+      },
+      {
+        "command": "java.project.clean.workspace",
+        "title": "%contributes.commands.java.project.clean.workspace%"
+      },
+      {
         "command": "java.view.package.refresh",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
@@ -228,6 +236,14 @@
         {
           "command": "java.view.package.newPackage",
           "when": "never"
+        },
+        {
+          "command": "java.project.build.workspace",
+          "when": "never"
+        },
+        {
+          "command": "java.project.clean.workspace",
+          "when": "never"
         }
       ],
       "view/title": [
@@ -267,12 +283,12 @@
           "group": "overflow_10@20"
         },
         {
-          "command": "java.workspace.compile",
+          "command": "java.project.build.workspace",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
           "group": "overflow_20@10"
         },
         {
-          "command": "java.clean.workspace",
+          "command": "java.project.clean.workspace",
           "when": "view == javaProjectExplorer && workspaceFolderCount != 0",
           "group": "overflow_20@20"
         }

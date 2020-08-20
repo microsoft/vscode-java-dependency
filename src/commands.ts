@@ -44,6 +44,10 @@ export namespace Commands {
 
     export const JAVA_PROJECT_REFRESH_LIBRARIES = "java.project.refreshLibraries";
 
+    export const JAVA_PROJECT_BUILD_WORKSPACE = "java.project.build.workspace";
+
+    export const JAVA_PROJECT_CLEAN_WORKSPACE = "java.project.clean.workspace";
+
     export const JAVA_MAVEN_PROJECT_ADD_DEPENDENCY = "java.project.maven.addDependency";
 
     export const JAVA_MAVEN_CREATE_PROJECT = "maven.archetype.generate";
@@ -54,9 +58,6 @@ export namespace Commands {
 
     export const JAVA_GETPACKAGEDATA = "java.getPackageData";
 
-    /**
-     * command from VS Code Java to switch the language server mode
-     */
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
     export const JAVA_PROJECT_GETMAINMETHOD = "java.project.getMainMethod";
@@ -66,6 +67,8 @@ export namespace Commands {
     export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
 
     export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
+
+    export const JAVA_CLEAN_WORKSPACE = "java.clean.workspace";
 
     export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
 }
