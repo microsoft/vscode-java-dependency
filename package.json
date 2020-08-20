@@ -235,14 +235,15 @@
           "command": "java.project.create",
           "when": "view == javaProjectExplorer",
           "group": "navigation@10"
-        },{
-          "command": "java.view.package.refresh",
-          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
-          "group": "navigation@20"
         },
         {
           "command": "java.view.package.exportJar",
           "when": "view == javaProjectExplorer && java:serverMode != LightWeight && workspaceFolderCount != 0",
+          "group": "navigation@20"
+        },
+        {
+          "command": "java.view.package.refresh",
+          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
           "group": "navigation@30"
         },
         {
@@ -269,6 +270,11 @@
           "command": "java.workspace.compile",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
           "group": "overflow_20@10"
+        },
+        {
+          "command": "java.clean.workspace",
+          "when": "view == javaProjectExplorer && workspaceFolderCount != 0",
+          "group": "overflow_20@20"
         }
       ],
       "view/item/context": [
