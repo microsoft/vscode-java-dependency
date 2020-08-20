@@ -4,6 +4,7 @@
 import * as fse from "fs-extra";
 import * as path from "path";
 import { Uri, window, workspace, WorkspaceEdit } from "vscode";
+import { Explorer } from "../constants";
 import { NodeKind } from "../java/nodeData";
 import { isJavaIdentifier, isKeyword } from "../utility";
 import { DataNode } from "../views/dataNode";
@@ -49,7 +50,7 @@ function getNewFilePath(basePath: string, className: string): string {
 export async function newPackage(node: DataNode): Promise<void> {
     let defaultValue: string;
     let packageRootPath: string;
-    if (node.nodeData.kind === NodeKind.PackageRoot || node.name === "default-package") {
+    if (node.nodeData.kind === NodeKind.PackageRoot || node.name === Explorer.DEFAULT_PACKAGE_NAME) {
         defaultValue = "";
         packageRootPath = Uri.parse(node.uri).fsPath;
     } else if (node.nodeData.kind === NodeKind.Package) {

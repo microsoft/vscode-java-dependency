@@ -65,6 +65,14 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "java.project.build.workspace",
+        "title": "%contributes.commands.java.project.build.workspace%"
+      },
+      {
+        "command": "java.project.clean.workspace",
+        "title": "%contributes.commands.java.project.clean.workspace%"
+      },
+      {
         "command": "java.view.package.refresh",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
@@ -228,43 +236,61 @@
         {
           "command": "java.view.package.newPackage",
           "when": "never"
+        },
+        {
+          "command": "java.project.build.workspace",
+          "when": "never"
+        },
+        {
+          "command": "java.project.clean.workspace",
+          "when": "never"
         }
       ],
       "view/title": [
         {
+          "command": "java.project.create",
+          "when": "view == javaProjectExplorer",
+          "group": "navigation@10"
+        },
+        {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight && workspaceFolderCount != 0",
-          "group": "navigation@50"
+          "when": "view == javaProjectExplorer && java:serverMode != LightWeight && workspaceFolderCount != 0",
+          "group": "navigation@20"
         },
         {
           "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
-          "group": "navigation@40"
+          "group": "navigation@30"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
           "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation == flat && java:serverMode!= LightWeight",
-          "group": "navigation@30"
+          "group": "overflow_10@10"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
           "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation != flat && java:serverMode!= LightWeight",
-          "group": "navigation@30"
+          "group": "overflow_10@10"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
           "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer != true && java:serverMode!= LightWeight",
-          "group": "navigation@20"
+          "group": "overflow_10@20"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
           "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer == true && java:serverMode!= LightWeight",
-          "group": "navigation@20"
+          "group": "overflow_10@20"
         },
         {
-          "command": "java.project.create",
-          "when": "view == javaProjectExplorer",
-          "group": "navigation@10"
+          "command": "java.project.build.workspace",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
+          "group": "overflow_20@10"
+        },
+        {
+          "command": "java.project.clean.workspace",
+          "when": "view == javaProjectExplorer && workspaceFolderCount != 0",
+          "group": "overflow_20@20"
         }
       ],
       "view/item/context": [

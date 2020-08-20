@@ -3,6 +3,7 @@
 
 import * as path from "path";
 import { Uri } from "vscode";
+import { Explorer } from "../../constants";
 import { DataNode } from "../dataNode";
 import { ExplorerNode } from "../explorerNode";
 import { Trie, TrieNode } from "./Trie";
@@ -29,7 +30,7 @@ class ExplorerNodeCache {
     public saveNode(node: ExplorerNode): void {
         // default package has the same uri as the root package,
         // we skip default package and store the root package here.
-        if (node instanceof DataNode && node.uri && node.name !== "default-package") {
+        if (node instanceof DataNode && node.uri && node.name !== Explorer.DEFAULT_PACKAGE_NAME) {
             this.mutableNodeCache.insert(node);
         }
     }
