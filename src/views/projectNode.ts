@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { ThemeIcon } from "vscode";
+import { Explorer } from "../constants";
 import { ContainerEntryKind, IContainerNodeData } from "../java/containerNodeData";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
@@ -69,7 +70,52 @@ export class ProjectNode extends DataNode {
     protected get iconPath(): ThemeIcon {
         return new ThemeIcon("project");
     }
+
     protected get contextValue(): string {
-        return `project/${this.name}`;
+        let contextValue: string = Explorer.ContextValueType.Project;
+        const natureIds: string[] | undefined = this.nodeData.metaData[NATURE_ID];
+        if (natureIds) {
+            const attributeString: string = getProjectTypeAttributes(natureIds);
+            contextValue += attributeString;
+        }
+        return contextValue;
     }
 }
+
+function getProjectTypeAttributes(natureIds: string []): string {
+    let attributeString: string = "";
+    for (const natureId of natureIds) {
+        const readableNature: string = getProjectType(natureId);
+        if (readableNature) {
+            attributeString += `+${readableNature}`;
+        }
+    }
+    return attributeString;
+}
+
+function getProjectType(natureId: string): string {
+    switch (natureId) {
+        case NatureId.Java:
+            return ReadableNature.Java;
+        case NatureId.Maven:
+            return ReadableNature.Maven;
+        case NatureId.Gradle:
+            return ReadableNature.Gradle;
+        default:
+            return "";
+    }
+}
+
+enum NatureId {
+    Maven = "org.eclipse.m2e.core.maven2Nature",
+    Gradle = "org.eclipse.buildship.core.gradleprojectnature",
+    Java = "org.eclipse.jdt.core.javanature",
+}
+
+enum ReadableNature {
+    Maven = "maven",
+    Gradle = "gradle",
+    Java = "java",
+}
+
+const NATURE_ID = "NatureId";

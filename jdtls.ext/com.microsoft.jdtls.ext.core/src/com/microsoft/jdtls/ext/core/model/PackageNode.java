@@ -41,6 +41,11 @@ import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
  */
 public class PackageNode {
 
+    /**
+     * Nature Id for the IProject
+     */
+    private static final String NATURE_ID = "NatureId";
+
     public final static String K_TYPE_KIND = "TypeKind";
 
     /**
@@ -141,6 +146,11 @@ public class PackageNode {
         IProject proj = javaElement.getJavaProject().getProject();
         PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
         projectNode.setUri(proj.getLocationURI().toString());
+        try {
+            projectNode.setMetaDataValue(NATURE_ID, proj.getDescription().getNatureIds());
+        } catch (CoreException e) {
+            // do nothing
+        }
         return projectNode;
     }
 

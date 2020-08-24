@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { ThemeIcon } from "vscode";
+import { Explorer } from "../constants";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { DataNode } from "./dataNode";
@@ -30,7 +31,8 @@ export class WorkspaceNode extends DataNode {
     protected get iconPath(): ThemeIcon {
         return new ThemeIcon("root-folder");
     }
+
     protected get contextValue(): string {
-        return `workspace/${this.name}`;
+        return Explorer.ContextValueType.Workspace;
     }
 }

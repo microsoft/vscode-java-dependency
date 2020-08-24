@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { ThemeIcon, Uri } from "vscode";
+import { Explorer } from "../constants";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
@@ -33,10 +34,36 @@ export class ContainerNode extends DataNode {
     }
 
     protected get contextValue(): string {
-        return `container/${this.name}`;
+        let contextValue: string = Explorer.ContextValueType.Container;
+        const containerType: string = getContainerType(this._nodeData.path);
+        if (containerType) {
+            contextValue += `+${containerType}`;
+        }
+        return contextValue;
     }
 
     protected get iconPath(): ThemeIcon {
         return new ThemeIcon("library");
     }
+}
+
+function getContainerType(containerPath: string | undefined): string {
+    if (!containerPath) {
+        return "";
+    } else if (containerPath.startsWith(ContainerPath.JavaSE)) {
+        return "javaSE";
+    } else if (containerPath.startsWith(ContainerPath.Maven)) {
+        return "maven";
+    } else if (containerPath.startsWith(ContainerPath.Gradle)) {
+        return "gradle";
+    } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary)) {
+        return "referencedLibrary";
+    }
+}
+
+const enum ContainerPath {
+    JavaSE = "org.eclipse.jdt.launching.JRE_CONTAINER",
+    Maven = "org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER",
+    Gradle = "org.eclipse.buildship.core.gradleclasspathcontainer",
+    ReferencedLibrary = "REFERENCED_LIBRARIES_PATH",
 }

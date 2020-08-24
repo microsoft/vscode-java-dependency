@@ -25,8 +25,6 @@ export class LibraryController implements Disposable {
                 this.removeLibrary(Uri.parse(node.uri).fsPath)),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, () =>
                 this.refreshLibraries()),
-            instrumentOperationAsVsCodeCommand(Commands.JAVA_MAVEN_PROJECT_ADD_DEPENDENCY, (node: ContainerNode) =>
-                this.addMavenDependency(node)),
         );
     }
 

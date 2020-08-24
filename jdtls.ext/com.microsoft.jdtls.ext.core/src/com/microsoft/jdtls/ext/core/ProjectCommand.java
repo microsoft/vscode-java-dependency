@@ -56,7 +56,6 @@ import org.eclipse.jdt.ls.core.internal.ResourceUtils;
 import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibraries;
 
-import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
