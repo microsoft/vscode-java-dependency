@@ -15,7 +15,7 @@ export abstract class DataNode extends ExplorerNode {
         if (this._nodeData) {
             const item = new TreeItem(
                 this._nodeData.displayName || this._nodeData.name,
-                this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None
+                this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None,
             );
             item.description = this.description;
             item.iconPath = this.iconPath;
