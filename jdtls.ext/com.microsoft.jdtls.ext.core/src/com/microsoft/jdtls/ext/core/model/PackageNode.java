@@ -74,6 +74,11 @@ public class PackageNode {
     private String name;
 
     /**
+     * The display name of the node
+     */
+    private String displayName;
+
+    /**
      * The module name of the PackageNode for Java 9 and above
      */
     private String moduleName;
@@ -273,6 +278,14 @@ public class PackageNode {
 
     public String getName() {
         return name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setModuleName(String moduleName) {
