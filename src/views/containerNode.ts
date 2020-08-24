@@ -50,8 +50,8 @@ export class ContainerNode extends DataNode {
 function getContainerType(containerPath: string | undefined): string {
     if (!containerPath) {
         return "";
-    } else if (containerPath.startsWith(ContainerPath.JavaSE)) {
-        return "javaSE";
+    } else if (containerPath.startsWith(ContainerPath.JRE)) {
+        return "jre";
     } else if (containerPath.startsWith(ContainerPath.Maven)) {
         return "maven";
     } else if (containerPath.startsWith(ContainerPath.Gradle)) {
@@ -62,7 +62,7 @@ function getContainerType(containerPath: string | undefined): string {
 }
 
 const enum ContainerPath {
-    JavaSE = "org.eclipse.jdt.launching.JRE_CONTAINER",
+    JRE = "org.eclipse.jdt.launching.JRE_CONTAINER",
     Maven = "org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER",
     Gradle = "org.eclipse.buildship.core.gradleclasspathcontainer",
     ReferencedLibrary = "REFERENCED_LIBRARIES_PATH",

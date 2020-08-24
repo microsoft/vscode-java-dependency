@@ -27,8 +27,8 @@ suite("Context Value Tests", () => {
         assert.equal((await gradleProject.getTreeItem()).contextValue, "java:project+java+gradle+uri");
     });
 
-    test("test JavaSE container node", async function() {
-        assert.equal((await javaSEContainer.getTreeItem()).contextValue, "java:container+javaSE+uri");
+    test("test JRE container node", async function() {
+        assert.equal((await jreContainer.getTreeItem()).contextValue, "java:container+jre+uri");
     });
 
     test("test Maven container node", async function() {
@@ -93,29 +93,29 @@ const gradleProject: ProjectNode = new ProjectNode({
     },
 }, workspace);
 
-const javaSEContainer: ContainerNode = new ContainerNode({
-    name: "javaSEContainer",
+const jreContainer: ContainerNode = new ContainerNode({
+    name: "jreContainer",
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Container,
     path: "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-11",
 }, mavenProject, mavenProject);
 
 const mavenContainer: ContainerNode = new ContainerNode({
-    name: "javaSEContainer",
+    name: "mavenContainer",
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Container,
     path: "org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER",
 }, mavenProject, mavenProject);
 
 const gradleContainer: ContainerNode = new ContainerNode({
-    name: "javaSEContainer",
+    name: "gradleContainer",
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Container,
     path: "org.eclipse.buildship.core.gradleclasspathcontainer",
 }, gradleProject, gradleProject);
 
 const referencedLibrariesContainer: ContainerNode = new ContainerNode({
-    name: "javaSEContainer",
+    name: "referencedLibrariesContainer",
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Container,
     path: "REFERENCED_LIBRARIES_PATH",
