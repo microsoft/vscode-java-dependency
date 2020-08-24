@@ -33,6 +33,6 @@ export class WorkspaceNode extends DataNode {
     }
 
     protected get contextValue(): string {
-        return Explorer.ContextValueType.Workspace;
+        return Explorer.ContextValueType.WorkspaceFolder;
     }
 }

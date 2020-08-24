@@ -16,7 +16,7 @@ import { WorkspaceNode } from "../../src/views/workspaceNode";
 suite("Context Value Tests", () => {
 
     test("test workspace node", async function() {
-        assert.equal((await workspace.getTreeItem()).contextValue, "java:workspace+uri");
+        assert.equal((await workspace.getTreeItem()).contextValue, "java:workspaceFolder+uri");
     });
 
     test("test Maven project node", async function() {
