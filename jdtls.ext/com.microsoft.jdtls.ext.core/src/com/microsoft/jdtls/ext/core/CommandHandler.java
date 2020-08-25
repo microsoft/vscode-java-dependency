@@ -24,11 +24,17 @@ public class CommandHandler implements IDelegateCommandHandler {
         if (!StringUtils.isBlank(commandId)) {
             switch (commandId) {
                 case "java.project.list":
-                    return ProjectCommand.execute(arguments, monitor);
+                    return ProjectCommand.listProjects(arguments, monitor);
+                case "java.project.refreshLib":
+                    return ProjectCommand.refreshLibraries(arguments, monitor);
                 case "java.getPackageData":
                     return PackageCommand.getChildren(arguments, monitor);
                 case "java.resolvePath":
                     return PackageCommand.resolvePath(arguments, monitor);
+                case "java.project.getMainMethod":
+                    return ProjectCommand.getMainMethod(arguments, monitor);
+                case "java.project.generateJar":
+                    return ProjectCommand.exportJar(arguments, monitor);
                 default:
                     break;
             }

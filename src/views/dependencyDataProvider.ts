@@ -3,41 +3,51 @@
 
 import * as _ from "lodash";
 import {
-    commands, Event, EventEmitter, ExtensionContext, ProviderResult, Range,
-    Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
+    commands, Event, EventEmitter, ExtensionContext, extensions, ProviderResult,
+    Range, Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
+import { newJavaClass, newPackage } from "../explorerCommands/new";
+import { createJarFile } from "../exportJarFileCommand";
+import { isLightWeightMode, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
+import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
 
 export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
-    private _onDidChangeTreeData: EventEmitter<null> = new EventEmitter<null>();
+    private _onDidChangeTreeData: EventEmitter<ExplorerNode | null | undefined> = new EventEmitter<ExplorerNode | null | undefined>();
 
     // tslint:disable-next-line:member-ordering
-    public onDidChangeTreeData: Event<null> = this._onDidChangeTreeData.event;
+    public onDidChangeTreeData: Event<ExplorerNode | null | undefined> = this._onDidChangeTreeData.event;
 
     private _rootItems: ExplorerNode[] = null;
-    private _refreshDelayTrigger: (() => void) & _.Cancelable;
+    private _refreshDelayTrigger: ((element?: ExplorerNode) => void) & _.Cancelable;
 
     constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean) => this.refreshWithLog(debounce)));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS,
-            (node: INodeData) => commands.executeCommand("revealFileInOS", Uri.parse(node.uri))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH,
-            (node: INodeData) => commands.executeCommand("copyFilePath", Uri.parse(node.uri))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH,
-            (node: INodeData) => commands.executeCommand("copyRelativeFilePath", Uri.parse(node.uri))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OPEN_FILE,
-            instrumentOperation(Commands.VIEW_PACKAGE_OPEN_FILE, (_operationId, uri) => this.openFile(uri))));
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_OUTLINE,
-            instrumentOperation(Commands.VIEW_PACKAGE_OUTLINE, (_operationId, uri, range) => this.goToOutline(uri, range))));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
+            this.refreshWithLog(debounce, element)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, (node: INodeData) => createJarFile(node)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, (node: DataNode) => newJavaClass(node)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_NEW_JAVA_PACKAGE, (node: DataNode) => newPackage(node)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node?: INodeData) =>
+            commands.executeCommand("revealFileInOS", Uri.parse(node.uri))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node: INodeData) =>
+            commands.executeCommand("copyFilePath", Uri.parse(node.uri))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node: INodeData) =>
+            commands.executeCommand("copyRelativeFilePath", Uri.parse(node.uri))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OPEN_FILE, (uri) => this.openFile(uri)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OUTLINE, (uri, range) => this.goToOutline(uri, range)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_BUILD_WORKSPACE, () =>
+            commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CLEAN_WORKSPACE, () =>
+            commands.executeCommand(Commands.JAVA_CLEAN_WORKSPACE)));
         Settings.registerConfigurationListener((updatedConfig, oldConfig) => {
             if (updatedConfig.refreshDelay !== oldConfig.refreshDelay) {
                 this.setRefreshDelay(updatedConfig.refreshDelay);
@@ -46,16 +56,16 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         this.setRefreshDelay();
     }
 
-    public refreshWithLog(debounce?: boolean) {
+    public refreshWithLog(debounce?: boolean, element?: ExplorerNode) {
         if (Settings.autoRefresh()) {
-            this.refresh(debounce);
+            this.refresh(debounce, element);
         } else {
-            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh(debounce))();
+            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh(debounce, element))();
         }
     }
 
-    public refresh(debounce = false) {
-        this._refreshDelayTrigger();
+    public refresh(debounce = false, element?: ExplorerNode) {
+        this._refreshDelayTrigger(element);
         if (!debounce) { // Immediately refresh
             this._refreshDelayTrigger.flush();
         }
@@ -68,7 +78,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         if (this._refreshDelayTrigger) {
             this._refreshDelayTrigger.cancel();
         }
-        this._refreshDelayTrigger = _.debounce(() => this.doRefresh(), wait);
+        this._refreshDelayTrigger = _.debounce(this.doRefresh, wait);
     }
 
     public openFile(uri: string) {
@@ -89,11 +99,23 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return element.getTreeItem();
     }
 
-    public getChildren(element?: ExplorerNode): ProviderResult<ExplorerNode[]> {
+    public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[]> {
+        if (isLightWeightMode()) {
+            return [];
+        }
+
+        if (isSwitchingServer()) {
+            await new Promise<void>((resolve: () => void): void => {
+                extensions.getExtension("redhat.java")!.exports.onDidServerModeChange(resolve);
+            });
+        }
+
         if (!this._rootItems || !element) {
             return this.getRootNodes();
         } else {
-            return element.getChildren();
+            const children: ExplorerNode[] = await element.getChildren();
+            explorerNodeCache.saveNodes(children);
+            return children;
         }
     }
 
@@ -109,9 +131,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return project ? project.revealPaths(paths) : null;
     }
 
-    private doRefresh(): void {
-        this._rootItems = null;
-        this._onDidChangeTreeData.fire();
+    private doRefresh(element?: ExplorerNode): void {
+        explorerNodeCache.removeNodeChildren(element);
+        this._onDidChangeTreeData.fire(element);
     }
 
     private async getRootProjects(): Promise<ExplorerNode[]> {

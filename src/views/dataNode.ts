@@ -13,7 +13,10 @@ export abstract class DataNode extends ExplorerNode {
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         if (this._nodeData) {
-            const item = new TreeItem(this._nodeData.name, this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
+            const item = new TreeItem(
+                this._nodeData.displayName || this._nodeData.name,
+                this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None,
+            );
             item.description = this.description;
             item.iconPath = this.iconPath;
             item.command = this.command;
@@ -32,6 +35,10 @@ export abstract class DataNode extends ExplorerNode {
 
     public get path() {
         return this._nodeData.path;
+    }
+
+    public get handlerIdentifier() {
+        return this._nodeData.handlerIdentifier;
     }
 
     public get name() { // return name like `referenced-library`
@@ -58,7 +65,7 @@ export abstract class DataNode extends ExplorerNode {
 
     protected computeContextValue(): string {
         let contextValue = this.contextValue;
-        if (this.uri) {
+        if (this.uri && this.uri.startsWith("file:")) {
             contextValue = `${contextValue || ""}+uri`;
         }
         if (contextValue) {

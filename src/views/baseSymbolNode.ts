@@ -1,49 +1,45 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command, DocumentSymbol, Range, SymbolInformation, SymbolKind } from "vscode";
+import { Command, DocumentSymbol, Range, SymbolInformation, SymbolKind, ThemeIcon } from "vscode";
 import { Commands } from "../commands";
-import { Services } from "../services";
 import { ExplorerNode } from "./explorerNode";
-import { TypeRootNode } from "./typeRootNode";
+import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export abstract class BaseSymbolNode extends ExplorerNode {
 
     private static _iconMap: Map<SymbolKind, string> = new Map([
-        [SymbolKind.Package, "Namespace"],
-        [SymbolKind.Class, "Class"],
-        [SymbolKind.Interface, "Interface"],
-        [SymbolKind.Enum, "Enumerator"],
-        [SymbolKind.EnumMember, "EnumItem"],
-        [SymbolKind.Constant, "Constant"],
-        [SymbolKind.Method, "Method"],
-        [SymbolKind.Function, "Method"],
-        [SymbolKind.Constructor, "Method"],
-        [SymbolKind.Field, "Field"],
-        [SymbolKind.Property, "Property"],
-        [SymbolKind.Variable, "LocalVariable"],
-        [SymbolKind.Constant, "Constant"],
+        [SymbolKind.Package, "package"],
+        [SymbolKind.Class, "class"],
+        [SymbolKind.Interface, "interface"],
+        [SymbolKind.Enum, "enum"],
+        [SymbolKind.EnumMember, "enum-member"],
+        [SymbolKind.Constant, "constant"],
+        [SymbolKind.Method, "method"],
+        [SymbolKind.Function, "method"],
+        [SymbolKind.Constructor, "method"],
+        [SymbolKind.Field, "field"],
+        [SymbolKind.Property, "property"],
+        [SymbolKind.Variable, "variable"],
     ]);
 
-    constructor(public readonly symbolInfo: SymbolInformation | DocumentSymbol, private parent: TypeRootNode) {
+    constructor(public readonly symbolInfo: SymbolInformation | DocumentSymbol, parent: PrimaryTypeNode) {
         super(parent);
     }
 
-    protected get iconPath(): any {
+    protected get iconPath(): ThemeIcon {
         if (BaseSymbolNode._iconMap.has(this.symbolInfo.kind)) {
-            const iconFileName = BaseSymbolNode._iconMap.get(this.symbolInfo.kind);
-            return {
-                light: Services.context.asAbsolutePath(`./images/symbols/${iconFileName}_16x.svg`),
-                dark: Services.context.asAbsolutePath(`./images/symbols/${iconFileName}_inverse_16x.svg`),
-            };
+            const symbolKind = BaseSymbolNode._iconMap.get(this.symbolInfo.kind);
+            return new ThemeIcon(`symbol-${symbolKind}`);
         }
+        return new ThemeIcon("symbol-misc");
     }
 
     protected get command(): Command {
         return {
             title: "Go to outline",
             command: Commands.VIEW_PACKAGE_OUTLINE,
-            arguments: [(this.getParent() as TypeRootNode).uri, this.range],
+            arguments: [(this.getParent() as PrimaryTypeNode).uri, this.range],
         };
     }
 

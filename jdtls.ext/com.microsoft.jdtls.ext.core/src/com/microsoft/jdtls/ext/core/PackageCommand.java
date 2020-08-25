@@ -41,8 +41,10 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJarEntryResource;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -60,7 +62,6 @@ import com.google.gson.GsonBuilder;
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 import com.microsoft.jdtls.ext.core.model.PackageRootNode;
-import com.microsoft.jdtls.ext.core.model.TypeRootNode;
 
 public class PackageCommand {
 
@@ -122,11 +123,11 @@ public class PackageCommand {
         List<PackageNode> result = new ArrayList<>();
         URI uri = JDTUtils.toURI(typeRootUri);
         ITypeRoot typeRoot = ExtUtils.JDT_SCHEME.equals(uri.getScheme()) ? JDTUtils.resolveClassFile(uri) : JDTUtils.resolveCompilationUnit(uri);
-        if (typeRoot != null) {
+        if (typeRoot != null && typeRoot.findPrimaryType() != null) {
             // Add project node:
             result.add(PackageNode.createNodeForProject(typeRoot));
-            IPackageFragment packageFragment = (IPackageFragment) typeRoot.getParent();
-            IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getParent();
+            IPackageFragment packageFragment = (IPackageFragment) typeRoot.getAncestor(IJavaElement.PACKAGE_FRAGMENT);
+            IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
             // TODO: Let the client handle the display instead. Server side should always
             // provide the container node.
             boolean isClassFile = typeRoot instanceof IClassFile;
@@ -135,10 +136,7 @@ public class PackageCommand {
             }
             result.add(PackageNode.createNodeForPackageFragmentRoot(pkgRoot));
             result.add(PackageNode.createNodeForPackageFragment(packageFragment));
-
-            PackageNode item = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT, TypeRootNode.K_SOURCE);
-            item.setUri(JDTUtils.toUri(typeRoot));
-            result.add(item);
+            result.add(PackageNode.createNodeForPrimaryType(typeRoot.findPrimaryType()));
         } else if (ExtUtils.isJarResourceUri(uri)) {
             IJarEntryResource resource = ExtUtils.getJarEntryResource(uri);
             IPackageFragmentRoot pkgRoot = resource.getPackageFragmentRoot();
@@ -247,8 +245,11 @@ public class PackageCommand {
                         .collect(Collectors.toList());
                 boolean isReferencedLibrariesExist = Arrays.stream(references)
                         .anyMatch(entry -> entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE);
-                if (isReferencedLibrariesExist) {
+                // Invisble project will always have the referenced libraries entry
+                if (!ProjectUtils.isVisibleProject(javaProject.getProject())) {
                     result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
+                } else if (isReferencedLibrariesExist) {
+                    result.add(PackageNode.IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER);
                 }
                 return result;
             } catch (CoreException e) {
@@ -257,8 +258,6 @@ public class PackageCommand {
         }
         return Collections.emptyList();
     }
-
-
 
     private static List<PackageNode> getPackageFragmentRoots(PackageParams query, IProgressMonitor pm) {
         ArrayList<PackageNode> children = new ArrayList<>();
@@ -289,6 +288,7 @@ public class PackageCommand {
                             displayName = relativePath.toPortableString();
                         }
                         PackageRootNode node = new PackageRootNode(fragmentRoot, displayName, NodeKind.PACKAGEROOT);
+                        node.setHandlerIdentifier(fragmentRoot.getHandleIdentifier());
                         children.add(node);
                         if (fragmentRoot instanceof JrtPackageFragmentRoot) {
                             node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
@@ -326,104 +326,103 @@ public class PackageCommand {
     }
 
     private static List<PackageNode> getPackages(PackageParams query, IProgressMonitor pm) {
-        IJavaProject javaProject = getJavaProject(query.getProjectUri());
-        if (javaProject != null) {
-            try {
-                IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
-                if (packageRoot == null) {
-                    throw new CoreException(
-                            new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
-                }
-                Object[] result = getPackageFragmentRootContent(packageRoot, pm);
-                return convertToPackageNode(result, packageRoot);
-            } catch (CoreException e) {
-                JdtlsExtActivator.logException("Problem load project package ", e);
+        try {
+            IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(query.getHandlerIdentifier());
+            if (packageRoot == null) {
+                throw new CoreException(
+                        new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
             }
+            Object[] result = getPackageFragmentRootContent(packageRoot, pm);
+            return convertToPackageNode(result, packageRoot);
+        } catch (CoreException e) {
+            JdtlsExtActivator.logException("Problem load project package ", e);
         }
         return Collections.emptyList();
     }
 
     private static List<PackageNode> getRootTypes(PackageParams query, IProgressMonitor pm) {
-        IJavaProject javaProject = getJavaProject(query.getProjectUri());
-        if (javaProject != null) {
-            try {
-                IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
-                if (packageRoot == null) {
-                    throw new CoreException(
-                            new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
-                }
-                IPackageFragment packageFragment = packageRoot
-                        .getPackageFragment(PackageNode.DEFAULT_PACKAGE_DISPLAYNAME.equals(query.getPath()) ? "" : query.getPath());
-                if (packageFragment != null) {
-                    IJavaElement[] types = packageFragment.getChildren();
-                    Object[] nonJavaResources = packageFragment.getNonJavaResources();
-                    List<PackageNode> rootTypeNodes = Arrays.stream(types).filter(typeRoot -> !typeRoot.getElementName().contains("$"))
-                            .map(PackageNode::createNodeForTypeRoot).collect(Collectors.toList());
-                    if (nonJavaResources.length == 0) {
-                        return rootTypeNodes;
+        try {
+            IPackageFragment packageFragment = (IPackageFragment) JavaCore.create(query.getHandlerIdentifier());
+            if (packageFragment != null) {
+                List<IType> primaryTypes = new ArrayList<>();
+                for (IJavaElement element : packageFragment.getChildren()) {
+                    if (element instanceof ITypeRoot) {
+                        // Filter out the inner class files
+                        if (element instanceof IClassFile && element.getElementName().contains("$")) {
+                            continue;
+                        }
+                        IType primaryType = ((ITypeRoot) element).findPrimaryType();
+                        if (primaryType != null) {
+                            primaryTypes.add(primaryType);
+                        }
                     }
-                    // when .java files and other .properties files are mixed up
-                    rootTypeNodes.addAll(
-                            Arrays.stream(nonJavaResources).filter(resource -> resource instanceof IFile || resource instanceof JarEntryFile).map(resource -> {
-                                if (resource instanceof IFile) {
-                                    IFile file = (IFile) resource;
-                                    PackageNode item = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
-                                    item.setUri(JDTUtils.getFileURI(file));
-                                    return item;
-                                } else {
-                                    JarEntryFile file = (JarEntryFile) resource;
-                                    PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
-                                    entry.setUri(ExtUtils.toUri((JarEntryFile) resource));
-                                    return entry;
-                                }
-
-                            }).collect(Collectors.toList()));
+                }
+                Object[] nonJavaResources = packageFragment.getNonJavaResources();
+                List<PackageNode> rootTypeNodes = primaryTypes.stream()
+                    .map(PackageNode::createNodeForPrimaryType)
+                    .collect(Collectors.toList());
+                if (nonJavaResources.length == 0) {
                     return rootTypeNodes;
                 }
-            } catch (CoreException e) {
-                JdtlsExtActivator.logException("Problem load project classfile list ", e);
+                // when .java files and other .properties files are mixed up
+                rootTypeNodes.addAll(
+                        Arrays.stream(nonJavaResources).filter(resource -> resource instanceof IFile || resource instanceof JarEntryFile).map(resource -> {
+                            if (resource instanceof IFile) {
+                                IFile file = (IFile) resource;
+                                PackageNode item = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
+                                item.setUri(JDTUtils.getFileURI(file));
+                                return item;
+                            } else {
+                                JarEntryFile file = (JarEntryFile) resource;
+                                PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
+                                entry.setUri(ExtUtils.toUri((JarEntryFile) resource));
+                                return entry;
+                            }
+
+                        }).collect(Collectors.toList()));
+                return rootTypeNodes;
             }
+        } catch (CoreException e) {
+            JdtlsExtActivator.logException("Problem load project classfile list ", e);
         }
         return Collections.emptyList();
     }
 
     private static List<PackageNode> getFolderChildren(PackageParams query, IProgressMonitor pm) {
-        IJavaProject javaProject = getJavaProject(query.getProjectUri());
-        if (javaProject != null) {
-            try {
-                IPackageFragmentRoot packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
-                if (packageRoot == null) {
-                    throw new CoreException(
-                            new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
-                }
-                if (packageRoot.getKind() == IPackageFragmentRoot.K_BINARY) {
-                    Object[] resources = packageRoot.getNonJavaResources();
-                    for (Object resource : resources) {
-                        if (pm.isCanceled()) {
-                            throw new OperationCanceledException();
-                        }
-                        if (resource instanceof JarEntryDirectory) {
-                            JarEntryDirectory directory = (JarEntryDirectory) resource;
-                            Object[] children = findJarDirectoryChildren(directory, query.getPath());
-                            if (children != null) {
-                                return convertToPackageNode(children, null);
-                            }
-                        }
+        try {
+            IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(query.getHandlerIdentifier());
+            if (packageRoot == null) {
+                throw new CoreException(
+                        new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
+            }
+            if (packageRoot.getKind() == IPackageFragmentRoot.K_BINARY) {
+                Object[] resources = packageRoot.getNonJavaResources();
+                for (Object resource : resources) {
+                    if (pm.isCanceled()) {
+                        throw new OperationCanceledException();
                     }
-                } else {
-                    IFolder folder = javaProject.getProject().getFolder(new Path(query.getPath()).makeRelativeTo(javaProject.getProject().getFullPath()));
-                    if (folder != null && folder.exists()) {
-                        Object[] children = JavaCore.create(folder) != null ? Arrays.stream(folder.members()).filter(t -> t instanceof IFile).toArray()
-                                : folder.members();
+                    if (resource instanceof JarEntryDirectory) {
+                        JarEntryDirectory directory = (JarEntryDirectory) resource;
+                        Object[] children = findJarDirectoryChildren(directory, query.getPath());
                         if (children != null) {
                             return convertToPackageNode(children, null);
                         }
                     }
                 }
-
-            } catch (CoreException e) {
-                JdtlsExtActivator.logException("Problem load project classfile list ", e);
+            } else {
+                IJavaProject javaProject = packageRoot.getJavaProject();
+                IFolder folder = javaProject.getProject().getFolder(new Path(query.getPath()).makeRelativeTo(javaProject.getProject().getFullPath()));
+                if (folder != null && folder.exists()) {
+                    Object[] children = JavaCore.create(folder) != null ? Arrays.stream(folder.members()).filter(t -> t instanceof IFile).toArray()
+                            : folder.members();
+                    if (children != null) {
+                        return convertToPackageNode(children, null);
+                    }
+                }
             }
+
+        } catch (CoreException e) {
+            JdtlsExtActivator.logException("Problem load project classfile list ", e);
         }
         return Collections.emptyList();
     }
@@ -436,10 +435,20 @@ public class PackageCommand {
                 result.add(child);
             } else if (fragment.getNonJavaResources().length > 0) { // some package has non-java files
                 result.add(fragment);
+            } else if (!fragment.hasSubpackages()) {
+                result.add(fragment);
             }
         }
         Object[] nonJavaResources = root.getNonJavaResources();
         Collections.addAll(result, nonJavaResources);
+
+        IModuleDescription moduleDescription = root.getModuleDescription();
+        if (moduleDescription != null) {
+            IClassFile moduleInfo = moduleDescription.getClassFile();
+            if (moduleInfo != null) {
+                result.add(moduleDescription.getClassFile());
+            }
+        }
         return result.toArray();
     }
 
@@ -457,7 +466,7 @@ public class PackageCommand {
                 result.add(entry);
             } else if (root instanceof IClassFile) {
                 IClassFile classFile = (IClassFile) root;
-                PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.TYPEROOT);
+                PackageNode entry = new PackageNode(classFile.getElementName(), null, NodeKind.FILE);
                 entry.setUri(JDTUtils.toUri(classFile));
                 result.add(entry);
             } else if (root instanceof JarEntryResource) {
@@ -522,7 +531,7 @@ public class PackageCommand {
         return null;
     }
 
-    private static IJavaProject getJavaProject(String projectUri) {
+    public static IJavaProject getJavaProject(String projectUri) {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         IContainer[] containers = root.findContainersForLocationURI(JDTUtils.toURI(projectUri));
 

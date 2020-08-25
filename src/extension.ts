@@ -1,33 +1,113 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, ExtensionContext } from "vscode";
+import { commands, Event, Extension, ExtensionContext, extensions, Uri } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
+import { Context } from "./constants";
+import { contextManager } from "./contextManager";
+import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
-import { Services } from "./services";
+import { init as initExpService } from "./ExperimentationService";
 import { Settings } from "./settings";
+import { syncHandler } from "./syncHandler";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
 export async function activate(context: ExtensionContext): Promise<any> {
-    await initializeFromJsonFile(context.asAbsolutePath("./package.json"));
+    await initializeFromJsonFile(context.asAbsolutePath("./package.json"), { firstParty: true });
     return instrumentOperation("activation", activateExtension)(context);
 }
 
-function activateExtension(operationId: string, context: ExtensionContext) {
-    commands.executeCommand("setContext", "extensionActivated", true);
+async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
+    const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
+    if (extension && extension.isActive) {
+        const extensionApi: any = extension.exports;
+        if (!extensionApi) {
+            return;
+        }
 
-    Services.initialize(context);
+        serverMode = extensionApi.serverMode;
+
+        if (extensionApi.onDidClasspathUpdate) {
+            const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
+            context.subscriptions.push(onDidClasspathUpdate(async () => {
+                await commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
+            }));
+        }
+
+        if (extensionApi.onDidServerModeChange) {
+            const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
+            context.subscriptions.push(onDidServerModeChange(async (mode: string) => {
+                serverMode = mode;
+                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
+            }));
+        }
+
+        if (extensionApi.onDidProjectsImport) {
+            const onDidProjectsImport: Event<Uri[]> = extensionApi.onDidProjectsImport;
+            context.subscriptions.push(onDidProjectsImport(async () => {
+                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
+            }));
+        }
+    }
+
     Settings.initialize(context);
+    contextManager.initialize(context);
+    setMavenExtensionState();
 
-    const projectController: ProjectController = new ProjectController(context);
-    const instrumented = instrumentOperation(Commands.JAVA_PROJECT_CREATE, () => projectController.createJavaProject());
-    context.subscriptions.push(commands.registerCommand(Commands.JAVA_PROJECT_CREATE, instrumented));
-
+    context.subscriptions.push(new ProjectController(context));
+    context.subscriptions.push(new LibraryController(context));
     context.subscriptions.push(new DependencyExplorer(context));
+    context.subscriptions.push(contextManager);
+    context.subscriptions.push(syncHandler);
+    contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+
+    initExpService(context);
+}
+
+// determine if the add dependency shortcut will show or not
+function setMavenExtensionState() {
+    setMavenEnabledContext();
+    extensions.onDidChange(() => {
+        setMavenEnabledContext();
+    });
+
+    function setMavenEnabledContext() {
+        const mavenExt: Extension<any> | undefined = extensions.getExtension("vscjava.vscode-maven");
+        contextManager.setContextValue(Context.MAVEN_ENABLED, !!mavenExt);
+    }
 }
 
 // this method is called when your extension is deactivated
 export async function deactivate() {
     await disposeTelemetryWrapper();
+}
+
+export function isStandardServerReady(): boolean {
+    // undefined serverMode indicates an older version language server
+    if (serverMode === undefined) {
+        return true;
+    }
+
+    if (serverMode !== LanguageServerMode.Standard) {
+        return false;
+    }
+
+    return true;
+}
+
+export function isLightWeightMode(): boolean {
+    return serverMode === LanguageServerMode.LightWeight;
+}
+
+export function isSwitchingServer(): boolean {
+    return serverMode === LanguageServerMode.Hybrid;
+}
+
+let serverMode: string | undefined;
+
+const enum LanguageServerMode {
+    LightWeight = "LightWeight",
+    Standard = "Standard",
+    Hybrid = "Hybrid",
 }

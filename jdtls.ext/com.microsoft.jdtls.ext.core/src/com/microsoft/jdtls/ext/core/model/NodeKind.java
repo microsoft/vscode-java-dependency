@@ -22,7 +22,7 @@ public enum NodeKind {
 
     PACKAGE(5),
 
-    TYPEROOT(6),
+    PRIMARYTYPE(6),
 
     FOLDER(7),
 

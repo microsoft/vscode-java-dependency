@@ -12,7 +12,9 @@
 package com.microsoft.jdtls.ext.core.model;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -20,14 +22,13 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
@@ -39,17 +40,43 @@ import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
  * Represent a PackageNode in the project view.
  */
 public class PackageNode {
+
+    public final static String K_TYPE_KIND = "TypeKind";
+
+    /**
+     * Kind constant for a class.
+     */
+    public final static int K_CLASS = 1;
+
+    /**
+     * Kind constant for an interface.
+     */
+    public final static int K_INTERFACE = 2;
+
+    /**
+     * Kind constant for an enum.
+     */
+    public final static int K_ENUM = 3;
+
     private static final String REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries";
+    private static final String IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries (Read-only)";
 
     public static final String REFERENCED_LIBRARIES_PATH = "REFERENCED_LIBRARIES_PATH";
     public static final String DEFAULT_PACKAGE_DISPLAYNAME = "(default package)";
     public static final ContainerNode REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH,
             NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
+    public static final ContainerNode IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME,
+            REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
 
     /**
      * The name of the PackageNode
      */
     private String name;
+
+    /**
+     * The display name of the node
+     */
+    private String displayName;
 
     /**
      * The module name of the PackageNode for Java 9 and above
@@ -62,6 +89,11 @@ public class PackageNode {
     private String path;
 
     /**
+     * The handlerIdentifier
+     */
+    private String handlerIdentifier;
+
+    /**
      * The URI value of the PackageNode
      */
     private String uri;
@@ -70,6 +102,11 @@ public class PackageNode {
      * PackageNode kind
      */
     private NodeKind kind;
+
+    /**
+     * PackageNode metaData
+     */
+    private Map<String, Object> metaData;
 
     /**
      * PackageNode children list
@@ -84,6 +121,25 @@ public class PackageNode {
         this.name = name;
         this.path = path;
         this.kind = kind;
+    }
+
+    public String getHandlerIdentifier() {
+        return handlerIdentifier;
+    }
+
+    public void setHandlerIdentifier(String handlerIdentifier) {
+        this.handlerIdentifier = handlerIdentifier;
+    }
+
+    public Map<String, Object> getMetaData() {
+        return metaData;
+    }
+
+    public void setMetaDataValue(String key, Object value) {
+        if (this.metaData == null) {
+            this.metaData = new HashMap<>();
+        }
+        this.metaData.put(key, value);
     }
 
     public static PackageNode createNodeForProject(IJavaElement javaElement) {
@@ -110,7 +166,9 @@ public class PackageNode {
 
     public static PackageNode createNodeForPackageFragment(IPackageFragment packageFragment) {
         String packageName = packageFragment.isDefaultPackage() ? DEFAULT_PACKAGE_DISPLAYNAME : packageFragment.getElementName();
-        return new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+        PackageNode fragmentNode = new PackageNode(packageName, packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+        fragmentNode.setHandlerIdentifier(packageFragment.getHandleIdentifier());
+        return fragmentNode;
     }
 
     public static PackageNode createNodeForVirtualContainer(IPackageFragmentRoot pkgRoot) throws JavaModelException {
@@ -184,15 +242,23 @@ public class PackageNode {
         return null;
     }
 
-    public static PackageNode createNodeForTypeRoot(IJavaElement typeRoot) {
-        PackageNode typeRootNode = new TypeRootNode(typeRoot.getElementName(), typeRoot.getPath().toPortableString(), NodeKind.TYPEROOT,
-                typeRoot instanceof IClassFile ? TypeRootNode.K_BINARY : TypeRootNode.K_SOURCE);
-        if (typeRoot instanceof ICompilationUnit) {
-            typeRootNode.setUri(JDTUtils.toURI((ICompilationUnit) typeRoot));
-        } else if (typeRoot instanceof IClassFile) {
-            typeRootNode.setUri(JDTUtils.toUri((IClassFile) typeRoot));
+    public static PackageNode createNodeForPrimaryType(IType type) {
+        PackageNode primaryTypeNode = new PackageNode(type.getElementName(), type.getPath().toPortableString(), NodeKind.PRIMARYTYPE);
+
+        try {
+            if (type.isEnum()) {
+                primaryTypeNode.setMetaDataValue(K_TYPE_KIND, K_ENUM);
+            } else if (type.isInterface()) {
+                primaryTypeNode.setMetaDataValue(K_TYPE_KIND, K_INTERFACE);
+            } else {
+                primaryTypeNode.setMetaDataValue(K_TYPE_KIND, K_CLASS);
+            }
+        } catch (JavaModelException e) {
+            primaryTypeNode.setMetaDataValue(K_TYPE_KIND, K_CLASS);
         }
-        return typeRootNode;
+
+        primaryTypeNode.setUri(JDTUtils.toUri(type.getTypeRoot()));
+        return primaryTypeNode;
     }
 
     /**
@@ -212,6 +278,10 @@ public class PackageNode {
 
     public String getName() {
         return name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setModuleName(String moduleName) {

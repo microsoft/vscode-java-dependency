@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
-
+import { commands } from "vscode";
 /**
  * Commonly used commands
  */
@@ -30,12 +30,54 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH = "java.view.package.copyRelativeFilePath";
 
+    export const VIEW_PACKAGE_EXPORT_JAR = "java.view.package.exportJar";
+
+    export const VIEW_PACKAGE_NEW_JAVA_CLASS = "java.view.package.newJavaClass";
+
+    export const VIEW_PACKAGE_NEW_JAVA_PACKAGE = "java.view.package.newPackage";
+
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
+    export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
+
+    export const JAVA_PROJECT_REMOVE_LIBRARY = "java.project.removeLibrary";
+
+    export const JAVA_PROJECT_REFRESH_LIBRARIES = "java.project.refreshLibraries";
+
+    export const JAVA_PROJECT_BUILD_WORKSPACE = "java.project.build.workspace";
+
+    export const JAVA_PROJECT_CLEAN_WORKSPACE = "java.project.clean.workspace";
+
+    export const JAVA_MAVEN_PROJECT_ADD_DEPENDENCY = "java.project.maven.addDependency";
+
+    export const JAVA_MAVEN_CREATE_PROJECT = "maven.archetype.generate";
+
     export const JAVA_PROJECT_LIST = "java.project.list";
+
+    export const JAVA_PROJECT_REFRESH_LIB_SERVER = "java.project.refreshLib";
 
     export const JAVA_GETPACKAGEDATA = "java.getPackageData";
 
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
+    export const JAVA_PROJECT_GETMAINMETHOD = "java.project.getMainMethod";
+
+    export const JAVA_PROJECT_GENERATEJAR = "java.project.generateJar";
+
+    export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
+
+    export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
+
+    export const JAVA_CLEAN_WORKSPACE = "java.clean.workspace";
+
+    export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
+}
+
+export function executeJavaLanguageServerCommand(...rest) {
+    return executeJavaExtensionCommand(Commands.EXECUTE_WORKSPACE_COMMAND, ...rest);
+}
+
+export async function executeJavaExtensionCommand(commandName: string, ...rest) {
+    // TODO: need to handle error and trace telemetry
+    return commands.executeCommand(commandName, ...rest);
 }

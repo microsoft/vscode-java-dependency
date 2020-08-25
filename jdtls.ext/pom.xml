@@ -4,12 +4,12 @@
     <groupId>com.microsoft.jdtls.ext</groupId>
     <artifactId>jdtls-ext-parent</artifactId>
     <name>${base.name} :: Parent</name>
-    <version>0.6.0</version>
-   <packaging>pom</packaging>
+    <version>0.12.0</version>
+    <packaging>pom</packaging>
     <properties>
         <base.name>Java Project Manager</base.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tycho-version>1.0.0</tycho-version>
+        <tycho-version>1.5.0</tycho-version>
     </properties>
 
     <developers>
@@ -81,9 +81,9 @@
     </build>
     <repositories>
         <repository>
-        <id>201906</id>
+        <id>202006</id>
         <layout>p2</layout>
-        <url>http://download.eclipse.org/releases/2019-06/</url>
+        <url>http://download.eclipse.org/releases/2020-06/</url>
         </repository>
         <repository>
             <id>oss.sonatype.org</id>

@@ -9,8 +9,8 @@ import { FileNode } from "./fileNode";
 import { FolderNode } from "./folderNode";
 import { HierarchicalPackageNode } from "./hierarchicalPackageNode";
 import { PackageRootNode } from "./packageRootNode";
+import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
-import { TypeRootNode } from "./typeRootNode";
 
 export class HierarchicalPackageRootNode extends PackageRootNode {
 
@@ -39,8 +39,10 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
                     result.push(new FileNode(data, this));
                 } else if (data.kind === NodeKind.Folder) {
                     result.push(new FolderNode(data, this, this._project, this));
-                } else if (data.kind === NodeKind.TypeRoot) {
-                    result.push(new TypeRootNode(data, this));
+                } else if (data.kind === NodeKind.PrimaryType) {
+                    if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
+                        result.push(new PrimaryTypeNode(data, this));
+                    }
                 }
             });
         }

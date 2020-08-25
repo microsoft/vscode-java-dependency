@@ -7,16 +7,28 @@ export enum NodeKind {
     Container = 3,
     PackageRoot = 4,
     Package = 5,
-    TypeRoot = 6,
+    PrimaryType = 6,
     Folder = 7,
     File = 8,
 }
 
+export enum TypeKind {
+    Class = 1,
+    Interface = 2,
+    Enum = 3,
+}
+
 export interface INodeData {
+    displayName?: string;
     name: string;
     moduleName?: string;
     path?: string;
+    /**
+     * returned from Java side using `IJavaElement.getHandlerIdentifier();`
+     */
+    handlerIdentifier?: string;
     uri?: string;
     kind: NodeKind;
     children?: any[];
+    metaData?: Map<string, any>;
 }

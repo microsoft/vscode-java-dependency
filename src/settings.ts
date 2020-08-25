@@ -2,12 +2,12 @@
 // Licensed under the MIT license.
 
 import {
-    commands, ConfigurationChangeEvent, Disposable, DocumentHighlight, ExtensionContext,
-    window, workspace, WorkspaceConfiguration,
+    commands, ConfigurationChangeEvent, ExtensionContext,
+    workspace, WorkspaceConfiguration,
 } from "vscode";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
-import { SyncHandler } from "./fileWather";
+import { syncHandler } from "./syncHandler";
 
 export class Settings {
 
@@ -23,34 +23,29 @@ export class Settings {
             }
         }));
         this.registerConfigurationListener((updatedConfig, oldConfig) => {
-            if (updatedConfig.showOutline !== oldConfig.showOutline
+            if (updatedConfig.showMembers !== oldConfig.showMembers
                 || updatedConfig.packagePresentation !== oldConfig.packagePresentation
                 || (updatedConfig.syncWithFolderExplorer !== oldConfig.syncWithFolderExplorer
                     && updatedConfig.syncWithFolderExplorer)) {
                 commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
-            }
-        });
-        this.registerConfigurationListener((updatedConfig, oldConfig) => {
-            if (updatedConfig.autoRefresh !== oldConfig.autoRefresh) {
-                SyncHandler.updateFileWatcher(updatedConfig.autoRefresh);
+            } else if (updatedConfig.autoRefresh !== oldConfig.autoRefresh) {
+                syncHandler.updateFileWatcher(updatedConfig.autoRefresh);
             }
         });
 
-        SyncHandler.updateFileWatcher(Settings.autoRefresh());
+        syncHandler.updateFileWatcher(Settings.autoRefresh());
 
         context.subscriptions.push({ dispose: () => { this._configurationListeners = []; } });
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER,
-            instrumentOperation(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER,
-            instrumentOperation(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER, Settings.unlinkWithFolderCommand)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_UNLINKWITHFOLDER, Settings.unlinkWithFolderCommand));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW,
-            instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW, Settings.changeToFlatPackageView)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW,
+            Settings.changeToFlatPackageView));
 
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW,
-            instrumentOperation(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW, Settings.changeToHierarchicalPackageView)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW,
+            Settings.changeToHierarchicalPackageView));
     }
 
     public static registerConfigurationListener(listener: Listener) {
@@ -73,8 +68,30 @@ export class Settings {
         workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Hierarchical, false);
     }
 
-    public static showOutline(): boolean {
-        return this._dependencyConfig.get("showOutline");
+    public static updateReferencedLibraries(libraries: IReferencedLibraries): void {
+        let updateSetting: string[] | Partial<IReferencedLibraries> = {
+            include: libraries.include,
+            exclude: libraries.exclude.length > 0 ? libraries.exclude : undefined,
+            sources: Object.keys(libraries.sources).length > 0 ? libraries.sources : undefined,
+        };
+        if (!updateSetting.exclude && !updateSetting.sources) {
+            updateSetting = libraries.include;
+        }
+        workspace.getConfiguration().update("java.project.referencedLibraries", updateSetting);
+    }
+
+    public static referencedLibraries(): IReferencedLibraries {
+        const setting = workspace.getConfiguration("java.project").get<string[] | Partial<IReferencedLibraries>>("referencedLibraries");
+        const defaultSetting: IReferencedLibraries = { include: [], exclude: [], sources: {} };
+        if (Array.isArray(setting)) {
+            return { ...defaultSetting, include: setting };
+        } else {
+            return { ...defaultSetting, ...setting };
+        }
+    }
+
+    public static showMembers(): boolean {
+        return this._dependencyConfig.get("showMembers");
     }
 
     public static autoRefresh(): boolean {
@@ -104,3 +121,9 @@ enum PackagePresentation {
 }
 
 type Listener = (updatedConfig: WorkspaceConfiguration, oldConfig: WorkspaceConfiguration) => void;
+
+export interface IReferencedLibraries {
+    include: string[];
+    exclude: string[];
+    sources: { [binary: string]: string };
+}
