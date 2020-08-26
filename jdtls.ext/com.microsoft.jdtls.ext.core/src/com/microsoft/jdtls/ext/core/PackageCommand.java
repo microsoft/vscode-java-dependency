@@ -135,7 +135,7 @@ public class PackageCommand {
                 result.add(PackageNode.createNodeForVirtualContainer(pkgRoot));
             }
             // for invisible project, removing the '_' link name may cause an empty named package root
-            // in this case, we will avoid that 'empty' mode from displaying
+            // in this case, we will avoid that 'empty' node from displaying
             PackageNode pkgRootNode = PackageNode.createNodeForPackageFragmentRoot(pkgRoot);
             if (StringUtils.isNotBlank(pkgRootNode.getName())) {
                 result.add(pkgRootNode);
@@ -181,7 +181,7 @@ public class PackageCommand {
                     
                     IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
                     // for invisible project, removing the '_' link name may cause an empty named package root
-                    // in this case, we will avoid that 'empty' mode from displaying
+                    // in this case, we will avoid that 'empty' node from displaying
                     PackageNode pkgRootNode = PackageNode.createNodeForPackageFragmentRoot(pkgRoot);
                     if (StringUtils.isNotBlank(pkgRootNode.getName())) {
                         result.add(pkgRootNode);
