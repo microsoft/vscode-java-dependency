@@ -14,6 +14,7 @@ package com.microsoft.jdtls.ext.core;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -84,13 +85,19 @@ public final class ProjectCommand {
 
     public static List<PackageNode> listProjects(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
-        IPath workspacePath = ResourceUtils.canonicalFilePathFromURI(workspaceUri);
-        String invisibleProjectName = ProjectUtils.getWorkspaceInvisibleProjectName(workspacePath);
+        IPath workspaceFolderPath = ResourceUtils.canonicalFilePathFromURI(workspaceUri);
+        String invisibleProjectName = ProjectUtils.getWorkspaceInvisibleProjectName(workspaceFolderPath);
 
         IProject[] projects = getWorkspaceRoot().getProjects();
         ArrayList<PackageNode> children = new ArrayList<>();
+        List<IPath> paths = Collections.singletonList(workspaceFolderPath);
         for (IProject project : projects) {
-            if (!project.isAccessible() || !ProjectUtils.isJavaProject(project) || Objects.equals(project, JavaLanguageServerPlugin.getProjectsManager().getDefaultProject())) {
+            if (!project.isAccessible() || !ProjectUtils.isJavaProject(project)) {
+                continue;
+            }
+            // Ignore all the projects that's not contained in the workspace folder, except for the invisible project.
+            // This check is needed in multi-root scenario.
+            if ((!ResourceUtils.isContainedIn(project.getLocation(), paths) && !Objects.equals(project.getName(), invisibleProjectName))) {
                 continue;
             }
             PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));

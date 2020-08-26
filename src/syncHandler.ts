@@ -5,12 +5,11 @@ import * as path from "path";
 import { commands, Disposable, FileSystemWatcher, Uri, workspace } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
+import { NodeKind } from "./java/nodeData";
 import { Settings } from "./settings";
 import { DataNode } from "./views/dataNode";
 import { ExplorerNode } from "./views/explorerNode";
-import { HierarchicalPackageRootNode } from "./views/hierarchicalPackageRootNode";
 import { explorerNodeCache } from "./views/nodeCache/explorerNodeCache";
-import { PackageRootNode } from "./views/packageRootNode";
 
 const ENABLE_AUTO_REFRESH: string = "java.view.package.enableAutoRefresh";
 const DISABLE_AUTO_REFRESH: string = "java.view.package.disableAutoRefresh";
@@ -75,7 +74,7 @@ class SyncHandler implements Disposable {
         if (Settings.isHierarchicalView()) {
             // TODO: has to get the hierarchical package root node due to the java side implementation
             // because currently it will only get the types for a package node but no child packages.
-            while (!(node instanceof HierarchicalPackageRootNode)) {
+            while (node && node.nodeData.kind !== NodeKind.PackageRoot) {
                 node = <DataNode>node.getParent();
             }
             return node;
@@ -88,7 +87,7 @@ class SyncHandler implements Disposable {
             } else {
                 // the direct parent is not rendered in the explorer, the returned node
                 // is other package fragment, we need to refresh the package fragment root.
-                while (!(node instanceof PackageRootNode)) {
+                while (node && node.nodeData.kind !== NodeKind.PackageRoot) {
                     node = <DataNode>node.getParent();
                 }
                 return node;

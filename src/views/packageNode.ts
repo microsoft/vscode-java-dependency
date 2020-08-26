@@ -21,7 +21,6 @@ export class PackageNode extends DataNode {
             kind: NodeKind.Package,
             projectUri: this._project.nodeData.uri,
             path: this.nodeData.name,
-            rootPath: this._rootNode.path,
             handlerIdentifier: this.nodeData.handlerIdentifier,
         });
     }
@@ -49,7 +48,7 @@ export class PackageNode extends DataNode {
 
     protected get contextValue(): string {
         const parentData = <IPackageRootNodeData> this._rootNode.nodeData;
-        if (parentData.entryKind === PackageRootKind.K_SOURCE) {
+        if (parentData.entryKind === PackageRootKind.K_SOURCE || parentData.kind === NodeKind.Project) {
             return `${Explorer.ContextValueType.Package}+source`;
         } else if (parentData.entryKind === PackageRootKind.K_BINARY) {
             return `${Explorer.ContextValueType.Package}+binary`;

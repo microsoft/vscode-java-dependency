@@ -27,17 +27,7 @@ public class PackageParams {
 
     private String handlerIdentifier;
 
-    private String rootPath;
-
     public PackageParams() {
-    }
-
-    public String getHandlerIdentifier() {
-        return handlerIdentifier;
-    }
-
-    public void setHandlerIdentifier(String handlerIdentifier) {
-        this.handlerIdentifier = handlerIdentifier;
     }
 
     public PackageParams(NodeKind kind, String projectUri) {
@@ -46,16 +36,13 @@ public class PackageParams {
     }
 
     public PackageParams(NodeKind kind, String projectUri, String path) {
-        this.kind = kind;
-        this.projectUri = projectUri;
+        this(kind, projectUri);
         this.path = path;
     }
 
-    public PackageParams(NodeKind kind, String projectUri, String path, String rootPath) {
-        this.kind = kind;
-        this.projectUri = projectUri;
-        this.path = path;
-        this.rootPath = rootPath;
+    public PackageParams(NodeKind kind, String projectUri, String path, String handlerIdentifier) {
+        this(kind, projectUri, path);
+        this.handlerIdentifier = handlerIdentifier;
     }
 
     public NodeKind getKind() {
@@ -82,11 +69,12 @@ public class PackageParams {
         this.path = nodePath;
     }
 
-    public String getRootPath() {
-        return rootPath;
+    public String getHandlerIdentifier() {
+        return handlerIdentifier;
     }
 
-    public void setRootPath(String rootPath) {
-        this.rootPath = rootPath;
+    public void setHandlerIdentifier(String handlerIdentifier) {
+        this.handlerIdentifier = handlerIdentifier;
     }
+
 }

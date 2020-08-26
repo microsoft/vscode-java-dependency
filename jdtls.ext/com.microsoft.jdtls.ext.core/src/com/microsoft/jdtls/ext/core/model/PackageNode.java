@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -32,6 +33,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
+import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 
 import com.microsoft.jdtls.ext.core.ExtUtils;
 import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
@@ -194,7 +196,8 @@ public class PackageNode {
 
     }
 
-    public static PackageNode createNodeForPackageFragmentRoot(IPackageFragmentRoot pkgRoot) throws JavaModelException {
+    public static PackageRootNode createNodeForPackageFragmentRoot(IPackageFragmentRoot pkgRoot) throws JavaModelException {
+        String displayName = pkgRoot.getElementName();
         boolean isSourcePath = pkgRoot.getKind() == IPackageFragmentRoot.K_SOURCE;
         if (!isSourcePath) {
             IClasspathEntry entry = pkgRoot.getRawClasspathEntry();
@@ -202,11 +205,19 @@ public class PackageNode {
             if (entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
                 return createNodeForClasspathVariable(entry);
             } else {
-                return new PackageRootNode(pkgRoot, pkgRoot.getElementName(), NodeKind.PACKAGEROOT);
+                return new PackageRootNode(pkgRoot, displayName, NodeKind.PACKAGEROOT);
             }
         } else {
-            return new PackageRootNode(pkgRoot,
-                    ExtUtils.removeProjectSegment(pkgRoot.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(), NodeKind.PACKAGEROOT);
+            IJavaProject javaProject = pkgRoot.getJavaProject();
+            IPath relativePath = pkgRoot.getPath();
+            if (pkgRoot.getJavaProject().getPath().isPrefixOf(relativePath)) {
+                relativePath = relativePath.makeRelativeTo(javaProject.getPath());
+            }
+            if (Objects.equals(ProjectUtils.WORKSPACE_LINK, relativePath.segment(0))) {
+                relativePath = relativePath.removeFirstSegments(1); // Remove the '_' prefix
+            }
+            displayName = relativePath.toPortableString();
+            return new PackageRootNode(pkgRoot, displayName, NodeKind.PACKAGEROOT);
         }
     }
 
@@ -278,7 +289,7 @@ public class PackageNode {
      *            referenced variable's classpath entry
      * @return correspond package node
      */
-    public static PackageNode createNodeForClasspathVariable(IClasspathEntry classpathEntry) {
+    public static PackageRootNode createNodeForClasspathVariable(IClasspathEntry classpathEntry) {
         IClasspathEntry entry = JavaCore.getResolvedClasspathEntry(classpathEntry);
         String name = classpathEntry.getPath().toPortableString();
         String path = entry.getPath().toPortableString();

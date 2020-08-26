@@ -134,7 +134,12 @@ public class PackageCommand {
             if (isClassFile) {
                 result.add(PackageNode.createNodeForVirtualContainer(pkgRoot));
             }
-            result.add(PackageNode.createNodeForPackageFragmentRoot(pkgRoot));
+            // for invisible project, removing the '_' link name may cause an empty named package root
+            // in this case, we will avoid that 'empty' mode from displaying
+            PackageNode pkgRootNode = PackageNode.createNodeForPackageFragmentRoot(pkgRoot);
+            if (StringUtils.isNotBlank(pkgRootNode.getName())) {
+                result.add(pkgRootNode);
+            }
             result.add(PackageNode.createNodeForPackageFragment(packageFragment));
             result.add(PackageNode.createNodeForPrimaryType(typeRoot.findPrimaryType()));
         } else if (ExtUtils.isJarResourceUri(uri)) {
@@ -171,15 +176,16 @@ public class PackageCommand {
                 IJavaElement parentJavaElement = JavaCore.create(parent);
                 if (parent instanceof IFolder && parentJavaElement instanceof IPackageFragment) {
                     IPackageFragment packageFragment = (IPackageFragment) parentJavaElement;
-                    IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getParent();
-                    PackageNode rootNode = null;
-
-                    rootNode = new PackageRootNode(pkgRoot,
-                            ExtUtils.removeProjectSegment(packageFragment.getJavaProject().getElementName(), pkgRoot.getPath()).toPortableString(),
-                            NodeKind.PACKAGEROOT);
 
                     result.add(PackageNode.createNodeForProject(packageFragment));
-                    result.add(rootNode);
+                    
+                    IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
+                    // for invisible project, removing the '_' link name may cause an empty named package root
+                    // in this case, we will avoid that 'empty' mode from displaying
+                    PackageNode pkgRootNode = PackageNode.createNodeForPackageFragmentRoot(pkgRoot);
+                    if (StringUtils.isNotBlank(pkgRootNode.getName())) {
+                        result.add(pkgRootNode);
+                    }
                     result.add(PackageNode.createNodeForPackageFragment(packageFragment));
 
                     PackageNode item = new PackageNode(resource.getName(), resource.getFullPath().toPortableString(), NodeKind.FILE);
@@ -276,31 +282,30 @@ public class PackageCommand {
                 if (containerEntry != null) {
                     IPackageFragmentRoot[] packageFragmentRoots = javaProject.findPackageFragmentRoots(containerEntry);
                     for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
-                        String displayName = fragmentRoot.getElementName();
-                        if (fragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
-                            IPath relativePath = fragmentRoot.getPath();
-                            if (javaProject.getPath().isPrefixOf(relativePath)) {
-                                relativePath = relativePath.makeRelativeTo(javaProject.getPath());
+                        PackageRootNode node = PackageNode.createNodeForPackageFragmentRoot(fragmentRoot);
+                        if (StringUtils.isNotBlank(node.getName())) {
+                            node.setHandlerIdentifier(fragmentRoot.getHandleIdentifier());
+                            if (fragmentRoot instanceof JrtPackageFragmentRoot) {
+                                node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
                             }
-                            if (ProjectUtils.WORKSPACE_LINK.equals(relativePath.segment(0))) {
-                                relativePath = relativePath.removeFirstSegments(1); // Remove the '_' prefix
+    
+                            IClasspathEntry resolvedClasspathEntry = fragmentRoot.getResolvedClasspathEntry();
+                            if (resolvedClasspathEntry != null) {
+                                Map<String, String> attributes = new HashMap<>();
+                                for (IClasspathAttribute attribute : resolvedClasspathEntry.getExtraAttributes()) {
+                                    attributes.put(attribute.getName(), attribute.getValue());
+                                }
+                                node.setAttributes(attributes);
                             }
-                            displayName = relativePath.toPortableString();
-                        }
-                        PackageRootNode node = new PackageRootNode(fragmentRoot, displayName, NodeKind.PACKAGEROOT);
-                        node.setHandlerIdentifier(fragmentRoot.getHandleIdentifier());
-                        children.add(node);
-                        if (fragmentRoot instanceof JrtPackageFragmentRoot) {
-                            node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
-                        }
 
-                        IClasspathEntry resolvedClasspathEntry = fragmentRoot.getResolvedClasspathEntry();
-                        if (resolvedClasspathEntry != null) {
-                            Map<String, String> attributes = new HashMap<>();
-                            for (IClasspathAttribute attribute : resolvedClasspathEntry.getExtraAttributes()) {
-                                attributes.put(attribute.getName(), attribute.getValue());
-                            }
-                            node.setAttributes(attributes);
+                            children.add(node);
+                        } else {
+                            // for invisible project, the package root name may become empty after removing the '_',
+                            // in this case, we skip this root node from showing in the explorer and keep finding its children.
+                            PackageParams subQuery = new PackageParams(NodeKind.PACKAGEROOT, query.getProjectUri(),
+                                    query.getPath(), fragmentRoot.getHandleIdentifier());
+                            List<PackageNode> packageNodes = getPackages(subQuery, pm);
+                            children.addAll(packageNodes);
                         }
                     }
                     return children;
