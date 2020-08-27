@@ -148,7 +148,7 @@ async function scaffoldSimpleProject(context: ExtensionContext): Promise<void> {
 const projectTypes: IProjectType[] = [
     {
         displayName: "No build tools",
-        detail: "Create a project without any build tools",
+        detail: "Work with source code directly without any build tools",
         metadata: {
             type: ProjectType.NoBuildTool,
             extensionId: "",
