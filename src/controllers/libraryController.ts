@@ -32,15 +32,6 @@ export class LibraryController implements Disposable {
         this.disposable.dispose();
     }
 
-    public async addMavenDependency(node: ContainerNode) {
-        const pomPath: string = path.join(node.projectBasePath, "pom.xml");
-        if (await fse.pathExists(pomPath)) {
-            commands.executeCommand("maven.project.addDependency", { pomPath });
-        } else {
-            commands.executeCommand("maven.project.addDependency");
-        }
-    }
-
     public async addLibraries(libraryGlobs?: string[]) {
         if (!libraryGlobs) {
             libraryGlobs = [];

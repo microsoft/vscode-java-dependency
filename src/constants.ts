@@ -6,7 +6,7 @@ export namespace Context {
 }
 
 export namespace Explorer {
-    export const DEFAULT_PACKAGE_NAME: string = "default-package";
+    export const DEFAULT_PACKAGE_NAME: string = "(default package)";
     export enum ContextValueType {
         WorkspaceFolder = "workspaceFolder",
         Project = "project",
