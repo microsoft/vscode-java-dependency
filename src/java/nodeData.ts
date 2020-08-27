@@ -19,6 +19,7 @@ export enum TypeKind {
 }
 
 export interface INodeData {
+    displayName?: string;
     name: string;
     moduleName?: string;
     path?: string;

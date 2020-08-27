@@ -4,7 +4,7 @@
 import * as _ from "lodash";
 import {
     commands, Event, EventEmitter, ExtensionContext, extensions, ProviderResult,
-    Range, Selection, TextEditorRevealType, TreeDataProvider, TreeItem, Uri, window, workspace,
+    Range, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
@@ -42,8 +42,10 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             commands.executeCommand("copyFilePath", Uri.parse(node.uri))));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node: INodeData) =>
             commands.executeCommand("copyRelativeFilePath", Uri.parse(node.uri))));
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OPEN_FILE, (uri) => this.openFile(uri)));
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OUTLINE, (uri, range) => this.goToOutline(uri, range)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OPEN_FILE, (uri) =>
+                commands.executeCommand(Commands.VSCODE_OPEN, Uri.parse(uri))));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OUTLINE, (uri, range) =>
+                window.showTextDocument(Uri.parse(uri), { selection: range })));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_BUILD_WORKSPACE, () =>
             commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CLEAN_WORKSPACE, () =>
@@ -79,20 +81,6 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             this._refreshDelayTrigger.cancel();
         }
         this._refreshDelayTrigger = _.debounce(this.doRefresh, wait);
-    }
-
-    public openFile(uri: string) {
-        return workspace.openTextDocument(Uri.parse(uri)).then((res) => {
-            return window.showTextDocument(res);
-        });
-    }
-
-    public goToOutline(uri: string, range: Range): Thenable<{}> {
-        return this.openFile(uri).then((editor) => {
-            editor.revealRange(range, TextEditorRevealType.Default);
-            editor.selection = new Selection(range.start, range.start);
-            return commands.executeCommand("workbench.action.focusActiveEditorGroup");
-        });
     }
 
     public getTreeItem(element: ExplorerNode): TreeItem | Thenable<TreeItem> {

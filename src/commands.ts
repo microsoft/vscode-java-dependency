@@ -64,6 +64,8 @@ export namespace Commands {
 
     export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
 
+    export const VSCODE_OPEN = "vscode.open";
+
     export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
 
     export const JAVA_CLEAN_WORKSPACE = "java.clean.workspace";

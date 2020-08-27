@@ -14,7 +14,6 @@ package com.microsoft.jdtls.ext.core;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +33,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -89,15 +89,15 @@ public final class ProjectCommand {
 
         IProject[] projects = getWorkspaceRoot().getProjects();
         ArrayList<PackageNode> children = new ArrayList<>();
-        List<IPath> paths = Arrays.asList(workspacePath);
         for (IProject project : projects) {
-            if (!ProjectUtils.isJavaProject(project)) {
+            if (!project.isAccessible() || !ProjectUtils.isJavaProject(project) || Objects.equals(project, JavaLanguageServerPlugin.getProjectsManager().getDefaultProject())) {
                 continue;
             }
-            if (project.exists() && (ResourceUtils.isContainedIn(project.getLocation(), paths) || Objects.equals(project.getName(), invisibleProjectName))) {
-                PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
-                children.add(projectNode);
+            PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
+            if (Objects.equals(project.getName(), invisibleProjectName)) {
+                projectNode.setDisplayName(FilenameUtils.getBaseName(workspaceUri));
             }
+            children.add(projectNode);
         }
         return children;
     }
