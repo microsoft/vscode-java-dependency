@@ -1,20 +1,50 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { ThemeIcon } from "vscode";
+import { ThemeIcon, Uri, workspace } from "vscode";
 import { Explorer } from "../constants";
 import { ContainerEntryKind, IContainerNodeData } from "../java/containerNodeData";
+import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
+import { Settings } from "../settings";
 import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
+import { HierarchicalPackageNode } from "./hierarchicalPackageNode";
 import { NodeFactory } from "./nodeFactory";
+import { PackageNode } from "./packageNode";
 
 export class ProjectNode extends DataNode {
 
     constructor(nodeData: INodeData, parent: DataNode) {
         super(nodeData, parent);
+    }
+
+    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+        if (workspace.getWorkspaceFolder(Uri.parse(this.uri))) {
+            return super.revealPaths(paths);
+        }
+
+        // invisible project uri is not contained in workspace
+        const childNodeData = paths[0];
+        const children: ExplorerNode[] = await this.getChildren();
+        if (!children) {
+            return undefined;
+        }
+
+        const childNode = <DataNode>children.find((child: DataNode) => {
+            if (child instanceof HierarchicalPackageNode) {
+                return childNodeData.name.startsWith(child.nodeData.name + ".") || childNodeData.name === child.nodeData.name;
+            }
+            return child.nodeData.name === childNodeData.name && child.path === childNodeData.path;
+        });
+
+        // don't shift when child node is an hierarchical node, or it may lose data of package node
+        if (!(childNode instanceof HierarchicalPackageNode)) {
+            paths.shift();
+        }
+        return (childNode && paths.length > 0) ? childNode.revealPaths(paths) : childNode;
     }
 
     protected loadData(): Thenable<INodeData[]> {
@@ -50,14 +80,30 @@ export class ProjectNode extends DataNode {
     protected createChildNodeList(): ExplorerNode[] {
 
         const result = [];
+        const packageData = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((data) => {
                 if (data.kind === NodeKind.Container) {
                     result.push(new ContainerNode(data, this, this));
                 } else if (data.kind === NodeKind.PackageRoot) {
                     result.push(NodeFactory.createPackageRootNode(data, this, this));
+                } else if (data.kind === NodeKind.Package) {
+                    // Invisible project may have an empty named package root, in that case,
+                    // we will skip it.
+                    packageData.push(data);
                 }
             });
+        }
+
+        if (packageData.length > 0) {
+            if (Settings.isHierarchicalView()) {
+                const data: HierarchicalPackageNodeData = HierarchicalPackageNodeData.createHierarchicalNodeDataByPackageList(packageData);
+                const hierarchicalPackageNodes: HierarchicalPackageNode[] = data === null ? [] : data.children.map((hierarchicalChildrenNode) =>
+                        new HierarchicalPackageNode(hierarchicalChildrenNode, this, this, this));
+                result.push(...hierarchicalPackageNodes);
+            } else {
+                result.push(...packageData.map((data) => new PackageNode(data, this, this, this)));
+            }
         }
 
         result.sort((a: DataNode, b: DataNode) => {

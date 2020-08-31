@@ -120,6 +120,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     private doRefresh(element?: ExplorerNode): void {
+        if (!element) {
+            this._rootItems = undefined;
+        }
         explorerNodeCache.removeNodeChildren(element);
         this._onDidChangeTreeData.fire(element);
     }
