@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { ThemeIcon } from "vscode";
+import { Explorer } from "../constants";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
@@ -49,7 +50,9 @@ export class PackageNode extends DataNode {
     protected get contextValue(): string {
         const parentData = <IPackageRootNodeData> this._rootNode.nodeData;
         if (parentData.entryKind === PackageRootKind.K_SOURCE) {
-            return `package/${this.name}`;
+            return `${Explorer.ContextValueType.Package}+source`;
+        } else if (parentData.entryKind === PackageRootKind.K_BINARY) {
+            return `${Explorer.ContextValueType.Package}+binary`;
         }
     }
 }

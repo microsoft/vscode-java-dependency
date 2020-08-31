@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { ThemeIcon } from "vscode";
+import { Explorer } from "../constants";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
@@ -62,13 +63,19 @@ export class PackageRootNode extends DataNode {
     protected get contextValue(): string {
         const data = <IPackageRootNodeData>this.nodeData;
         if (data.entryKind === PackageRootKind.K_BINARY) {
+            let contextValue: string = Explorer.ContextValueType.Jar;
             const parent = <ContainerNode>this.getParent();
-            return `jar/${parent.name}`;
-        } else if (!resourceRoots.includes(this._nodeData.name)) {
+            if (parent.path.startsWith("REFERENCED_LIBRARIES_PATH")) {
+                contextValue += "+referencedLibrary";
+            }
+            return contextValue;
+        } else if (resourceRoots.includes(this._nodeData.name)) {
             // APIs in JDT does not have a consistent result telling whether a package root
             // is a source root or resource root, so we hard code some common resources root
             // here as a workaround.
-            return `packageRoot/${this.name}`;
+            return `${Explorer.ContextValueType.PackageRoot}+resource`;
+        } else {
+            return `${Explorer.ContextValueType.PackageRoot}+source`;
         }
     }
 

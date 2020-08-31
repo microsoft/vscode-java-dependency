@@ -53,7 +53,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 
     Settings.initialize(context);
     contextManager.initialize(context);
-    setMavenExtensionState();
 
     context.subscriptions.push(new ProjectController(context));
     context.subscriptions.push(new LibraryController(context));
@@ -63,19 +62,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
 
     initExpService(context);
-}
-
-// determine if the add dependency shortcut will show or not
-function setMavenExtensionState() {
-    setMavenEnabledContext();
-    extensions.onDidChange(() => {
-        setMavenEnabledContext();
-    });
-
-    function setMavenEnabledContext() {
-        const mavenExt: Extension<any> | undefined = extensions.getExtension("vscjava.vscode-maven");
-        contextManager.setContextValue(Context.MAVEN_ENABLED, !!mavenExt);
-    }
 }
 
 // this method is called when your extension is deactivated

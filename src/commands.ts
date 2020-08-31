@@ -48,8 +48,6 @@ export namespace Commands {
 
     export const JAVA_PROJECT_CLEAN_WORKSPACE = "java.project.clean.workspace";
 
-    export const JAVA_MAVEN_PROJECT_ADD_DEPENDENCY = "java.project.maven.addDependency";
-
     export const JAVA_MAVEN_CREATE_PROJECT = "maven.archetype.generate";
 
     export const JAVA_PROJECT_LIST = "java.project.list";

@@ -47,12 +47,6 @@
         "icon": "$(add)"
       },
       {
-        "command": "java.project.maven.addDependency",
-        "title": "%contributes.commands.java.project.maven.addDependency%",
-        "category": "Java",
-        "icon": "$(add)"
-      },
-      {
         "command": "java.project.removeLibrary",
         "title": "%contributes.commands.java.project.removeLibrary%",
         "category": "Java",
@@ -218,10 +212,6 @@
           "when": "never"
         },
         {
-          "command": "java.project.maven.addDependency",
-          "when": "never"
-        },
-        {
           "command": "java.project.removeLibrary",
           "when": "never"
         },
@@ -296,52 +286,47 @@
       "view/item/context": [
         {
           "command": "java.view.package.revealFileInOS",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
           "group": "path@10"
         },
         {
           "command": "java.view.package.copyFilePath",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
           "group": "path@20"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:.*?\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
           "group": "path@25"
         },
         {
           "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot).*\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "new@10"
         },
         {
           "command": "java.view.package.newPackage",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot).*\\+uri/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "new@20"
         },
         {
           "command": "java.project.addLibraries",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:container\/referenced-libraries$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:container(?=.*?\\b\\+referencedLibrary\\b)/",
           "group": "inline@0"
         },
         {
           "command": "java.project.removeLibrary",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:jar\/referenced-libraries\\+uri$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:jar(?=.*?\\b\\+referencedLibrary\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "inline"
         },
         {
           "command": "java.project.refreshLibraries",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:container\/referenced-libraries$/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:container(?=.*?\\b\\+referencedLibrary\\b)/",
           "group": "inline@1"
         },
         {
-          "command": "java.project.maven.addDependency",
-          "when": "view == javaProjectExplorer && mavenEnabled && viewItem =~ /container\/maven-dependencies/",
-          "group": "inline@0"
-        },
-        {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace.*?\\+uri/ && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace(?=.*?\\b\\+uri\\b)/ && java:serverMode!= LightWeight",
           "group": "inline"
         }
       ]

@@ -2,10 +2,17 @@
 // Licensed under the MIT license.
 
 export namespace Context {
-    export const MAVEN_ENABLED: string = "mavenEnabled";
     export const EXTENSION_ACTIVATED: string = "extensionActivated";
 }
 
 export namespace Explorer {
-    export const DEFAULT_PACKAGE_NAME: string = "default-package";
+    export const DEFAULT_PACKAGE_NAME: string = "(default package)";
+    export enum ContextValueType {
+        WorkspaceFolder = "workspaceFolder",
+        Project = "project",
+        Container = "container",
+        PackageRoot = "packageRoot",
+        Package = "package",
+        Jar = "jar",
+    }
 }
