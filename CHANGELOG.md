@@ -4,12 +4,25 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.13.0
+### Added
+- Add overflow menu and the shortcut for `Build Workspace` and `Clean Workspace` commands. [PR#308](https://github.com/microsoft/vscode-java-dependency/pull/308)
+
+### Changed
+- Refined the context value of the nodes in the `Java Projects` explorer. [PR#311](https://github.com/microsoft/vscode-java-dependency/pull/311). For more details about how to register commands onto the nodes, see the [wiki page](https://github.com/microsoft/vscode-java-dependency/wiki/Register-Command-onto-the-Nodes-of-Project-View).
+- The default package will not show in the explorer any more. [#313](https://github.com/microsoft/vscode-java-dependency/issues/313)
+- Improve the explorer layout for `No build tools` projects. [PR#312](https://github.com/microsoft/vscode-java-dependency/pull/312), [PR#210](https://github.com/microsoft/vscode-java-dependency/pull/210)
+- Improve the description for `No build tools` option when creating new projects. [PR#314](https://github.com/microsoft/vscode-java-dependency/pull/314)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.13.0+is%3Aclosed)
+
 ## 0.12.0
 ### Added
 - Support creating new packages and types. [#78](https://github.com/microsoft/vscode-java-dependency/issues/78)
 
 ### Changed
-- Reduce unnecessary refreshes when editing a Java file. [#283](https://github.com/microsoft/vscode-java-dependency/issues/78)
+- Reduce unnecessary refreshes when editing a Java file. [#283](https://github.com/microsoft/vscode-java-dependency/issues/283)
 - Adopt welcome view for Project explorer in LightWeight mode. [PR#300](https://github.com/microsoft/vscode-java-dependency/pull/300)
 
 ### Fixed
