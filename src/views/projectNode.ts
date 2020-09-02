@@ -14,6 +14,7 @@ import { ExplorerNode } from "./explorerNode";
 import { HierarchicalPackageNode } from "./hierarchicalPackageNode";
 import { NodeFactory } from "./nodeFactory";
 import { PackageNode } from "./packageNode";
+import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export class ProjectNode extends DataNode {
 
@@ -91,6 +92,12 @@ export class ProjectNode extends DataNode {
                     // Invisible project may have an empty named package root, in that case,
                     // we will skip it.
                     packageData.push(data);
+                } else if (data.kind === NodeKind.PrimaryType) {
+                    // For invisible project with empty named package root with a default package,
+                    // types will be the project node's children
+                    if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
+                        result.push(new PrimaryTypeNode(data, this));
+                    }
                 }
             });
         }
