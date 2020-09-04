@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as _ from "lodash";
-import { Disposable, Uri, window, workspace } from "vscode";
+import { Disposable, Uri, workspace } from "vscode";
 import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
