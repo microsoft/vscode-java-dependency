@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { pathExists } from "fs-extra";
+import * as _ from "lodash";
 import { basename, extname, join } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, Uri, window } from "vscode";
 import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
@@ -68,8 +69,8 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 return resolve(pickItems);
             });
         });
-        if (dependencyItems.length === 0) {
-            throw new Error("No classpath found. Please make sure your project is valid.");
+        if (_.isEmpty(dependencyItems)) {
+            throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
             stepMetadata.elements.push(dependencyItems[0].uri);
             return true;
