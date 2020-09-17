@@ -10,14 +10,14 @@ import { WorkspaceNode } from "../views/workspaceNode";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { createPickBox, IJarQuickPickItem } from "./utility";
 
-export class ResolveWorkspaceExecutor implements IExportJarStepExecutor {
+export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
 
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
-        await this.resolveWorkspaceFolder(stepMetadata, stepMetadata.entry);
+        await this.resolveJavaProject(stepMetadata, stepMetadata.entry);
         return ExportJarStep.ResolveMainMethod;
     }
 
-    private async resolveWorkspaceFolder(stepMetadata: IStepMetadata, node?: INodeData): Promise<void> {
+    private async resolveJavaProject(stepMetadata: IStepMetadata, node?: INodeData): Promise<void> {
         if (node instanceof WorkspaceNode) {
             stepMetadata.workspaceUri = Uri.parse(node.uri);
             stepMetadata.projectList = await Jdtls.getProjects(node.uri);

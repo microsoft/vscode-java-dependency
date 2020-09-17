@@ -7,8 +7,8 @@ import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { buildWorkspace } from "./build";
 import { GenerateJarExecutor } from "./exportJarSteps/GenerateJarExecutor";
 import { IExportJarStepExecutor } from "./exportJarSteps/IExportJarStepExecutor";
+import { ResolveJavaProjectExecutor } from "./exportJarSteps/ResolveJavaProjectExecutor";
 import { ResolveMainMethodExecutor } from "./exportJarSteps/ResolveMainMethodExecutor";
-import { ResolveWorkspaceExecutor } from "./exportJarSteps/ResolveWorkspaceExecutor";
 import { isStandardServerReady } from "./extension";
 import { INodeData } from "./java/nodeData";
 
@@ -23,7 +23,7 @@ export interface IStepMetadata {
 }
 
 export enum ExportJarStep {
-    ResolveWorkspace = "RESOLVEWORKSPACE",
+    ResolveJavaProject = "RESOLVEJAVAPROJECT",
     ResolveMainMethod = "RESOLVEMAINMETHOD",
     GenerateJar = "GENERATEJAR",
     Finish = "FINISH",
@@ -31,7 +31,7 @@ export enum ExportJarStep {
 
 let isExportingJar: boolean = false;
 const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarStep, IExportJarStepExecutor>([
-    [ExportJarStep.ResolveWorkspace, new ResolveWorkspaceExecutor()],
+    [ExportJarStep.ResolveJavaProject, new ResolveJavaProjectExecutor()],
     [ExportJarStep.ResolveMainMethod, new ResolveMainMethodExecutor()],
     [ExportJarStep.GenerateJar, new GenerateJarExecutor()],
 ]);
@@ -45,7 +45,7 @@ export async function createJarFile(node?: INodeData) {
         if (await buildWorkspace() === false) {
             return reject();
         }
-        let step: ExportJarStep = ExportJarStep.ResolveWorkspace;
+        let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
         const stepMetadata: IStepMetadata = {
             entry: node,
             isPickedWorkspace: false,
