@@ -14,28 +14,27 @@ export class ResolveWorkspaceExecutor implements IExportJarStepExecutor {
 
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
         await this.resolveWorkspaceFolder(stepMetadata, stepMetadata.entry);
-        if (_.isEmpty(stepMetadata.projectList)) {
-            throw new Error("No java project found. Please make sure your java project exists in the workspace.");
-        }
         return ExportJarStep.ResolveMainMethod;
     }
 
-    private async resolveWorkspaceFolder(stepMetadata: IStepMetadata, node?: INodeData) {
+    private async resolveWorkspaceFolder(stepMetadata: IStepMetadata, node?: INodeData): Promise<void> {
         if (node instanceof WorkspaceNode) {
-            await this.assignProjectList(stepMetadata, node.uri);
+            stepMetadata.workspaceUri = Uri.parse(node.uri);
+            stepMetadata.projectList = await Jdtls.getProjects(node.uri);
             return;
         }
         const folders = workspace.workspaceFolders;
         // Guarded by workspaceFolderCount != 0 in package.json
         if (folders.length === 1) {
-            await this.assignProjectList(stepMetadata, folders[0].uri.toString());
+            stepMetadata.workspaceUri = folders[0].uri;
+            stepMetadata.projectList = await Jdtls.getProjects(folders[0].uri.toString());
             return;
         }
         const pickItems: IJarQuickPickItem[] = [];
         const projectMap: Map<string, INodeData[]> = new Map<string, INodeData[]>();
         for (const folder of folders) {
             const uriString: string = folder.uri.toString();
-            const projects: INodeData[] = await Jdtls.getProjects(Uri.parse(uriString).toString());
+            const projects: INodeData[] = await Jdtls.getProjects(uriString);
             if (!_.isEmpty(projects)) {
                 pickItems.push({
                     label: folder.name,
@@ -44,6 +43,9 @@ export class ResolveWorkspaceExecutor implements IExportJarStepExecutor {
                 });
                 projectMap.set(uriString, projects);
             }
+        }
+        if (_.isEmpty(pickItems)) {
+            throw new Error("No java project found. Please make sure your Java project exists in the workspace.");
         }
         stepMetadata.isPickedWorkspace = true;
         const disposables: Disposable[] = [];
@@ -67,8 +69,4 @@ export class ResolveWorkspaceExecutor implements IExportJarStepExecutor {
         }
     }
 
-    private async assignProjectList(stepMetadata: IStepMetadata, uri: string) {
-        stepMetadata.workspaceUri = Uri.parse(uri);
-        stepMetadata.projectList = await Jdtls.getProjects(stepMetadata.workspaceUri.toString());
-    }
 }
