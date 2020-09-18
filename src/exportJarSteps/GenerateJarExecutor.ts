@@ -5,18 +5,23 @@ import { pathExists } from "fs-extra";
 import * as _ from "lodash";
 import { basename, extname, join } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, Uri, window } from "vscode";
-import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
+import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
+import { IStepMetadata } from "./IStepMetadata";
 import { createPickBox, IJarQuickPickItem } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
+    public getNextStep(): ExportJarStep {
+        return ExportJarStep.Finish;
+    }
+
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
         if (await this.generateJar(stepMetadata)) {
-            return ExportJarStep.Finish;
+            return this.getNextStep();
         }
-        return ExportJarStep.ResolveMainMethod;
+        return stepMetadata.steps.pop();
     }
 
     private async generateJar(stepMetadata: IStepMetadata): Promise<boolean> {
@@ -72,7 +77,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
-            stepMetadata.elements.push(dependencyItems[0].uri);
+            stepMetadata.elements.push(dependencyItems[0].path);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
@@ -94,7 +99,8 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         let result: boolean = false;
         try {
             result = await new Promise<boolean>(async (resolve, reject) => {
-                const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements", dependencyItems, true, true);
+                const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements",
+                    dependencyItems, stepMetadata.steps.length > 0, true);
                 pickBox.selectedItems = pickedDependencyItems;
                 disposables.push(
                     pickBox.onDidTriggerButton((item) => {
@@ -104,7 +110,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     }),
                     pickBox.onDidAccept(() => {
                         for (const item of pickBox.selectedItems) {
-                            stepMetadata.elements.push(item.uri);
+                            stepMetadata.elements.push(item.path);
                         }
                         return resolve(true);
                     }),
@@ -139,7 +145,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 dependencyItems.push({
                     label: baseName,
                     description: descriptionValue,
-                    uri: classpath,
+                    path: classpath,
                     type: typeValue,
                     picked: isRuntime,
                 });
