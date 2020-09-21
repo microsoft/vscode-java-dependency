@@ -37,14 +37,25 @@ export async function createJarFile(node?: INodeData) {
             return reject();
         }
         let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
-        const stepMetadata: IStepMetadata = {
+        let stepMetadata: IStepMetadata = {
             entry: node,
             elements: [],
             steps: [],
         };
         while (step !== ExportJarStep.Finish) {
             try {
-                step = await stepMap.get(step).execute(stepMetadata);
+                const executor: IExportJarStepExecutor = stepMap.get(step);
+                if (executor === undefined) {
+                    // Unpredictable error, return to the initialization
+                    step = ExportJarStep.ResolveJavaProject;
+                    stepMetadata = {
+                        entry: node,
+                        elements: [],
+                        steps: [],
+                    };
+                } else {
+                    step = await executor.execute(stepMetadata);
+                }
             } catch (err) {
                 return err ? reject(`${err}`) : reject();
             }

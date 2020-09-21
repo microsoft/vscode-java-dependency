@@ -4,12 +4,12 @@
 import { pathExists } from "fs-extra";
 import * as _ from "lodash";
 import { basename, extname, join } from "path";
-import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, Uri, window } from "vscode";
+import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, IJarQuickPickItem } from "./utility";
+import { createPickBox } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -99,7 +99,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         let result: boolean = false;
         try {
             result = await new Promise<boolean>(async (resolve, reject) => {
-                const pickBox = createPickBox("Export Jar : Determine elements", "Select the elements",
+                const pickBox = createPickBox<IJarQuickPickItem>("Export Jar : Determine elements", "Select the elements",
                     dependencyItems, stepMetadata.steps.length > 0, true);
                 pickBox.selectedItems = pickedDependencyItems;
                 disposables.push(
@@ -160,4 +160,9 @@ class ClasspathResult {
     public projectRoot: string;
     public classpaths: string[];
     public modulepaths: string[];
+}
+
+interface IJarQuickPickItem extends QuickPickItem {
+    path: string;
+    type: string;
 }

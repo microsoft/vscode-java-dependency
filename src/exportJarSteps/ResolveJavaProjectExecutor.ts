@@ -2,14 +2,14 @@
 // Licensed under the MIT license.
 
 import * as _ from "lodash";
-import { Disposable, Uri, workspace } from "vscode";
+import { Disposable, QuickPickItem, Uri, workspace } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { WorkspaceNode } from "../views/workspaceNode";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, IJarQuickPickItem } from "./utility";
+import { createPickBox } from "./utility";
 
 export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
 
@@ -35,7 +35,7 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
             stepMetadata.projectList = await Jdtls.getProjects(folders[0].uri.toString());
             return;
         }
-        const pickItems: IJarQuickPickItem[] = [];
+        const pickItems: IJavaProjectQuickPickItem[] = [];
         const projectMap: Map<string, INodeData[]> = new Map<string, INodeData[]>();
         for (const folder of folders) {
             const projects: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
@@ -53,7 +53,7 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         }
         const disposables: Disposable[] = [];
         await new Promise((resolve, reject) => {
-            const pickBox = createPickBox("Export Jar : Determine project", "Select the project", pickItems, false);
+            const pickBox = createPickBox<IJavaProjectQuickPickItem>("Export Jar : Determine project", "Select the project", pickItems, false);
             disposables.push(
                 pickBox.onDidAccept(() => {
                     stepMetadata.workspaceUri = pickBox.selectedItems[0].uri;
@@ -73,4 +73,8 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         }
     }
 
+}
+
+interface IJavaProjectQuickPickItem extends QuickPickItem {
+    uri: Uri;
 }

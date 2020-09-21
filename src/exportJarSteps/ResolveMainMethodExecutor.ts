@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Disposable, ProgressLocation, QuickInputButtons, window } from "vscode";
+import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, IJarQuickPickItem } from "./utility";
+import { createPickBox } from "./utility";
 
 export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
 
@@ -42,14 +42,14 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
             stepMetadata.selectedMainMethod = "";
             return true;
         }
-        const pickItems: IJarQuickPickItem[] = [];
+        const pickItems: QuickPickItem[] = [];
         for (const mainMethod of mainMethods) {
             pickItems.push({
                 label: ResolveMainMethodExecutor.getName(mainMethod),
                 description: mainMethod.name,
             });
         }
-        const noMainClassItem: IJarQuickPickItem = {
+        const noMainClassItem: QuickPickItem = {
             label: "<without main class>",
             description: "",
         };
@@ -58,7 +58,7 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
         let result: boolean = false;
         try {
             result = await new Promise<boolean>(async (resolve, reject) => {
-                const pickBox = createPickBox("Export Jar : Determine main class", "Select the main class",
+                const pickBox = createPickBox<QuickPickItem>("Export Jar : Determine main class", "Select the main class",
                     pickItems, stepMetadata.steps.length > 0);
                 disposables.push(
                     pickBox.onDidTriggerButton((item) => {

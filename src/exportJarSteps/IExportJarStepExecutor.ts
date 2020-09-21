@@ -5,6 +5,6 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { IStepMetadata } from "./IStepMetadata";
 
 export interface IExportJarStepExecutor {
-    getNextStep(): ExportJarStep | undefined;
+    getNextStep(): ExportJarStep;
     execute(stepMetadata?: IStepMetadata): Promise<ExportJarStep>;
 }
