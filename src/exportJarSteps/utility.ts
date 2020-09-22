@@ -1,16 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { QuickInputButtons, QuickPick, QuickPickItem, window } from "vscode";
+import { QuickInputButtons, QuickPick, QuickPickItem, Uri, window } from "vscode";
 
-export interface IJarQuickPickItem extends QuickPickItem {
-    uri?: string;
-    type?: string;
-}
-
-export function createPickBox(title: string, placeholder: string, items: IJarQuickPickItem[],
-                              backBtnEnabled: boolean, canSelectMany: boolean = false): QuickPick<IJarQuickPickItem> {
-    const pickBox = window.createQuickPick<IJarQuickPickItem>();
+export function createPickBox<T extends QuickPickItem>(title: string, placeholder: string, items: T[],
+                                                       backBtnEnabled: boolean, canSelectMany: boolean = false): QuickPick<T> {
+    const pickBox = window.createQuickPick<T>();
     pickBox.title = title;
     pickBox.placeholder = placeholder;
     pickBox.canSelectMany = canSelectMany;

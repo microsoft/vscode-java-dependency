@@ -2,19 +2,24 @@
 // Licensed under the MIT license.
 
 import * as _ from "lodash";
-import { Disposable, Uri, workspace } from "vscode";
-import { ExportJarStep, IStepMetadata } from "../exportJarFileCommand";
+import { Disposable, QuickPickItem, Uri, workspace } from "vscode";
+import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { WorkspaceNode } from "../views/workspaceNode";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
-import { createPickBox, IJarQuickPickItem } from "./utility";
+import { IStepMetadata } from "./IStepMetadata";
+import { createPickBox } from "./utility";
 
 export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
 
+    public getNextStep(): ExportJarStep {
+        return ExportJarStep.ResolveMainMethod;
+    }
+
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
         await this.resolveJavaProject(stepMetadata, stepMetadata.entry);
-        return ExportJarStep.ResolveMainMethod;
+        return this.getNextStep();
     }
 
     private async resolveJavaProject(stepMetadata: IStepMetadata, node?: INodeData): Promise<void> {
@@ -30,31 +35,30 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
             stepMetadata.projectList = await Jdtls.getProjects(folders[0].uri.toString());
             return;
         }
-        const pickItems: IJarQuickPickItem[] = [];
+        const pickItems: IJavaProjectQuickPickItem[] = [];
         const projectMap: Map<string, INodeData[]> = new Map<string, INodeData[]>();
         for (const folder of folders) {
-            const uriString: string = folder.uri.toString();
-            const projects: INodeData[] = await Jdtls.getProjects(uriString);
+            const projects: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
             if (!_.isEmpty(projects)) {
                 pickItems.push({
                     label: folder.name,
                     description: folder.uri.fsPath,
-                    uri: uriString,
+                    uri: folder.uri,
                 });
-                projectMap.set(uriString, projects);
+                projectMap.set(folder.uri.toString(), projects);
             }
         }
         if (_.isEmpty(pickItems)) {
             throw new Error("No java project found. Please make sure your Java project exists in the workspace.");
         }
-        stepMetadata.isPickedWorkspace = true;
         const disposables: Disposable[] = [];
         await new Promise((resolve, reject) => {
-            const pickBox = createPickBox("Export Jar : Determine project", "Select the project", pickItems, false);
+            const pickBox = createPickBox<IJavaProjectQuickPickItem>("Export Jar : Determine project", "Select the project", pickItems, false);
             disposables.push(
                 pickBox.onDidAccept(() => {
-                    stepMetadata.workspaceUri = Uri.parse(pickBox.selectedItems[0].uri);
-                    stepMetadata.projectList = projectMap.get(pickBox.selectedItems[0].uri);
+                    stepMetadata.workspaceUri = pickBox.selectedItems[0].uri;
+                    stepMetadata.projectList = projectMap.get(pickBox.selectedItems[0].uri.toString());
+                    stepMetadata.steps.push(ExportJarStep.ResolveJavaProject);
                     return resolve();
                 }),
                 pickBox.onDidHide(() => {
@@ -69,4 +73,8 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         }
     }
 
+}
+
+interface IJavaProjectQuickPickItem extends QuickPickItem {
+    uri: Uri;
 }
