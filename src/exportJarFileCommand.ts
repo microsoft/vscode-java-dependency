@@ -7,20 +7,11 @@ import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { buildWorkspace } from "./build";
 import { GenerateJarExecutor } from "./exportJarSteps/GenerateJarExecutor";
 import { IExportJarStepExecutor } from "./exportJarSteps/IExportJarStepExecutor";
+import { IStepMetadata } from "./exportJarSteps/IStepMetadata";
 import { ResolveJavaProjectExecutor } from "./exportJarSteps/ResolveJavaProjectExecutor";
 import { ResolveMainMethodExecutor } from "./exportJarSteps/ResolveMainMethodExecutor";
 import { isStandardServerReady } from "./extension";
 import { INodeData } from "./java/nodeData";
-
-export interface IStepMetadata {
-    entry?: INodeData;
-    workspaceUri?: Uri;
-    isPickedWorkspace: boolean;
-    projectList?: INodeData[];
-    selectedMainMethod?: string;
-    outputPath?: string;
-    elements: string[];
-}
 
 export enum ExportJarStep {
     ResolveJavaProject = "RESOLVEJAVAPROJECT",
@@ -46,14 +37,25 @@ export async function createJarFile(node?: INodeData) {
             return reject();
         }
         let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
-        const stepMetadata: IStepMetadata = {
+        let stepMetadata: IStepMetadata = {
             entry: node,
-            isPickedWorkspace: false,
             elements: [],
+            steps: [],
         };
         while (step !== ExportJarStep.Finish) {
             try {
-                step = await stepMap.get(step).execute(stepMetadata);
+                const executor: IExportJarStepExecutor = stepMap.get(step);
+                if (executor === undefined) {
+                    // Unpredictable error, return to the initialization
+                    step = ExportJarStep.ResolveJavaProject;
+                    stepMetadata = {
+                        entry: node,
+                        elements: [],
+                        steps: [],
+                    };
+                } else {
+                    step = await executor.execute(stepMetadata);
+                }
             } catch (err) {
                 return err ? reject(`${err}`) : reject();
             }
