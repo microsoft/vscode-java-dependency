@@ -132,7 +132,8 @@
       {
         "command": "java.view.package.newJavaClass",
         "title": "%contributes.commands.java.view.package.newJavaClass%",
-        "category": "Java"
+        "category": "Java",
+        "icon": "$(add)"
       },
       {
         "command": "java.view.package.newPackage",
@@ -248,9 +249,9 @@
       ],
       "explorer/context": [
         {
-            "command": "java.view.package.revealInProjectExplorer",
-            "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
-            "group": "java:project_10"
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "java:project_10"
         }
       ],
       "view/title": [
@@ -320,6 +321,16 @@
           "command": "java.view.package.newJavaClass",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "new@10"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "inline@add_0"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "inline@add_0"
         },
         {
           "command": "java.view.package.newPackage",
