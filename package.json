@@ -67,6 +67,11 @@
         "title": "%contributes.commands.java.project.clean.workspace%"
       },
       {
+        "command": "java.view.package.revealInProjectExplorer",
+        "title": "%contributes.commands.java.view.package.revealInProjectExplorer%",
+        "category": "Java"
+      },
+      {
         "command": "java.view.package.refresh",
         "title": "%contributes.commands.java.view.package.refresh%",
         "category": "Java",
@@ -234,6 +239,17 @@
         {
           "command": "java.project.clean.workspace",
           "when": "never"
+        },
+        {
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "never"
+        }
+      ],
+      "explorer/context": [
+        {
+            "command": "java.view.package.revealInProjectExplorer",
+            "when": "resourceExtname == .java && extensionActivated && java:serverMode == Standard",
+            "group": "java:project_10"
         }
       ],
       "view/title": [

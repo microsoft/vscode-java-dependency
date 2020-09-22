@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
+import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
+import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { Commands } from "../commands";
 import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -42,6 +44,14 @@ export class DependencyExplorer implements Disposable {
                 if (window.activeTextEditor && Settings.syncWithFolderExplorer()) {
                     this.reveal(window.activeTextEditor.document.uri);
                 }
+            }),
+        );
+
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER, async (uri: Uri) => {
+                await commands.executeCommand(Commands.JAVA_PROJECT_EXPLORER_FOCUS);
+                await commands.executeCommand(Commands.VIEW_PACKAGE_OPEN_FILE, uri);
+                this.reveal(uri);
             }),
         );
     }

@@ -36,6 +36,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_NEW_JAVA_PACKAGE = "java.view.package.newPackage";
 
+    export const VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER = "java.view.package.revealInProjectExplorer";
+
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
     export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
@@ -47,6 +49,8 @@ export namespace Commands {
     export const JAVA_PROJECT_BUILD_WORKSPACE = "java.project.build.workspace";
 
     export const JAVA_PROJECT_CLEAN_WORKSPACE = "java.project.clean.workspace";
+
+    export const JAVA_PROJECT_EXPLORER_FOCUS = "javaProjectExplorer.focus";
 
     export const JAVA_MAVEN_CREATE_PROJECT = "maven.archetype.generate";
 
