@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { commands, Event, Extension, ExtensionContext, extensions, Uri } from "vscode";
-import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { Context } from "./constants";
 import { contextManager } from "./contextManager";
@@ -19,49 +19,52 @@ export async function activate(context: ExtensionContext): Promise<any> {
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
-    const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
-    if (extension && extension.isActive) {
-        const extensionApi: any = extension.exports;
-        if (!extensionApi) {
-            return;
-        }
-
-        serverMode = extensionApi.serverMode;
-
-        if (extensionApi.onDidClasspathUpdate) {
-            const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
-            context.subscriptions.push(onDidClasspathUpdate(async () => {
-                await commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
-            }));
-        }
-
-        if (extensionApi.onDidServerModeChange) {
-            const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
-            context.subscriptions.push(onDidServerModeChange(async (mode: string) => {
-                serverMode = mode;
-                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
-            }));
-        }
-
-        if (extensionApi.onDidProjectsImport) {
-            const onDidProjectsImport: Event<Uri[]> = extensionApi.onDidProjectsImport;
-            context.subscriptions.push(onDidProjectsImport(async () => {
-                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
-            }));
-        }
-    }
-
-    Settings.initialize(context);
-    contextManager.initialize(context);
-
     context.subscriptions.push(new ProjectController(context));
-    context.subscriptions.push(new LibraryController(context));
-    context.subscriptions.push(new DependencyExplorer(context));
-    context.subscriptions.push(contextManager);
-    context.subscriptions.push(syncHandler);
-    contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_ACTIVATE, async () => {
+        const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
+        if (extension) {
+            await extension.activate();
+            const extensionApi: any = extension.exports;
+            if (!extensionApi) {
+                return;
+            }
 
-    initExpService(context);
+            serverMode = extensionApi.serverMode;
+
+            if (extensionApi.onDidClasspathUpdate) {
+                const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
+                context.subscriptions.push(onDidClasspathUpdate(async () => {
+                    await commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
+                }));
+            }
+
+            if (extensionApi.onDidServerModeChange) {
+                const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
+                context.subscriptions.push(onDidServerModeChange(async (mode: string) => {
+                    serverMode = mode;
+                    commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
+                }));
+            }
+
+            if (extensionApi.onDidProjectsImport) {
+                const onDidProjectsImport: Event<Uri[]> = extensionApi.onDidProjectsImport;
+                context.subscriptions.push(onDidProjectsImport(async () => {
+                    commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
+                }));
+            }
+        }
+
+        Settings.initialize(context);
+        contextManager.initialize(context);
+
+        context.subscriptions.push(new LibraryController(context));
+        context.subscriptions.push(new DependencyExplorer(context));
+        context.subscriptions.push(contextManager);
+        context.subscriptions.push(syncHandler);
+        contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+
+        initExpService(context);
+    }));
 }
 
 // this method is called when your extension is deactivated

@@ -31,7 +31,8 @@
   "main": "./dist/extension",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.13.0.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.13.0.jar",
+      "./server/com.microsoft.jdtls.ext.activator-0.13.0.jar"
     ],
     "commands": [
       {
@@ -178,23 +179,23 @@
       "commandPalette": [
         {
           "command": "java.view.package.refresh",
-          "when": "java:serverMode != LightWeight"
+          "when": "java:projectManagerActivated && java:serverMode == Standard"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
-          "when": "java:serverMode != LightWeight"
+          "when": "java:projectManagerActivated && java:serverMode == Standard"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
-          "when": "java:serverMode != LightWeight"
+          "when": "java:projectManagerActivated && java:serverMode == Standard"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
-          "when": "java:serverMode != LightWeight"
+          "when": "java:projectManagerActivated && java:serverMode == Standard"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
-          "when": "java:serverMode != LightWeight"
+          "when": "java:projectManagerActivated && java:serverMode == Standard"
         },
         {
           "command": "java.view.package.revealFileInOS",
@@ -202,7 +203,7 @@
         },
         {
           "command": "java.view.package.exportJar",
-          "when": "java:serverMode != LightWeight"
+          "when": "java:projectManagerActivated && java:serverMode == Standard"
         },
         {
           "command": "java.view.package.copyFilePath",
@@ -248,54 +249,54 @@
       "explorer/context": [
         {
             "command": "java.view.package.revealInProjectExplorer",
-            "when": "resourceExtname == .java && extensionActivated && java:serverMode == Standard",
+            "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
             "group": "java:project_10"
         }
       ],
       "view/title": [
         {
           "command": "java.project.create",
-          "when": "view == javaProjectExplorer",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && java:serverMode == Standard",
           "group": "navigation@10"
         },
         {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && java:serverMode != LightWeight && workspaceFolderCount != 0",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && java:serverMode == Standard && workspaceFolderCount != 0",
           "group": "navigation@20"
         },
         {
           "command": "java.view.package.refresh",
-          "when": "view == javaProjectExplorer && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && java:serverMode == Standard",
           "group": "navigation@30"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
-          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation == flat && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && config.java.dependency.packagePresentation == flat && java:serverMode == Standard",
           "group": "overflow_10@10"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
-          "when": "view == javaProjectExplorer && config.java.dependency.packagePresentation != flat && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && config.java.dependency.packagePresentation != flat && java:serverMode == Standard",
           "group": "overflow_10@10"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
-          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer != true && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && config.java.dependency.syncWithFolderExplorer != true && java:serverMode == Standard",
           "group": "overflow_10@20"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
-          "when": "view == javaProjectExplorer && config.java.dependency.syncWithFolderExplorer == true && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && config.java.dependency.syncWithFolderExplorer == true && java:serverMode == Standard",
           "group": "overflow_10@20"
         },
         {
           "command": "java.project.build.workspace",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && java:serverMode == Standard && workspaceFolderCount != 0",
           "group": "overflow_20@10"
         },
         {
           "command": "java.project.clean.workspace",
-          "when": "view == javaProjectExplorer && workspaceFolderCount != 0",
+          "when": "view == javaProjectExplorer && java:projectManagerActivated && java:serverMode == Standard && workspaceFolderCount != 0",
           "group": "overflow_20@20"
         }
       ],
@@ -351,8 +352,7 @@
       "explorer": [
         {
           "id": "javaProjectExplorer",
-          "name": "Java Projects",
-          "when": "extensionActivated"
+          "name": "Java Projects"
         }
       ]
     },
@@ -361,6 +361,11 @@
         "view": "javaProjectExplorer",
         "contents": "No projects are listed because the Java Language Server is currently running in [LightWeight Mode](https://aka.ms/vscode-java-lightweight). To show projects, click on the button to switch to Standard Mode.\n[Switch to Standard Mode](command:java.server.mode.switch?%5B%22Standard%22,true%5D)",
         "when": "java:serverMode == LightWeight"
+      },
+      {
+        "view": "javaProjectExplorer",
+        "contents": "You can create a new Java project by clicking the below button.\n[Create new Java project](command:java.project.create)",
+        "when": "!java:projectManagerActivated || java:serverMode != Standard"
       }
     ]
   },
@@ -371,9 +376,6 @@
     "build-server": "./node_modules/.bin/gulp build_server",
     "vscode:prepublish": "tsc -p ./ && webpack --mode production"
   },
-  "extensionDependencies": [
-    "redhat.java"
-  ],
   "devDependencies": {
     "@types/fs-extra": "^5.1.0",
     "@types/glob": "^7.1.3",

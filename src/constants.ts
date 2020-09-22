@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 export namespace Context {
-    export const EXTENSION_ACTIVATED: string = "extensionActivated";
+    export const EXTENSION_ACTIVATED: string = "java:projectManagerActivated";
 }
 
 export namespace Explorer {
