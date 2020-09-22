@@ -15,8 +15,11 @@ gulp.task('build_server', ()=>
 {
   cp.execSync(mvnw()+ ' clean package', {cwd:server_dir, stdio:[0,1,2]} );
   
-  return gulp.src(server_dir + '/com.microsoft.jdtls.ext.core/target/com.microsoft.jdtls.ext.core*.jar')
-        .pipe(gulp.dest('./server'))
+  return gulp.src([
+      server_dir + '/com.microsoft.jdtls.ext.core/target/com.microsoft.jdtls.ext.core*.jar',
+      server_dir + '/com.microsoft.jdtls.ext.activator/target/com.microsoft.jdtls.ext.activator*.jar',
+    ])
+    .pipe(gulp.dest('./server'))
 });
 
 

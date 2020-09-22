@@ -1,6 +1,7 @@
 {
     "projects": [
-        "./jdtls.ext/com.microsoft.jdtls.ext.core"
+        "./jdtls.ext/com.microsoft.jdtls.ext.core",
+        "./jdtls.ext/com.microsoft.jdtls.ext.activator"
     ],
    "targetPlatform": "./jdtls.ext/target.target"
 }

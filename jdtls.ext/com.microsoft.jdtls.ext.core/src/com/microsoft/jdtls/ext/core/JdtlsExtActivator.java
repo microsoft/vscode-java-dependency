@@ -17,7 +17,6 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 
 public class JdtlsExtActivator implements BundleActivator {
 
@@ -37,19 +36,6 @@ public class JdtlsExtActivator implements BundleActivator {
     @Override
     public void stop(BundleContext bundleContext) throws Exception {
         JdtlsExtActivator.context = null;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T acquireService(Class<T> serviceInterface) {
-        ServiceReference<T> reference = (ServiceReference<T>) context.getServiceReference(serviceInterface.getName());
-        if (reference == null) {
-            return null;
-        }
-        T service = context.getService(reference);
-        if (service != null) {
-            context.ungetService(reference);
-        }
-        return service;
     }
 
     public static void log(IStatus status) {

@@ -52,6 +52,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_EXPLORER_FOCUS = "javaProjectExplorer.focus";
 
+    export const JAVA_PROJECT_ACTIVATE = "java.project.activate";
+
     export const JAVA_MAVEN_CREATE_PROJECT = "maven.archetype.generate";
 
     export const JAVA_PROJECT_LIST = "java.project.list";
