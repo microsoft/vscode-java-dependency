@@ -6,7 +6,7 @@
   "contributes.commands.java.view.package.refresh": "Refresh",
   "contributes.commands.java.project.build.workspace": "Build Workspace",
   "contributes.commands.java.project.clean.workspace": "Clean Workspace",
-  "contributes.commands.java.view.package.revealInProjectExplorer": "Open Java Projects",
+  "contributes.commands.java.view.package.revealInProjectExplorer": "Reveal in Java Projects",
   "contributes.commands.java.view.package.changeToFlatPackageView":"Flat View",
   "contributes.commands.java.view.package.changeToHierarchicalPackageView":"Hierarchical View",
   "contributes.commands.java.view.package.linkWithFolderExplorer":"Synchronize with Editor",
