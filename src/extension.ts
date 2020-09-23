@@ -4,7 +4,7 @@
 import { commands, Event, Extension, ExtensionContext, extensions, Uri } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
-import { Context } from "./constants";
+import { Build, Context } from "./constants";
 import { contextManager } from "./contextManager";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
@@ -62,6 +62,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         context.subscriptions.push(contextManager);
         context.subscriptions.push(syncHandler);
         contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+        contextManager.setContextValue(Context.SUPPORTED_BUILD_FILES, Build.FILE_NAMES);
 
         initExpService(context);
     }));
