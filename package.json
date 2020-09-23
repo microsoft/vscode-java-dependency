@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.44.0"
+    "vscode": "^1.49.0"
   },
   "repository": {
     "type": "git",
@@ -250,8 +250,25 @@
       "explorer/context": [
         {
           "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceFilename in java:supportedBuildFiles && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "navigation@100"
+        },
+        {
+          "command": "java.view.package.revealInProjectExplorer",
           "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
-          "group": "java:project_10"
+          "group": "navigation@100"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceFilename in java:supportedBuildFiles && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "2_files@100"
+        },
+        {
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "2_files@100"
         }
       ],
       "view/title": [
@@ -394,7 +411,7 @@
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^5.2.7",
     "@types/node": "^8.10.62",
-    "@types/vscode": "1.44.0",
+    "@types/vscode": "1.49.0",
     "glob": "^7.1.6",
     "gulp": "^4.0.2",
     "gulp-copy": "^4.0.1",

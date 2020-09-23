@@ -3,6 +3,7 @@
 
 export namespace Context {
     export const EXTENSION_ACTIVATED: string = "java:projectManagerActivated";
+    export const SUPPORTED_BUILD_FILES: string = "java:supportedBuildFiles";
 }
 
 export namespace Explorer {
@@ -14,4 +15,8 @@ export namespace Explorer {
         Package = "package",
         Jar = "jar",
     }
+}
+
+export namespace Build {
+    export const FILE_NAMES: string[] = ["pom.xml", "build.gradle"];
 }

@@ -200,6 +200,10 @@ public class PackageCommand {
                 } else {
                     return getParentAncestorNodes(resource);
                 }
+            } else {
+                IContainer container = JDTUtils.findFolder(typeRootUri);
+                IJavaElement element = JavaCore.create(container);
+                result.add(PackageNode.createNodeForProject(element));
             }
         }
 
