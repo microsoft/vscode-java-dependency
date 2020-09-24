@@ -200,7 +200,7 @@
         },
         {
           "command": "java.view.package.revealFileInOS",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.exportJar",
@@ -208,43 +208,43 @@
         },
         {
           "command": "java.view.package.copyFilePath",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.addLibraries",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.removeLibrary",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.refreshLibraries",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.newJavaClass",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.newPackage",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.build.workspace",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.clean.workspace",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.revealInProjectExplorer",
-          "when": "never"
+          "when": "false"
         }
       ],
       "explorer/context": [
