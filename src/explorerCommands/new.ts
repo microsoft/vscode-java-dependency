@@ -89,10 +89,14 @@ function getNewFilePath(basePath: string, className: string): string {
 export async function newPackage(node: DataNode): Promise<void> {
     let defaultValue: string;
     let packageRootPath: string;
-    if (node.nodeData.kind === NodeKind.PackageRoot) {
+    const nodeKind = node.nodeData.kind;
+    if (nodeKind === NodeKind.Project) {
+        defaultValue = "";
+        packageRootPath = await getPackageFsPath(node);
+    } else if (nodeKind === NodeKind.PackageRoot) {
         defaultValue = "";
         packageRootPath = Uri.parse(node.uri).fsPath;
-    } else if (node.nodeData.kind === NodeKind.Package) {
+    } else if (nodeKind === NodeKind.Package) {
         defaultValue = node.nodeData.name + ".";
         packageRootPath = getPackageRootPath(Uri.parse(node.uri).fsPath, node.nodeData.name);
     } else {
