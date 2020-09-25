@@ -4,7 +4,7 @@ Bundle-Name: JDTLS EXT Activator
 Bundle-SymbolicName: com.microsoft.jdtls.ext.activator;singleton:=true
 Bundle-Version: 0.13.0
 Bundle-Activator: com.microsoft.jdtls.ext.activator.JdtlsExtActivator
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.eclipse.jdt.core,
  org.osgi.framework;version="1.3.0"
 Require-Bundle: org.eclipse.core.runtime,
