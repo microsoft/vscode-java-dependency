@@ -6,6 +6,7 @@ import { Commands } from "../commands";
 import { INodeData } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
+import { Explorer } from "../constants";
 
 export class FileNode extends DataNode {
     constructor(nodeData: INodeData, parent: DataNode) {
@@ -34,5 +35,9 @@ export class FileNode extends DataNode {
             command: Commands.VIEW_PACKAGE_OPEN_FILE,
             arguments: [this.uri],
         };
+    }
+
+    protected get contextValue(): string {
+        return Explorer.ContextValueType.File;
     }
 }

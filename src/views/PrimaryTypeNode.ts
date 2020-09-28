@@ -9,6 +9,7 @@ import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { DocumentSymbolNode } from "./documentSymbolNode";
 import { ExplorerNode } from "./explorerNode";
+import { Explorer } from "../constants";
 
 export class PrimaryTypeNode extends DataNode {
 
@@ -87,5 +88,19 @@ export class PrimaryTypeNode extends DataNode {
             command: Commands.VIEW_PACKAGE_OPEN_FILE,
             arguments: [this.uri],
         };
+    }
+
+    protected get contextValue(): string {
+        let context: string = Explorer.ContextValueType.SourceFile;
+        const type = this.nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND];
+
+        if (type === TypeKind.Enum) {
+            context += "+enum";
+        } else if (type === TypeKind.Interface) {
+            context += "+interface";
+        } else {
+            context += "+class";
+        }
+        return context;
     }
 }

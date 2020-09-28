@@ -138,6 +138,11 @@
         "command": "java.view.package.newPackage",
         "title": "%contributes.commands.java.view.package.newPackage%",
         "category": "Java"
+      },
+      {
+        "command": "java.view.package.moveFileToTrash",
+        "title": "%contributes.commands.java.view.package.moveFileToTrash%",
+        "category": "Java"
       }
     ],
     "configuration": {
@@ -234,6 +239,10 @@
           "when": "never"
         },
         {
+          "command": "java.view.package.moveFileToTrash",
+          "when": "never"
+        },
+        {
           "command": "java.project.build.workspace",
           "when": "never"
         },
@@ -325,6 +334,21 @@
           "command": "java.view.package.newPackage",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "new@20"
+        },
+        {
+          "command": "java.view.package.moveFileToTrash",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "delete@10"
+        },
+        {
+          "command": "java.view.package.moveFileToTrash",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:file(?=.*?\\b\\+uri\\b)/",
+          "group": "delete@10"
+        },
+        {
+          "command": "java.view.package.moveFileToTrash",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:sourceFile(?=.*?\\b\\+uri\\b)/",
+          "group": "delete@10"
         },
         {
           "command": "java.project.addLibraries",

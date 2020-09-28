@@ -36,6 +36,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_NEW_JAVA_PACKAGE = "java.view.package.newPackage";
 
+    export const VIEW_PACKAGE_MOVE_FILE_TO_TRASH = "java.view.package.moveFileToTrash";
+
     export const VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER = "java.view.package.revealInProjectExplorer";
 
     export const JAVA_PROJECT_CREATE = "java.project.create";
