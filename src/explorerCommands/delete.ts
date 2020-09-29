@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { window, workspace,  Uri } from "vscode";
+import { window, workspace, Uri } from "vscode";
 import { DataNode } from "../views/dataNode";
 
 const confirmMessage = "Move to Recycle Bin";
