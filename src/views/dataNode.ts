@@ -2,11 +2,15 @@
 // Licensed under the MIT license.
 
 import * as _ from "lodash";
-import { ProviderResult, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
+import { ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { INodeData } from "../java/nodeData";
+import { Lock } from "../utils/Lock";
 import { ExplorerNode } from "./explorerNode";
 
 export abstract class DataNode extends ExplorerNode {
+
+    protected _lock: Lock = new Lock();
+
     constructor(protected _nodeData: INodeData, parent: DataNode) {
         super(parent);
     }
@@ -56,14 +60,18 @@ export abstract class DataNode extends ExplorerNode {
         return (childNode && paths.length) ? childNode.revealPaths(paths) : childNode;
     }
 
-    public getChildren(): ProviderResult<ExplorerNode[]> {
-        if (!this._nodeData.children) {
-            return this.loadData().then((res) => {
-                this._nodeData.children = res;
+    public async getChildren(): Promise<ExplorerNode[]> {
+        try {
+            await this._lock.acquire();
+            if (!this._nodeData.children) {
+                const data = await this.loadData();
+                this._nodeData.children = data;
                 return this.createChildNodeList();
-            });
+            }
+            return this.createChildNodeList();
+        } finally {
+            this._lock.release();
         }
-        return this.createChildNodeList();
     }
 
     protected computeContextValue(): string {

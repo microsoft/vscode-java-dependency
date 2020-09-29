@@ -25,17 +25,21 @@ export class HierarchicalPackageNode extends PackageNode {
         }
     }
 
-    public getChildren(): ProviderResult<ExplorerNode[]> {
-        return this.loadData().then((res) => {
-            if (res) {
+    public async getChildren(): Promise<ExplorerNode[]> {
+        try {
+            await this._lock.acquire();
+            const data = await this.loadData();
+            if (data) {
                 if (this.nodeData?.children) {
-                    this.nodeData.children.push(...res);
+                    this.nodeData.children.push(...data);
                 } else {
-                    this.nodeData.children = res;
+                    this.nodeData.children = data;
                 }
             }
             return this.createChildNodeList();
-        });
+        } finally {
+            this._lock.release();
+        }
     }
 
     public async revealPaths(paths: INodeData[]): Promise<DataNode> {
