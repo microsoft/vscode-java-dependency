@@ -22,6 +22,8 @@ export class DependencyExplorer implements Disposable {
 
     private _dataProvider: DependencyDataProvider;
 
+    private readonly SUPPORTED_URI_SCHEMES: string[] = ["file", "jdt"];
+
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
         this._dependencyViewer = window.createTreeView("javaProjectExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
@@ -30,7 +32,7 @@ export class DependencyExplorer implements Disposable {
             window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
                 if (this._dependencyViewer.visible && textEditor && textEditor.document && Settings.syncWithFolderExplorer()) {
                     const uri: Uri = textEditor.document.uri;
-                    if (uri.scheme === "file") {
+                    if (this.SUPPORTED_URI_SCHEMES.includes(uri.scheme)) {
                         this.reveal(uri);
                     }
                 }
