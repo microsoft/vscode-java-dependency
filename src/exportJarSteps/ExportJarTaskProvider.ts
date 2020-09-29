@@ -3,7 +3,7 @@
 
 import {
     CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition, TaskProvider,
-    TaskRevealKind, TerminalDimensions, workspace
+    TaskRevealKind, TerminalDimensions, workspace,
 } from "vscode";
 import { createJarFile } from "../exportJarFileCommand";
 import { IStepMetadata } from "./IStepMetadata";
