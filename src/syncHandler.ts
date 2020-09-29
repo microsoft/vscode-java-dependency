@@ -87,7 +87,7 @@ class SyncHandler implements Disposable {
             } else {
                 // the direct parent is not rendered in the explorer, the returned node
                 // is other package fragment, we need to refresh the package fragment root.
-                while (node && node.nodeData.kind !== NodeKind.PackageRoot) {
+                while (node && node.nodeData.kind > NodeKind.PackageRoot) {
                     node = <DataNode>node.getParent();
                 }
                 return node;
