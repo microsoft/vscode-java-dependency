@@ -28,38 +28,38 @@ const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarSte
 
 let isExportingJar: boolean = false;
 
-export async function createJarFileEntry(node?: INodeData): Promise<boolean> {
+export async function createJarFileEntry(node?: INodeData): Promise<void> {
     if (!isStandardServerReady() || await buildWorkspace() === false || isExportingJar) {
         return;
     }
     isExportingJar = true;
-    const step: ExportJarStep = ExportJarStep.ResolveJavaProject;
+    let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
     const stepMetadata: IStepMetadata = {
         entry: node,
         steps: [],
     };
-    try {
-        await stepMap.get(step).execute(stepMetadata);
-    } catch (err) {
-        isExportingJar = false;
-        if (err) {
-            failMessage(`${err}`);
-        }
-        return true;
-    }
-    tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata)); // async
-    return new Promise<boolean>((resolve, reject) => {
-        tasks.onDidEndTask((e) => {
-            if (e.execution.task.source === ExportJarTaskProvider.exportJarType) {
-                isExportingJar = false;
-                if (stepMetadata.workspaceFolder === undefined) {
-                    resolve(false);
-                } else {
-                    resolve(true);
-                }
+    while (step !== ExportJarStep.Finish) {
+        try {
+            step = await stepMap.get(step).execute(stepMetadata);
+        } catch (err) {
+            isExportingJar = false;
+            if (err) {
+                failMessage(`${err}`);
             }
+            return;
+        }
+        tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata));
+        await new Promise<void>((resolve, reject) => {
+            tasks.onDidEndTask((e) => {
+                if (e.execution.task.source === ExportJarTaskProvider.exportJarType) {
+                    isExportingJar = false;
+                    step = (stepMetadata.workspaceFolder === undefined) ? ExportJarStep.ResolveJavaProject : ExportJarStep.Finish;
+                    resolve();
+                }
+            });
         });
-    });
+    }
+    return;
 }
 
 export async function createJarFile(stepMetadata: IStepMetadata) {
