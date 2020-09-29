@@ -100,13 +100,10 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             });
         }
 
-        if (!this._rootItems || !element) {
-            return this.getRootNodes();
-        } else {
-            const children: ExplorerNode[] = await element.getChildren();
-            explorerNodeCache.saveNodes(children);
-            return children;
-        }
+        const children: ExplorerNode[] = (!this._rootItems || !element) ?
+            await this.getRootNodes() : await element.getChildren();
+        explorerNodeCache.saveNodes(children);
+        return children;
     }
 
     public getParent(element: ExplorerNode): ProviderResult<ExplorerNode> {

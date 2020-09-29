@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.44.0"
+    "vscode": "^1.49.0"
   },
   "repository": {
     "type": "git",
@@ -132,7 +132,8 @@
       {
         "command": "java.view.package.newJavaClass",
         "title": "%contributes.commands.java.view.package.newJavaClass%",
-        "category": "Java"
+        "category": "Java",
+        "icon": "$(add)"
       },
       {
         "command": "java.view.package.newPackage",
@@ -204,7 +205,7 @@
         },
         {
           "command": "java.view.package.revealFileInOS",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.exportJar",
@@ -212,31 +213,31 @@
         },
         {
           "command": "java.view.package.copyFilePath",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.addLibraries",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.removeLibrary",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.refreshLibraries",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.newJavaClass",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.newPackage",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.moveFileToTrash",
@@ -244,22 +245,39 @@
         },
         {
           "command": "java.project.build.workspace",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.clean.workspace",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.view.package.revealInProjectExplorer",
-          "when": "never"
+          "when": "false"
         }
       ],
       "explorer/context": [
         {
-            "command": "java.view.package.revealInProjectExplorer",
-            "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
-            "group": "java:project_10"
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceFilename in java:supportedBuildFiles && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "navigation@100"
+        },
+        {
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "navigation@100"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceFilename in java:supportedBuildFiles && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "2_files@100"
+        },
+        {
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceExtname == .java && java:projectManagerActivated && java:serverMode == Standard",
+          "group": "2_files@100"
         }
       ],
       "view/title": [
@@ -331,8 +349,28 @@
           "group": "new@10"
         },
         {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "inline@add_0"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "new@10"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "inline@add_0"
+        },
+        {
           "command": "java.view.package.newPackage",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "new@20"
+        },
+        {
+          "command": "java.view.package.newPackage",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "new@20"
         },
         {
@@ -407,7 +445,7 @@
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^5.2.7",
     "@types/node": "^8.10.62",
-    "@types/vscode": "1.44.0",
+    "@types/vscode": "1.49.0",
     "glob": "^7.1.6",
     "gulp": "^4.0.2",
     "gulp-copy": "^4.0.1",

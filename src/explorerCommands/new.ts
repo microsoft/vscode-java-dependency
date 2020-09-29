@@ -3,13 +3,17 @@
 
 import * as fse from "fs-extra";
 import * as path from "path";
-import { Uri, window, workspace, WorkspaceEdit } from "vscode";
+import { QuickPickItem, Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
 import { isJavaIdentifier, isKeyword } from "../utility";
 import { DataNode } from "../views/dataNode";
 
 export async function newJavaClass(node: DataNode): Promise<void> {
-    const packageFsPath: string = Uri.parse(node.uri).fsPath;
+    const packageFsPath: string = await getPackageFsPath(node);
+    if (!packageFsPath) {
+        return;
+    }
+
     const className: string | undefined = await window.showInputBox({
         placeHolder: "Input the class name",
         ignoreFocusOut: true,
@@ -39,6 +43,42 @@ export async function newJavaClass(node: DataNode): Promise<void> {
     workspace.applyEdit(workspaceEdit);
 }
 
+async function getPackageFsPath(node: DataNode): Promise<string> {
+    if (node.nodeData.kind === NodeKind.Project) {
+        const childrenNodes: DataNode[] = await node.getChildren() as DataNode[];
+        const packageRoots: any[] = childrenNodes.filter((child) => {
+            return child.nodeData.kind === NodeKind.PackageRoot;
+        });
+        if (packageRoots.length < 1) {
+            // This might happen for an invisible project with "_" as its root
+            const packageNode: DataNode = childrenNodes.find((child) => {
+                return child.nodeData.kind === NodeKind.Package;
+            });
+            if (packageNode) {
+                return getPackageRootPath(Uri.parse(packageNode.uri).fsPath, packageNode.name);
+            }
+            return "";
+        } else if (packageRoots.length === 1) {
+            return Uri.parse(packageRoots[0].uri).fsPath;
+        } else {
+            const options: ISourceRootPickItem[] = packageRoots.map((root) => {
+                return {
+                    label: root.name,
+                    fsPath: Uri.parse(root.uri).fsPath,
+                };
+            });
+            const choice: ISourceRootPickItem | undefined = await window.showQuickPick(options, {
+                    placeHolder: "Choose a source folder",
+                    ignoreFocusOut: true,
+                },
+            );
+            return choice ? choice.fsPath : "";
+        }
+    }
+
+    return Uri.parse(node.uri).fsPath;
+}
+
 function getNewFilePath(basePath: string, className: string): string {
     if (className.endsWith(".java")) {
         className = className.substr(0, className.length - ".java".length);
@@ -49,13 +89,16 @@ function getNewFilePath(basePath: string, className: string): string {
 export async function newPackage(node: DataNode): Promise<void> {
     let defaultValue: string;
     let packageRootPath: string;
-    if (node.nodeData.kind === NodeKind.PackageRoot) {
+    const nodeKind = node.nodeData.kind;
+    if (nodeKind === NodeKind.Project) {
+        defaultValue = "";
+        packageRootPath = await getPackageFsPath(node);
+    } else if (nodeKind === NodeKind.PackageRoot) {
         defaultValue = "";
         packageRootPath = Uri.parse(node.uri).fsPath;
-    } else if (node.nodeData.kind === NodeKind.Package) {
+    } else if (nodeKind === NodeKind.Package) {
         defaultValue = node.nodeData.name + ".";
-        const numberOfSegment: number = node.nodeData.name.split(".").length;
-        packageRootPath = path.join(Uri.parse(node.uri).fsPath, ...Array(numberOfSegment).fill(".."));
+        packageRootPath = getPackageRootPath(Uri.parse(node.uri).fsPath, node.nodeData.name);
     } else {
         return;
     }
@@ -86,6 +129,11 @@ export async function newPackage(node: DataNode): Promise<void> {
     await fse.ensureDir(getNewPackagePath(packageRootPath, packageName));
 }
 
+function getPackageRootPath(packageFsPath: string, packageName: string): string {
+    const numberOfSegment: number = packageName.split(".").length;
+    return path.join(packageFsPath, ...Array(numberOfSegment).fill(".."));
+}
+
 function getNewPackagePath(packageRootPath: string, packageName: string): string {
     return path.join(packageRootPath, ...packageName.split("."));
 }
@@ -106,4 +154,8 @@ function checkJavaQualifiedName(value: string): string {
     }
 
     return "";
+}
+
+interface ISourceRootPickItem extends QuickPickItem {
+    fsPath: string;
 }
