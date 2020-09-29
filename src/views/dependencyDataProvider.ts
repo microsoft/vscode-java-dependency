@@ -15,6 +15,7 @@ import { isLightWeightMode, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Settings } from "../settings";
+import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
@@ -24,6 +25,8 @@ import { WorkspaceNode } from "./workspaceNode";
 export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     private _onDidChangeTreeData: EventEmitter<ExplorerNode | null | undefined> = new EventEmitter<ExplorerNode | null | undefined>();
+
+    private _lock: Lock = new Lock();
 
     // tslint:disable-next-line:member-ordering
     public onDidChangeTreeData: Event<ExplorerNode | null | undefined> = this._onDidChangeTreeData.event;
@@ -127,7 +130,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     private async getRootProjects(): Promise<ExplorerNode[]> {
-        const rootElements = this._rootItems ? this._rootItems : await this.getChildren();
+        const rootElements = await this.getRootNodes();
         if (rootElements[0] instanceof ProjectNode) {
             return rootElements;
         } else {
@@ -140,9 +143,15 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         }
     }
 
-    private getRootNodes(): Thenable<ExplorerNode[]> {
-        return new Promise((resolve, reject) => {
-            const rootItems = new Array<ExplorerNode>();
+    private async getRootNodes(): Promise<ExplorerNode[]> {
+        try {
+            await this._lock.acquire();
+
+            if (this._rootItems) {
+                return this._rootItems;
+            }
+
+            const rootItems: ExplorerNode[] = [];
             const folders = workspace.workspaceFolders;
             if (folders && folders.length) {
                 if (folders.length > 1) {
@@ -152,19 +161,20 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                         kind: NodeKind.Workspace,
                     }, null)));
                     this._rootItems = rootItems;
-                    resolve(rootItems);
+                    return rootItems;
                 } else {
-                    Jdtls.getProjects(folders[0].uri.toString()).then((result: INodeData[]) => {
-                        result.forEach((project) => {
-                            rootItems.push(new ProjectNode(project, null));
-                        });
-                        this._rootItems = rootItems;
-                        resolve(rootItems);
+                    const result: INodeData[] = await Jdtls.getProjects(folders[0].uri.toString());
+                    result.forEach((project) => {
+                        rootItems.push(new ProjectNode(project, null));
                     });
+                    this._rootItems = rootItems;
+                    return rootItems;
                 }
             } else {
-                reject("No workspace found");
+                throw new Error("No workspace folder found, please open a folder into the workspace first.");
             }
-        });
+        } finally {
+            this._lock.release();
+        }
     }
 }
