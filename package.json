@@ -241,7 +241,7 @@
         },
         {
           "command": "java.view.package.moveFileToTrash",
-          "when": "never"
+          "when": "false"
         },
         {
           "command": "java.project.build.workspace",
