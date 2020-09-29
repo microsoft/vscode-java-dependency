@@ -173,6 +173,15 @@
           ],
           "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
+        },
+        "java.dependency.exportjar.defaultTargetFolder": {
+          "type": "string",
+          "enum": [
+            "${workspaceFolder}/${workspaceFolderBasename}.jar",
+            "askUser"
+          ],
+          "description": "Specific the default output folder of export jar.",
+          "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         }
       }
     },
@@ -435,6 +444,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "is-valid-path": "0.1.1",
     "fs-extra": "^7.0.1",
     "lodash": "^4.17.20",
     "minimatch": "^3.0.4",
