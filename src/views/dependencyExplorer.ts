@@ -29,7 +29,10 @@ export class DependencyExplorer implements Disposable {
         context.subscriptions.push(
             window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
                 if (this._dependencyViewer.visible && textEditor && textEditor.document && Settings.syncWithFolderExplorer()) {
-                    this.reveal(textEditor.document.uri);
+                    const uri: Uri = textEditor.document.uri;
+                    if (uri.scheme === "file") {
+                        this.reveal(uri);
+                    }
                 }
             }),
         );
