@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition, TaskProvider, TaskRevealKind, TerminalDimensions, workspace } from "vscode";
+import {
+    CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition, TaskProvider,
+    TaskRevealKind, TerminalDimensions, workspace
+} from "vscode";
 import { createJarFile } from "../exportJarFileCommand";
 import { IStepMetadata } from "./IStepMetadata";
 
@@ -42,7 +45,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     public onDidWrite: Event<string> = this.writeEmitter.event;
     public onDidClose?: Event<void> = this.closeEmitter.event;
-    
+
     private stepMetadata: IStepMetadata;
 
     constructor(exportJarTaskDefinition: IExportJarTaskDefinition, stepMetadata: IStepMetadata) {
@@ -51,7 +54,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         this.stepMetadata.outputPath = exportJarTaskDefinition.targetPath;
         this.stepMetadata.elements = exportJarTaskDefinition.elements;
     }
-    
+
     public async open(initialDimensions: TerminalDimensions | undefined): Promise<void> {
         await createJarFile(this.stepMetadata);
         this.closeEmitter.fire();
