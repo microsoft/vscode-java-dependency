@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { window, workspace, Uri } from "vscode";
+import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
 
 const confirmMessage = "Move to Recycle Bin";
@@ -18,20 +18,20 @@ export async function deleteFiles(node: DataNode): Promise<void> {
     const isFolder = children && children.length !== 0;
     const message = getInformationMessage(node.name, isFolder);
 
-    let answer: string | undefined = await window.showInformationMessage(
-        message, 
+    const answer: string | undefined = await window.showInformationMessage(
+        message,
         { modal: true },
-        confirmMessage
+        confirmMessage,
     );
 
     if (!answer) {
         return;
     }
-    
-    if (answer == confirmMessage) {
+
+    if (answer === confirmMessage) {
         workspace.fs.delete(Uri.parse(node.uri), {
             recursive: true,
-            useTrash: true
+            useTrash: true,
         });
     }
 }

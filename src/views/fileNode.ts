@@ -3,10 +3,10 @@
 
 import { Command, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { Commands } from "../commands";
+import { Explorer } from "../constants";
 import { INodeData } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { Explorer } from "../constants";
 
 export class FileNode extends DataNode {
     constructor(nodeData: INodeData, parent: DataNode) {

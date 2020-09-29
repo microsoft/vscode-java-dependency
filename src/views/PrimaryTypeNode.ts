@@ -4,12 +4,12 @@
 import { Command, commands, DocumentSymbol, SymbolInformation, SymbolKind, TextDocument, ThemeIcon, Uri, workspace } from "vscode";
 import { createUuid, sendOperationEnd, sendOperationStart } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
+import { Explorer } from "../constants";
 import { INodeData, TypeKind } from "../java/nodeData";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { DocumentSymbolNode } from "./documentSymbolNode";
 import { ExplorerNode } from "./explorerNode";
-import { Explorer } from "../constants";
 
 export class PrimaryTypeNode extends DataNode {
 

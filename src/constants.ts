@@ -17,7 +17,7 @@ export namespace Explorer {
         File = "file",
         Enum = "enum",
         Interface = "interface",
-        Class = "class"
+        Class = "class",
     }
 }
 
