@@ -15,9 +15,7 @@ export namespace Explorer {
         Package = "package",
         Jar = "jar",
         File = "file",
-        Enum = "enum",
-        Interface = "interface",
-        Class = "class",
+        Type = "type",
     }
 }
 

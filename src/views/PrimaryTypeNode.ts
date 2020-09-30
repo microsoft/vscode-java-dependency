@@ -91,14 +91,15 @@ export class PrimaryTypeNode extends DataNode {
     }
 
     protected get contextValue(): string {
+        const context = Explorer.ContextValueType.Type;
         const type = this.nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND];
 
         if (type === TypeKind.Enum) {
-            return Explorer.ContextValueType.Enum;
+            return `${context}+enum`;
         } else if (type === TypeKind.Interface) {
-            return Explorer.ContextValueType.Interface;
+            return `${context}+interface`;
         } else {
-            return Explorer.ContextValueType.Class;
+            return `${context}+class`;
         }
     }
 }
