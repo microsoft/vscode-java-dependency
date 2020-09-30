@@ -7,6 +7,7 @@ import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewV
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Build } from "../constants";
+import { deleteFiles } from "../explorerCommands/delete";
 import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -70,6 +71,13 @@ export class DependencyExplorer implements Disposable {
                 }
 
                 this.reveal(uri);
+            }),
+        );
+
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node: DataNode) => {
+                const firstSelectedNode = this._dependencyViewer.selection[0];
+                deleteFiles(node, firstSelectedNode);
             }),
         );
     }

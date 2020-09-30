@@ -3,6 +3,7 @@
 
 import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
+import { ExplorerNode } from "../views/explorerNode";
 
 const confirmMessage = "Move to Recycle Bin";
 
@@ -13,7 +14,12 @@ function getInformationMessage(name: string, isFolder: boolean): string {
     return msg + additionMsg;
 }
 
-export async function deleteFiles(node: DataNode): Promise<void> {
+export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
+    // if command not invoked by context menu, use selected node in explorer
+    if (!node) {
+        node = selectedNode as DataNode;
+    }
+
     const children = await node.getChildren();
     const isFolder = children && children.length !== 0;
     const message = getInformationMessage(node.name, isFolder);

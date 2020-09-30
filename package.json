@@ -181,6 +181,13 @@
         }
       }
     },
+    "keybindings": [
+      {
+        "command": "java.view.package.moveFileToTrash",
+        "key": "delete",
+        "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
+      }
+    ],
     "menus": {
       "commandPalette": [
         {
@@ -331,62 +338,62 @@
         {
           "command": "java.view.package.revealFileInOS",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
-          "group": "path@10"
+          "group": "6_copypath@10"
         },
         {
           "command": "java.view.package.copyFilePath",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
-          "group": "path@20"
+          "group": "6_copypath@20"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
-          "group": "path@25"
-        },
-        {
-          "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@10"
-        },
-        {
-          "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "inline@add_0"
-        },
-        {
-          "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@10"
-        },
-        {
-          "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "inline@add_0"
-        },
-        {
-          "command": "java.view.package.newPackage",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@20"
-        },
-        {
-          "command": "java.view.package.newPackage",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@20"
+          "group": "6_copypath@25"
         },
         {
           "command": "java.view.package.moveFileToTrash",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "delete@10"
+          "group": "7_modification@10"
         },
         {
           "command": "java.view.package.moveFileToTrash",
           "when": "view == javaProjectExplorer && viewItem =~ /java:file(?=.*?\\b\\+uri\\b)/",
-          "group": "delete@10"
+          "group": "7_modification@10"
         },
         {
           "command": "java.view.package.moveFileToTrash",
           "when": "view == javaProjectExplorer && viewItem =~ /java:type(?=.*?\\b\\+uri\\b)/",
-          "group": "delete@10"
+          "group": "7_modification@10"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "new@10"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "inline@add_0"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "new@10"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "inline@add_0"
+        },
+        {
+          "command": "java.view.package.newPackage",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "new@20"
+        },
+        {
+          "command": "java.view.package.newPackage",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "new@20"
         },
         {
           "command": "java.project.addLibraries",
