@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Uri, window, workspace } from "vscode";
+import { commands, Uri, window, workspace } from "vscode";
+import { Commands } from "../commands";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
 import { isMutable } from "./utils";
@@ -29,7 +30,9 @@ export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): P
     );
 
     if (answer === confirmMessage) {
-        workspace.fs.delete(Uri.parse(node.uri), {
+        const fileUri = Uri.parse(node.uri);
+        commands.executeCommand(Commands.CLOSE_OTHER_EDITORS_IN_GROUP, fileUri);
+        workspace.fs.delete(fileUri, {
             recursive: true,
             useTrash: true,
         });

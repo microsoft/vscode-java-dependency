@@ -74,6 +74,8 @@ export namespace Commands {
 
     export const VSCODE_OPEN = "vscode.open";
 
+    export const CLOSE_OTHER_EDITORS_IN_GROUP = "workbench.action.closeOtherEditors";
+
     export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
 
     export const JAVA_CLEAN_WORKSPACE = "java.clean.workspace";
