@@ -4,6 +4,7 @@
 import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
+import { shouldModifyNode } from "./utils";
 
 const confirmMessage = "Move to Recycle Bin";
 
@@ -18,6 +19,10 @@ export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): P
     // if command not invoked by context menu, use selected node in explorer
     if (!node) {
         node = selectedNode as DataNode;
+        // avoid delete dependency files
+        if (!shouldModifyNode(node)) {
+            return;
+        }
     }
 
     const children = await node.getChildren();
