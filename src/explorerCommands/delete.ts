@@ -4,23 +4,16 @@
 import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
-import { shouldModifyNode } from "./utils";
+import { isMutable } from "./utils";
 
 const confirmMessage = "Move to Recycle Bin";
-
-function getInformationMessage(name: string, isFolder: boolean): string {
-    const folderMsg = isFolder ? " and its contents" : "";
-    const msg = `Are you sure you want to delete \'${name}\'${folderMsg}?\n`;
-    const additionMsg = "You can restore from the Recycle Bin.";
-    return msg + additionMsg;
-}
 
 export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
     // if command not invoked by context menu, use selected node in explorer
     if (!node) {
         node = selectedNode as DataNode;
         // avoid delete dependency files
-        if (!shouldModifyNode(node)) {
+        if (!isMutable(node)) {
             return;
         }
     }
@@ -35,14 +28,17 @@ export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): P
         confirmMessage,
     );
 
-    if (!answer) {
-        return;
-    }
-
     if (answer === confirmMessage) {
         workspace.fs.delete(Uri.parse(node.uri), {
             recursive: true,
             useTrash: true,
         });
     }
+}
+
+function getInformationMessage(name: string, isFolder: boolean): string {
+    const folderMsg = isFolder ? " and its contents" : "";
+    const msg = `Are you sure you want to delete \'${name}\'${folderMsg}?\n`;
+    const additionMsg = "You can restore from the Recycle Bin.";
+    return msg + additionMsg;
 }
