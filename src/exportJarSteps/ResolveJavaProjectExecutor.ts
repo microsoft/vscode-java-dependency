@@ -22,7 +22,7 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         return this.getNextStep();
     }
 
-    private async assignStepMetadata(stepMetadata: IStepMetadata, uri: Uri): Promise<void> {
+    private async setWorkspaceFolder(stepMetadata: IStepMetadata, uri: Uri): Promise<void> {
         stepMetadata.projectList = await Jdtls.getProjects(uri.toString());
         const folders = workspace.workspaceFolders;
         for (const folder of folders) {
@@ -34,13 +34,13 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
 
     private async resolveJavaProject(stepMetadata: IStepMetadata): Promise<void> {
         if (stepMetadata.entry instanceof WorkspaceNode) {
-            await this.assignStepMetadata(stepMetadata, Uri.parse(stepMetadata.entry.uri));
+            await this.setWorkspaceFolder(stepMetadata, Uri.parse(stepMetadata.entry.uri));
             return;
         }
         const folders = workspace.workspaceFolders;
         // Guarded by workspaceFolderCount != 0 in package.json
         if (folders.length === 1) {
-            await this.assignStepMetadata(stepMetadata, folders[0].uri);
+            await this.setWorkspaceFolder(stepMetadata, folders[0].uri);
             return;
         }
         const pickItems: IJavaProjectQuickPickItem[] = [];

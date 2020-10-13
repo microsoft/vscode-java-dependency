@@ -6,7 +6,7 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { cleanLastStepData, createPickBox } from "./utility";
+import { createPickBox, resetStepMetadata } from "./utility";
 
 export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
 
@@ -26,7 +26,7 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
             return this.getNextStep();
         }
         const lastStep: ExportJarStep = stepMetadata.steps.pop();
-        cleanLastStepData(lastStep, stepMetadata);
+        resetStepMetadata(lastStep, stepMetadata);
         return lastStep;
     }
 

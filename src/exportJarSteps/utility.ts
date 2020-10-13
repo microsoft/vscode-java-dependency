@@ -9,11 +9,11 @@ import { IStepMetadata } from "./IStepMetadata";
 
 export const SETTING_ASKUSER: string = "askUser";
 
-export function cleanLastStepData(lastStep: ExportJarStep, stepMetadata: IStepMetadata): void {
-    if (lastStep === ExportJarStep.ResolveJavaProject) {
+export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMetadata): void {
+    if (resetTo === ExportJarStep.ResolveJavaProject) {
         stepMetadata.workspaceFolder = undefined;
         stepMetadata.projectList = undefined;
-    } else if (lastStep === ExportJarStep.ResolveMainMethod) {
+    } else if (resetTo === ExportJarStep.ResolveMainMethod) {
         stepMetadata.mainMethod = undefined;
     }
 }

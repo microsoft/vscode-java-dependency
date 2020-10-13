@@ -3,13 +3,13 @@
 
 import { ensureDir, pathExists } from "fs-extra";
 import * as _ from "lodash";
-import { basename, dirname, extname, normalize } from "path";
+import { basename, dirname, extname, isAbsolute, join, normalize } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { cleanLastStepData, createPickBox, IMessageOption, saveDialog, SETTING_ASKUSER } from "./utility";
+import { createPickBox, IMessageOption, resetStepMetadata, saveDialog, SETTING_ASKUSER } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -22,7 +22,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             return this.getNextStep();
         }
         const lastStep: ExportJarStep = stepMetadata.steps.pop();
-        cleanLastStepData(lastStep, stepMetadata);
+        resetStepMetadata(lastStep, stepMetadata);
         return lastStep;
     }
 
@@ -51,12 +51,17 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     }
                     destPath = outputUri.fsPath;
                 } else {
+                    if (extname(stepMetadata.outputPath) !== ".jar") {
+                        return reject(new Error("inValid target file extension."));
+                    }
+                    // Both the absolute path and the relative path (to workspace folder) are supported.
+                    destPath = (isAbsolute(stepMetadata.outputPath)) ?
+                            stepMetadata.outputPath :
+                            normalize(join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath));
                     try {
-                        const t = dirname(stepMetadata.outputPath);
-                        await ensureDir(dirname(stepMetadata.outputPath));
-                        destPath = stepMetadata.outputPath;
+                        await ensureDir(dirname(destPath));
                     } catch (e) {
-                        return reject(new Error(e));
+                        return reject(e);
                     }
                 }
                 const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainMethod), stepMetadata.elements, destPath);

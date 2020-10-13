@@ -13,7 +13,7 @@ export class ExportJarTaskProvider implements TaskProvider {
     public static exportJarType: string = "exportjar";
 
     public static getTask(stepMetadata: IStepMetadata): Task {
-        const targetPathSetting: string = workspace.getConfiguration("java.dependency.exportjar").get<string>("defaultTargetFolder");
+        const targetPathSetting: string = workspace.getConfiguration("java.dependency.exportjar").get<string>("defaultTargetPath");
         const defaultDefinition: IExportJarTaskDefinition = {
             type: ExportJarTaskProvider.exportJarType,
             targetPath: targetPathSetting,
