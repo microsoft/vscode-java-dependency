@@ -139,6 +139,11 @@
         "command": "java.view.package.newPackage",
         "title": "%contributes.commands.java.view.package.newPackage%",
         "category": "Java"
+      },
+      {
+        "command": "java.view.package.moveFileToTrash",
+        "title": "%contributes.commands.java.view.package.moveFileToTrash%",
+        "category": "Java"
       }
     ],
     "configuration": {
@@ -176,6 +181,13 @@
         }
       }
     },
+    "keybindings": [
+      {
+        "command": "java.view.package.moveFileToTrash",
+        "key": "delete",
+        "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
+      }
+    ],
     "menus": {
       "commandPalette": [
         {
@@ -232,6 +244,10 @@
         },
         {
           "command": "java.view.package.newPackage",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.moveFileToTrash",
           "when": "false"
         },
         {
@@ -322,17 +338,32 @@
         {
           "command": "java.view.package.revealFileInOS",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
-          "group": "path@10"
+          "group": "6_copypath@10"
         },
         {
           "command": "java.view.package.copyFilePath",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
-          "group": "path@20"
+          "group": "6_copypath@20"
         },
         {
           "command": "java.view.package.copyRelativeFilePath",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(?=.*?\\b\\+uri\\b)/",
-          "group": "path@25"
+          "group": "6_copypath@25"
+        },
+        {
+          "command": "java.view.package.moveFileToTrash",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "7_modification@10"
+        },
+        {
+          "command": "java.view.package.moveFileToTrash",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:file(?=.*?\\b\\+uri\\b)/",
+          "group": "7_modification@10"
+        },
+        {
+          "command": "java.view.package.moveFileToTrash",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:type(?=.*?\\b\\+uri\\b)/",
+          "group": "7_modification@10"
         },
         {
           "command": "java.view.package.newJavaClass",

@@ -46,9 +46,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node: INodeData) =>
             commands.executeCommand("copyRelativeFilePath", Uri.parse(node.uri))));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OPEN_FILE, (uri) =>
-                commands.executeCommand(Commands.VSCODE_OPEN, Uri.parse(uri))));
+            commands.executeCommand(Commands.VSCODE_OPEN, Uri.parse(uri), { preserveFocus: true })));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OUTLINE, (uri, range) =>
-                window.showTextDocument(Uri.parse(uri), { selection: range })));
+            window.showTextDocument(Uri.parse(uri), { selection: range })));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_BUILD_WORKSPACE, () =>
             commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CLEAN_WORKSPACE, () =>

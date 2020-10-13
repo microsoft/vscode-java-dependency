@@ -4,6 +4,7 @@
 import { Command, commands, DocumentSymbol, SymbolInformation, SymbolKind, TextDocument, ThemeIcon, Uri, workspace } from "vscode";
 import { createUuid, sendOperationEnd, sendOperationStart } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
+import { Explorer } from "../constants";
 import { INodeData, TypeKind } from "../java/nodeData";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
@@ -87,5 +88,18 @@ export class PrimaryTypeNode extends DataNode {
             command: Commands.VIEW_PACKAGE_OPEN_FILE,
             arguments: [this.uri],
         };
+    }
+
+    protected get contextValue(): string {
+        const context = Explorer.ContextValueType.Type;
+        const type = this.nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND];
+
+        if (type === TypeKind.Enum) {
+            return `${context}+enum`;
+        } else if (type === TypeKind.Interface) {
+            return `${context}+interface`;
+        } else {
+            return `${context}+class`;
+        }
     }
 }
