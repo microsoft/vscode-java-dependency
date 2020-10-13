@@ -30,10 +30,7 @@ export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): P
     );
 
     if (answer === confirmMessage) {
-        const fileUri = Uri.parse(node.uri);
-        await commands.executeCommand(Commands.VSCODE_OPEN, fileUri);
-        await commands.executeCommand(Commands.CLOSE_EDITOR_COMMAND_ID);
-        workspace.fs.delete(fileUri, {
+        workspace.fs.delete(Uri.parse(node.uri), {
             recursive: true,
             useTrash: true,
         });
