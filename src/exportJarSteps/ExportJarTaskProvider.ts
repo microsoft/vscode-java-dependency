@@ -2,10 +2,11 @@
 // Licensed under the MIT license.
 
 import {
-    CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition, TaskProvider,
-    TaskRevealKind, TaskScope, TerminalDimensions, workspace,
+    CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
+    TaskProvider, TaskRevealKind, TaskScope, TerminalDimensions,
 } from "vscode";
 import { createJarFile } from "../exportJarFileCommand";
+import { getExportJarTargetPath } from "../settings";
 import { IStepMetadata } from "./IStepMetadata";
 
 export class ExportJarTaskProvider implements TaskProvider {
@@ -13,7 +14,7 @@ export class ExportJarTaskProvider implements TaskProvider {
     public static exportJarType: string = "exportjar";
 
     public static getTask(stepMetadata: IStepMetadata): Task {
-        const targetPathSetting: string = workspace.getConfiguration("java.dependency.exportjar").get<string>("defaultTargetPath");
+        const targetPathSetting: string = getExportJarTargetPath();
         const defaultDefinition: IExportJarTaskDefinition = {
             type: ExportJarTaskProvider.exportJarType,
             targetPath: targetPathSetting,

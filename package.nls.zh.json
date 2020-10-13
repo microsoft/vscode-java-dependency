@@ -23,5 +23,5 @@
   "configuration.java.dependency.autoRefresh": "在 Java 项目管理器中自动同步修改",
   "configuration.java.dependency.refreshDelay": "控制 Java 项目管理器刷新的延迟时间 (毫秒)",
   "configuration.java.dependency.packagePresentation": "Java 包显示方式: 平行显示或者分层显示",
-  "configuration.java.dependency.exportjar.defaultTargetPath": "导出 Jar 文件的默认路径"
+  "configuration.java.dependency.exportjar.targetPath": "导出 Jar 文件的默认路径"
 }

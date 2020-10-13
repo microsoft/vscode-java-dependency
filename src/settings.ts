@@ -127,3 +127,7 @@ export interface IReferencedLibraries {
     exclude: string[];
     sources: { [binary: string]: string };
 }
+
+export function getExportJarTargetPath(): string {
+    return workspace.getConfiguration("java.dependency.exportjar").get<string>("targetPath");
+}

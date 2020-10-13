@@ -9,7 +9,7 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, IMessageOption, resetStepMetadata, saveDialog, SETTING_ASKUSER } from "./utility";
+import { createPickBox, resetStepMetadata, saveDialog, SETTING_ASKUSER } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -57,7 +57,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     // Both the absolute path and the relative path (to workspace folder) are supported.
                     destPath = (isAbsolute(stepMetadata.outputPath)) ?
                             stepMetadata.outputPath :
-                            normalize(join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath));
+                            join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath);
                     try {
                         await ensureDir(dirname(destPath));
                     } catch (e) {
