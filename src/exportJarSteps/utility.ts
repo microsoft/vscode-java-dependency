@@ -35,13 +35,6 @@ export interface IMessageOption {
     command: string;
     arguments?: any;
 }
-export class ErrorWithHandler extends Error {
-    public handler: IMessageOption;
-    constructor(message: string, handler: IMessageOption) {
-        super(message);
-        this.handler = handler;
-    }
-}
 
 export async function saveDialog(workSpaceUri: Uri, title: string): Promise<Uri> {
     const options: SaveDialogOptions = {

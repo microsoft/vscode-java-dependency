@@ -9,7 +9,7 @@ import { IExportJarStepExecutor } from "./exportJarSteps/IExportJarStepExecutor"
 import { IStepMetadata } from "./exportJarSteps/IStepMetadata";
 import { ResolveJavaProjectExecutor } from "./exportJarSteps/ResolveJavaProjectExecutor";
 import { ResolveMainMethodExecutor } from "./exportJarSteps/ResolveMainMethodExecutor";
-import { ErrorWithHandler, failMessage, successMessage } from "./exportJarSteps/utility";
+import { failMessage, successMessage } from "./exportJarSteps/utility";
 import { isStandardServerReady } from "./extension";
 import { INodeData } from "./java/nodeData";
 
@@ -29,59 +29,35 @@ const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarSte
 let isExportingJar: boolean = false;
 
 export async function createJarFileEntry(node?: INodeData): Promise<void> {
-    if (!isStandardServerReady() || await buildWorkspace() === false || isExportingJar) {
+    if (!isStandardServerReady() || isExportingJar || await buildWorkspace() === false) {
         return;
     }
-    isExportingJar = true;
-    let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
     const stepMetadata: IStepMetadata = {
         entry: node,
         steps: [],
     };
-    while (step !== ExportJarStep.Finish) {
-        try {
-            step = await stepMap.get(step).execute(stepMetadata);
-        } catch (err) {
-            isExportingJar = false;
-            if (err) {
-                failMessage(`${err}`);
-            }
-            return;
-        }
-        tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata));
-        await new Promise<void>((resolve, reject) => {
-            tasks.onDidEndTask((e) => {
-                if (e.execution.task.source === ExportJarTaskProvider.exportJarType) {
-                    isExportingJar = false;
-                    step = (stepMetadata.workspaceFolder === undefined) ? ExportJarStep.ResolveJavaProject : ExportJarStep.Finish;
-                    resolve();
-                }
-            });
-        });
-    }
+    tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata));
     return;
 }
 
 export async function createJarFile(stepMetadata: IStepMetadata) {
-    let step: ExportJarStep = ExportJarStep.ResolveMainMethod;
+    isExportingJar = true;
+    let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
     return new Promise<string>(async (resolve, reject) => {
         while (step !== ExportJarStep.Finish) {
             try {
                 step = await stepMap.get(step).execute(stepMetadata);
-                if (step === ExportJarStep.ResolveJavaProject) {
-                    return reject();
-                }
             } catch (err) {
                 return reject(err);
             }
         }
         return resolve(stepMetadata.outputPath);
     }).then((message) => {
+        isExportingJar = false;
         successMessage(message);
     }, (err) => {
-        if (err instanceof ErrorWithHandler) {
-            failMessage(err.message, err.handler);
-        } else if (err) {
+        isExportingJar = false;
+        if (err) {
             failMessage(`${err}`);
         }
     });

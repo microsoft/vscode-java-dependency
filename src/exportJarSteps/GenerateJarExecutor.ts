@@ -1,16 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { pathExists, pathExistsSync } from "fs-extra";
-import isValid = require("is-valid-path");
+import { ensureDir, pathExists } from "fs-extra";
 import * as _ from "lodash";
-import { basename, dirname, extname, join, normalize } from "path";
+import { basename, dirname, extname, normalize } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { cleanLastStepData, createPickBox, ErrorWithHandler, IMessageOption, saveDialog, SETTING_ASKUSER } from "./utility";
+import { cleanLastStepData, createPickBox, IMessageOption, saveDialog, SETTING_ASKUSER } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -51,14 +50,14 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                         return reject();
                     }
                     destPath = outputUri.fsPath;
-                } else if (isValid(stepMetadata.outputPath) && pathExistsSync(dirname(stepMetadata.outputPath))) {
-                    destPath = stepMetadata.outputPath;
                 } else {
-                    const option: IMessageOption = {
-                        title: "Edit in settings.json",
-                        command: "workbench.action.openSettingsJson",
-                    };
-                    return reject(new ErrorWithHandler("Invalid target folder. Please check it in settings.json.", option));
+                    try {
+                        const t = dirname(stepMetadata.outputPath);
+                        await ensureDir(dirname(stepMetadata.outputPath));
+                        destPath = stepMetadata.outputPath;
+                    } catch (e) {
+                        return reject(new Error(e));
+                    }
                 }
                 const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainMethod), stepMetadata.elements, destPath);
                 if (exportResult.result === true) {
