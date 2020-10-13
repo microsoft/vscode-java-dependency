@@ -3,6 +3,7 @@
 
 import { Command, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { Commands } from "../commands";
+import { Explorer } from "../constants";
 import { INodeData } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
@@ -34,5 +35,9 @@ export class FileNode extends DataNode {
             command: Commands.VIEW_PACKAGE_OPEN_FILE,
             arguments: [this.uri],
         };
+    }
+
+    protected get contextValue(): string {
+        return Explorer.ContextValueType.File;
     }
 }

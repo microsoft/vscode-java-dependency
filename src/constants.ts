@@ -14,6 +14,8 @@ export namespace Explorer {
         PackageRoot = "packageRoot",
         Package = "package",
         Jar = "jar",
+        File = "file",
+        Type = "type",
     }
 }
 
