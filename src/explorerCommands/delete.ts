@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, Uri, window, workspace } from "vscode";
-import { Commands } from "../commands";
+import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
 import { isMutable } from "./utils";
