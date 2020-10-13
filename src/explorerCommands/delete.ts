@@ -31,7 +31,8 @@ export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): P
 
     if (answer === confirmMessage) {
         const fileUri = Uri.parse(node.uri);
-        commands.executeCommand(Commands.CLOSE_OTHER_EDITORS_IN_GROUP, fileUri);
+        await commands.executeCommand(Commands.VSCODE_OPEN, fileUri);
+        await commands.executeCommand(Commands.CLOSE_EDITOR_COMMAND_ID);
         workspace.fs.delete(fileUri, {
             recursive: true,
             useTrash: true,
@@ -41,7 +42,7 @@ export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): P
 
 function getInformationMessage(name: string, isFolder: boolean): string {
     const folderMsg = isFolder ? " and its contents" : "";
-    const msg = `Are you sure you want to delete \'${name}\'${folderMsg}?\n`;
+    const msg = `Are you sure you want to delete \'${name}\'${folderMsg}?\n\n`;
     const additionMsg = "You can restore from the Recycle Bin.";
     return msg + additionMsg;
 }
