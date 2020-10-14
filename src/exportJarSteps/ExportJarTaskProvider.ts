@@ -11,7 +11,7 @@ import { IStepMetadata } from "./IStepMetadata";
 
 export class ExportJarTaskProvider implements TaskProvider {
 
-    public static exportJarType: string = "exportjar";
+    public static exportJarType: string = "java";
 
     public static getTask(stepMetadata: IStepMetadata): Task {
         const targetPathSetting: string = Settings.getExportJarTargetPath();
@@ -21,7 +21,7 @@ export class ExportJarTaskProvider implements TaskProvider {
             elements: [],
             mainMethod: undefined,
         };
-        const task: Task = new Task(defaultDefinition, TaskScope.Workspace, "exportJarTask", ExportJarTaskProvider.exportJarType,
+        const task: Task = new Task(defaultDefinition, TaskScope.Workspace, "exportjar:default", ExportJarTaskProvider.exportJarType,
             new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
                 return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
             }));

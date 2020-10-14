@@ -23,18 +23,21 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
     }
 
     private async resolveJavaProject(stepMetadata: IStepMetadata): Promise<void> {
+        const folders = workspace.workspaceFolders;
         if (stepMetadata.entry instanceof WorkspaceNode) {
             const workspaceUri: Uri = Uri.parse(stepMetadata.entry.uri);
-            await this.setWorkspaceFolder(stepMetadata, workspaceUri);
+            for (const folder of workspace.workspaceFolders) {
+                if (folder.uri.toString() === workspaceUri.toString()) {
+                    stepMetadata.workspaceFolder = folder;
+                }
+            }
             stepMetadata.projectList = await Jdtls.getProjects(workspaceUri.toString());
             return;
         }
-        const folders = workspace.workspaceFolders;
         // Guarded by workspaceFolderCount != 0 in package.json
         if (folders.length === 1) {
-            const workspaceUri: Uri = folders[0].uri;
-            await this.setWorkspaceFolder(stepMetadata, workspaceUri);
-            stepMetadata.projectList = await Jdtls.getProjects(workspaceUri.toString());
+            stepMetadata.workspaceFolder = folders[0];
+            stepMetadata.projectList = await Jdtls.getProjects(folders[0].uri.toString());
             return;
         }
         const pickItems: IJavaProjectQuickPickItem[] = [];
@@ -72,14 +75,6 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         });
         for (const d of disposables) {
             d.dispose();
-        }
-    }
-
-    private async setWorkspaceFolder(stepMetadata: IStepMetadata, uri: Uri): Promise<void> {
-        for (const folder of workspace.workspaceFolders) {
-            if (folder.uri.toString() === uri.toString()) {
-                stepMetadata.workspaceFolder = folder;
-            }
         }
     }
 
