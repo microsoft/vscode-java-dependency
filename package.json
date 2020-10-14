@@ -377,7 +377,7 @@
         {
           "command": "java.view.package.newJavaClass",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@10"
+          "group": "1_new@10"
         },
         {
           "command": "java.view.package.newJavaClass",
@@ -387,7 +387,7 @@
         {
           "command": "java.view.package.newJavaClass",
           "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@10"
+          "group": "1_new@10"
         },
         {
           "command": "java.view.package.newJavaClass",
@@ -397,12 +397,12 @@
         {
           "command": "java.view.package.newPackage",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@20"
+          "group": "1_new@20"
         },
         {
           "command": "java.view.package.newPackage",
           "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "new@20"
+          "group": "1_new@20"
         },
         {
           "command": "java.project.addLibraries",
