@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { pathExists } from "fs-extra";
+import { ensureDir, pathExists } from "fs-extra";
 import * as _ from "lodash";
-import { basename, extname, join } from "path";
+import { basename, dirname, extname, isAbsolute, join, normalize } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox } from "./utility";
+import { createPickBox, resetStepMetadata, saveDialog, SETTING_ASKUSER } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -21,12 +21,17 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (await this.generateJar(stepMetadata)) {
             return this.getNextStep();
         }
-        return stepMetadata.steps.pop();
+        const lastStep: ExportJarStep = stepMetadata.steps.pop();
+        resetStepMetadata(lastStep, stepMetadata);
+        return lastStep;
     }
 
     private async generateJar(stepMetadata: IStepMetadata): Promise<boolean> {
-        if (!(await this.generateElements(stepMetadata))) {
-            return false;
+        if (_.isEmpty(stepMetadata.elements)) {
+            stepMetadata.elements = [];
+            if (!(await this.generateElements(stepMetadata))) {
+                return false;
+            }
         }
         return window.withProgress({
             location: ProgressLocation.Window,
@@ -37,13 +42,36 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                const destPath = join(stepMetadata.workspaceUri.fsPath, basename(stepMetadata.workspaceUri.fsPath) + ".jar");
-                const exportResult = await Jdtls.exportJar(basename(stepMetadata.selectedMainMethod), stepMetadata.elements, destPath);
-                if (exportResult === true) {
+                stepMetadata.outputPath = normalize(stepMetadata.outputPath);
+                let destPath = "";
+                if (stepMetadata.outputPath === SETTING_ASKUSER) {
+                    const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
+                    if (outputUri === undefined) {
+                        return reject();
+                    }
+                    destPath = outputUri.fsPath;
+                } else {
+                    // Both the absolute path and the relative path (to workspace folder) are supported.
+                    destPath = (isAbsolute(stepMetadata.outputPath)) ?
+                            stepMetadata.outputPath :
+                            join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath);
+                    // Since both the specific target folder and the specific target file are supported,
+                    // we regard a path as a file if it ends with ".jar". Otherwise, it was regarded as a folder.
+                    if (extname(stepMetadata.outputPath) !== ".jar") {
+                        destPath = join(destPath, stepMetadata.workspaceFolder.name + ".jar");
+                    }
+                    try {
+                        await ensureDir(dirname(destPath));
+                    } catch (e) {
+                        return reject(e);
+                    }
+                }
+                const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainMethod), stepMetadata.elements, destPath);
+                if (exportResult.result === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
                 } else {
-                    return reject(new Error("Export jar failed."));
+                    return reject(new Error("Export jar failed." + exportResult.message));
                 }
             });
         });
@@ -65,11 +93,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 const uriSet: Set<string> = new Set<string>();
                 for (const rootNode of stepMetadata.projectList) {
                     const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-                    pickItems.push(...await this.parseDependencyItems(classPaths.classpaths, uriSet, stepMetadata.workspaceUri.fsPath, true),
-                        ...await this.parseDependencyItems(classPaths.modulepaths, uriSet, stepMetadata.workspaceUri.fsPath, true));
+                    pickItems.push(...await this.parseDependencyItems(classPaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true),
+                        ...await this.parseDependencyItems(classPaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true));
                     const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-                    pickItems.push(...await this.parseDependencyItems(classPathsTest.classpaths, uriSet, stepMetadata.workspaceUri.fsPath, false),
-                        ...await this.parseDependencyItems(classPathsTest.modulepaths, uriSet, stepMetadata.workspaceUri.fsPath, false));
+                    pickItems.push(...await this.parseDependencyItems(classPathsTest.classpaths, uriSet,
+                        stepMetadata.workspaceFolder.uri.fsPath, false),
+                        ...await this.parseDependencyItems(classPathsTest.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false));
                 }
                 return resolve(pickItems);
             });
@@ -165,4 +194,10 @@ class ClasspathResult {
 interface IJarQuickPickItem extends QuickPickItem {
     path: string;
     type: string;
+}
+
+export interface IExportResult {
+    result: boolean;
+    message: string;
+    log?: string;
 }

@@ -110,6 +110,11 @@ export class Settings {
         return this._dependencyConfig.get("refreshDelay");
     }
 
+    public static getExportJarTargetPath(): string {
+        // tslint:disable-next-line: no-invalid-template-strings
+        return workspace.getConfiguration("java.project.exportJar").get<string>("targetPath", "${workspaceFolder}/${workspaceFolderBasename}.jar");
+    }
+
     private static _dependencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
 
     private static _configurationListeners: Listener[] = [];

@@ -9,7 +9,7 @@ import {
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
-import { createJarFile } from "../exportJarFileCommand";
+import { executeExportJarTask } from "../exportJarFileCommand";
 import { isLightWeightMode, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
@@ -36,7 +36,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
             this.refreshWithLog(debounce, element)));
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, (node: INodeData) => createJarFile(node)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, async (node: INodeData) => {
+            executeExportJarTask(node);
+        }));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, (node: DataNode) => newJavaClass(node)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_PACKAGE, (node: DataNode) => newPackage(node)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node?: INodeData) =>

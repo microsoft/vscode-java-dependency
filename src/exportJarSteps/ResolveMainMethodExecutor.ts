@@ -6,7 +6,7 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox } from "./utility";
+import { createPickBox, resetStepMetadata } from "./utility";
 
 export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
 
@@ -19,10 +19,15 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
     }
 
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
+        if (stepMetadata.mainMethod !== undefined) {
+            return this.getNextStep();
+        }
         if (await this.resolveMainMethod(stepMetadata)) {
             return this.getNextStep();
         }
-        return stepMetadata.steps.pop();
+        const lastStep: ExportJarStep = stepMetadata.steps.pop();
+        resetStepMetadata(lastStep, stepMetadata);
+        return lastStep;
     }
 
     private async resolveMainMethod(stepMetadata: IStepMetadata): Promise<boolean> {
@@ -35,11 +40,11 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                resolve(await Jdtls.getMainMethod(stepMetadata.workspaceUri.toString()));
+                resolve(await Jdtls.getMainMethod(stepMetadata.workspaceFolder.uri.toString()));
             });
         });
         if (mainMethods === undefined || mainMethods.length === 0) {
-            stepMetadata.selectedMainMethod = "";
+            stepMetadata.mainMethod = "";
             return true;
         }
         const pickItems: QuickPickItem[] = [];
@@ -67,7 +72,7 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
                         }
                     }),
                     pickBox.onDidAccept(() => {
-                        stepMetadata.selectedMainMethod = pickBox.selectedItems[0].description;
+                        stepMetadata.mainMethod = pickBox.selectedItems[0].description;
                         stepMetadata.steps.push(ExportJarStep.ResolveMainMethod);
                         return resolve(true);
                     }),

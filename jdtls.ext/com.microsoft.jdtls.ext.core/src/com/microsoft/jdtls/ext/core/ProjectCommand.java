@@ -66,7 +66,7 @@ import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeArchive;
 
 public final class ProjectCommand {
 
-    public static class MainClassInfo {
+    private static class MainClassInfo {
 
         public String name;
 
@@ -78,10 +78,25 @@ public final class ProjectCommand {
         }
     }
 
-    private static final Gson gson = new GsonBuilder()
-            .registerTypeAdapterFactory(new CollectionTypeAdapter.Factory())
-            .registerTypeAdapterFactory(new EnumTypeAdapter.Factory())
-            .create();
+    private static class exportResult {
+        public boolean result;
+        public String message;
+        public String log;
+
+        exportResult(boolean result) {
+            this.result = result;
+            this.log = "";
+        }
+
+        exportResult(boolean result, String message) {
+            this.result = result;
+            this.message = message;
+            this.log = "";
+        }
+    }
+
+    private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapter.Factory())
+            .registerTypeAdapterFactory(new EnumTypeAdapter.Factory()).create();
 
     public static List<PackageNode> listProjects(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
@@ -95,9 +110,11 @@ public final class ProjectCommand {
             if (!project.isAccessible() || !ProjectUtils.isJavaProject(project)) {
                 continue;
             }
-            // Ignore all the projects that's not contained in the workspace folder, except for the invisible project.
+            // Ignore all the projects that's not contained in the workspace folder, except
+            // for the invisible project.
             // This check is needed in multi-root scenario.
-            if ((!ResourceUtils.isContainedIn(project.getLocation(), paths) && !Objects.equals(project.getName(), invisibleProjectName))) {
+            if ((!ResourceUtils.isContainedIn(project.getLocation(), paths)
+                    && !Objects.equals(project.getName(), invisibleProjectName))) {
                 continue;
             }
             PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
@@ -115,7 +132,8 @@ public final class ProjectCommand {
         String projectName = ProjectUtils.getWorkspaceInvisibleProjectName(workspacePath);
         IProject project = getWorkspaceRoot().getProject(projectName);
         try {
-            ReferencedLibraries libraries = JavaLanguageServerPlugin.getPreferencesManager().getPreferences().getReferencedLibraries();
+            ReferencedLibraries libraries = JavaLanguageServerPlugin.getPreferencesManager().getPreferences()
+                    .getReferencedLibraries();
             UpdateClasspathJob.getInstance().updateClasspath(JavaCore.create(project), libraries);
             return true;
         } catch (Exception e) {
@@ -128,9 +146,9 @@ public final class ProjectCommand {
         return ResourcesPlugin.getWorkspace().getRoot();
     }
 
-    public static boolean exportJar(List<Object> arguments, IProgressMonitor monitor) {
+    public static exportResult exportJar(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments.size() < 3) {
-            return false;
+            return new exportResult(false, "Invalid export Arguments");
         }
         String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
         String[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), String[].class);
@@ -138,38 +156,37 @@ public final class ProjectCommand {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         if (mainMethod.length() > 0) {
-            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,mainMethod);
+            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainMethod);
         }
         try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
-            Set<String> fDirectories = new HashSet<>();
+            Set<String> directories = new HashSet<>();
             for (String classpath : classpaths) {
                 if (classpath != null) {
-                    if(classpath.endsWith(".jar")) {
+                    if (classpath.endsWith(".jar")) {
                         ZipFile zip = new ZipFile(classpath);
-                        writeArchive(zip, true, true, target, fDirectories, monitor);
-                    }
-                    else {
+                        writeArchive(zip, true, true, target, directories, monitor);
+                    } else {
                         File folder = new File(classpath);
-                        writeFileRecursively(folder, target, fDirectories, folder.getAbsolutePath().length() + 1);
+                        writeFileRecursively(folder, target, directories, folder.getAbsolutePath().length() + 1);
                     }
                 }
             }
         } catch (Exception e) {
-            return false;
+            return new exportResult(false, e.getMessage());
         }
-        return true;
+        return new exportResult(true);
     }
 
-    private static void writeFileRecursively(File folder, JarOutputStream fJarOutputStream, Set<String> fDirectories, int len) {
+    private static void writeFileRecursively(File folder, JarOutputStream jarOutputStream, Set<String> directories,
+            int len) {
         File[] files = folder.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
-                writeFileRecursively(file, fJarOutputStream, fDirectories, len);
+                writeFileRecursively(file, jarOutputStream, directories, len);
             } else if (file.isFile()) {
                 try {
-                    writeFile(file, new Path(file.getAbsolutePath().substring(len)), true, true, fJarOutputStream, fDirectories);
-                }
-                catch (Exception e) {
+                    writeFile(file, new Path(file.getAbsolutePath().substring(len)), true, true, jarOutputStream, directories);
+                } catch (Exception e) {
                     // do nothing
                 }
             }
@@ -219,8 +236,8 @@ public final class ProjectCommand {
         };
         SearchEngine searchEngine = new SearchEngine();
         try {
-            searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()},
-                    scope, requestor, new NullProgressMonitor());
+            searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope,
+                    requestor, new NullProgressMonitor());
         } catch (CoreException e) {
             // ignore
         }
