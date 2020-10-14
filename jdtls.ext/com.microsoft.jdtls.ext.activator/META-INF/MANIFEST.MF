@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JDTLS EXT Activator
 Bundle-SymbolicName: com.microsoft.jdtls.ext.activator;singleton:=true
-Bundle-Version: 0.13.0
+Bundle-Version: 0.14.0
 Bundle-Activator: com.microsoft.jdtls.ext.activator.JdtlsExtActivator
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.eclipse.jdt.core,
