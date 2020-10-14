@@ -22,25 +22,19 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         return this.getNextStep();
     }
 
-    private async setWorkspaceFolder(stepMetadata: IStepMetadata, uri: Uri): Promise<void> {
-        stepMetadata.projectList = await Jdtls.getProjects(uri.toString());
-        const folders = workspace.workspaceFolders;
-        for (const folder of folders) {
-            if (folder.uri.toString() === uri.toString()) {
-                stepMetadata.workspaceFolder = folder;
-            }
-        }
-    }
-
     private async resolveJavaProject(stepMetadata: IStepMetadata): Promise<void> {
         if (stepMetadata.entry instanceof WorkspaceNode) {
-            await this.setWorkspaceFolder(stepMetadata, Uri.parse(stepMetadata.entry.uri));
+            const workspaceUri: Uri = Uri.parse(stepMetadata.entry.uri);
+            await this.setWorkspaceFolder(stepMetadata, workspaceUri);
+            stepMetadata.projectList = await Jdtls.getProjects(workspaceUri.toString());
             return;
         }
         const folders = workspace.workspaceFolders;
         // Guarded by workspaceFolderCount != 0 in package.json
         if (folders.length === 1) {
-            await this.setWorkspaceFolder(stepMetadata, folders[0].uri);
+            const workspaceUri: Uri = folders[0].uri;
+            await this.setWorkspaceFolder(stepMetadata, workspaceUri);
+            stepMetadata.projectList = await Jdtls.getProjects(workspaceUri.toString());
             return;
         }
         const pickItems: IJavaProjectQuickPickItem[] = [];
@@ -78,6 +72,14 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         });
         for (const d of disposables) {
             d.dispose();
+        }
+    }
+
+    private async setWorkspaceFolder(stepMetadata: IStepMetadata, uri: Uri): Promise<void> {
+        for (const folder of workspace.workspaceFolders) {
+            if (folder.uri.toString() === uri.toString()) {
+                stepMetadata.workspaceFolder = folder;
+            }
         }
     }
 

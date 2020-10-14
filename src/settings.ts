@@ -110,6 +110,10 @@ export class Settings {
         return this._dependencyConfig.get("refreshDelay");
     }
 
+    public static getExportJarTargetPath(): string {
+        return workspace.getConfiguration("java.dependency.exportjar").get<string>("targetPath");
+    }
+
     private static _dependencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
 
     private static _configurationListeners: Listener[] = [];
@@ -126,8 +130,4 @@ export interface IReferencedLibraries {
     include: string[];
     exclude: string[];
     sources: { [binary: string]: string };
-}
-
-export function getExportJarTargetPath(): string {
-    return workspace.getConfiguration("java.dependency.exportjar").get<string>("targetPath");
 }

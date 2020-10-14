@@ -28,7 +28,7 @@ const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarSte
 
 let isExportingJar: boolean = false;
 
-export async function createJarFileEntry(node?: INodeData): Promise<void> {
+export async function executeExportJarTask(node?: INodeData): Promise<void> {
     if (!isStandardServerReady() || isExportingJar || await buildWorkspace() === false) {
         return;
     }

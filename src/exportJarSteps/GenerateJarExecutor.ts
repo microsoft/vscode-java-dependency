@@ -51,13 +51,15 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     }
                     destPath = outputUri.fsPath;
                 } else {
-                    if (extname(stepMetadata.outputPath) !== ".jar") {
-                        return reject(new Error("inValid target file extension."));
-                    }
                     // Both the absolute path and the relative path (to workspace folder) are supported.
                     destPath = (isAbsolute(stepMetadata.outputPath)) ?
                             stepMetadata.outputPath :
                             join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath);
+                    // Since both the specific target folder and the specific target file are supported,
+                    // we regard a path as a file if it ends with ".jar". Otherwise, it was regarded as a folder.
+                    if (extname(stepMetadata.outputPath) !== ".jar") {
+                        destPath = join(destPath, stepMetadata.workspaceFolder.name + ".jar");
+                    }
                     try {
                         await ensureDir(dirname(destPath));
                     } catch (e) {
