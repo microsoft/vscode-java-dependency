@@ -4,6 +4,18 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.14.0
+### Added
+- Add a new setting `java.project.exportJar.targetPath` to specify target path when exporting jar. [#330](https://github.com/microsoft/vscode-java-dependency/issues/330)
+- Add delete action into the Project explorer's context menu. [PR#343](https://github.com/microsoft/vscode-java-dependency/pull/343)
+- Can trigger `New Java Class` and `New Package` actions from the project nodes in the Project explorer. [PR#335](https://github.com/microsoft/vscode-java-dependency/pull/335)
+- Can reveal the Project explorer from the Java source file. [PR#327](https://github.com/microsoft/vscode-java-dependency/pull/327)
+- Can reveal the Project explorer from the editor context menu. [PR#332](https://github.com/microsoft/vscode-java-dependency/pull/332)
+- Add inline buttons for `New Java Class` in the Project explorer. [PR#331](https://github.com/microsoft/vscode-java-dependency/pull/331)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.14.0+is%3Aclosed)
+
 ## 0.13.0
 ### Added
 - Add overflow menu and the shortcut for `Build Workspace` and `Clean Workspace` commands. [PR#308](https://github.com/microsoft/vscode-java-dependency/pull/308)
