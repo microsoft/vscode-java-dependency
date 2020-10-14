@@ -179,13 +179,13 @@
           "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
         },
-        "java.dependency.exportjar.targetPath": {
+        "java.project.exportjar.targetPath": {
           "type": "string",
           "enum": [
             "${workspaceFolder}/${workspaceFolderBasename}.jar",
             "askUser"
           ],
-          "description": "%configuration.java.dependency.exportjar.targetPath%",
+          "description": "%configuration.java.project.exportjar.targetPath%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         }
       }
