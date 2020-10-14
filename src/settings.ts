@@ -112,7 +112,7 @@ export class Settings {
 
     public static getExportJarTargetPath(): string {
         // tslint:disable-next-line: no-invalid-template-strings
-        return workspace.getConfiguration("java.project.exportjar").get<string>("targetPath", "${workspaceFolder}/${workspaceFolderBasename}.jar");
+        return workspace.getConfiguration("java.project.exportJar").get<string>("targetPath", "${workspaceFolder}/${workspaceFolderBasename}.jar");
     }
 
     private static _dependencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
