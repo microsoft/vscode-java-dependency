@@ -165,14 +165,12 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     private toAbsolute(path: string): string {
         if (path.length > 0 && path[0] === "!") {
-            const realPath = path.substring(1);
-            if (!isAbsolute(realPath)) {
-                return "!" + join(this.stepMetadata.workspaceFolder.uri.fsPath, realPath);
+            const positivePath = path.substring(1);
+            if (!isAbsolute(positivePath)) {
+                return "!" + join(this.stepMetadata.workspaceFolder.uri.fsPath, positivePath);
             }
-        } else {
-            if (!isAbsolute(path)) {
-                return join(this.stepMetadata.workspaceFolder.uri.fsPath, path);
-            }
+        } else if (!isAbsolute(path)) {
+            return join(this.stepMetadata.workspaceFolder.uri.fsPath, path);
         }
         return path;
     }
