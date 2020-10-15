@@ -8,6 +8,12 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { IStepMetadata } from "./IStepMetadata";
 
 export const SETTING_ASKUSER: string = "askUser";
+export const RUNTIME_DEPENDENCIES: string = "RuntimeDependencies";
+export const TEST_DEPENDENCIES: string = "TestDependencies";
+export const COMPILE_OUTPUT: string = "CompileOutput";
+export const TESTCOMPILE_OUTPUT: string = "TestCompileOutput";
+// tslint:disable-next-line: no-invalid-template-strings
+export const DEFAULT_OUTPUT_PATH: string = "${workspaceFolder}/${workspaceFolderBasename}.jar";
 
 export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMetadata): void {
     if (resetTo === ExportJarStep.ResolveJavaProject) {

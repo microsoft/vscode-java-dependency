@@ -10,7 +10,14 @@ export interface IStepMetadata {
     workspaceFolder?: WorkspaceFolder;
     projectList?: INodeData[];
     mainMethod?: string;
-    outputPath?: string;
     elements?: string[];
+    classpaths?: IClassPaths[];
+    outputPath?: string;
     steps: ExportJarStep[];
+}
+
+export interface IClassPaths {
+    source: string;
+    destination: string | undefined;
+    isExtract: boolean;
 }

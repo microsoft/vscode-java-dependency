@@ -8,7 +8,7 @@ import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons,
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
-import { IStepMetadata } from "./IStepMetadata";
+import { IClassPaths, IStepMetadata } from "./IStepMetadata";
 import { createPickBox, resetStepMetadata, saveDialog, SETTING_ASKUSER } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
@@ -28,7 +28,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
 
     private async generateJar(stepMetadata: IStepMetadata): Promise<boolean> {
         if (_.isEmpty(stepMetadata.elements)) {
-            stepMetadata.elements = [];
+            stepMetadata.classpaths = [];
             if (!(await this.generateElements(stepMetadata))) {
                 return false;
             }
@@ -62,7 +62,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainMethod), stepMetadata.elements, destPath);
+                const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainMethod), stepMetadata.classpaths, destPath);
                 if (exportResult.result === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
@@ -87,14 +87,15 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 });
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
-                for (const rootNode of stepMetadata.projectList) {
-                    const classPaths: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "runtime" });
-                    pickItems.push(...await this.parseDependencyItems(classPaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true),
-                        ...await this.parseDependencyItems(classPaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true));
-                    const classPathsTest: ClasspathResult = await extensionApi.getClasspaths(rootNode.uri, { scope: "test" });
-                    pickItems.push(...await this.parseDependencyItems(classPathsTest.classpaths, uriSet,
-                        stepMetadata.workspaceFolder.uri.fsPath, false),
-                        ...await this.parseDependencyItems(classPathsTest.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false));
+                for (const project of stepMetadata.projectList) {
+                    const runTimeClassPaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
+                    pickItems.push(
+                        ...await this.parseDependencyItems(runTimeClassPaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true),
+                        ...await this.parseDependencyItems(runTimeClassPaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true));
+                    const testClassPaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "test" });
+                    pickItems.push(
+                        ...await this.parseDependencyItems(testClassPaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false),
+                        ...await this.parseDependencyItems(testClassPaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false));
                 }
                 return resolve(pickItems);
             });
@@ -102,7 +103,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
-            stepMetadata.elements.push(dependencyItems[0].path);
+            const classpath: IClassPaths = {
+                source: dependencyItems[0].path,
+                destination: undefined,
+                isExtract: false,
+            };
+            stepMetadata.classpaths.push(classpath);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
@@ -138,7 +144,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                             return;
                         }
                         for (const item of pickBox.selectedItems) {
-                            stepMetadata.elements.push(item.path);
+                            const classpath: IClassPaths = {
+                                source: item.path,
+                                destination: undefined,
+                                isExtract: item.type === "external",
+                            };
+                            stepMetadata.classpaths.push(classpath);
                         }
                         return resolve(true);
                     }),
@@ -184,10 +195,10 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
 
 }
 
-class ClasspathResult {
-    public projectRoot: string;
-    public classpaths: string[];
-    public modulepaths: string[];
+export interface IClasspathResult {
+    projectRoot: string;
+    classpaths: string[];
+    modulepaths: string[];
 }
 
 interface IJarQuickPickItem extends QuickPickItem {

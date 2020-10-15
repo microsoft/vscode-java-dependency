@@ -476,6 +476,25 @@
         "contents": "You can create a new Java project by clicking the below button.\n[Create new Java project](command:java.project.create)",
         "when": "!java:projectManagerActivated || java:serverMode != Standard"
       }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "java",
+        "properties": {
+          "elements": {
+            "type": "array",
+            "description": "The files of export jar task. Will dismiss the select elements step."
+          },
+          "mainMethod": {
+            "type": "string",
+            "description": "The main Method defined in the manifest of the target jar. Will dismiss the select main mathod step."
+          },
+          "targetPath": {
+            "type": "string",
+            "description": "The target path of the jar. Will override the setting in settings.json"
+          }
+        }
+      }
     ]
   },
   "scripts": {
@@ -506,6 +525,8 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "globby": "11.0.1",
+    "upath": "1.2.0",
     "fs-extra": "^7.0.1",
     "lodash": "^4.17.20",
     "minimatch": "^3.0.4",

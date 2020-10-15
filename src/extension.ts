@@ -9,6 +9,7 @@ import { contextManager } from "./contextManager";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
+import { ExportJarTaskProvider } from "./exportJarSteps/ExportJarTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
 import { DependencyExplorer } from "./views/dependencyExplorer";
@@ -61,6 +62,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         context.subscriptions.push(new DependencyExplorer(context));
         context.subscriptions.push(contextManager);
         context.subscriptions.push(syncHandler);
+        ExportJarTaskProvider.setProvider();
         contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
         contextManager.setContextValue(Context.SUPPORTED_BUILD_FILES, Build.FILE_NAMES);
 
@@ -70,6 +72,10 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 
 // this method is called when your extension is deactivated
 export async function deactivate() {
+    const exportJarTaskProvider = ExportJarTaskProvider.getProvider();
+    if (exportJarTaskProvider) {
+        exportJarTaskProvider.dispose();
+    }
     await disposeTelemetryWrapper();
 }
 
