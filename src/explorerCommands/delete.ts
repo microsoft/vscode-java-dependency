@@ -12,7 +12,6 @@ export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): P
     // if command not invoked by context menu, use selected node in explorer
     if (!node) {
         node = selectedNode as DataNode;
-        // avoid delete dependency files
         if (!isMutable(node)) {
             return;
         }

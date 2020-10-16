@@ -197,6 +197,11 @@
     },
     "keybindings": [
       {
+        "command": "java.view.package.renameFile",
+        "key": "F2",
+        "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
+      },
+      {
         "command": "java.view.package.moveFileToTrash",
         "key": "delete",
         "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
@@ -261,11 +266,11 @@
           "when": "false"
         },
         {
-          "command": "java.view.package.moveFileToTrash",
+          "command": "java.view.package.renameFile",
           "when": "false"
         },
         {
-          "command": "java.view.package.renameFile",
+          "command": "java.view.package.moveFileToTrash",
           "when": "false"
         },
         {

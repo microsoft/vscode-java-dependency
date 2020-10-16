@@ -4,6 +4,7 @@
 import { DataNode } from "../views/dataNode";
 
 export function isMutable(node: DataNode): boolean {
+    // avoid modify dependency files
     const packageExp = /java:(package|packageRoot)(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/;
     const fileExp = /java:file(?=.*?\b\+uri\b)/;
     const typeExp = /java:type(?=.*?\b\+uri\b)/;

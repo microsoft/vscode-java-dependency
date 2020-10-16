@@ -4,8 +4,18 @@
 import * as path from "path";
 import { Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { DataNode } from "../views/dataNode";
+import { ExplorerNode } from "../views/explorerNode";
+import { isMutable } from "./utils";
 
-export async function renameFile(node: DataNode): Promise<void> {
+export async function renameFile(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
+    // if command not invoked by context menu, use selected node in explorer
+    if (!node) {
+        node = selectedNode as DataNode;
+        if (!isMutable(node)) {
+            return;
+        }
+    }
+    
     const newName: string | undefined = await window.showInputBox({
         placeHolder: "Input new file name",
         ignoreFocusOut: true,
