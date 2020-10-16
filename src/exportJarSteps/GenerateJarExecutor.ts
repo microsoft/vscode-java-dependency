@@ -9,7 +9,7 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClassPaths, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, resetStepMetadata, saveDialog, SETTING_ASKUSER } from "./utility";
+import { createPickBox, ExportJarProperties, resetStepMetadata, saveDialog } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 

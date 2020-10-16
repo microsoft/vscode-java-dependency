@@ -16,6 +16,7 @@ export class PathTrie {
         let currentNode: PathTrieNode = this.root;
         const fsPath: string = Uri.file(input).fsPath;
         const segments: string[] = fsPath.split(sep);
+
         for (const segment of segments) {
             if (!segment) {
                 continue;

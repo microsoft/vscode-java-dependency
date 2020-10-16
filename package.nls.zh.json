@@ -24,5 +24,8 @@
   "configuration.java.dependency.autoRefresh": "在 Java 项目管理器中自动同步修改",
   "configuration.java.dependency.refreshDelay": "控制 Java 项目管理器刷新的延迟时间 (毫秒)",
   "configuration.java.dependency.packagePresentation": "Java 包显示方式: 平行显示或者分层显示",
-  "configuration.java.project.exportJar.targetPath": "导出 Jar 文件的默认路径"
+  "configuration.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径",
+  "taskDefinitions.java.project.exportJar.elements": "导出 Jar 文件的内容列表，一旦被赋值，导出 Jar 文件过程中选择文件内容的步骤将被忽略。",
+  "taskDefinitions.java.project.exportJar.mainMethod": "导出 Jar 文件的 Main 函数名称，一旦被赋值，导出 Jar 文件过程中选择 Main 函数的步骤将被忽略。",
+  "taskDefinitions.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径。将会覆盖 settings.json 文件中的设置。"
 }

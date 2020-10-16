@@ -62,7 +62,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         context.subscriptions.push(new DependencyExplorer(context));
         context.subscriptions.push(contextManager);
         context.subscriptions.push(syncHandler);
-        ExportJarTaskProvider.setProvider();
+        ExportJarTaskProvider.registerProvider();
         contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
         contextManager.setContextValue(Context.SUPPORTED_BUILD_FILES, Build.FILE_NAMES);
 

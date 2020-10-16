@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as globby from "globby";
-import _ = require("lodash");
+import * as _ from "lodash";
 import { extname, isAbsolute, join } from "path";
 import * as upath from "upath";
 import {
@@ -16,13 +16,13 @@ import { Settings } from "../settings";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IClassPaths, IStepMetadata } from "./IStepMetadata";
 import { PathTrie } from "./PathTrie";
-import { COMPILE_OUTPUT, DEFAULT_OUTPUT_PATH, RUNTIME_DEPENDENCIES, SETTING_ASKUSER, TEST_DEPENDENCIES, TESTCOMPILE_OUTPUT } from "./utility";
+import { ExportJarProperties } from "./utility";
 
 export class ExportJarTaskProvider implements TaskProvider {
 
     public static exportJarType: string = "java";
 
-    public static setProvider(): void {
+    public static registerProvider(): void {
         ExportJarTaskProvider.exportJarTaskProvider = tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider());
     }
 
@@ -50,24 +50,24 @@ export class ExportJarTaskProvider implements TaskProvider {
 
     private tasks: Task[] | undefined;
 
-    public async resolveTask(_task: Task): Promise<Task> {
-        const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>_task.definition;
-        const folder: WorkspaceFolder = <WorkspaceFolder>_task.scope;
+    public async resolveTask(task: Task): Promise<Task> {
+        const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>task.definition;
+        const folder: WorkspaceFolder = <WorkspaceFolder>task.scope;
         const stepMetadata: IStepMetadata = {
             entry: undefined,
             workspaceFolder: folder,
             steps: [],
         };
-        const task: Task = new Task(definition, folder, _task.name, ExportJarTaskProvider.exportJarType,
+        const resolvedTask: Task = new Task(definition, folder, task.name, ExportJarTaskProvider.exportJarType,
             new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
                 return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
             }));
-        task.presentationOptions.reveal = TaskRevealKind.Never;
-        return task;
+        resolvedTask.presentationOptions.reveal = TaskRevealKind.Never;
+        return resolvedTask;
     }
 
     public async provideTasks(): Promise<Task[]> {
-        if (this.tasks !== undefined) {
+        if (_.isEmpty(this.tasks)) {
             return this.tasks;
         }
         this.tasks = [];
@@ -77,21 +77,21 @@ export class ExportJarTaskProvider implements TaskProvider {
             if (_.isEmpty(projectList)) {
                 continue;
             } else if (projectList.length === 1) {
-                outputList.push("${" + COMPILE_OUTPUT + "}");
-                outputList.push("${" + TESTCOMPILE_OUTPUT + "}");
+                outputList.push("${" + ExportJarProperties.COMPILE_OUTPUT + "}");
+                outputList.push("${" + ExportJarProperties.TESTCOMPILE_OUTPUT + "}");
             } else {
                 for (const project of projectList) {
-                    outputList.push("${" + COMPILE_OUTPUT + ":" + project.name + "}");
-                    outputList.push("${" + TESTCOMPILE_OUTPUT + ":" + project.name + "}");
+                    outputList.push("${" + ExportJarProperties.COMPILE_OUTPUT + ":" + project.name + "}");
+                    outputList.push("${" + ExportJarProperties.TESTCOMPILE_OUTPUT + ":" + project.name + "}");
                 }
             }
-            outputList.push("${" + RUNTIME_DEPENDENCIES + "}");
-            outputList.push("${" + TEST_DEPENDENCIES + "}");
+            outputList.push("${" + ExportJarProperties.RUNTIME_DEPENDENCIES + "}");
+            outputList.push("${" + ExportJarProperties.TEST_DEPENDENCIES + "}");
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
                 elements: outputList,
                 mainMethod: "",
-                targetPath: DEFAULT_OUTPUT_PATH,
+                targetPath: ExportJarProperties.DEFAULT_OUTPUT_PATH,
             };
             const stepMetadata: IStepMetadata = {
                 entry: undefined,
@@ -136,8 +136,8 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     public async open(initialDimensions: TerminalDimensions | undefined): Promise<void> {
         if (_.isEmpty(this.stepMetadata.outputPath)) {
             // Only for custom task
-            this.stepMetadata.outputPath = (Settings.getExportJarTargetPath() === SETTING_ASKUSER) ?
-                SETTING_ASKUSER : join(this.stepMetadata.workspaceFolder.uri.fsPath, this.stepMetadata.workspaceFolder.name + ".jar");
+            this.stepMetadata.outputPath = (Settings.getExportJarTargetPath() === ExportJarProperties.SETTING_ASKUSER) ?
+                ExportJarProperties.SETTING_ASKUSER : join(this.stepMetadata.workspaceFolder.uri.fsPath, this.stepMetadata.workspaceFolder.name + ".jar");
         }
         if (!_.isEmpty(this.stepMetadata.elements)) {
             const classPathMap: Map<string, string[]> = new Map<string, string[]>();
@@ -207,17 +207,17 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 classPathArray.push(upath.normalizeSafe(this.toAbsolute(element)));
                 continue;
             }
-            if (variableResult[1] === RUNTIME_DEPENDENCIES) {
+            if (variableResult[1] === ExportJarProperties.RUNTIME_DEPENDENCIES) {
                 for (const dependency of runtimeDependencies) {
                     dependencies.push(upath.normalizeSafe(dependency));
                 }
-            } else if (variableResult[1] === TEST_DEPENDENCIES) {
+            } else if (variableResult[1] === ExportJarProperties.TEST_DEPENDENCIES) {
                 for (const dependency of testDependencies) {
                     dependencies.push(upath.normalizeSafe(dependency));
                 }
             } else {
                 const splitResult: string[] = variableResult[1].split(":");
-                if (splitResult[0] === COMPILE_OUTPUT) {
+                if (splitResult[0] === ExportJarProperties.COMPILE_OUTPUT) {
                     if (splitResult.length === 1) {
                         for (const values of classPathMap.values()) {
                             for (const value of values) {
@@ -233,7 +233,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                             }
                         }
                     }
-                } else if (splitResult[0] === TESTCOMPILE_OUTPUT) {
+                } else if (splitResult[0] === ExportJarProperties.TESTCOMPILE_OUTPUT) {
                     if (splitResult.length === 1) {
                         for (const values of testClassPathMap.values()) {
                             for (const value of values) {

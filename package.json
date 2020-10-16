@@ -483,15 +483,18 @@
         "properties": {
           "elements": {
             "type": "array",
-            "description": "The files of export jar task. Will dismiss the select elements step."
+            "items": {
+              "type": "string"
+            },
+            "description": "%taskDefinitions.java.project.exportJar.elements%"
           },
           "mainMethod": {
             "type": "string",
-            "description": "The main Method defined in the manifest of the target jar. Will dismiss the select main mathod step."
+            "description": "%taskDefinitions.java.project.exportJar.mainMethod%"
           },
           "targetPath": {
             "type": "string",
-            "description": "The target path of the jar. Will override the setting in settings.json"
+            "description": "%taskDefinitions.java.project.exportJar.targetPath%"
           }
         }
       }
