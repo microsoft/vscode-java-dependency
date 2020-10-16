@@ -33,6 +33,23 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 return false;
             }
         }
+        stepMetadata.outputPath = normalize(stepMetadata.outputPath);
+        let destPath = "";
+        if (stepMetadata.outputPath === SETTING_ASKUSER) {
+            const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
+            destPath = outputUri.fsPath;
+        } else {
+            // Both the absolute path and the relative path (to workspace folder) are supported.
+            destPath = (isAbsolute(stepMetadata.outputPath)) ?
+                stepMetadata.outputPath :
+                join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath);
+            // Since both the specific target folder and the specific target file are supported,
+            // we regard a path as a file if it ends with ".jar". Otherwise, it was regarded as a folder.
+            if (extname(stepMetadata.outputPath) !== ".jar") {
+                destPath = join(destPath, stepMetadata.workspaceFolder.name + ".jar");
+            }
+            await ensureDir(dirname(destPath));
+        }
         return window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Generating jar...",
@@ -42,30 +59,6 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                stepMetadata.outputPath = normalize(stepMetadata.outputPath);
-                let destPath = "";
-                if (stepMetadata.outputPath === SETTING_ASKUSER) {
-                    const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
-                    if (outputUri === undefined) {
-                        return reject();
-                    }
-                    destPath = outputUri.fsPath;
-                } else {
-                    // Both the absolute path and the relative path (to workspace folder) are supported.
-                    destPath = (isAbsolute(stepMetadata.outputPath)) ?
-                            stepMetadata.outputPath :
-                            join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath);
-                    // Since both the specific target folder and the specific target file are supported,
-                    // we regard a path as a file if it ends with ".jar". Otherwise, it was regarded as a folder.
-                    if (extname(stepMetadata.outputPath) !== ".jar") {
-                        destPath = join(destPath, stepMetadata.workspaceFolder.name + ".jar");
-                    }
-                    try {
-                        await ensureDir(dirname(destPath));
-                    } catch (e) {
-                        return reject(e);
-                    }
-                }
                 const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainMethod), stepMetadata.elements, destPath);
                 if (exportResult.result === true) {
                     stepMetadata.outputPath = destPath;
