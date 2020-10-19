@@ -16,7 +16,7 @@ import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
 import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
-import { IClassPaths, IStepMetadata } from "./IStepMetadata";
+import { IClassPath, IStepMetadata } from "./IStepMetadata";
 import { ExportJarProperties } from "./utility";
 
 export class ExportJarTaskProvider implements TaskProvider {
@@ -197,7 +197,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     }
 
     private async resolveClassPaths(runtimeDependencies: string[], testDependencies: string[],
-                                    classPathMap: Map<string, string[]>, testClassPathMap: Map<string, string[]>): Promise<IClassPaths[]> {
+                                    classPathMap: Map<string, string[]>, testClassPathMap: Map<string, string[]>): Promise<IClassPath[]> {
         // tslint:disable-next-line: no-invalid-template-strings
         const regExp: RegExp = new RegExp("\\${(.*)}");
         const classPathArray: string[] = [];
@@ -272,7 +272,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             }
         }
         const globs: string[] = await globby(fsPathArray);
-        const sources: IClassPaths[] = [];
+        const sources: IClassPath[] = [];
         for (const glob of globs) {
             const tireNode: TrieNode<IUriData> = trie.findFirst(Uri.file(glob).fsPath);
             if (tireNode === undefined) {
@@ -283,7 +283,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 fsPath = dirname(fsPath);
             }
             if (!_.isEmpty(tireNode)) {
-                const classpath: IClassPaths = {
+                const classpath: IClassPath = {
                     source: glob,
                     destination: glob.substring(fsPath.length + 1),
                     isExtract: false,
@@ -292,7 +292,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             }
         }
         for (const dependency of await globby(dependencies)) {
-            const classpath: IClassPaths = {
+            const classpath: IClassPath = {
                 source: dependency,
                 destination: undefined,
                 isExtract: true,

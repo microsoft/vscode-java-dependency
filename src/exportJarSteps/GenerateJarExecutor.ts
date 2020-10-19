@@ -8,7 +8,7 @@ import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons,
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
-import { IClassPaths, IStepMetadata } from "./IStepMetadata";
+import { IClassPath, IStepMetadata } from "./IStepMetadata";
 import { createPickBox, ExportJarProperties, resetStepMetadata, saveDialog } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
@@ -103,7 +103,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
-            const classpath: IClassPaths = {
+            const classpath: IClassPath = {
                 source: dependencyItems[0].path,
                 destination: undefined,
                 isExtract: false,
@@ -144,7 +144,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                             return;
                         }
                         for (const item of pickBox.selectedItems) {
-                            const classpath: IClassPaths = {
+                            const classpath: IClassPath = {
                                 source: item.path,
                                 destination: undefined,
                                 isExtract: item.type === "external",
