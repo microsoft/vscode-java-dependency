@@ -199,11 +199,13 @@
       {
         "command": "java.view.package.renameFile",
         "key": "F2",
+        "mac": "enter",
         "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
       },
       {
         "command": "java.view.package.moveFileToTrash",
         "key": "delete",
+        "mac": "cmd+backspace",
         "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
       }
     ],
