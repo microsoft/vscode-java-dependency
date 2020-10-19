@@ -37,6 +37,9 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         let destPath = "";
         if (stepMetadata.outputPath === SETTING_ASKUSER) {
             const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
+            if (outputUri === undefined) {
+                return Promise.reject();
+            }
             destPath = outputUri.fsPath;
         } else {
             // Both the absolute path and the relative path (to workspace folder) are supported.
