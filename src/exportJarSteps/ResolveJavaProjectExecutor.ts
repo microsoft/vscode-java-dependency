@@ -61,6 +61,9 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
             const pickBox = createPickBox<IJavaProjectQuickPickItem>("Export Jar : Determine workspace", "Select the workspace", pickItems, false);
             disposables.push(
                 pickBox.onDidAccept(() => {
+                    if (!pickBox.selectedItems[0]) {
+                        return;
+                    }
                     stepMetadata.projectList = projectMap.get(pickBox.selectedItems[0].workspaceFolder.uri.toString());
                     stepMetadata.workspaceFolder = pickBox.selectedItems[0].workspaceFolder;
                     stepMetadata.steps.push(ExportJarStep.ResolveJavaProject);

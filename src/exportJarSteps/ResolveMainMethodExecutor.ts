@@ -72,6 +72,9 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
                         }
                     }),
                     pickBox.onDidAccept(() => {
+                        if (!pickBox.selectedItems[0]) {
+                            return;
+                        }
                         stepMetadata.mainMethod = pickBox.selectedItems[0].description;
                         stepMetadata.steps.push(ExportJarStep.ResolveMainMethod);
                         return resolve(true);
