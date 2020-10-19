@@ -3,17 +3,16 @@
 
 import * as path from "path";
 import { Uri } from "vscode";
-import { DataNode } from "../dataNode";
 
-export class Trie {
-    private root: TrieNode;
+export class Trie<T extends IUriData> {
+    private _root: TrieNode<T>;
 
     constructor() {
-        this.root = new TrieNode(null, null);
+        this._root = new TrieNode(null, null);
     }
 
-    public insert(input: DataNode): void {
-        let currentNode: TrieNode = this.root;
+    public insert(input: T): void {
+        let currentNode: TrieNode<T> = this.root;
         const fsPath: string = Uri.parse(input.uri).fsPath;
         const segments: string[] = fsPath.split(path.sep);
 
@@ -30,7 +29,7 @@ export class Trie {
         currentNode.value = input;
     }
 
-    public find(fsPath: string): TrieNode | undefined {
+    public find(fsPath: string): TrieNode<T> | undefined {
         let currentNode = this.root;
         const segments: string[] = fsPath.split(path.sep);
 
@@ -48,9 +47,9 @@ export class Trie {
         return currentNode;
     }
 
-    public findFirstAncestorNodeWithData(fsPath: string): TrieNode | undefined {
-        let currentNode: TrieNode = this.root;
-        let res: TrieNode | undefined;
+    public findFirstAncestorNodeWithData(fsPath: string): TrieNode<T> | undefined {
+        let currentNode: TrieNode<T> = this.root;
+        let res: TrieNode<T> | undefined;
         const segments: string[] = fsPath.split(path.sep);
 
         for (const segment of segments) {
@@ -71,42 +70,44 @@ export class Trie {
         return res;
     }
 
-    public clearAll(): void {
-        this.root.removeChildren();
+    public get root(): TrieNode<T> {
+        return this._root;
     }
 }
 
-export class TrieNode {
-    private _key: string;
-    private _value: DataNode;
-    private _children: INodeChildren;
+export interface IUriData {
+    uri: string;
+}
 
-    constructor(key: string, value: DataNode) {
+export class TrieNode<T> {
+    private _key: string;
+    private _value: T;
+    private _children: INodeChildren<T>;
+
+    constructor(key: string, value: T) {
         this._key = key;
         this._value = value;
         this._children = {};
     }
 
-    public get children(): INodeChildren {
+    public get children(): INodeChildren<T> {
         return this._children;
     }
 
-    public set value(value: DataNode) {
+    public set children(children: INodeChildren<T>) {
+        this._children = children;
+    }
+
+    public set value(value: T) {
         this._value = value;
     }
 
-    public get value(): DataNode | undefined {
+    public get value(): T | undefined {
         return this._value;
     }
 
-    public removeChildren(): void {
-        this._children = {};
-        if (this._value?.nodeData?.children) {
-            this._value.nodeData.children = undefined;
-        }
-    }
 }
 
-interface INodeChildren {
-    [key: string]: TrieNode;
+interface INodeChildren<T> {
+    [key: string]: TrieNode<T>;
 }
