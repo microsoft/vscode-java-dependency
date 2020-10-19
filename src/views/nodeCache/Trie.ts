@@ -47,6 +47,27 @@ export class Trie<T extends IUriData> {
         return currentNode;
     }
 
+    public findFirst(fsPath: string): TrieNode<T> | undefined {
+        let currentNode = this.root;
+        const segments: string[] = fsPath.split(path.sep);
+
+        for (const segment of segments) {
+            if (!segment) {
+                continue;
+            }
+            if (currentNode.value) {
+                return currentNode;
+            }
+            if (currentNode.children[segment]) {
+                currentNode = currentNode.children[segment];
+            } else {
+                return undefined;
+            }
+        }
+
+        return currentNode;
+    }
+
     public findFirstAncestorNodeWithData(fsPath: string): TrieNode<T> | undefined {
         let currentNode: TrieNode<T> = this.root;
         let res: TrieNode<T> | undefined;

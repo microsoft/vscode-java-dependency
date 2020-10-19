@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import { lstatSync } from "fs";
 import * as globby from "globby";
 import * as _ from "lodash";
-import { extname, isAbsolute, join } from "path";
+import { dirname, extname, isAbsolute, join } from "path";
 import * as upath from "upath";
 import {
     CustomExecution, Disposable, Event, EventEmitter, Extension, extensions, Pseudoterminal, Task, TaskDefinition,
@@ -13,9 +14,9 @@ import { createJarFile } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
+import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IClassPaths, IStepMetadata } from "./IStepMetadata";
-import { PathTrie } from "./PathTrie";
 import { ExportJarProperties } from "./utility";
 
 export class ExportJarTaskProvider implements TaskProvider {
@@ -252,13 +253,19 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 }
             }
         }
-        const trie: PathTrie = new PathTrie();
+        const trie: Trie<IUriData> = new Trie<IUriData>();
         const fsPathArray: string[] = [];
         for (const classPath of classPathArray) {
-            if (classPath.length > 0 && classPath[0] !== "!") {
-                const fsPathPosix = upath.normalizeSafe(Uri.file(classPath).fsPath);
-                fsPathArray.push(fsPathPosix);
-                trie.insert(fsPathPosix);
+            if (classPath.length === 0) {
+                continue;
+            }
+            if (classPath[0] !== "!") {
+                const uri: Uri = Uri.file(classPath);
+                const uriData: IUriData = {
+                    uri: uri.toString(),
+                };
+                fsPathArray.push(upath.normalizeSafe(uri.fsPath));
+                trie.insert(uriData);
             } else {
                 const realPath = classPath.substring(1);
                 fsPathArray.push("!" + upath.normalizeSafe(Uri.file(realPath).fsPath));
@@ -267,11 +274,18 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         const globs: string[] = await globby(fsPathArray);
         const sources: IClassPaths[] = [];
         for (const glob of globs) {
-            const tireResult: string = trie.find(Uri.file(glob).fsPath);
-            if (!_.isEmpty(tireResult)) {
+            const tireNode: TrieNode<IUriData> = trie.findFirst(Uri.file(glob).fsPath);
+            if (tireNode === undefined) {
+                continue;
+            }
+            let fsPath = upath.normalizeSafe(Uri.parse(tireNode.value.uri).fsPath);
+            if (!(lstatSync(fsPath).isDirectory())) {
+                fsPath = dirname(fsPath);
+            }
+            if (!_.isEmpty(tireNode)) {
                 const classpath: IClassPaths = {
                     source: glob,
-                    destination: glob.substring(tireResult.length + 1),
+                    destination: glob.substring(fsPath.length + 1),
                     isExtract: false,
                 };
                 sources.push(classpath);
