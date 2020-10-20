@@ -61,32 +61,36 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
         };
         pickItems.push(noMainClassItem);
         const disposables: Disposable[] = [];
-        const result: boolean = await new Promise<boolean>(async (resolve, reject) => {
-            const pickBox = createPickBox<QuickPickItem>("Export Jar : Determine main class", "Select the main class",
-                pickItems, stepMetadata.steps.length > 0);
-            disposables.push(
-                pickBox.onDidTriggerButton((item) => {
-                    if (item === QuickInputButtons.Back) {
-                        return resolve(false);
-                    }
-                }),
-                pickBox.onDidAccept(() => {
-                    if (_.isEmpty(pickBox.selectedItems)) {
-                        return;
-                    }
-                    stepMetadata.mainMethod = pickBox.selectedItems[0].description;
-                    stepMetadata.steps.push(ExportJarStep.ResolveMainMethod);
-                    return resolve(true);
-                }),
-                pickBox.onDidHide(() => {
-                    return reject();
-                }),
-            );
-            disposables.push(pickBox);
-            pickBox.show();
-        });
-        for (const d of disposables) {
-            d.dispose();
+        let result: boolean = false;
+        try {
+            result = await new Promise<boolean>(async (resolve, reject) => {
+                const pickBox = createPickBox<QuickPickItem>("Export Jar : Determine main class", "Select the main class",
+                    pickItems, stepMetadata.steps.length > 0);
+                disposables.push(
+                    pickBox.onDidTriggerButton((item) => {
+                        if (item === QuickInputButtons.Back) {
+                            return resolve(false);
+                        }
+                    }),
+                    pickBox.onDidAccept(() => {
+                        if (_.isEmpty(pickBox.selectedItems)) {
+                            return;
+                        }
+                        stepMetadata.mainMethod = pickBox.selectedItems[0].description;
+                        stepMetadata.steps.push(ExportJarStep.ResolveMainMethod);
+                        return resolve(true);
+                    }),
+                    pickBox.onDidHide(() => {
+                        return reject();
+                    }),
+                );
+                disposables.push(pickBox);
+                pickBox.show();
+            });
+        } finally {
+            for (const d of disposables) {
+                d.dispose();
+            }
         }
         return result;
     }
