@@ -35,7 +35,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }
         stepMetadata.outputPath = normalize(stepMetadata.outputPath);
         let destPath = "";
-        if (stepMetadata.outputPath === SETTING_ASKUSER) {
+        if (stepMetadata.outputPath === ExportJarProperties.SETTING_ASKUSER) {
             const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
             if (outputUri === undefined) {
                 return Promise.reject();
