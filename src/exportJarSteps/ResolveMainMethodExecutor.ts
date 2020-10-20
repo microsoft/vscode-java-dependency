@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import * as _ from "lodash";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
@@ -72,6 +73,9 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
                         }
                     }),
                     pickBox.onDidAccept(() => {
+                        if (_.isEmpty(pickBox.selectedItems)) {
+                            return;
+                        }
                         stepMetadata.mainMethod = pickBox.selectedItems[0].description;
                         stepMetadata.steps.push(ExportJarStep.ResolveMainMethod);
                         return resolve(true);
