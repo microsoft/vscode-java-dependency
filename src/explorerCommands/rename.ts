@@ -18,6 +18,7 @@ export async function renameFile(node: DataNode, selectedNode: ExplorerNode): Pr
 
     const newName: string | undefined = await window.showInputBox({
         placeHolder: "Input new file name",
+        value: node.name,
         ignoreFocusOut: true,
     });
 
