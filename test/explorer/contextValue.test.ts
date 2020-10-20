@@ -3,11 +3,13 @@
 
 import * as assert from "assert";
 import { Uri } from "vscode";
-import { INodeData, NodeKind } from "../../src/java/nodeData";
+import { INodeData, NodeKind, TypeKind } from "../../src/java/nodeData";
 import { PackageRootKind } from "../../src/java/packageRootNodeData";
 import { ContainerNode } from "../../src/views/containerNode";
+import { FileNode } from "../../src/views/fileNode";
 import { PackageNode } from "../../src/views/packageNode";
 import { PackageRootNode } from "../../src/views/packageRootNode";
+import { PrimaryTypeNode } from "../../src/views/PrimaryTypeNode";
 import { ProjectNode } from "../../src/views/projectNode";
 import { WorkspaceNode } from "../../src/views/workspaceNode";
 
@@ -65,6 +67,22 @@ suite("Context Value Tests", () => {
 
     test("test binary package node", async function() {
         assert.equal((await binaryPackage.getTreeItem()).contextValue, "java:package+binary+uri");
+    });
+
+    test("test file node", async function() {
+        assert.equal((await file.getTreeItem()).contextValue, "java:file+uri");
+    });
+
+    test("test class type node", async function() {
+        assert.equal((await classType.getTreeItem()).contextValue, "java:type+class+uri");
+    });
+
+    test("test enum type node", async function() {
+        assert.equal((await enumType.getTreeItem()).contextValue, "java:type+enum+uri");
+    });
+
+    test("test interface type node", async function() {
+        assert.equal((await interfaceType.getTreeItem()).contextValue, "java:type+interface+uri");
     });
 });
 
@@ -160,3 +178,36 @@ const binaryPackage: PackageNode = new PackageNode({
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Package,
 }, dependencyJar, mavenProject, dependencyJar);
+
+const file: FileNode = new FileNode({
+    name: "config.txt",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.File,
+}, sourcePackage);
+
+const classType: PrimaryTypeNode = new PrimaryTypeNode({
+    name: "App",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.PrimaryType,
+    metaData: {
+        TypeKind: TypeKind.Class,
+    },
+}, sourcePackage);
+
+const enumType: PrimaryTypeNode = new PrimaryTypeNode({
+    name: "LanguageServerMode",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.PrimaryType,
+    metaData: {
+        TypeKind: TypeKind.Enum,
+    },
+}, sourcePackage);
+
+const interfaceType: PrimaryTypeNode = new PrimaryTypeNode({
+    name: "Controller",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.PrimaryType,
+    metaData: {
+        TypeKind: TypeKind.Interface,
+    },
+}, sourcePackage);

@@ -57,27 +57,33 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
             throw new Error("No java project found. Please make sure your Java project exists in the workspace.");
         }
         const disposables: Disposable[] = [];
-        await new Promise((resolve, reject) => {
-            const pickBox = createPickBox<IJavaProjectQuickPickItem>("Export Jar : Determine workspace", "Select the workspace", pickItems, false);
-            disposables.push(
-                pickBox.onDidAccept(() => {
-                    stepMetadata.projectList = projectMap.get(pickBox.selectedItems[0].workspaceFolder.uri.toString());
-                    stepMetadata.workspaceFolder = pickBox.selectedItems[0].workspaceFolder;
-                    stepMetadata.steps.push(ExportJarStep.ResolveJavaProject);
-                    return resolve();
-                }),
-                pickBox.onDidHide(() => {
-                    return reject();
-                }),
-            );
-            disposables.push(pickBox);
-            pickBox.show();
-        });
-        for (const d of disposables) {
-            d.dispose();
+        try {
+            await new Promise((resolve, reject) => {
+                const pickBox = createPickBox<IJavaProjectQuickPickItem>("Export Jar : Determine workspace",
+                    "Select the workspace", pickItems, false);
+                disposables.push(
+                    pickBox.onDidAccept(() => {
+                        if (_.isEmpty(pickBox.selectedItems)) {
+                            return;
+                        }
+                        stepMetadata.projectList = projectMap.get(pickBox.selectedItems[0].workspaceFolder.uri.toString());
+                        stepMetadata.workspaceFolder = pickBox.selectedItems[0].workspaceFolder;
+                        stepMetadata.steps.push(ExportJarStep.ResolveJavaProject);
+                        return resolve();
+                    }),
+                    pickBox.onDidHide(() => {
+                        return reject();
+                    }),
+                );
+                disposables.push(pickBox);
+                pickBox.show();
+            });
+        } finally {
+            for (const d of disposables) {
+                d.dispose();
+            }
         }
     }
-
 }
 
 interface IJavaProjectQuickPickItem extends QuickPickItem {

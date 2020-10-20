@@ -134,6 +134,9 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                         }
                     }),
                     pickBox.onDidAccept(() => {
+                        if (_.isEmpty(pickBox.selectedItems)) {
+                            return;
+                        }
                         for (const item of pickBox.selectedItems) {
                             stepMetadata.elements.push(item.path);
                         }

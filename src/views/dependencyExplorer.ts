@@ -8,6 +8,7 @@ import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-w
 import { Commands } from "../commands";
 import { Build } from "../constants";
 import { deleteFiles } from "../explorerCommands/delete";
+import { renameFile } from "../explorerCommands/rename";
 import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -75,9 +76,14 @@ export class DependencyExplorer implements Disposable {
         );
 
         context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_RENAME_FILE, (node: DataNode) => {
+                renameFile(node, this._dependencyViewer.selection[0]);
+            }),
+        );
+
+        context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node: DataNode) => {
-                const firstSelectedNode = this._dependencyViewer.selection[0];
-                deleteFiles(node, firstSelectedNode);
+                deleteFiles(node, this._dependencyViewer.selection[0]);
             }),
         );
     }
