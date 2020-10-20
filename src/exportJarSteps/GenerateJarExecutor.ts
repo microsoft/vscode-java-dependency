@@ -121,35 +121,34 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             }
         }
         const disposables: Disposable[] = [];
-        let result: boolean = false;
-        try {
-            result = await new Promise<boolean>(async (resolve, reject) => {
-                const pickBox = createPickBox<IJarQuickPickItem>("Export Jar : Determine elements", "Select the elements",
-                    dependencyItems, stepMetadata.steps.length > 0, true);
-                pickBox.selectedItems = pickedDependencyItems;
-                disposables.push(
-                    pickBox.onDidTriggerButton((item) => {
-                        if (item === QuickInputButtons.Back) {
-                            return resolve(false);
-                        }
-                    }),
-                    pickBox.onDidAccept(() => {
-                        for (const item of pickBox.selectedItems) {
-                            stepMetadata.elements.push(item.path);
-                        }
-                        return resolve(true);
-                    }),
-                    pickBox.onDidHide(() => {
-                        return reject();
-                    }),
-                );
-                disposables.push(pickBox);
-                pickBox.show();
-            });
-        } finally {
-            for (const d of disposables) {
-                d.dispose();
-            }
+        const result: boolean = await new Promise<boolean>(async (resolve, reject) => {
+            const pickBox = createPickBox<IJarQuickPickItem>("Export Jar : Determine elements", "Select the elements",
+                dependencyItems, stepMetadata.steps.length > 0, true);
+            pickBox.selectedItems = pickedDependencyItems;
+            disposables.push(
+                pickBox.onDidTriggerButton((item) => {
+                    if (item === QuickInputButtons.Back) {
+                        return resolve(false);
+                    }
+                }),
+                pickBox.onDidAccept(() => {
+                    if (_.isEmpty(pickBox.selectedItems)) {
+                        return;
+                    }
+                    for (const item of pickBox.selectedItems) {
+                        stepMetadata.elements.push(item.path);
+                    }
+                    return resolve(true);
+                }),
+                pickBox.onDidHide(() => {
+                    return reject();
+                }),
+            );
+            disposables.push(pickBox);
+            pickBox.show();
+        });
+        for (const d of disposables) {
+            d.dispose();
         }
         return result;
     }
