@@ -72,10 +72,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 
 // this method is called when your extension is deactivated
 export async function deactivate() {
-    const exportJarTaskProvider = ExportJarTaskProvider.getProvider();
-    if (exportJarTaskProvider) {
-        exportJarTaskProvider.dispose();
-    }
+    ExportJarTaskProvider.disposeProvider();
     await disposeTelemetryWrapper();
 }
 

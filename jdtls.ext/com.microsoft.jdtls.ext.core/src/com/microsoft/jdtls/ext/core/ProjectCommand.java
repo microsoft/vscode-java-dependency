@@ -82,7 +82,7 @@ public final class ProjectCommand {
     private static class ClassPath {
         public String source;
         public String destination;
-        public boolean isExtract;
+        public boolean isDependency;
     }
 
     private static class exportResult {
@@ -168,33 +168,16 @@ public final class ProjectCommand {
         try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
             Set<String> directories = new HashSet<>();
             for (ClassPath classpath : classpaths) {
-                if (classpath.isExtract) {
-                    ZipFile zip = new ZipFile(classpath.source);
-                    writeArchive(zip, true, true, target, directories, monitor);
+                if (classpath.isDependency) {
+                    writeArchive(new ZipFile(classpath.source), true, true, target, directories, monitor);
                 } else {
-                    File file = new File(classpath.source);
-                    if (StringUtils.isEmpty(classpath.destination)) {
-                        writeFileRecursively(file, target, directories, file.getAbsolutePath().length() + 1);
-                    } else {
-                        writeFile(file, new Path(classpath.destination), true, true, target, directories);
-                    }
+                    writeFile(new File(classpath.source), new Path(classpath.destination), true, true, target, directories);
                 }
             }
         } catch (Exception e) {
             return new exportResult(false, e.getMessage());
         }
         return new exportResult(true);
-    }
-
-    private static void writeFileRecursively(File source, JarOutputStream jarOutputStream, Set<String> directories, int len) throws CoreException {
-        File[] files = source.listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                writeFileRecursively(file, jarOutputStream, directories, len);
-            } else if (file.isFile()) {
-                writeFile(file, new Path(file.getAbsolutePath().substring(len)), true, true, jarOutputStream, directories);
-            }
-        }
     }
 
     public static List<MainClassInfo> getMainMethod(List<Object> arguments, IProgressMonitor monitor) throws Exception {

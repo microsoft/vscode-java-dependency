@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { ensureDir, pathExists } from "fs-extra";
+import globby = require("globby");
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
@@ -9,7 +10,7 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarProperties, resetStepMetadata, saveDialog } from "./utility";
+import { createPickBox, ExportJarProperties, resetStepMetadata, saveDialog, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -75,7 +76,10 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
 
     private async generateElements(stepMetadata: IStepMetadata): Promise<boolean> {
         const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
-        const extensionApi: any = await extension?.activate();
+        if (extension === undefined) {
+            return Promise.reject(new Error("redhat.java isn't running, the export process will be aborted."));
+        }
+        const extensionApi: any = await extension.activate();
         const dependencyItems: IJarQuickPickItem[] = await window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving classpaths...",
@@ -106,7 +110,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             const classpath: IClassPath = {
                 source: dependencyItems[0].path,
                 destination: undefined,
-                isExtract: false,
+                isDependency: false,
             };
             stepMetadata.classpaths.push(classpath);
             return true;
@@ -139,17 +143,29 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                             return resolve(false);
                         }
                     }),
-                    pickBox.onDidAccept(() => {
+                    pickBox.onDidAccept(async () => {
                         if (_.isEmpty(pickBox.selectedItems)) {
                             return;
                         }
                         for (const item of pickBox.selectedItems) {
-                            const classpath: IClassPath = {
-                                source: item.path,
-                                destination: undefined,
-                                isExtract: item.type === "external",
-                            };
-                            stepMetadata.classpaths.push(classpath);
+                            if (item.type === "external") {
+                                const classpath: IClassPath = {
+                                    source: item.path,
+                                    destination: undefined,
+                                    isDependency: true,
+                                };
+                                stepMetadata.classpaths.push(classpath);
+                            } else {
+                                const posixPath: string = toPosixPath(item.path);
+                                for (const path of await globby(posixPath)) {
+                                    const classpath: IClassPath = {
+                                        source: path,
+                                        destination: path.substring(posixPath.length + 1),
+                                        isDependency: false,
+                                    };
+                                    stepMetadata.classpaths.push(classpath);
+                                }
+                            }
                         }
                         return resolve(true);
                     }),

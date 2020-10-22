@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { lstatSync } from "fs";
+import { lstat } from "fs-extra";
 import * as globby from "globby";
 import * as _ from "lodash";
-import { dirname, extname, isAbsolute, join } from "path";
-import * as upath from "upath";
+import { dirname, extname, isAbsolute, join, normalize } from "path";
 import {
     CustomExecution, Disposable, Event, EventEmitter, Extension, extensions, Pseudoterminal, Task, TaskDefinition,
     TaskProvider, TaskRevealKind, tasks, TaskScope, TerminalDimensions, Uri, workspace, WorkspaceFolder,
@@ -17,7 +16,7 @@ import { Settings } from "../settings";
 import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { ExportJarProperties } from "./utility";
+import { ExportJarProperties, failMessage, toPosixPath } from "./utility";
 
 export class ExportJarTaskProvider implements TaskProvider {
 
@@ -29,6 +28,13 @@ export class ExportJarTaskProvider implements TaskProvider {
 
     public static getProvider(): Disposable | undefined {
         return ExportJarTaskProvider.exportJarTaskProvider;
+    }
+
+    public static disposeProvider(): void {
+        const provider = ExportJarTaskProvider.exportJarTaskProvider;
+        if (provider) {
+            provider.dispose();
+        }
     }
 
     public static getTask(stepMetadata: IStepMetadata): Task {
@@ -165,21 +171,22 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     }
 
     private toAbsolute(path: string): string {
-        if (path.length > 0 && path[0] === "!") {
-            const positivePath = path.substring(1);
-            if (!isAbsolute(positivePath)) {
-                return "!" + join(this.stepMetadata.workspaceFolder.uri.fsPath, positivePath);
-            }
-        } else if (!isAbsolute(path)) {
-            return join(this.stepMetadata.workspaceFolder.uri.fsPath, path);
+        const negative: boolean = (path[0] === "!");
+        let positivePath: string = negative ? path.substring(1) : path;
+        if (!isAbsolute(positivePath)) {
+            positivePath = join(this.stepMetadata.workspaceFolder.uri.fsPath, positivePath);
         }
-        return path;
+        return negative ? "!" + positivePath : positivePath;
     }
 
-    private async getClasspaths(projectUri: string, _scope: string, classpaths: string[], dependencies: string[]): Promise<void> {
+    private async getClasspaths(projectUri: string, classpathScope: string, classpaths: string[], dependencies: string[]): Promise<void> {
         const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
-        const extensionApi: any = await extension?.activate();
-        const classpathResult: IClasspathResult = await extensionApi.getClasspaths(projectUri, { scope: _scope });
+        if (extension === undefined) {
+            failMessage("redhat.java isn't running, the export process will be aborted.");
+            return Promise.reject();
+        }
+        const extensionApi: any = await extension.activate();
+        const classpathResult: IClasspathResult = await extensionApi.getClasspaths(projectUri, { scope: classpathScope });
         for (const classpath of classpathResult.classpaths) {
             if (extname(classpath) === ".jar") {
                 dependencies.push(classpath);
@@ -203,21 +210,27 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         const classPathArray: string[] = [];
         const dependencies: string[] = [];
         for (const element of this.stepMetadata.elements) {
+            if (element.length === 0) {
+                continue;
+            }
             const variableResult = element.match(regExp);
             if (_.isEmpty(variableResult) || variableResult.length <= 1) {
-                classPathArray.push(upath.normalizeSafe(this.toAbsolute(element)));
+                classPathArray.push(toPosixPath(normalize(this.toAbsolute(element))));
                 continue;
             }
             if (variableResult[1] === ExportJarProperties.RUNTIME_DEPENDENCIES) {
                 for (const dependency of runtimeDependencies) {
-                    dependencies.push(upath.normalizeSafe(dependency));
+                    dependencies.push(toPosixPath(normalize(dependency)));
                 }
             } else if (variableResult[1] === ExportJarProperties.TEST_DEPENDENCIES) {
                 for (const dependency of testDependencies) {
-                    dependencies.push(upath.normalizeSafe(dependency));
+                    dependencies.push(toPosixPath(normalize(dependency)));
                 }
             } else {
                 const splitResult: string[] = variableResult[1].split(":");
+                if (_.isEmpty(splitResult)) {
+                    continue;
+                }
                 if (splitResult[0] === ExportJarProperties.COMPILE_OUTPUT) {
                     if (splitResult.length === 1) {
                         for (const values of classPathMap.values()) {
@@ -264,11 +277,10 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 const uriData: IUriData = {
                     uri: uri.toString(),
                 };
-                fsPathArray.push(upath.normalizeSafe(uri.fsPath));
+                fsPathArray.push(toPosixPath(normalize(uri.fsPath)));
                 trie.insert(uriData);
             } else {
-                const realPath = classPath.substring(1);
-                fsPathArray.push("!" + upath.normalizeSafe(Uri.file(realPath).fsPath));
+                fsPathArray.push("!" + toPosixPath(normalize(Uri.file(classPath.substring(1)).fsPath)));
             }
         }
         const globs: string[] = await globby(fsPathArray);
@@ -278,15 +290,15 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             if (tireNode === undefined) {
                 continue;
             }
-            let fsPath = upath.normalizeSafe(Uri.parse(tireNode.value.uri).fsPath);
-            if (!(lstatSync(fsPath).isDirectory())) {
+            let fsPath = toPosixPath(normalize(Uri.parse(tireNode.value.uri).fsPath));
+            if (!(await lstat(fsPath)).isDirectory()) {
                 fsPath = dirname(fsPath);
             }
             if (!_.isEmpty(tireNode)) {
                 const classpath: IClassPath = {
                     source: glob,
                     destination: glob.substring(fsPath.length + 1),
-                    isExtract: false,
+                    isDependency: false,
                 };
                 sources.push(classpath);
             }
@@ -295,7 +307,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             const classpath: IClassPath = {
                 source: dependency,
                 destination: undefined,
-                isExtract: true,
+                isDependency: true,
             };
             sources.push(classpath);
         }

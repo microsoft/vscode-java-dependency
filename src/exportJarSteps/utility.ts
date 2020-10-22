@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { EOL, platform } from "os";
+import { posix, sep, win32 } from "path";
 import { commands, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
@@ -88,4 +89,8 @@ export function successMessage(outputFileName: string) {
                 commands.executeCommand("revealFileInOS", Uri.file(outputFileName));
             }
         });
+}
+
+export function toPosixPath(inputPath: string): string {
+    return inputPath.split(win32.sep).join(posix.sep);
 }

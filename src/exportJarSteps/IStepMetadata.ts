@@ -19,5 +19,5 @@ export interface IStepMetadata {
 export interface IClassPath {
     source: string;
     destination: string | undefined;
-    isExtract: boolean;
+    isDependency: boolean;
 }
