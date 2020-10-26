@@ -5,6 +5,7 @@ import { ensureDir, pathExists } from "fs-extra";
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
+import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
@@ -33,9 +34,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 return false;
             }
         }
-        stepMetadata.outputPath = normalize(stepMetadata.outputPath);
         let destPath = "";
-        if (stepMetadata.outputPath === SETTING_ASKUSER) {
+        if (stepMetadata.outputPath === SETTING_ASKUSER || stepMetadata.outputPath === "") {
+            // Send telemetry when `askUser` is set
+            if (stepMetadata.outputPath === SETTING_ASKUSER) {
+                instrumentOperation("java.project.exportJar.targetPath.askUser", () => {});
+            }
             const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
             if (outputUri === undefined) {
                 return Promise.reject();
@@ -53,6 +57,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             }
             await ensureDir(dirname(destPath));
         }
+        destPath = normalize(destPath);
         return window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Generating jar...",

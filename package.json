@@ -186,15 +186,7 @@
         },
         "java.project.exportJar.targetPath": {
           "type": "string",
-          "enum": [
-            "${workspaceFolder}/${workspaceFolderBasename}.jar",
-            "askUser"
-          ],
-          "enumDescriptions": [
-            "Export jar to the workspace folder with its name",
-            "Open a dialog to ask user about the target path and the name of the jar"
-          ],
-          "description": "%configuration.java.project.exportJar.targetPath%",
+          "markdownDescription": "%configuration.java.project.exportJar.targetPath%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         }
       }
