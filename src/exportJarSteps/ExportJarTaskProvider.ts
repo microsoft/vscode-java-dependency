@@ -6,8 +6,8 @@ import * as globby from "globby";
 import * as _ from "lodash";
 import { dirname, extname, isAbsolute, join, normalize } from "path";
 import {
-    CustomExecution, Disposable, Event, EventEmitter, Extension, extensions, Pseudoterminal, Task, TaskDefinition,
-    TaskProvider, TaskRevealKind, tasks, TaskScope, TerminalDimensions, Uri, workspace, WorkspaceFolder,
+    CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
+    TaskProvider, TaskRevealKind, TaskScope, TerminalDimensions, Uri, workspace, WorkspaceFolder,
 } from "vscode";
 import { createJarFile } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
@@ -16,26 +16,11 @@ import { Settings } from "../settings";
 import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { ExportJarProperties, failMessage, toPosixPath } from "./utility";
+import { ExportJarProperties, failMessage, getExtensionApi, toPosixPath } from "./utility";
 
 export class ExportJarTaskProvider implements TaskProvider {
 
     public static exportJarType: string = "java";
-
-    public static registerProvider(): void {
-        ExportJarTaskProvider.exportJarTaskProvider = tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider());
-    }
-
-    public static getProvider(): Disposable | undefined {
-        return ExportJarTaskProvider.exportJarTaskProvider;
-    }
-
-    public static disposeProvider(): void {
-        const provider = ExportJarTaskProvider.exportJarTaskProvider;
-        if (provider) {
-            provider.dispose();
-        }
-    }
 
     public static getTask(stepMetadata: IStepMetadata): Task {
         const targetPathSetting: string = Settings.getExportJarTargetPath();
@@ -52,8 +37,6 @@ export class ExportJarTaskProvider implements TaskProvider {
         task.presentationOptions.reveal = TaskRevealKind.Never;
         return task;
     }
-
-    private static exportJarTaskProvider: Disposable | undefined;
 
     private tasks: Task[] | undefined;
 
@@ -74,7 +57,7 @@ export class ExportJarTaskProvider implements TaskProvider {
     }
 
     public async provideTasks(): Promise<Task[]> {
-        if (_.isEmpty(this.tasks)) {
+        if (!_.isEmpty(this.tasks)) {
             return this.tasks;
         }
         this.tasks = [];
@@ -86,14 +69,16 @@ export class ExportJarTaskProvider implements TaskProvider {
             } else if (projectList.length === 1) {
                 outputList.push("${" + ExportJarProperties.COMPILE_OUTPUT + "}");
                 outputList.push("${" + ExportJarProperties.TESTCOMPILE_OUTPUT + "}");
+                outputList.push("${" + ExportJarProperties.RUNTIME_DEPENDENCIES + "}");
+                outputList.push("${" + ExportJarProperties.TEST_DEPENDENCIES + "}");
             } else {
                 for (const project of projectList) {
                     outputList.push("${" + ExportJarProperties.COMPILE_OUTPUT + ":" + project.name + "}");
                     outputList.push("${" + ExportJarProperties.TESTCOMPILE_OUTPUT + ":" + project.name + "}");
+                    outputList.push("${" + ExportJarProperties.RUNTIME_DEPENDENCIES + ":" + project.name + "}");
+                    outputList.push("${" + ExportJarProperties.TEST_DEPENDENCIES + ":" + project.name + "}");
                 }
             }
-            outputList.push("${" + ExportJarProperties.RUNTIME_DEPENDENCIES + "}");
-            outputList.push("${" + ExportJarProperties.TEST_DEPENDENCIES + "}");
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
                 elements: outputList,
@@ -142,28 +127,31 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     public async open(initialDimensions: TerminalDimensions | undefined): Promise<void> {
         if (_.isEmpty(this.stepMetadata.outputPath)) {
-            // Only for custom task
-            this.stepMetadata.outputPath = (Settings.getExportJarTargetPath() === ExportJarProperties.SETTING_ASKUSER) ?
+            const targetPath = Settings.getExportJarTargetPath();
+            this.stepMetadata.outputPath = (targetPath === ExportJarProperties.SETTING_ASKUSER || targetPath === "") ?
                 ExportJarProperties.SETTING_ASKUSER : join(this.stepMetadata.workspaceFolder.uri.fsPath, this.stepMetadata.workspaceFolder.name + ".jar");
         }
-        if (!_.isEmpty(this.stepMetadata.elements)) {
-            const classPathMap: Map<string, string[]> = new Map<string, string[]>();
-            const testClassPathMap: Map<string, string[]> = new Map<string, string[]>();
-            const runtimeDependencies: string[] = [];
-            const testDependencies: string[] = [];
-            const projectList: INodeData[] = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
-            for (const project of projectList) {
-                const runtimeClassPaths: string[] = [];
-                await this.getClasspaths(project.uri, "runtime", runtimeClassPaths, runtimeDependencies);
-                classPathMap.set(project.name, runtimeClassPaths);
-                const testClassPaths: string[] = [];
-                await this.getClasspaths(project.uri, "test", testClassPaths, testDependencies);
-                testClassPathMap.set(project.name, testClassPaths);
+        try {
+            if (!_.isEmpty(this.stepMetadata.elements)) {
+                const classPathMap: Map<string, string[]> = new Map<string, string[]>();
+                const testClassPathMap: Map<string, string[]> = new Map<string, string[]>();
+                const runtimeDependencies: string[] = [];
+                const testDependencies: string[] = [];
+                const projectList: INodeData[] = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
+                for (const project of projectList) {
+                    const runtimeClassPaths: string[] = [];
+                    await this.getClasspaths(project.uri, "runtime", runtimeClassPaths, runtimeDependencies);
+                    classPathMap.set(project.name, runtimeClassPaths);
+                    const testClassPaths: string[] = [];
+                    await this.getClasspaths(project.uri, "test", testClassPaths, testDependencies);
+                    testClassPathMap.set(project.name, testClassPaths);
+                }
+                this.stepMetadata.classpaths = await this.resolveClassPaths(runtimeDependencies, testDependencies, classPathMap, testClassPathMap);
             }
-            this.stepMetadata.classpaths = await this.resolveClassPaths(runtimeDependencies, testDependencies, classPathMap, testClassPathMap);
+            await createJarFile(this.stepMetadata);
+        } finally {
+            this.closeEmitter.fire();
         }
-        await createJarFile(this.stepMetadata);
-        this.closeEmitter.fire();
     }
 
     public close(): void {
@@ -180,12 +168,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     }
 
     private async getClasspaths(projectUri: string, classpathScope: string, classpaths: string[], dependencies: string[]): Promise<void> {
-        const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
-        if (extension === undefined) {
-            failMessage("redhat.java isn't running, the export process will be aborted.");
-            return Promise.reject();
-        }
-        const extensionApi: any = await extension.activate();
+        const extensionApi: any = await getExtensionApi();
         const classpathResult: IClasspathResult = await extensionApi.getClasspaths(projectUri, { scope: classpathScope });
         for (const classpath of classpathResult.classpaths) {
             if (extname(classpath) === ".jar") {
@@ -206,7 +189,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     private async resolveClassPaths(runtimeDependencies: string[], testDependencies: string[],
                                     classPathMap: Map<string, string[]>, testClassPathMap: Map<string, string[]>): Promise<IClassPath[]> {
         // tslint:disable-next-line: no-invalid-template-strings
-        const regExp: RegExp = new RegExp("\\${(.*)}");
+        const regExp: RegExp = new RegExp("\\${(.*?)(:.*)?}");
         const classPathArray: string[] = [];
         const dependencies: string[] = [];
         for (const element of this.stepMetadata.elements) {
@@ -286,7 +269,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         const globs: string[] = await globby(fsPathArray);
         const sources: IClassPath[] = [];
         for (const glob of globs) {
-            const tireNode: TrieNode<IUriData> = trie.findFirst(Uri.file(glob).fsPath);
+            const tireNode: TrieNode<IUriData> = trie.find(Uri.file(glob).fsPath, true);
             if (tireNode === undefined) {
                 continue;
             }

@@ -5,12 +5,12 @@ import { ensureDir, pathExists } from "fs-extra";
 import globby = require("globby");
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize } from "path";
-import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
+import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarProperties, resetStepMetadata, saveDialog, toPosixPath } from "./utility";
+import { createPickBox, ExportJarProperties, getExtensionApi, resetStepMetadata, saveDialog, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -75,11 +75,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
     }
 
     private async generateElements(stepMetadata: IStepMetadata): Promise<boolean> {
-        const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
-        if (extension === undefined) {
-            return Promise.reject(new Error("redhat.java isn't running, the export process will be aborted."));
-        }
-        const extensionApi: any = await extension.activate();
+        const extensionApi: any = await getExtensionApi();
         const dependencyItems: IJarQuickPickItem[] = await window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving classpaths...",

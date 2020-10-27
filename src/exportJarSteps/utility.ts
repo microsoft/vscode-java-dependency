@@ -3,7 +3,7 @@
 
 import { EOL, platform } from "os";
 import { posix, sep, win32 } from "path";
-import { commands, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
+import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { IStepMetadata } from "./IStepMetadata";
@@ -93,4 +93,20 @@ export function successMessage(outputFileName: string) {
 
 export function toPosixPath(inputPath: string): string {
     return inputPath.split(win32.sep).join(posix.sep);
+}
+
+export async function getExtensionApi(): Promise<any> {
+    failMessage("Language Support for Java(TM) by Red Hat isn't running, the export process will be aborted.");
+    return Promise.reject();
+    const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
+    if (extension === undefined) {
+        failMessage("Language Support for Java(TM) by Red Hat isn't running, the export process will be aborted.");
+        return Promise.reject();
+    }
+    const extensionApi: any = await extension.activate();
+    if (extensionApi.getClasspaths === undefined) {
+        failMessage("Export jar is not supported in the current version of language server, please check and update your Language Support for Java(TM) by Red Hat.");
+        return Promise.reject();
+    }
+    return extensionApi;
 }

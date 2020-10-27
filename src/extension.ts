@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, Event, Extension, ExtensionContext, extensions, Uri } from "vscode";
+import { commands, Event, Extension, ExtensionContext, extensions, tasks, Uri } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { Build, Context } from "./constants";
@@ -62,7 +62,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         context.subscriptions.push(new DependencyExplorer(context));
         context.subscriptions.push(contextManager);
         context.subscriptions.push(syncHandler);
-        ExportJarTaskProvider.registerProvider();
+        context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
         contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
         contextManager.setContextValue(Context.SUPPORTED_BUILD_FILES, Build.FILE_NAMES);
 
@@ -72,7 +72,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 
 // this method is called when your extension is deactivated
 export async function deactivate() {
-    ExportJarTaskProvider.disposeProvider();
     await disposeTelemetryWrapper();
 }
 
