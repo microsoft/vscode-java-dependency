@@ -24,5 +24,5 @@
   "configuration.java.dependency.autoRefresh": "Synchronize Java Projects explorer with changes",
   "configuration.java.dependency.refreshDelay": "The delay time (ms) the auto refresh is invoked when changes are detected",
   "configuration.java.dependency.packagePresentation": "Package presentation mode: flat or hierarchical",
-  "configuration.java.project.exportJar.targetPath": "Specifies the output path of export jar. The default value is `${workspaceFolder}/${workspaceFolderBasename}.jar`. When it is empty or equals `askUser`, you will specify the output path manually. **Note**: Since `askUser` will be deprecated in the future, it's recommended to simply set this setting to empty instead."
+  "configuration.java.project.exportJar.targetPath": "Specifies the output path of export jar. The default value is `${workspaceFolder}/${workspaceFolderBasename}.jar`. To select the output location manually each time exporting the jar file. Simply leave it **empty** or set it to `askUser`."
 }

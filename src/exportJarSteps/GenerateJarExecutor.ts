@@ -5,7 +5,7 @@ import { ensureDir, pathExists } from "fs-extra";
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize } from "path";
 import { Disposable, Extension, extensions, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
-import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
+import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
@@ -38,7 +38,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (stepMetadata.outputPath === SETTING_ASKUSER || stepMetadata.outputPath === "") {
             // Send telemetry when `askUser` is set
             if (stepMetadata.outputPath === SETTING_ASKUSER) {
-                instrumentOperation("java.project.exportJar.targetPath.askUser", () => {});
+                sendInfo("", { exportJarPath: stepMetadata.outputPath });
             }
             const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
             if (outputUri === undefined) {
