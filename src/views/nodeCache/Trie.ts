@@ -37,7 +37,7 @@ export class Trie<T extends IUriData> {
             if (!segment) {
                 continue;
             }
-            if (returnEarly === true && currentNode.value) {
+            if (returnEarly && currentNode.value) {
                 return currentNode;
             }
             if (currentNode.children[segment]) {

@@ -96,8 +96,6 @@ export function toPosixPath(inputPath: string): string {
 }
 
 export async function getExtensionApi(): Promise<any> {
-    failMessage("Language Support for Java(TM) by Red Hat isn't running, the export process will be aborted.");
-    return Promise.reject();
     const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
     if (extension === undefined) {
         failMessage("Language Support for Java(TM) by Red Hat isn't running, the export process will be aborted.");

@@ -4,7 +4,7 @@
 import { ensureDir, pathExists } from "fs-extra";
 import globby = require("globby");
 import * as _ from "lodash";
-import { basename, dirname, extname, isAbsolute, join, normalize } from "path";
+import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
@@ -156,7 +156,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                                 for (const path of await globby(posixPath)) {
                                     const classpath: IClassPath = {
                                         source: path,
-                                        destination: path.substring(posixPath.length + 1),
+                                        destination: relative(posixPath, path),
                                         isDependency: false,
                                     };
                                     stepMetadata.classpaths.push(classpath);
@@ -188,7 +188,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             }
             const extName = extname(classpath);
             const baseName = Uri.parse(classpath).fsPath.startsWith(Uri.parse(projectPath).fsPath) ?
-                classpath.substring(projectPath.length + 1) : basename(classpath);
+                relative(projectPath, classpath) : basename(classpath);
             const descriptionValue = (isRuntime) ? "Runtime" : "Test";
             const typeValue = (extName === ".jar") ? "external" : "internal";
             if (!uriSet.has(classpath)) {

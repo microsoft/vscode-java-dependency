@@ -27,5 +27,5 @@
   "configuration.java.project.exportJar.targetPath": "The default output path of export jar",
   "taskDefinitions.java.project.exportJar.elements": "The content list of export jar.",
   "taskDefinitions.java.project.exportJar.mainMethod": "The main method in the manifest of exported jar.",
-  "taskDefinitions.java.project.exportJar.targetPath": "The output path of the exported jar. This will override the setting `configuration.java.project.exportJar.targetPath`."
+  "taskDefinitions.java.project.exportJar.targetPath": "The output path of the exported jar. This will make effect instead of configuration.java.project.exportJar.targetPath."
 }
