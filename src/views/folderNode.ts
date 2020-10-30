@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { ThemeIcon } from "vscode";
+import { Explorer } from "../constants";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
@@ -40,5 +41,9 @@ export class FolderNode extends DataNode {
 
     protected get iconPath(): ThemeIcon {
         return new ThemeIcon("folder");
+    }
+
+    protected get contextValue(): string {
+        return Explorer.ContextValueType.Folder;
     }
 }

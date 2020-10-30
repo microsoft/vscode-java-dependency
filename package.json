@@ -382,12 +382,12 @@
         },
         {
           "command": "java.view.package.renameFile",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:file(?=.*?\\b\\+uri\\b)/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:packageRoot(?=.*?\\b\\+resource\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "7_modification@10"
         },
         {
           "command": "java.view.package.renameFile",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:type(?=.*?\\b\\+uri\\b)/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(file|type|folder)(?=.*?\\b\\+uri\\b)/",
           "group": "7_modification@10"
         },
         {
@@ -397,12 +397,12 @@
         },
         {
           "command": "java.view.package.moveFileToTrash",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:file(?=.*?\\b\\+uri\\b)/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:packageRoot(?=.*?\\b\\+resource\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "7_modification@20"
         },
         {
           "command": "java.view.package.moveFileToTrash",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:type(?=.*?\\b\\+uri\\b)/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:(file|type|folder)(?=.*?\\b\\+uri\\b)/",
           "group": "7_modification@20"
         },
         {
