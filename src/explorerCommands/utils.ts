@@ -5,10 +5,9 @@ import { DataNode } from "../views/dataNode";
 
 export function isMutable(node: DataNode): boolean {
     // avoid modify dependency files
-    const packageExp = /java:(package|packageRoot)(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/;
-    const fileExp = /java:file(?=.*?\b\+uri\b)/;
-    const typeExp = /java:type(?=.*?\b\+uri\b)/;
+    const packageExp = /java:(package|packageRoot)(?=.*?\b\+(source|resource)\b)(?=.*?\b\+uri\b)/;
+    const resourceOrTypeExp = /java:(file|type|folder)(?=.*?\b\+uri\b)/;
 
     const contextValue = node.computeContextValue();
-    return packageExp.test(contextValue) || fileExp.test(contextValue) || typeExp.test(contextValue);
+    return packageExp.test(contextValue) || resourceOrTypeExp.test(contextValue);
 }
