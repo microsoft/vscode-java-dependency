@@ -480,6 +480,7 @@
     "taskDefinitions": [
       {
         "type": "java",
+        "required": ["targetPath"],
         "properties": {
           "elements": {
             "type": "array",

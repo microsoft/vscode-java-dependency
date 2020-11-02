@@ -6,11 +6,12 @@ import globby = require("globby");
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
+import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarProperties, getExtensionApi, resetStepMetadata, saveDialog, toPosixPath } from "./utility";
+import { createPickBox, ExportJarTargets, getExtensionApi, resetStepMetadata, saveDialog, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -34,9 +35,11 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 return false;
             }
         }
-        stepMetadata.outputPath = normalize(stepMetadata.outputPath);
         let destPath = "";
-        if (stepMetadata.outputPath === ExportJarProperties.SETTING_ASKUSER) {
+        if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER || stepMetadata.outputPath === "") {
+            if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER) {
+                sendInfo("", { exportJarPath: stepMetadata.outputPath });
+            }
             const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
             if (outputUri === undefined) {
                 return Promise.reject();
@@ -54,6 +57,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             }
             await ensureDir(dirname(destPath));
         }
+        destPath = normalize(destPath);
         return window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Generating jar...",

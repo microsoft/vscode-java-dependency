@@ -4,6 +4,7 @@
 import { lstat } from "fs-extra";
 import * as globby from "globby";
 import * as _ from "lodash";
+import { platform } from "os";
 import { dirname, extname, isAbsolute, join, normalize, relative } from "path";
 import {
     CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
@@ -16,7 +17,13 @@ import { Settings } from "../settings";
 import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { ExportJarProperties, failMessage, getExtensionApi, toPosixPath } from "./utility";
+import { ExportJarConstants, ExportJarTargets, failMessage, getExtensionApi, toPosixPath, toWinPath } from "./utility";
+
+interface IExportJarTaskDefinition extends TaskDefinition {
+    elements?: string[];
+    mainMethod?: string;
+    targetPath?: string;
+}
 
 export class ExportJarTaskProvider implements TaskProvider {
 
@@ -46,6 +53,7 @@ export class ExportJarTaskProvider implements TaskProvider {
         const stepMetadata: IStepMetadata = {
             entry: undefined,
             workspaceFolder: folder,
+            projectList: await Jdtls.getProjects(folder.uri.toString()),
             steps: [],
         };
         const resolvedTask: Task = new Task(definition, folder, task.name, ExportJarTaskProvider.exportJarType,
@@ -63,27 +71,27 @@ export class ExportJarTaskProvider implements TaskProvider {
         this.tasks = [];
         for (const folder of workspace.workspaceFolders) {
             const projectList: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
-            const outputList: string[] = [];
+            const elementList: string[] = [];
             if (_.isEmpty(projectList)) {
                 continue;
             } else if (projectList.length === 1) {
-                outputList.push("${" + ExportJarProperties.COMPILE_OUTPUT + "}");
-                outputList.push("${" + ExportJarProperties.TESTCOMPILE_OUTPUT + "}");
-                outputList.push("${" + ExportJarProperties.RUNTIME_DEPENDENCIES + "}");
-                outputList.push("${" + ExportJarProperties.TEST_DEPENDENCIES + "}");
+                elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + "}",
+                    "${" + ExportJarConstants.TESTCOMPILE_OUTPUT + "}",
+                    "${" + ExportJarConstants.RUNTIME_DEPENDENCIES + "}",
+                    "${" + ExportJarConstants.TEST_DEPENDENCIES + "}");
             } else {
                 for (const project of projectList) {
-                    outputList.push("${" + ExportJarProperties.COMPILE_OUTPUT + ":" + project.name + "}");
-                    outputList.push("${" + ExportJarProperties.TESTCOMPILE_OUTPUT + ":" + project.name + "}");
-                    outputList.push("${" + ExportJarProperties.RUNTIME_DEPENDENCIES + ":" + project.name + "}");
-                    outputList.push("${" + ExportJarProperties.TEST_DEPENDENCIES + ":" + project.name + "}");
+                    elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + ":" + project.name + "}",
+                        "${" + ExportJarConstants.TESTCOMPILE_OUTPUT + ":" + project.name + "}",
+                        "${" + ExportJarConstants.RUNTIME_DEPENDENCIES + ":" + project.name + "}",
+                        "${" + ExportJarConstants.TEST_DEPENDENCIES + ":" + project.name + "}");
                 }
             }
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
-                elements: outputList,
+                elements: elementList,
                 mainMethod: "",
-                targetPath: ExportJarProperties.DEFAULT_OUTPUT_PATH,
+                targetPath: ExportJarTargets.DEFAULT_OUTPUT_PATH,
             };
             const stepMetadata: IStepMetadata = {
                 entry: undefined,
@@ -100,12 +108,6 @@ export class ExportJarTaskProvider implements TaskProvider {
         }
         return this.tasks;
     }
-}
-
-interface IExportJarTaskDefinition extends TaskDefinition {
-    elements?: string[];
-    mainMethod?: string;
-    targetPath?: string;
 }
 
 class ExportJarTaskTerminal implements Pseudoterminal {
@@ -126,11 +128,6 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     }
 
     public async open(initialDimensions: TerminalDimensions | undefined): Promise<void> {
-        if (_.isEmpty(this.stepMetadata.outputPath)) {
-            const targetPath = Settings.getExportJarTargetPath();
-            this.stepMetadata.outputPath = (targetPath === ExportJarProperties.SETTING_ASKUSER || targetPath === "") ?
-                ExportJarProperties.SETTING_ASKUSER : join(this.stepMetadata.workspaceFolder.uri.fsPath, this.stepMetadata.workspaceFolder.name + ".jar");
-        }
         try {
             if (!_.isEmpty(this.stepMetadata.elements)) {
                 const runtimeClassPathMap: Map<string, string[]> = new Map<string, string[]>();
@@ -139,23 +136,17 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 const testDependencyMap: Map<string, string[]> = new Map<string, string[]>();
                 const projectList: INodeData[] = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
                 for (const project of projectList) {
-                    const runtimeClassPaths: string[] = [];
-                    const runtimeDependencies: string[] = [];
-                    await this.getClasspaths(project.uri, "runtime", runtimeClassPaths, runtimeDependencies);
-                    runtimeClassPathMap.set(project.name, runtimeClassPaths);
-                    runtimeDependencyMap.set(project.name, runtimeDependencies);
-                    const testClassPaths: string[] = [];
-                    const testDependencies: string[] = [];
-                    await this.getClasspaths(project.uri, "test", testClassPaths, testDependencies);
-                    testClassPathMap.set(project.name, testClassPaths);
-                    testDependencyMap.set(project.name, testDependencies);
+                    await this.setClasspathMap(project, "runtime", runtimeClassPathMap, runtimeDependencyMap);
+                    await this.setClasspathMap(project, "test", testClassPathMap, testDependencyMap);
                 }
                 this.stepMetadata.classpaths = await this.resolveClassPaths(runtimeClassPathMap,
                     runtimeDependencyMap, testClassPathMap, testDependencyMap);
             }
             await createJarFile(this.stepMetadata);
-        } catch (e) {
-            // Do nothing
+        } catch (err) {
+            if (err) {
+                failMessage(`${err}`);
+            }
         } finally {
             this.closeEmitter.fire();
         }
@@ -165,32 +156,38 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     }
 
-    private toAbsolute(path: string): string {
+    private toAbsolutePosixPath(path: string): string {
         const negative: boolean = (path[0] === "!");
         let positivePath: string = negative ? path.substring(1) : path;
         if (!isAbsolute(positivePath)) {
             positivePath = join(this.stepMetadata.workspaceFolder.uri.fsPath, positivePath);
         }
+        positivePath = toPosixPath(positivePath);
         return negative ? "!" + positivePath : positivePath;
     }
 
-    private async getClasspaths(projectUri: string, classpathScope: string, classpaths: string[], dependencies: string[]): Promise<void> {
+    private async setClasspathMap(project: INodeData, classpathScope: string,
+                                  classPathMap: Map<string, string[]>, dependencyMap: Map<string, string[]>): Promise<void> {
         const extensionApi: any = await getExtensionApi();
-        const classpathResult: IClasspathResult = await extensionApi.getClasspaths(projectUri, { scope: classpathScope });
+        const classpathResult: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: classpathScope });
+        const classPaths: string[] = [];
+        const dependencies: string[] = [];
         for (const classpath of classpathResult.classpaths) {
             if (extname(classpath) === ".jar") {
                 dependencies.push(classpath);
             } else {
-                classpaths.push(classpath);
+                classPaths.push(classpath);
             }
         }
         for (const classpath of classpathResult.modulepaths) {
             if (extname(classpath) === ".jar") {
                 dependencies.push(classpath);
             } else {
-                classpaths.push(classpath);
+                classPaths.push(classpath);
             }
         }
+        classPathMap.set(project.name, classPaths);
+        dependencyMap.set(project.name, dependencies);
     }
 
     private async resolveClassPaths(runtimeClassPathMap: Map<string, string[]>,
@@ -199,30 +196,30 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                                     testDependencyMap: Map<string, string[]>): Promise<IClassPath[]> {
         // tslint:disable-next-line: no-invalid-template-strings
         const regExp: RegExp = new RegExp("\\${(.*?)(:.*)?}");
-        const classPathArray: string[] = [];
-        const dependencies: string[] = [];
+        let classPathArray: string[] = [];
+        let dependencies: string[] = [];
         for (const element of this.stepMetadata.elements) {
             if (element.length === 0) {
                 continue;
             }
             const matchResult = element.match(regExp);
             if (_.isEmpty(matchResult) || matchResult.length <= 2) {
-                classPathArray.push(toPosixPath(normalize(this.toAbsolute(element))));
+                classPathArray.push(this.toAbsolutePosixPath(element));
                 continue;
             }
             const projectName: string = (matchResult[2] === undefined) ? undefined : matchResult[2].substring(1);
             switch (matchResult[1]) {
-                case ExportJarProperties.RUNTIME_DEPENDENCIES:
-                    this.getClassPathFromMap(matchResult, runtimeDependencyMap, dependencies, true, projectName);
+                case ExportJarConstants.RUNTIME_DEPENDENCIES:
+                    dependencies = dependencies.concat(this.getClassPathFromMap(matchResult, runtimeDependencyMap, projectName));
                     break;
-                case ExportJarProperties.TEST_DEPENDENCIES:
-                    this.getClassPathFromMap(matchResult, testDependencyMap, dependencies, true, projectName);
+                case ExportJarConstants.TEST_DEPENDENCIES:
+                    dependencies = dependencies.concat(this.getClassPathFromMap(matchResult, testDependencyMap, projectName));
                     break;
-                case ExportJarProperties.COMPILE_OUTPUT:
-                    this.getClassPathFromMap(matchResult, runtimeClassPathMap, classPathArray, false, projectName);
+                case ExportJarConstants.COMPILE_OUTPUT:
+                    classPathArray = classPathArray.concat(this.getClassPathFromMap(matchResult, runtimeClassPathMap, projectName));
                     break;
-                case ExportJarProperties.TESTCOMPILE_OUTPUT:
-                    this.getClassPathFromMap(matchResult, testClassPathMap, classPathArray, false, projectName);
+                case ExportJarConstants.TESTCOMPILE_OUTPUT:
+                    classPathArray = classPathArray.concat(this.getClassPathFromMap(matchResult, testClassPathMap, projectName));
                     break;
             }
         }
@@ -232,25 +229,24 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             if (classPath.length === 0) {
                 continue;
             }
-            if (classPath[0] !== "!") {
-                const uri: Uri = Uri.file(classPath);
-                const uriData: IUriData = {
-                    uri: uri.toString(),
-                };
-                fsPathArray.push(toPosixPath(normalize(uri.fsPath)));
-                trie.insert(uriData);
-            } else {
-                fsPathArray.push("!" + toPosixPath(normalize(Uri.file(classPath.substring(1)).fsPath)));
+            if (classPath[0] === "!") {
+                fsPathArray.push("!" + classPath.substring(1));
+                continue;
             }
+            const uri: Uri = Uri.file(platform() === "win32" ? toWinPath(classPath) : classPath);
+            const uriData: IUriData = {
+                uri: uri.toString(),
+            };
+            trie.insert(uriData);
+            fsPathArray.push(classPath);
         }
-        const globs: string[] = await globby(fsPathArray);
         const sources: IClassPath[] = [];
-        for (const glob of globs) {
-            const tireNode: TrieNode<IUriData> = trie.find(Uri.file(glob).fsPath, true);
+        for (const glob of await globby(fsPathArray)) {
+            const tireNode: TrieNode<IUriData> = trie.find(Uri.file(platform() === "win32" ? toWinPath(glob) : glob).fsPath, true);
             if (tireNode === undefined) {
                 continue;
             }
-            let fsPath = toPosixPath(normalize(Uri.parse(tireNode.value.uri).fsPath));
+            let fsPath = Uri.parse(tireNode.value.uri).fsPath;
             if (!(await lstat(fsPath)).isDirectory()) {
                 fsPath = dirname(fsPath);
             }
@@ -274,34 +270,20 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         return sources;
     }
 
-    private getClassPathFromMap(matchResult: RegExpMatchArray, source: Map<string, string[]>, target: string[],
-                                isDependency: boolean, projectName: string | undefined): void {
-        if (projectName === undefined) {
-            for (const value of source.values()) {
-                this.assignClassPathFromMap(value, matchResult, target, isDependency);
+    private getClassPathFromMap(matchResult: RegExpMatchArray, source: Map<string, string[]>, projectName: string | undefined): string[] {
+        const result: string[] = [];
+        if (projectName !== undefined) {
+            for (const classPath of source.get(projectName)) {
+                result.push(this.toAbsolutePosixPath(matchResult.input.replace(matchResult[0], classPath)));
             }
         } else {
-            for (const entries of source.entries()) {
-                if (projectName === entries[0]) {
-                    this.assignClassPathFromMap(entries[1], matchResult, target, isDependency);
+            for (const value of source.values()) {
+                for (const classPath of value) {
+                    result.push(this.toAbsolutePosixPath(matchResult.input.replace(matchResult[0], classPath)));
                 }
             }
         }
+        return result;
     }
 
-    private assignClassPathFromMap(classPaths: string[], matchResult: RegExpMatchArray, target: string[], isDependency: boolean): void {
-        for (const classPath of classPaths) {
-            if (isDependency) {
-                target.push(toPosixPath(normalize(classPath)));
-            } else {
-                target.push(this.toAbsolute(matchResult.input.replace(matchResult[0], classPath)));
-            }
-        }
-    }
-}
-
-interface IExportJarTaskDefinition extends TaskDefinition {
-    elements?: string[];
-    mainMethod?: string;
-    targetPath?: string;
 }

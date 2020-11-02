@@ -2,20 +2,23 @@
 // Licensed under the MIT license.
 
 import { EOL, platform } from "os";
-import { posix, sep, win32 } from "path";
+import { posix, win32 } from "path";
 import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { IStepMetadata } from "./IStepMetadata";
 
-export namespace ExportJarProperties {
+export namespace ExportJarTargets {
     export const SETTING_ASKUSER: string = "askUser";
+    // tslint:disable-next-line: no-invalid-template-strings
+    export const DEFAULT_OUTPUT_PATH: string = "${workspaceFolder}/${workspaceFolderBasename}.jar";
+}
+
+export namespace ExportJarConstants {
     export const RUNTIME_DEPENDENCIES: string = "RuntimeDependencies";
     export const TEST_DEPENDENCIES: string = "TestDependencies";
     export const COMPILE_OUTPUT: string = "CompileOutput";
     export const TESTCOMPILE_OUTPUT: string = "TestCompileOutput";
-    // tslint:disable-next-line: no-invalid-template-strings
-    export const DEFAULT_OUTPUT_PATH: string = "${workspaceFolder}/${workspaceFolderBasename}.jar";
 }
 
 export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMetadata): void {
@@ -95,16 +98,18 @@ export function toPosixPath(inputPath: string): string {
     return inputPath.split(win32.sep).join(posix.sep);
 }
 
+export function toWinPath(inputPath: string): string {
+    return inputPath.split(posix.sep).join(win32.sep);
+}
+
 export async function getExtensionApi(): Promise<any> {
     const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
     if (extension === undefined) {
-        failMessage("Language Support for Java(TM) by Red Hat isn't running, the export process will be aborted.");
-        return Promise.reject();
+        throw new Error("Language Support for Java(TM) by Red Hat isn't running, the export process will be aborted.");
     }
     const extensionApi: any = await extension.activate();
     if (extensionApi.getClasspaths === undefined) {
-        failMessage("Export jar is not supported in the current version of language server, please check and update your Language Support for Java(TM) by Red Hat.");
-        return Promise.reject();
+        throw new Error("Export jar is not supported in the current version of language server, please check and update your Language Support for Java(TM) by Red Hat.");
     }
     return extensionApi;
 }

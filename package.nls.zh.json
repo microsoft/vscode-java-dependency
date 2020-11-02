@@ -26,6 +26,6 @@
   "configuration.java.dependency.packagePresentation": "Java 包显示方式: 平行显示或者分层显示",
   "configuration.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径",
   "taskDefinitions.java.project.exportJar.elements": "导出 Jar 文件的内容列表",
-  "taskDefinitions.java.project.exportJar.mainMethod": "导出 Jar 文件的 Main 函数名称。",
+  "taskDefinitions.java.project.exportJar.mainMethod": "导出 Jar 文件的 main 函数名称。",
   "taskDefinitions.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径。将会覆盖 configuration.java.project.exportJar.targetPath 的值。"
 }
