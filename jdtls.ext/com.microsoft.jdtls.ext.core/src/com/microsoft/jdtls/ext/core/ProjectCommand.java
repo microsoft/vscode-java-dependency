@@ -79,10 +79,10 @@ public final class ProjectCommand {
         }
     }
 
-    private static class ClassPath {
+    private static class Classpath {
         public String source;
         public String destination;
-        public boolean isDependency;
+        public boolean isArtifact;
     }
 
     private static class exportResult {
@@ -158,7 +158,7 @@ public final class ProjectCommand {
             return new exportResult(false, "Invalid export Arguments");
         }
         String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
-        ClassPath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), ClassPath[].class);
+        Classpath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), Classpath[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
@@ -167,8 +167,8 @@ public final class ProjectCommand {
         }
         try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
             Set<String> directories = new HashSet<>();
-            for (ClassPath classpath : classpaths) {
-                if (classpath.isDependency) {
+            for (Classpath classpath : classpaths) {
+                if (classpath.isArtifact) {
                     writeArchive(new ZipFile(classpath.source), true, true, target, directories, monitor);
                 } else {
                     writeFile(new File(classpath.source), new Path(classpath.destination), true, true, target, directories);

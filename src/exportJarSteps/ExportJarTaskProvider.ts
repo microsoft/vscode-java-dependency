@@ -5,7 +5,7 @@ import { lstat } from "fs-extra";
 import * as globby from "globby";
 import * as _ from "lodash";
 import { platform } from "os";
-import { dirname, extname, isAbsolute, join, normalize, relative } from "path";
+import { dirname, extname, isAbsolute, join, relative } from "path";
 import {
     CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
     TaskProvider, TaskRevealKind, TaskScope, TerminalDimensions, Uri, workspace, WorkspaceFolder,
@@ -16,8 +16,8 @@ import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
 import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
-import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { ExportJarConstants, ExportJarTargets, failMessage, getExtensionApi, toPosixPath, toWinPath } from "./utility";
+import { IClasspath, IStepMetadata } from "./IStepMetadata";
+import { ExportJarConstants, failMessage, getExtensionApi, toPosixPath, toWinPath } from "./utility";
 
 interface IExportJarTaskDefinition extends TaskDefinition {
     elements?: string[];
@@ -30,10 +30,9 @@ export class ExportJarTaskProvider implements TaskProvider {
     public static exportJarType: string = "java";
 
     public static getTask(stepMetadata: IStepMetadata): Task {
-        const targetPathSetting: string = Settings.getExportJarTargetPath();
         const defaultDefinition: IExportJarTaskDefinition = {
             type: ExportJarTaskProvider.exportJarType,
-            targetPath: targetPathSetting,
+            targetPath: Settings.getExportJarTargetPath(),
             elements: [],
             mainMethod: undefined,
         };
@@ -50,14 +49,14 @@ export class ExportJarTaskProvider implements TaskProvider {
     public async resolveTask(task: Task): Promise<Task> {
         const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>task.definition;
         const folder: WorkspaceFolder = <WorkspaceFolder>task.scope;
-        const stepMetadata: IStepMetadata = {
-            entry: undefined,
-            workspaceFolder: folder,
-            projectList: await Jdtls.getProjects(folder.uri.toString()),
-            steps: [],
-        };
         const resolvedTask: Task = new Task(definition, folder, task.name, ExportJarTaskProvider.exportJarType,
             new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
+                const stepMetadata: IStepMetadata = {
+                    entry: undefined,
+                    workspaceFolder: folder,
+                    projectList: await Jdtls.getProjects(folder.uri.toString()),
+                    steps: [],
+                };
                 return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
             }));
         resolvedTask.presentationOptions.reveal = TaskRevealKind.Never;
@@ -91,16 +90,16 @@ export class ExportJarTaskProvider implements TaskProvider {
                 type: ExportJarTaskProvider.exportJarType,
                 elements: elementList,
                 mainMethod: "",
-                targetPath: ExportJarTargets.DEFAULT_OUTPUT_PATH,
-            };
-            const stepMetadata: IStepMetadata = {
-                entry: undefined,
-                workspaceFolder: folder,
-                projectList: await Jdtls.getProjects(folder.uri.toString()),
-                steps: [],
+                targetPath: Settings.getExportJarTargetPath(),
             };
             const defaultTask: Task = new Task(defaultDefinition, folder, "exportjar:" + folder.name,
                 ExportJarTaskProvider.exportJarType, new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
+                    const stepMetadata: IStepMetadata = {
+                        entry: undefined,
+                        workspaceFolder: folder,
+                        projectList: await Jdtls.getProjects(folder.uri.toString()),
+                        steps: [],
+                    };
                     return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
                 }));
             defaultTask.presentationOptions.reveal = TaskRevealKind.Never;
@@ -127,20 +126,24 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         this.stepMetadata.elements = exportJarTaskDefinition.elements;
     }
 
-    public async open(initialDimensions: TerminalDimensions | undefined): Promise<void> {
+    public async open(_initialDimensions: TerminalDimensions | undefined): Promise<void> {
         try {
+            if (this.stepMetadata.outputPath === undefined) {
+                // For the tasks whose targetPath is undefined, the user will select the output location manually.
+                this.stepMetadata.outputPath = "";
+            }
             if (!_.isEmpty(this.stepMetadata.elements)) {
-                const runtimeClassPathMap: Map<string, string[]> = new Map<string, string[]>();
-                const runtimeDependencyMap: Map<string, string[]> = new Map<string, string[]>();
-                const testClassPathMap: Map<string, string[]> = new Map<string, string[]>();
-                const testDependencyMap: Map<string, string[]> = new Map<string, string[]>();
+                const runtimeOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
+                const runtimeArtifactMap: Map<string, string[]> = new Map<string, string[]>();
+                const testOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
+                const testArtifactMap: Map<string, string[]> = new Map<string, string[]>();
                 const projectList: INodeData[] = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
                 for (const project of projectList) {
-                    await this.setClasspathMap(project, "runtime", runtimeClassPathMap, runtimeDependencyMap);
-                    await this.setClasspathMap(project, "test", testClassPathMap, testDependencyMap);
+                    await this.setClasspathMap(project, "runtime", runtimeOutputFolderMap, runtimeArtifactMap);
+                    await this.setClasspathMap(project, "test", testOutputFolderMap, testArtifactMap);
                 }
-                this.stepMetadata.classpaths = await this.resolveClassPaths(runtimeClassPathMap,
-                    runtimeDependencyMap, testClassPathMap, testDependencyMap);
+                this.stepMetadata.classpaths = await this.resolveClasspaths(runtimeOutputFolderMap,
+                    runtimeArtifactMap, testOutputFolderMap, testArtifactMap);
             }
             await createJarFile(this.stepMetadata);
         } catch (err) {
@@ -156,6 +159,128 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     }
 
+    private async setClasspathMap(project: INodeData, classpathScope: string,
+                                  outputFolderMap: Map<string, string[]>, artifactMap: Map<string, string[]>): Promise<void> {
+        const extensionApi: any = await getExtensionApi();
+        const classpathResult: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: classpathScope });
+        const outputFolders: string[] = [];
+        const artifacts: string[] = [];
+        for (const classpath of classpathResult.classpaths) {
+            if (extname(classpath) === ".jar") {
+                artifacts.push(classpath);
+            } else {
+                outputFolders.push(classpath);
+            }
+        }
+        for (const classpath of classpathResult.modulepaths) {
+            if (extname(classpath) === ".jar") {
+                artifacts.push(classpath);
+            } else {
+                outputFolders.push(classpath);
+            }
+        }
+        outputFolderMap.set(project.name, outputFolders);
+        artifactMap.set(project.name, artifacts);
+    }
+
+    private async resolveClasspaths(runtimeOutputFolderMap: Map<string, string[]>,
+                                    runtimeArtifactMap: Map<string, string[]>,
+                                    testOutputFolderMap: Map<string, string[]>,
+                                    testArtifactMap: Map<string, string[]>): Promise<IClasspath[]> {
+        const regExp: RegExp = /\${(.*?)(:.*)?}/;
+        let outputElements: string[] = [];
+        let artifacts: string[] = [];
+        for (const element of this.stepMetadata.elements) {
+            if (element.length === 0) {
+                continue;
+            }
+            const matchResult = element.match(regExp);
+            if (_.isEmpty(matchResult) || matchResult.length <= 2) {
+                if (extname(element) === ".jar") {
+                    artifacts.push(this.toAbsolutePosixPath(element));
+                } else {
+                    outputElements.push(this.toAbsolutePosixPath(element));
+                }
+                continue;
+            }
+            const projectName: string = (matchResult[2] === undefined) ? undefined : matchResult[2].substring(1);
+            switch (matchResult[1]) {
+                case ExportJarConstants.RUNTIME_DEPENDENCIES:
+                    artifacts = artifacts.concat(this.getJarElementsFromClasspathMapping(matchResult, runtimeArtifactMap, projectName));
+                    break;
+                case ExportJarConstants.TEST_DEPENDENCIES:
+                    artifacts = artifacts.concat(this.getJarElementsFromClasspathMapping(matchResult, testArtifactMap, projectName));
+                    break;
+                case ExportJarConstants.COMPILE_OUTPUT:
+                    outputElements = outputElements.concat(this.getJarElementsFromClasspathMapping(matchResult, runtimeOutputFolderMap, projectName));
+                    break;
+                case ExportJarConstants.TESTCOMPILE_OUTPUT:
+                    outputElements = outputElements.concat(this.getJarElementsFromClasspathMapping(matchResult, testOutputFolderMap, projectName));
+                    break;
+            }
+        }
+        const trie: Trie<IUriData> = new Trie<IUriData>();
+        const globPatterns: string[] = [];
+        for (const outputElement of outputElements) {
+            if (outputElement.length === 0) {
+                continue;
+            }
+            if (outputElement[0] !== "!") {
+                const uri: Uri = Uri.file(platform() === "win32" ? toWinPath(outputElement) : outputElement);
+                const uriData: IUriData = {
+                    uri: uri.toString(),
+                };
+                trie.insert(uriData);
+            }
+            globPatterns.push(outputElement);
+        }
+        const sources: IClasspath[] = [];
+        for (const glob of await globby(globPatterns)) {
+            const tireNode: TrieNode<IUriData> = trie.find(Uri.file(platform() === "win32" ? toWinPath(glob) : glob).fsPath, /* returnEarly = */true);
+            if (tireNode === undefined) {
+                continue;
+            }
+            let fsPath = Uri.parse(tireNode.value.uri).fsPath;
+            if ((await lstat(fsPath)).isFile()) {
+                fsPath = dirname(fsPath);
+            }
+            if (!_.isEmpty(tireNode)) {
+                const classpath: IClasspath = {
+                    source: glob,
+                    destination: relative(fsPath, glob),
+                    isArtifact: false,
+                };
+                sources.push(classpath);
+            }
+        }
+        for (const artifact of await globby(artifacts)) {
+            const classpath: IClasspath = {
+                source: artifact,
+                destination: undefined,
+                isArtifact: true,
+            };
+            sources.push(classpath);
+        }
+        return sources;
+    }
+
+    private getJarElementsFromClasspathMapping(matchResult: RegExpMatchArray, rawClasspathEntries: Map<string, string[]>,
+                                               projectName: string | undefined): string[] {
+        const result: string[] = [];
+        if (projectName !== undefined) {
+            for (const classpath of rawClasspathEntries.get(projectName)) {
+                result.push(this.toAbsolutePosixPath(matchResult.input.replace(matchResult[0], classpath)));
+            }
+        } else {
+            for (const classpaths of rawClasspathEntries.values()) {
+                for (const classpath of classpaths) {
+                    result.push(this.toAbsolutePosixPath(matchResult.input.replace(matchResult[0], classpath)));
+                }
+            }
+        }
+        return result;
+    }
+
     private toAbsolutePosixPath(path: string): string {
         const negative: boolean = (path[0] === "!");
         let positivePath: string = negative ? path.substring(1) : path;
@@ -165,125 +290,4 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         positivePath = toPosixPath(positivePath);
         return negative ? "!" + positivePath : positivePath;
     }
-
-    private async setClasspathMap(project: INodeData, classpathScope: string,
-                                  classPathMap: Map<string, string[]>, dependencyMap: Map<string, string[]>): Promise<void> {
-        const extensionApi: any = await getExtensionApi();
-        const classpathResult: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: classpathScope });
-        const classPaths: string[] = [];
-        const dependencies: string[] = [];
-        for (const classpath of classpathResult.classpaths) {
-            if (extname(classpath) === ".jar") {
-                dependencies.push(classpath);
-            } else {
-                classPaths.push(classpath);
-            }
-        }
-        for (const classpath of classpathResult.modulepaths) {
-            if (extname(classpath) === ".jar") {
-                dependencies.push(classpath);
-            } else {
-                classPaths.push(classpath);
-            }
-        }
-        classPathMap.set(project.name, classPaths);
-        dependencyMap.set(project.name, dependencies);
-    }
-
-    private async resolveClassPaths(runtimeClassPathMap: Map<string, string[]>,
-                                    runtimeDependencyMap: Map<string, string[]>,
-                                    testClassPathMap: Map<string, string[]>,
-                                    testDependencyMap: Map<string, string[]>): Promise<IClassPath[]> {
-        // tslint:disable-next-line: no-invalid-template-strings
-        const regExp: RegExp = new RegExp("\\${(.*?)(:.*)?}");
-        let classPathArray: string[] = [];
-        let dependencies: string[] = [];
-        for (const element of this.stepMetadata.elements) {
-            if (element.length === 0) {
-                continue;
-            }
-            const matchResult = element.match(regExp);
-            if (_.isEmpty(matchResult) || matchResult.length <= 2) {
-                classPathArray.push(this.toAbsolutePosixPath(element));
-                continue;
-            }
-            const projectName: string = (matchResult[2] === undefined) ? undefined : matchResult[2].substring(1);
-            switch (matchResult[1]) {
-                case ExportJarConstants.RUNTIME_DEPENDENCIES:
-                    dependencies = dependencies.concat(this.getClassPathFromMap(matchResult, runtimeDependencyMap, projectName));
-                    break;
-                case ExportJarConstants.TEST_DEPENDENCIES:
-                    dependencies = dependencies.concat(this.getClassPathFromMap(matchResult, testDependencyMap, projectName));
-                    break;
-                case ExportJarConstants.COMPILE_OUTPUT:
-                    classPathArray = classPathArray.concat(this.getClassPathFromMap(matchResult, runtimeClassPathMap, projectName));
-                    break;
-                case ExportJarConstants.TESTCOMPILE_OUTPUT:
-                    classPathArray = classPathArray.concat(this.getClassPathFromMap(matchResult, testClassPathMap, projectName));
-                    break;
-            }
-        }
-        const trie: Trie<IUriData> = new Trie<IUriData>();
-        const fsPathArray: string[] = [];
-        for (const classPath of classPathArray) {
-            if (classPath.length === 0) {
-                continue;
-            }
-            if (classPath[0] === "!") {
-                fsPathArray.push("!" + classPath.substring(1));
-                continue;
-            }
-            const uri: Uri = Uri.file(platform() === "win32" ? toWinPath(classPath) : classPath);
-            const uriData: IUriData = {
-                uri: uri.toString(),
-            };
-            trie.insert(uriData);
-            fsPathArray.push(classPath);
-        }
-        const sources: IClassPath[] = [];
-        for (const glob of await globby(fsPathArray)) {
-            const tireNode: TrieNode<IUriData> = trie.find(Uri.file(platform() === "win32" ? toWinPath(glob) : glob).fsPath, true);
-            if (tireNode === undefined) {
-                continue;
-            }
-            let fsPath = Uri.parse(tireNode.value.uri).fsPath;
-            if (!(await lstat(fsPath)).isDirectory()) {
-                fsPath = dirname(fsPath);
-            }
-            if (!_.isEmpty(tireNode)) {
-                const classpath: IClassPath = {
-                    source: glob,
-                    destination: relative(fsPath, glob),
-                    isDependency: false,
-                };
-                sources.push(classpath);
-            }
-        }
-        for (const dependency of await globby(dependencies)) {
-            const classpath: IClassPath = {
-                source: dependency,
-                destination: undefined,
-                isDependency: true,
-            };
-            sources.push(classpath);
-        }
-        return sources;
-    }
-
-    private getClassPathFromMap(matchResult: RegExpMatchArray, source: Map<string, string[]>, projectName: string | undefined): string[] {
-        const result: string[] = [];
-        if (projectName !== undefined) {
-            for (const classPath of source.get(projectName)) {
-                result.push(this.toAbsolutePosixPath(matchResult.input.replace(matchResult[0], classPath)));
-            }
-        } else {
-            for (const value of source.values()) {
-                for (const classPath of value) {
-                    result.push(this.toAbsolutePosixPath(matchResult.input.replace(matchResult[0], classPath)));
-                }
-            }
-        }
-        return result;
-    }
-
 }

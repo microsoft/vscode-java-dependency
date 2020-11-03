@@ -10,8 +10,9 @@ import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
-import { IClassPath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarTargets, getExtensionApi, resetStepMetadata, saveDialog, toPosixPath } from "./utility";
+import { IClasspath, IStepMetadata } from "./IStepMetadata";
+import { createPickBox, ExportJarTargets, failMessage, getExtensionApi,
+    resetStepMetadata, saveDialog, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -92,14 +93,14 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
                 for (const project of stepMetadata.projectList) {
-                    const runTimeClassPaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
+                    const runTimeClasspaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(runTimeClassPaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true),
-                        ...await this.parseDependencyItems(runTimeClassPaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true));
-                    const testClassPaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "test" });
+                        ...await this.parseDependencyItems(runTimeClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true),
+                        ...await this.parseDependencyItems(runTimeClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true));
+                    const testClasspaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "test" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(testClassPaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false),
-                        ...await this.parseDependencyItems(testClassPaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false));
+                        ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false),
+                        ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false));
                 }
                 return resolve(pickItems);
             });
@@ -107,10 +108,10 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
-            const classpath: IClassPath = {
+            const classpath: IClasspath = {
                 source: dependencyItems[0].path,
                 destination: undefined,
-                isDependency: false,
+                isArtifact: false,
             };
             stepMetadata.classpaths.push(classpath);
             return true;
@@ -149,19 +150,19 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                         }
                         for (const item of pickBox.selectedItems) {
                             if (item.type === "external") {
-                                const classpath: IClassPath = {
+                                const classpath: IClasspath = {
                                     source: item.path,
                                     destination: undefined,
-                                    isDependency: true,
+                                    isArtifact: true,
                                 };
                                 stepMetadata.classpaths.push(classpath);
                             } else {
                                 const posixPath: string = toPosixPath(item.path);
                                 for (const path of await globby(posixPath)) {
-                                    const classpath: IClassPath = {
+                                    const classpath: IClasspath = {
                                         source: path,
                                         destination: relative(posixPath, path),
-                                        isDependency: false,
+                                        isArtifact: false,
                                     };
                                     stepMetadata.classpaths.push(classpath);
                                 }

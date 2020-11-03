@@ -27,5 +27,5 @@
   "configuration.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径",
   "taskDefinitions.java.project.exportJar.elements": "导出 Jar 文件的内容列表",
   "taskDefinitions.java.project.exportJar.mainMethod": "导出 Jar 文件的 main 函数名称。",
-  "taskDefinitions.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径。将会覆盖 configuration.java.project.exportJar.targetPath 的值。"
+  "taskDefinitions.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径。将会覆盖配置项: configuration.java.project.exportJar.targetPath 的值。"
 }

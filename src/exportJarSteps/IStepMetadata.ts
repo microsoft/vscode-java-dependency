@@ -11,13 +11,13 @@ export interface IStepMetadata {
     projectList?: INodeData[];
     mainMethod?: string;
     elements?: string[];
-    classpaths?: IClassPath[];
+    classpaths?: IClasspath[];
     outputPath?: string;
     steps: ExportJarStep[];
 }
 
-export interface IClassPath {
+export interface IClasspath {
     source: string;
     destination: string | undefined;
-    isDependency: boolean;
+    isArtifact: boolean;
 }
