@@ -7,8 +7,7 @@ import { Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
-import { checkJavaQualifiedName } from "./new";
-import { isMutable } from "./utils";
+import { checkJavaQualifiedName, isMutable } from "./utils";
 
 export async function renameFile(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
     // if command not invoked by context menu, use selected node in explorer
@@ -32,8 +31,9 @@ export async function renameFile(node: DataNode, selectedNode: ExplorerNode): Pr
                 return checkMessage;
             }
 
-            if (await fse.pathExists(getRenamedFsPath(oldFsPath, value))) {
-                return "Class/Package already exists.";
+            const inputFsPath = getRenamedFsPath(oldFsPath, value);
+            if (await fse.pathExists(inputFsPath)) {
+                return `File path: ${inputFsPath} already exists.`;
             }
 
             return "";
@@ -76,26 +76,15 @@ function getValueSelection(uri: string): [number, number] | undefined {
 }
 
 function CheckQualifiedInputName(value: string, nodeKind: NodeKind): string {
-    const capitalStartExp = /[A-Z](.*?)/;
-    const lowerOnlyExp = /(?=.*[A-Z])/;
     const javaValidateMessage = checkJavaQualifiedName(value);
 
     if (javaValidateMessage) {
         return javaValidateMessage;
     }
 
-    if (nodeKind === NodeKind.PrimaryType) {
-        if (!capitalStartExp.test(value)) {
-            return "Class name should start with upper case.";
-        }
-    }
-
     if (nodeKind === NodeKind.Package || nodeKind === NodeKind.PackageRoot) {
-        if (lowerOnlyExp.test(value)) {
-            return "Package name should be lower case only.";
-        }
         if (value.indexOf(".") !== -1) {
-            return "Cross-level rename is not supportted.";
+            return "Rename is only applicable to innermost package.";
         }
     }
 
