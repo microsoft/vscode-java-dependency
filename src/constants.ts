@@ -16,6 +16,7 @@ export namespace Explorer {
         Jar = "jar",
         File = "file",
         Type = "type",
+        Folder = "folder",
     }
 }
 
