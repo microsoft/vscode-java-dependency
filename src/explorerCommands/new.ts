@@ -138,7 +138,7 @@ function getNewPackagePath(packageRootPath: string, packageName: string): string
     return path.join(packageRootPath, ...packageName.split("."));
 }
 
-function checkJavaQualifiedName(value: string): string {
+export function checkJavaQualifiedName(value: string): string {
     if (!value || !value.trim()) {
         return "Input cannot be empty.";
     }
