@@ -112,7 +112,7 @@ public class PackageCommand {
      *            List of the arguments which contain one entry of the target
      *            compilation unit URI.
      * @return the list of the path
-     * @throws CoreException when create node or get resource
+     * @throws CoreException when fails to create node or get resource
      */
     public static List<PackageNode> resolvePath(List<Object> arguments, IProgressMonitor pm) throws CoreException {
         if (arguments == null || arguments.size() < 1) {
@@ -215,7 +215,7 @@ public class PackageCommand {
      * @param element
      *          resource to be searched from
      * @return parent node list of element
-     * @throws JavaModelException when get path or resource
+     * @throws JavaModelException when fails to get path or resource
      */
     private static List<PackageNode> getParentAncestorNodes(IResource element) throws JavaModelException {
         List<PackageNode> nodeList = new ArrayList<>();
