@@ -29,8 +29,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
-import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -39,30 +37,32 @@ import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 
+import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
+
 public class JarPackageUtil {
 
-    private static final int INTERNAL_ERROR= 10001;
-    
+    private static final int INTERNAL_ERROR = 10001;
+
     /**
      * Write the given entry describing the given content to the current archive.
      * Extracted from org.eclipse.jdt.ui.jarpackager.JarWriter3
      *
      * @param entry the entry to write
      * @param content the content to write
-     * @param fJarOutputStream the destination JarOutputStream
+     * @param fjarOutputStream the destination JarOutputStream
      *
      * @throws IOException If an I/O error occurred
      *
      * @since 1.14
      *
      */
-    private static void addEntry(JarEntry entry, InputStream content, JarOutputStream fJarOutputStream) throws IOException {
+    private static void addEntry(JarEntry entry, InputStream content, JarOutputStream fjarOutputStream) throws IOException {
         byte[] readBuffer = new byte[4096];
         try {
-            fJarOutputStream.putNextEntry(entry);
+            fjarOutputStream.putNextEntry(entry);
             int count;
             while ((count = content.read(readBuffer, 0, readBuffer.length)) != -1) {
-                fJarOutputStream.write(readBuffer, 0, count);
+                fjarOutputStream.write(readBuffer, 0, count);
             }
         } finally {
             if (content != null) {
@@ -84,8 +84,8 @@ public class JarPackageUtil {
      * @param zipFile the zipfile to extract
      * @param areDirectoryEntriesIncluded the directory entries are included
      * @param isCompressed the jar is compressed
-     * @param fJarOutputStream the destination JarOutputStream
-     * @param fDirectories the temporary set saves existing directories
+     * @param fjarOutputStream the destination JarOutputStream
+     * @param fdirectories the temporary set saves existing directories
      * @param progressMonitor the progressMonitor
      *
      * @return the MultiStatus saving the warnings during the process
@@ -94,9 +94,9 @@ public class JarPackageUtil {
      *
      */
     public static MultiStatus writeArchive(ZipFile zipFile, boolean areDirectoryEntriesIncluded,
-            boolean isCompressed, JarOutputStream fJarOutputStream,
-            Set<String> fDirectories, IProgressMonitor progressMonitor) {
-        MultiStatus fStatus = new MultiStatus(JdtlsExtActivator.PLUGIN_ID, IStatus.OK, ""); //$NON-NLS-1$
+            boolean isCompressed, JarOutputStream fjarOutputStream,
+            Set<String> fdirectories, IProgressMonitor progressMonitor) {
+        MultiStatus fstatus = new MultiStatus(JdtlsExtActivator.PLUGIN_ID, IStatus.OK, ""); //$NON-NLS-1$
         Enumeration<? extends ZipEntry> jarEntriesEnum = zipFile.entries();
         File zipFile1 = new File(zipFile.getName());
         try {
@@ -108,9 +108,9 @@ public class JarPackageUtil {
                     File zipEntryFile = new File(zipFile1, entryName);
                     String zipEntryCanonical = zipEntryFile.getCanonicalPath();
                     if (zipEntryCanonical.startsWith(zipFileCanonical + File.separator)) {
-                        addFile(entryName, zipEntry, zipFile, areDirectoryEntriesIncluded, isCompressed, fJarOutputStream, fDirectories, fStatus);
+                        addFile(entryName, zipEntry, zipFile, areDirectoryEntriesIncluded, isCompressed, fjarOutputStream, fdirectories, fstatus);
                     } else {
-                        addWarning("Invalid path" + entryName, null, fStatus); //$NON-NLS-1$
+                        addWarning("Invalid path" + entryName, null, fstatus); //$NON-NLS-1$
                     }
                 }
                 progressMonitor.worked(1);
@@ -119,10 +119,10 @@ public class JarPackageUtil {
                 }
             }
         } catch (IOException e) {
-            addWarning("ZipFile error" + zipFile.getName(), null, fStatus); //$NON-NLS-1$
+            addWarning("ZipFile error" + zipFile.getName(), null, fstatus); //$NON-NLS-1$
             e.printStackTrace();
         }
-        return fStatus;
+        return fstatus;
     }
 
     /**
@@ -134,31 +134,64 @@ public class JarPackageUtil {
      * @param zipFile the zipfile to extract
      * @param areDirectoryEntriesIncluded the directory entries are included
      * @param isCompressed the jar is compressed
-     * @param fJarOutputStream the destination JarOutputStream
-     * @param fDirectories the temporary set saves existing directories
-     * @param fStatus the <code>MultiStatus</code> saving the warnings during the process
+     * @param fjarOutputStream the destination JarOutputStream
+     * @param fdirectories the temporary set saves existing directories
+     * @param fstatus the <code>MultiStatus</code> saving the warnings during the process
      *
      * @since 1.14
      *
      */
     private static void addFile(String destinationPath, ZipEntry jarEntry, ZipFile zipFile,
             boolean areDirectoryEntriesIncluded, boolean isCompressed,
-            JarOutputStream fJarOutputStream, Set<String> fDirectories, MultiStatus fStatus) {
+            JarOutputStream fjarOutputStream, Set<String> fdirectories, MultiStatus fstatus) {
         // Handle META-INF/MANIFEST.MF
         if (destinationPath.equalsIgnoreCase("META-INF/MANIFEST.MF") //$NON-NLS-1$
                 || (destinationPath.startsWith("META-INF/") && destinationPath.endsWith(".SF"))) { //$NON-NLS-1$//$NON-NLS-2$
             return;
         }
         try {
-            addZipEntry(jarEntry, zipFile, destinationPath, areDirectoryEntriesIncluded, isCompressed, fJarOutputStream, fDirectories);
+            addZipEntry(jarEntry, zipFile, destinationPath, areDirectoryEntriesIncluded, isCompressed, fjarOutputStream, fdirectories);
         } catch (IOException ex) {
-            if (ex instanceof ZipException && ex.getMessage() != null && ex.getMessage().startsWith("duplicate entry:")) {//$NON-NLS-1$
+            if (ex instanceof ZipException && ex.getMessage() != null && ex.getMessage().startsWith("duplicate entry:")) { //$NON-NLS-1$
                 // ignore duplicates in META-INF (*.SF, *.RSA)
                 if (!destinationPath.startsWith("META-INF/")) { //$NON-NLS-1$
-                    addWarning(ex.getMessage(), ex, fStatus);
+                    addWarning(ex.getMessage(), ex, fstatus);
                 }
             }
         }
+    }
+
+    /**
+     * Add the single file to the JarOutputStream.
+     * Extracted from org.eclipse.jdt.internal.ui.jarpackagerfat.JarWriter4
+     *
+     * @param file the file to write
+     * @param path the destinationPath in the jar file
+     * @param areDirectoryEntriesIncluded the directory entries are included
+     * @param isCompressed the jar is compressed
+     * @param fjarOutputStream the destination JarOutputStream
+     * @param fdirectories the temporary set saves existing directories
+     *
+     * @throws IOException if an I/O error has occurred
+     *
+     * @since 1.14
+     *
+     */
+    private static void addFile(File file, IPath path, boolean areDirectoryEntriesIncluded,
+            boolean isCompressed, JarOutputStream fjarOutputStream, Set<String> fdirectories) throws IOException {
+        if (areDirectoryEntriesIncluded) {
+            addDirectories(path, fjarOutputStream, fdirectories);
+        }
+        JarEntry newEntry = new JarEntry(path.toString().replace(File.separatorChar, '/'));
+        if (isCompressed) {
+            newEntry.setMethod(ZipEntry.DEFLATED);
+            // Entry is filled automatically.
+        } else {
+            newEntry.setMethod(ZipEntry.STORED);
+            calculateCrcAndSize(newEntry, new FileInputStream(file), new byte[4096]);
+        }
+        newEntry.setTime(file.lastModified());
+        addEntry(newEntry, new FileInputStream(file), fjarOutputStream);
     }
 
     /**
@@ -170,8 +203,8 @@ public class JarPackageUtil {
      * @param path the destinationPath in the jar file
      * @param areDirectoryEntriesIncluded the directory entries are included
      * @param isCompressed the jar is compressed
-     * @param fJarOutputStream the destination JarOutputStream
-     * @param fDirectories the temporary set saves existing directories
+     * @param fjarOutputStream the destination JarOutputStream
+     * @param fdirectories the temporary set saves existing directories
      *
      * @throws IOException If an I/O error occurred
      *
@@ -180,9 +213,9 @@ public class JarPackageUtil {
      */
     private static void addZipEntry(ZipEntry zipEntry, ZipFile zipFile, String path,
             boolean areDirectoryEntriesIncluded, boolean isCompressed,
-            JarOutputStream fJarOutputStream, Set<String> fDirectories) throws IOException {
+            JarOutputStream fjarOutputStream, Set<String> fdirectories) throws IOException {
         if (areDirectoryEntriesIncluded) {
-            addDirectories(path, fJarOutputStream, fDirectories);
+            addDirectories(path, fjarOutputStream, fdirectories);
         }
         JarEntry newEntry = new JarEntry(path.replace(File.separatorChar, '/'));
         if (isCompressed) {
@@ -196,7 +229,7 @@ public class JarPackageUtil {
         long lastModified = System.currentTimeMillis();
         // Set modification time
         newEntry.setTime(lastModified);
-        addEntry(newEntry, zipFile.getInputStream(zipEntry), fJarOutputStream);
+        addEntry(newEntry, zipFile.getInputStream(zipEntry), fjarOutputStream);
     }
 
     /**
@@ -204,20 +237,20 @@ public class JarPackageUtil {
      * Extracted from org.eclipse.jdt.ui.jarpackager.JarWriter3
      *
      * @param destPath the path to add
-     * @param fJarOutputStream the destination JarOutputStream
-     * @param fDirectories the temporary set saves existing directories
+     * @param fjarOutputStream the destination JarOutputStream
+     * @param fdirectories the temporary set saves existing directories
      *
      * @throws IOException if an I/O error has occurred
      *
      * @since 1.14
      */
-    private static void addDirectories(String destPath, JarOutputStream fJarOutputStream, Set<String> fDirectories) throws IOException {
+    private static void addDirectories(String destPath, JarOutputStream fjarOutputStream, Set<String> fdirectories) throws IOException {
         String path = destPath.replace(File.separatorChar, '/');
         int lastSlash = path.lastIndexOf('/');
         List<JarEntry> directories = new ArrayList<>(2);
         while (lastSlash != -1) {
-            path= path.substring(0, lastSlash + 1);
-            if (!fDirectories.add(path)) {
+            path = path.substring(0, lastSlash + 1);
+            if (!fdirectories.add(path)) {
                 break;
             }
             JarEntry newEntry = new JarEntry(path);
@@ -226,11 +259,27 @@ public class JarPackageUtil {
             newEntry.setCrc(0);
             newEntry.setTime(System.currentTimeMillis());
             directories.add(newEntry);
-            lastSlash= path.lastIndexOf('/', lastSlash - 1);
+            lastSlash = path.lastIndexOf('/', lastSlash - 1);
         }
         for (int i = directories.size() - 1; i >= 0; --i) {
-            fJarOutputStream.putNextEntry(directories.get(i));
+            fjarOutputStream.putNextEntry(directories.get(i));
         }
+    }
+
+    /**
+     * Creates the directory entries for the given path and writes it to the current archive.
+     * Extracted from org.eclipse.jdt.ui.jarpackager.JarWriter3
+     *
+     * @param destinationPath the path to add
+     * @param fjarOutputStream the destination JarOutputStream
+     * @param fdirectories the temporary set saves existing directories
+     *
+     * @throws IOException if an I/O error has occurred
+     *
+     * @since 1.14
+     */
+    private static void addDirectories(IPath destinationPath, JarOutputStream fjarOutputStream, Set<String> fdirectories) throws IOException {
+        addDirectories(destinationPath.toString(), fjarOutputStream, fdirectories);
     }
 
     /**
@@ -241,8 +290,8 @@ public class JarPackageUtil {
      * @param destinationPath the destinationPath in the jar file
      * @param areDirectoryEntriesIncluded the directory entries are included
      * @param isCompressed the jar is compressed
-     * @param fJarOutputStream the destination JarOutputStream
-     * @param fDirectories the temporary set saves existing directories
+     * @param fjarOutputStream the destination JarOutputStream
+     * @param fdirectories the temporary set saves existing directories
      *
      * @throws CoreException if an error has occurred
      *
@@ -250,61 +299,12 @@ public class JarPackageUtil {
      *
      */
     public static void writeFile(File file, IPath destinationPath, boolean areDirectoryEntriesIncluded,
-            boolean isCompressed, JarOutputStream fJarOutputStream, Set<String> fDirectories) throws CoreException {
+            boolean isCompressed, JarOutputStream fjarOutputStream, Set<String> fdirectories) throws CoreException {
         try {
-            addFile(file, destinationPath, areDirectoryEntriesIncluded, isCompressed, fJarOutputStream, fDirectories);
+            addFile(file, destinationPath, areDirectoryEntriesIncluded, isCompressed, fjarOutputStream, fdirectories);
         } catch (IOException ex) {
             throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, INTERNAL_ERROR, ex.getLocalizedMessage(), ex));
         }
-    }
-
-    /**
-     * Add the single file to the JarOutputStream.
-     * Extracted from org.eclipse.jdt.internal.ui.jarpackagerfat.JarWriter4
-     *
-     * @param file the file to write
-     * @param path the destinationPath in the jar file
-     * @param areDirectoryEntriesIncluded the directory entries are included
-     * @param isCompressed the jar is compressed
-     * @param fJarOutputStream the destination JarOutputStream
-     * @param fDirectories the temporary set saves existing directories
-     *
-     * @throws IOException if an I/O error has occurred
-     *
-     * @since 1.14
-     *
-     */
-    private static void addFile(File file, IPath path, boolean areDirectoryEntriesIncluded,
-            boolean isCompressed, JarOutputStream fJarOutputStream, Set<String> fDirectories) throws IOException {
-        if (areDirectoryEntriesIncluded) {
-            addDirectories(path, fJarOutputStream, fDirectories);
-        }
-        JarEntry newEntry = new JarEntry(path.toString().replace(File.separatorChar, '/'));
-        if (isCompressed) {
-            newEntry.setMethod(ZipEntry.DEFLATED);
-            // Entry is filled automatically.
-        } else {
-            newEntry.setMethod(ZipEntry.STORED);
-            calculateCrcAndSize(newEntry, new FileInputStream(file), new byte[4096]);
-        }
-        newEntry.setTime(file.lastModified());
-        addEntry(newEntry, new FileInputStream(file), fJarOutputStream);
-    }
-
-    /**
-     * Creates the directory entries for the given path and writes it to the current archive.
-     * Extracted from org.eclipse.jdt.ui.jarpackager.JarWriter3
-     *
-     * @param destinationPath the path to add
-     * @param fJarOutputStream the destination JarOutputStream
-     * @param fDirectories the temporary set saves existing directories
-     *
-     * @throws IOException if an I/O error has occurred
-     *
-     * @since 1.14
-     */
-    private static void addDirectories(IPath destinationPath, JarOutputStream fJarOutputStream, Set<String> fDirectories) throws IOException {
-        addDirectories(destinationPath.toString(), fJarOutputStream, fDirectories);
     }
 
     /**
@@ -346,12 +346,12 @@ public class JarPackageUtil {
      *
      * @param message the message to add
      * @param error the reason of the message
-     * @param fStatus the <code>MultiStatus</code> to write
+     * @param fstatus the <code>MultiStatus</code> to write
      *
      * @since 1.14
      */
-    private final static void addWarning(String message, Throwable error, MultiStatus fStatus) {
-        fStatus.add(new Status(IStatus.WARNING, JdtlsExtActivator.PLUGIN_ID, INTERNAL_ERROR, message, error));
+    private static final void addWarning(String message, Throwable error, MultiStatus fstatus) {
+        fstatus.add(new Status(IStatus.WARNING, JdtlsExtActivator.PLUGIN_ID, INTERNAL_ERROR, message, error));
     }
 
 }

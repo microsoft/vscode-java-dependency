@@ -45,7 +45,6 @@ public class JarFileContentProvider implements IContentProvider {
                 throw new CoreException(new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", rootId)));
             }
 
-
             if (packageRoot instanceof JarPackageFragmentRoot) {
                 JarEntryFile fileEntry = ExtUtils.findJarEntryFile(packageRoot, path);
                 if (fileEntry != null) {
@@ -58,8 +57,6 @@ public class JarFileContentProvider implements IContentProvider {
         }
         return null;
     }
-
-
 
     private static String readFileContent(JarEntryFile file) throws CoreException {
         try (InputStream stream = (file.getContents())) {

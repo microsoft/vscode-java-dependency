@@ -23,9 +23,10 @@ gulp.task('build_server', ()=>
 });
 
 
-gulp.task('checkstyle', ()=>
+gulp.task('checkstyle', (cb)=> 
 {
   cp.execSync(mvnw()+ ' checkstyle:check', {cwd:server_dir, stdio:[0,1,2]} );
+  cb();
 });
 
 function isWin() {

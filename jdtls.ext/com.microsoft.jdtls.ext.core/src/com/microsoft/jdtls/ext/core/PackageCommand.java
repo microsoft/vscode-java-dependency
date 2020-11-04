@@ -90,7 +90,7 @@ public class PackageCommand {
      *            {@link NodeKind} and the second one is the query instance of type
      *            {@link PackageParams}
      * @return the found ClasspathNode list
-     * @throws CoreException
+     * @throws CoreException when loader is null
      */
     public static List<PackageNode> getChildren(List<Object> arguments, IProgressMonitor pm) throws CoreException {
         if (arguments == null || arguments.size() < 1) {
@@ -106,14 +106,13 @@ public class PackageCommand {
     }
 
     /**
-     * Resolve the path for Java file URI
+     * Resolve the path for Java file URI.
      *
      * @param arguments
      *            List of the arguments which contain one entry of the target
      *            compilation unit URI.
-     *
      * @return the list of the path
-     * @throws CoreException
+     * @throws CoreException when create node or get resource
      */
     public static List<PackageNode> resolvePath(List<Object> arguments, IProgressMonitor pm) throws CoreException {
         if (arguments == null || arguments.size() < 1) {
@@ -182,7 +181,7 @@ public class PackageCommand {
                     IPackageFragment packageFragment = (IPackageFragment) parentJavaElement;
 
                     result.add(PackageNode.createNodeForProject(packageFragment));
-                    
+
                     IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
                     // for invisible project, removing the '_' link name may cause an empty named package root
                     // in this case, we will avoid that 'empty' node from displaying
@@ -210,13 +209,13 @@ public class PackageCommand {
         return result;
     }
 
-
     /**
-     * Get the node list from bottom to top until project
+     * Get the node list from bottom to top until project.
      *
      * @param element
-     * @return
-     * @throws JavaModelException
+     *          resource to be searched from
+     * @return parent node list of element
+     * @throws JavaModelException when get path or resource
      */
     private static List<PackageNode> getParentAncestorNodes(IResource element) throws JavaModelException {
         List<PackageNode> nodeList = new ArrayList<>();
@@ -298,7 +297,7 @@ public class PackageCommand {
                             if (fragmentRoot instanceof JrtPackageFragmentRoot) {
                                 node.setModuleName(fragmentRoot.getModuleDescription().getElementName());
                             }
-    
+
                             IClasspathEntry resolvedClasspathEntry = fragmentRoot.getResolvedClasspathEntry();
                             if (resolvedClasspathEntry != null) {
                                 Map<String, String> attributes = new HashMap<>();
@@ -467,7 +466,8 @@ public class PackageCommand {
         return result.toArray();
     }
 
-    private static List<PackageNode> convertToPackageNode(Object[] rootContent, IPackageFragmentRoot packageRoot, IProgressMonitor pm) throws JavaModelException {
+    private static List<PackageNode> convertToPackageNode(Object[] rootContent, IPackageFragmentRoot packageRoot,
+            IProgressMonitor pm) throws JavaModelException {
         List<PackageNode> result = new ArrayList<>();
         for (Object root : rootContent) {
             if (root instanceof IPackageFragment) {
