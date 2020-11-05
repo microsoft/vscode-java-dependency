@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as fse from "fs-extra";
 import * as vscode from "vscode";
-import { addContextProperty, sendInfo } from "vscode-extension-telemetry-wrapper";
+import { addContextProperty } from "vscode-extension-telemetry-wrapper";
 import { getExperimentationService, IExperimentationService, IExperimentationTelemetry, TargetPopulation } from "vscode-tas-client";
 
 class ExperimentationTelemetry implements IExperimentationTelemetry {

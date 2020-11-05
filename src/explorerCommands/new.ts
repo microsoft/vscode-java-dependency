@@ -6,7 +6,7 @@ import * as path from "path";
 import { QuickPickItem, Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
-import { checkJavaQualifiedName } from "./utils";
+import { checkJavaQualifiedName } from "./utility";
 
 export async function newJavaClass(node: DataNode): Promise<void> {
     const packageFsPath: string = await getPackageFsPath(node);

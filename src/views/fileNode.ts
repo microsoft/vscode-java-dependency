@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { Command, ThemeIcon } from "vscode";
 import { Commands } from "../commands";
 import { Explorer } from "../constants";
 import { INodeData } from "../java/nodeData";
