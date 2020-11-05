@@ -17,6 +17,7 @@ import { Settings } from "../settings";
 import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
+import { MainMethodInfo } from "./ResolveMainMethodExecutor";
 import { ExportJarConstants, failMessage, getExtensionApi, toPosixPath, toWinPath } from "./utility";
 
 interface IExportJarTaskDefinition extends TaskDefinition {
@@ -86,10 +87,11 @@ export class ExportJarTaskProvider implements TaskProvider {
                         "${" + ExportJarConstants.TEST_DEPENDENCIES + ":" + project.name + "}");
                 }
             }
+            const mainMethods: MainMethodInfo[] = await Jdtls.getMainMethod(folder.uri.toString());
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
                 elements: elementList,
-                mainMethod: "",
+                mainMethod: (mainMethods.length === 1) ? mainMethods[0].name : undefined,
                 targetPath: Settings.getExportJarTargetPath(),
             };
             const defaultTask: Task = new Task(defaultDefinition, folder, "exportjar:" + folder.name,
@@ -101,7 +103,7 @@ export class ExportJarTaskProvider implements TaskProvider {
                         steps: [],
                     };
                     return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
-                }));
+                }), undefined);
             defaultTask.presentationOptions.reveal = TaskRevealKind.Never;
             this.tasks.push(defaultTask);
         }
@@ -129,6 +131,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     public async open(_initialDimensions: TerminalDimensions | undefined): Promise<void> {
         try {
             if (this.stepMetadata.outputPath === undefined) {
+                // TODO: get resolved path from setting configuration.java.project.exportJar.targetPath.
                 // For the tasks whose targetPath is undefined, the user will select the output location manually.
                 this.stepMetadata.outputPath = "";
             }
@@ -165,14 +168,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         const classpathResult: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: classpathScope });
         const outputFolders: string[] = [];
         const artifacts: string[] = [];
-        for (const classpath of classpathResult.classpaths) {
-            if (extname(classpath) === ".jar") {
-                artifacts.push(classpath);
-            } else {
-                outputFolders.push(classpath);
-            }
-        }
-        for (const classpath of classpathResult.modulepaths) {
+        for (const classpath of [...classpathResult.classpaths, ...classpathResult.modulepaths]) {
             if (extname(classpath) === ".jar") {
                 artifacts.push(classpath);
             } else {

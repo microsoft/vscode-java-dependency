@@ -15,10 +15,10 @@ export namespace ExportJarTargets {
 }
 
 export namespace ExportJarConstants {
-    export const RUNTIME_DEPENDENCIES: string = "RuntimeDependencies";
-    export const TEST_DEPENDENCIES: string = "TestDependencies";
-    export const COMPILE_OUTPUT: string = "CompileOutput";
-    export const TESTCOMPILE_OUTPUT: string = "TestCompileOutput";
+    export const RUNTIME_DEPENDENCIES: string = "runtimeDependencies";
+    export const TEST_DEPENDENCIES: string = "testDependencies";
+    export const COMPILE_OUTPUT: string = "compileOutput";
+    export const TESTCOMPILE_OUTPUT: string = "testCompileOutput";
 }
 
 export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMetadata): void {
