@@ -13,7 +13,7 @@ suite("Extension Tests", () => {
 
     test("should activate", function() {
         this.timeout(1 * 60 * 1000);
-        return vscode.extensions.getExtension("vscjava.vscode-java-dependency").activate().then((api) => {
+        return vscode.extensions.getExtension("vscjava.vscode-java-dependency").activate().then((_api) => {
             assert.ok(true);
         });
     });

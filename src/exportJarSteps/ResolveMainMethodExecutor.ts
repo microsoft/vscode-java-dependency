@@ -36,7 +36,7 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving main classes...",
             cancellable: true,
-        }, (progress, token) => {
+        }, (_progress, token) => {
             return new Promise<MainMethodInfo[] | undefined>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
                     return reject();

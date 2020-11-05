@@ -57,7 +57,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             location: ProgressLocation.Window,
             title: "Exporting Jar : Generating jar...",
             cancellable: true,
-        }, (progress, token) => {
+        }, (_progress, token) => {
             return new Promise<boolean>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
                     return reject();
@@ -80,7 +80,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving classpaths...",
             cancellable: true,
-        }, (progress, token) => {
+        }, (_progress, token) => {
             return new Promise<IJarQuickPickItem[]>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
                     return reject();

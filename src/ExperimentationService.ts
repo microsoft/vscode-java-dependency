@@ -11,7 +11,7 @@ class ExperimentationTelemetry implements IExperimentationTelemetry {
         addContextProperty(name, value);
     }
 
-    public postEvent(eventName: string, props: Map<string, string>): void {
+    public postEvent(_eventName: string, _props: Map<string, string>): void {
         // do nothing
     }
 }
@@ -33,8 +33,8 @@ export function init(context: vscode.ExtensionContext): void {
 
     // Due to a bug in the tas-client module, a call to isFlightEnabledAsync is required to begin
     // polling the TAS. Due to a separate bug, this call must be preceeded by a call to isCachedFlightEnabled.
-    const asyncDummyCheck = (arg: any) => {
-        expService?.isFlightEnabledAsync("dummy").then((v) => { return; }).catch((r) => { return; });
+    const asyncDummyCheck = (_arg: any) => {
+        expService?.isFlightEnabledAsync("dummy").then((_v) => { return; }).catch((_r) => { return; });
     };
     expService?.isCachedFlightEnabled("dummy").then(asyncDummyCheck).catch(asyncDummyCheck);
 }

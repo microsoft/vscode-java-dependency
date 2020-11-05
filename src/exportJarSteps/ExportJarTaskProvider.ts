@@ -56,7 +56,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         this.stepMetadata.elements = exportJarTaskDefinition.elements;
     }
 
-    public async open(initialDimensions: TerminalDimensions | undefined): Promise<void> {
+    public async open(_initialDimensions: TerminalDimensions | undefined): Promise<void> {
         await createJarFile(this.stepMetadata);
         this.closeEmitter.fire();
     }
