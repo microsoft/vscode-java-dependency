@@ -30,6 +30,8 @@ export class DocumentSymbolNode extends BaseSymbolNode {
             item.iconPath = this.iconPath;
             item.command = this.command;
             return item;
+        } else {
+            return null;
         }
     }
 

@@ -22,6 +22,8 @@ export class HierarchicalPackageNode extends PackageNode {
             const item = new TreeItem(this.getHierarchicalNodeData().displayName,
                 this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
             return { ...super.getTreeItem(), ...item };
+        } else {
+            return null;
         }
     }
 

@@ -52,7 +52,7 @@ export class ProjectNode extends DataNode {
         let result: INodeData[] = [];
         return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
             if (!res) {
-                return;
+                return null;
             }
             const sourceContainer: IContainerNodeData[] = [];
             res.forEach((node) => {
@@ -67,7 +67,7 @@ export class ProjectNode extends DataNode {
                 return Promise.all(sourceContainer.map((c) => Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this.uri, path: c.path })))
                     .then((rootPackages) => {
                         if (!rootPackages) {
-                            return;
+                            return null;
                         }
                         result = result.concat(...rootPackages);
                         return result;

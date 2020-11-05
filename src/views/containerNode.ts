@@ -58,6 +58,8 @@ function getContainerType(containerPath: string | undefined): string {
         return "gradle";
     } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary)) {
         return "referencedLibrary";
+    } else {
+        return "";
     }
 }
 
