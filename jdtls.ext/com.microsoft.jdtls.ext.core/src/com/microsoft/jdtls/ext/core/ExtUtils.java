@@ -39,7 +39,8 @@ public final class ExtUtils {
     public static String toUri(IJarEntryResource jarEntryFile) {
         IPackageFragmentRoot fragmentRoot = jarEntryFile.getPackageFragmentRoot();
         try {
-            return new URI(JDT_SCHEME, CONTENTS_AUTHORITY, jarEntryFile.getFullPath().toPortableString(), fragmentRoot.getHandleIdentifier(), null).toASCIIString();
+            return new URI(JDT_SCHEME, CONTENTS_AUTHORITY, jarEntryFile.getFullPath().toPortableString(), fragmentRoot.getHandleIdentifier(), null)
+                        .toASCIIString();
         } catch (URISyntaxException e) {
             JavaLanguageServerPlugin.logException("Error generating URI for jarentryfile ", e);
             return null;
@@ -109,13 +110,13 @@ public final class ExtUtils {
 
     public static URI getContainerURI(IJavaProject javaProject, IClasspathContainer container) throws CoreException {
         switch (container.getKind()) {
-        case IClasspathContainer.K_DEFAULT_SYSTEM: // JRE Container
-        case IClasspathContainer.K_SYSTEM:
-            return JavaRuntime.getVMInstall(javaProject).getInstallLocation().toURI();
-        case IClasspathContainer.K_APPLICATION: // Plugin Container, Maven Container, etc
-            return null; // TODO: find out a good way to detect these containers' uri
-        default: // Persistent container (e.g. /src/main/java)
-            return container.getPath().toFile().toURI();
+            case IClasspathContainer.K_DEFAULT_SYSTEM: // JRE Container
+            case IClasspathContainer.K_SYSTEM:
+                return JavaRuntime.getVMInstall(javaProject).getInstallLocation().toURI();
+            case IClasspathContainer.K_APPLICATION: // Plugin Container, Maven Container, etc
+                return null; // TODO: find out a good way to detect these containers' uri
+            default: // Persistent container (e.g. /src/main/java)
+                return container.getPath().toFile().toURI();
         }
     }
 

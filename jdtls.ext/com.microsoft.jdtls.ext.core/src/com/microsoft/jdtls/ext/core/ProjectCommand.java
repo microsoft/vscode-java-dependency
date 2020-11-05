@@ -11,6 +11,9 @@
 
 package com.microsoft.jdtls.ext.core;
 
+import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeArchive;
+import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeFile;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -24,8 +27,8 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipFile;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.apache.commons.io.FilenameUtils;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -34,11 +37,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.apache.commons.io.FilenameUtils;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jdt.core.search.IJavaSearchScope;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
@@ -47,22 +45,24 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
-import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
 import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibraries;
-
-import com.microsoft.jdtls.ext.core.model.PackageNode;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 
-import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeFile;
-import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeArchive;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.microsoft.jdtls.ext.core.model.PackageNode;
 
 public final class ProjectCommand {
 
@@ -78,17 +78,17 @@ public final class ProjectCommand {
         }
     }
 
-    private static class exportResult {
+    private static class ExportResult {
         public boolean result;
         public String message;
         public String log;
 
-        exportResult(boolean result) {
+        ExportResult(boolean result) {
             this.result = result;
             this.log = "";
         }
 
-        exportResult(boolean result, String message) {
+        ExportResult(boolean result, String message) {
             this.result = result;
             this.message = message;
             this.log = "";
@@ -146,9 +146,9 @@ public final class ProjectCommand {
         return ResourcesPlugin.getWorkspace().getRoot();
     }
 
-    public static exportResult exportJar(List<Object> arguments, IProgressMonitor monitor) {
+    public static ExportResult exportJar(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments.size() < 3) {
-            return new exportResult(false, "Invalid export Arguments");
+            return new ExportResult(false, "Invalid export Arguments");
         }
         String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
         String[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), String[].class);
@@ -172,9 +172,9 @@ public final class ProjectCommand {
                 }
             }
         } catch (Exception e) {
-            return new exportResult(false, e.getMessage());
+            return new ExportResult(false, e.getMessage());
         }
-        return new exportResult(true);
+        return new ExportResult(true);
     }
 
     private static void writeFileRecursively(File folder, JarOutputStream jarOutputStream, Set<String> directories,
@@ -236,7 +236,7 @@ public final class ProjectCommand {
         };
         SearchEngine searchEngine = new SearchEngine();
         try {
-            searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope,
+            searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()}, scope,
                     requestor, new NullProgressMonitor());
         } catch (CoreException e) {
             // ignore
