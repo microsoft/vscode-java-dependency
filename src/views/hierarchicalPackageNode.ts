@@ -23,7 +23,7 @@ export class HierarchicalPackageNode extends PackageNode {
                 this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
             return { ...super.getTreeItem(), ...item };
         }
-        return null;
+        return undefined;
     }
 
     public async getChildren(): Promise<ExplorerNode[]> {

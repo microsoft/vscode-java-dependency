@@ -36,7 +36,7 @@ export class SymbolNode extends BaseSymbolNode {
             item.command = this.command;
             return item;
         }
-        return null;
+        return undefined;
     }
 
     protected get range(): Range {
