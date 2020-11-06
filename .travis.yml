@@ -33,6 +33,7 @@ install:
 
 script:
 - gulp tslint
+- gulp checkstyle
 - gulp build_server
 - vsce package
 - npm test

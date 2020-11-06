@@ -10,6 +10,7 @@
         <base.name>Java Project Manager</base.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <tycho-version>1.5.0</tycho-version>
+        <checkstyleDir>${basedir}</checkstyleDir>
     </properties>
 
     <developers>
@@ -73,6 +74,27 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>8.29</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>com.github.sevntu-checkstyle</groupId>
+                            <artifactId>sevntu-checkstyle-maven-plugin</artifactId>
+                            <version>1.24.1</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <configLocation>${checkstyleDir}/check_style.xml</configLocation>
+                        <failOnViolation>true</failOnViolation>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.eclipse.tycho</groupId>
                     <artifactId>target-platform-configuration</artifactId>
                     <version>${tycho-version}</version>
@@ -80,6 +102,19 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>activate-in-module</id>
+            <activation>
+                <file>
+                    <exists>${basedir}/../check_style.xml</exists>
+                </file>
+            </activation>
+            <properties>
+                <checkstyleDir>${basedir}/..</checkstyleDir>
+            </properties>
+        </profile>
+    </profiles>
     <repositories>
         <repository>
         <id>202006</id>
