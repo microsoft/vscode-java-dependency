@@ -25,9 +25,9 @@ export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMet
     if (resetTo === ExportJarStep.ResolveJavaProject) {
         stepMetadata.workspaceFolder = undefined;
         stepMetadata.projectList = undefined;
-        stepMetadata.mainMethod = undefined;
-    } else if (resetTo === ExportJarStep.ResolveMainMethod) {
-        stepMetadata.mainMethod = undefined;
+        stepMetadata.mainClass = undefined;
+    } else if (resetTo === ExportJarStep.ResolveMainClass) {
+        stepMetadata.mainClass = undefined;
     }
 }
 

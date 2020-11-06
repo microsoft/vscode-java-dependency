@@ -67,9 +67,7 @@ import com.microsoft.jdtls.ext.core.model.PackageNode;
 public final class ProjectCommand {
 
     private static class MainClassInfo {
-
         public String name;
-
         public String path;
 
         public MainClassInfo(String name, String path) {
@@ -156,13 +154,13 @@ public final class ProjectCommand {
         if (arguments.size() < 3) {
             return new ExportResult(false, "Invalid export Arguments");
         }
-        String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
+        String mainClass = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
         Classpath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), Classpath[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        if (mainMethod.length() > 0) {
-            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainMethod);
+        if (mainClass.length() > 0) {
+            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
         }
         try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
             Set<String> directories = new HashSet<>();
@@ -179,7 +177,7 @@ public final class ProjectCommand {
         return new ExportResult(true);
     }
 
-    public static List<MainClassInfo> getMainMethod(List<Object> arguments, IProgressMonitor monitor) throws Exception {
+    public static List<MainClassInfo> getMainClasses(List<Object> arguments, IProgressMonitor monitor) throws Exception {
         List<PackageNode> projectList = listProjects(arguments, monitor);
         final List<MainClassInfo> res = new ArrayList<>();
         List<IJavaElement> searchRoots = new ArrayList<>();

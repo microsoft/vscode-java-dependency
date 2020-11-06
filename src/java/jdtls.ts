@@ -5,7 +5,7 @@ import { commands } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { IExportResult } from "../exportJarSteps/GenerateJarExecutor";
 import { IClasspath } from "../exportJarSteps/IStepMetadata";
-import { MainMethodInfo } from "../exportJarSteps/ResolveMainMethodExecutor";
+import { IMainClassInfo } from "../exportJarSteps/ResolveMainClassExecutor";
 import { INodeData } from "./nodeData";
 
 export namespace Jdtls {
@@ -25,13 +25,13 @@ export namespace Jdtls {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_RESOLVEPATH, params);
     }
 
-    export function getMainMethod(params: string): Thenable<MainMethodInfo[]> {
-        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINMETHOD, params);
+    export function getMainClasses(params: string): Thenable<IMainClassInfo[]> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINCLASSES, params);
     }
 
-    export function exportJar(mainMethod: string, classpaths: IClasspath[], destination: string): Thenable<IExportResult> {
+    export function exportJar(mainClass: string, classpaths: IClasspath[], destination: string): Thenable<IExportResult> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR,
-            mainMethod, classpaths, destination);
+            mainClass, classpaths, destination);
     }
 
     export enum CompileWorkspaceStatus {

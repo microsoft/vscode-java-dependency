@@ -9,7 +9,7 @@ export interface IStepMetadata {
     entry?: INodeData;
     workspaceFolder?: WorkspaceFolder;
     projectList?: INodeData[];
-    mainMethod?: string;
+    mainClass?: string;
     elements?: string[];
     classpaths?: IClasspath[];
     outputPath?: string;

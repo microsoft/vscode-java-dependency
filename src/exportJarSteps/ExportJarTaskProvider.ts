@@ -17,13 +17,14 @@ import { Settings } from "../settings";
 import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { MainMethodInfo } from "./ResolveMainMethodExecutor";
+import { IMainClassInfo } from "./ResolveMainClassExecutor";
 import { ExportJarConstants, failMessage, getExtensionApi, toPosixPath, toWinPath } from "./utility";
 
 interface IExportJarTaskDefinition extends TaskDefinition {
-    elements?: string[];
-    mainMethod?: string;
+    label?: string;
+    mainClass?: string;
     targetPath?: string;
+    elements?: string[];
 }
 
 export class ExportJarTaskProvider implements TaskProvider {
@@ -33,9 +34,10 @@ export class ExportJarTaskProvider implements TaskProvider {
     public static getTask(stepMetadata: IStepMetadata): Task {
         const defaultDefinition: IExportJarTaskDefinition = {
             type: ExportJarTaskProvider.exportJarType,
+            label: "ttt",
             targetPath: Settings.getExportJarTargetPath(),
             elements: [],
-            mainMethod: undefined,
+            mainClass: undefined,
         };
         const task: Task = new Task(defaultDefinition, TaskScope.Workspace, "exportjar:default", ExportJarTaskProvider.exportJarType,
             new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
@@ -87,12 +89,13 @@ export class ExportJarTaskProvider implements TaskProvider {
                         "${" + ExportJarConstants.TEST_DEPENDENCIES + ":" + project.name + "}");
                 }
             }
-            const mainMethods: MainMethodInfo[] = await Jdtls.getMainMethod(folder.uri.toString());
+            const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
-                elements: elementList,
-                mainMethod: (mainMethods.length === 1) ? mainMethods[0].name : undefined,
+                label: "ttt",
+                mainClass: (mainClasses.length === 1) ? mainClasses[0].name : undefined,
                 targetPath: Settings.getExportJarTargetPath(),
+                elements: elementList,
             };
             const defaultTask: Task = new Task(defaultDefinition, folder, "exportjar:" + folder.name,
                 ExportJarTaskProvider.exportJarType, new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
@@ -123,7 +126,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     constructor(exportJarTaskDefinition: IExportJarTaskDefinition, stepMetadata: IStepMetadata) {
         this.stepMetadata = stepMetadata;
-        this.stepMetadata.mainMethod = exportJarTaskDefinition.mainMethod;
+        this.stepMetadata.mainClass = exportJarTaskDefinition.mainClass;
         this.stepMetadata.outputPath = exportJarTaskDefinition.targetPath;
         this.stepMetadata.elements = exportJarTaskDefinition.elements;
     }

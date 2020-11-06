@@ -68,7 +68,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainMethod), stepMetadata.classpaths, destPath);
+                const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainClass), stepMetadata.classpaths, destPath);
                 if (exportResult.result === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
@@ -108,12 +108,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
-            const classpath: IClasspath = {
-                source: dependencyItems[0].path,
-                destination: undefined,
-                isArtifact: false,
-            };
-            stepMetadata.classpaths.push(classpath);
+            this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
@@ -149,7 +144,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                             return;
                         }
                         for (const item of pickBox.selectedItems) {
-                            if (item.type === "external") {
+                            if (item.type === "artifact") {
                                 const classpath: IClasspath = {
                                     source: item.path,
                                     destination: undefined,
@@ -157,15 +152,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                                 };
                                 stepMetadata.classpaths.push(classpath);
                             } else {
-                                const posixPath: string = toPosixPath(item.path);
-                                for (const path of await globby(posixPath)) {
-                                    const classpath: IClasspath = {
-                                        source: path,
-                                        destination: relative(posixPath, path),
-                                        isArtifact: false,
-                                    };
-                                    stepMetadata.classpaths.push(classpath);
-                                }
+                                this.setStepMetadataFromOutputFolder(item.path, stepMetadata);
                             }
                         }
                         return resolve(true);
@@ -185,6 +172,18 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         return result;
     }
 
+    private async setStepMetadataFromOutputFolder(folderPath: string, stepMetadata: IStepMetadata): Promise<void> {
+        const posixPath: string = toPosixPath(folderPath);
+        for (const path of await globby(posixPath)) {
+            const classpath: IClasspath = {
+                source: path,
+                destination: relative(posixPath, path),
+                isArtifact: false,
+            };
+            stepMetadata.classpaths.push(classpath);
+        }
+    }
+
     private async parseDependencyItems(paths: string[], uriSet: Set<string>, projectPath: string, isRuntime: boolean): Promise<IJarQuickPickItem[]> {
         const dependencyItems: IJarQuickPickItem[] = [];
         for (const classpath of paths) {
@@ -195,7 +194,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             const baseName = Uri.parse(classpath).fsPath.startsWith(Uri.parse(projectPath).fsPath) ?
                 relative(projectPath, classpath) : basename(classpath);
             const descriptionValue = (isRuntime) ? "Runtime" : "Test";
-            const typeValue = (extName === ".jar") ? "external" : "internal";
+            const typeValue = (extName === ".jar") ? "artifact" : "outputFolder";
             if (!uriSet.has(classpath)) {
                 uriSet.add(classpath);
                 dependencyItems.push({
