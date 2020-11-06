@@ -35,9 +35,8 @@ export class SymbolNode extends BaseSymbolNode {
             item.iconPath = this.iconPath;
             item.command = this.command;
             return item;
-        } else {
-            return null;
         }
+        return null;
     }
 
     protected get range(): Range {

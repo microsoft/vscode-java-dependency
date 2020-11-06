@@ -52,8 +52,7 @@ export class PackageNode extends DataNode {
             return `${Explorer.ContextValueType.Package}+source`;
         } else if (parentData.entryKind === PackageRootKind.K_BINARY) {
             return `${Explorer.ContextValueType.Package}+binary`;
-        } else {
-            return Explorer.ContextValueType.Package;
         }
+        return null;
     }
 }
