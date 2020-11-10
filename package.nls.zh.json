@@ -29,8 +29,8 @@
   "taskDefinitions.java.project.exportJar.elements": "导出 Jar 文件的内容列表。",
   "taskDefinitions.java.project.exportJar.mainClass": "导出 Jar 文件的 main 函数所在的类。",
   "taskDefinitions.java.project.exportJar.targetPath": "导出 Jar 文件的输出路径。将会覆盖配置项: configuration.java.project.exportJar.targetPath 的值。",
-  "taskDefinitions.java.project.exportJar.compileOutput": "在 runtime 范围内的输出文件夹。",
-  "taskDefinitions.java.project.exportJar.testCompileOutput": "在 test 范围内的输出文件夹。",
-  "taskDefinitions.java.project.exportJar.runtimeDependencies": "在 runtime 范围内的依赖。",
-  "taskDefinitions.java.project.exportJar.testDependencies": "在 test 范围内的依赖。"
+  "taskDefinitions.java.project.exportJar.compileOutput": "在 runtime scope 内包含输出的 class 文件的文件夹。",
+  "taskDefinitions.java.project.exportJar.testCompileOutput": "在 test scope 内包含输出的 class 文件的文件夹。",
+  "taskDefinitions.java.project.exportJar.runtimeDependencies": "在 runtime scope 内的依赖。",
+  "taskDefinitions.java.project.exportJar.testDependencies": "在 test scope 内的依赖。"
 }

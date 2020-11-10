@@ -166,9 +166,9 @@ public final class ProjectCommand {
             Set<String> directories = new HashSet<>();
             for (Classpath classpath : classpaths) {
                 if (classpath.isArtifact) {
-                    writeArchive(new ZipFile(classpath.source), true, true, target, directories, monitor);
+                    writeArchive(new ZipFile(classpath.source), /* areDirectoryEntriesIncluded = */true, /* isCompressed = */true, target, directories, monitor);
                 } else {
-                    writeFile(new File(classpath.source), new Path(classpath.destination), true, true, target, directories);
+                    writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true, /* isCompressed = */true, target, directories);
                 }
             }
         } catch (Exception e) {

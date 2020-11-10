@@ -34,7 +34,7 @@ export class ExportJarTaskProvider implements TaskProvider {
     public static getTask(stepMetadata: IStepMetadata): Task {
         const defaultDefinition: IExportJarTaskDefinition = {
             type: ExportJarTaskProvider.exportJarType,
-            label: "ttt",
+            label: `${ExportJarTaskProvider.exportJarType}: exportjar:default`,
             targetPath: Settings.getExportJarTargetPath(),
             elements: [],
             mainClass: undefined,
@@ -92,12 +92,12 @@ export class ExportJarTaskProvider implements TaskProvider {
             const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
-                label: "ttt",
+                label: `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
                 mainClass: (mainClasses.length === 1) ? mainClasses[0].name : undefined,
                 targetPath: Settings.getExportJarTargetPath(),
                 elements: elementList,
             };
-            const defaultTask: Task = new Task(defaultDefinition, folder, "exportjar:" + folder.name,
+            const defaultTask: Task = new Task(defaultDefinition, folder, `exportjar:${folder.name}`,
                 ExportJarTaskProvider.exportJarType, new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
                     const stepMetadata: IStepMetadata = {
                         entry: undefined,
