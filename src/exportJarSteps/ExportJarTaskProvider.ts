@@ -78,15 +78,11 @@ export class ExportJarTaskProvider implements TaskProvider {
                 continue;
             } else if (projectList.length === 1) {
                 elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + "}",
-                    "${" + ExportJarConstants.TESTCOMPILE_OUTPUT + "}",
-                    "${" + ExportJarConstants.RUNTIME_DEPENDENCIES + "}",
-                    "${" + ExportJarConstants.TEST_DEPENDENCIES + "}");
+                    "${" + ExportJarConstants.DEPENDENCIES + "}");
             } else {
                 for (const project of projectList) {
                     elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + ":" + project.name + "}",
-                        "${" + ExportJarConstants.TESTCOMPILE_OUTPUT + ":" + project.name + "}",
-                        "${" + ExportJarConstants.RUNTIME_DEPENDENCIES + ":" + project.name + "}",
-                        "${" + ExportJarConstants.TEST_DEPENDENCIES + ":" + project.name + "}");
+                        "${" + ExportJarConstants.DEPENDENCIES + ":" + project.name + "}");
                 }
             }
             const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
@@ -139,17 +135,17 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 this.stepMetadata.outputPath = "";
             }
             if (!_.isEmpty(this.stepMetadata.elements)) {
-                const runtimeOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
-                const runtimeArtifactMap: Map<string, string[]> = new Map<string, string[]>();
+                const outputFolderMap: Map<string, string[]> = new Map<string, string[]>();
+                const artifactMap: Map<string, string[]> = new Map<string, string[]>();
                 const testOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
                 const testArtifactMap: Map<string, string[]> = new Map<string, string[]>();
                 const projectList: INodeData[] = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
                 for (const project of projectList) {
-                    await this.setClasspathMap(project, "runtime", runtimeOutputFolderMap, runtimeArtifactMap);
+                    await this.setClasspathMap(project, "runtime", outputFolderMap, artifactMap);
                     await this.setClasspathMap(project, "test", testOutputFolderMap, testArtifactMap);
                 }
-                this.stepMetadata.classpaths = await this.resolveClasspaths(runtimeOutputFolderMap,
-                    runtimeArtifactMap, testOutputFolderMap, testArtifactMap);
+                this.stepMetadata.classpaths = await this.resolveClasspaths(outputFolderMap,
+                    artifactMap, testOutputFolderMap, testArtifactMap);
             }
             await createJarFile(this.stepMetadata);
         } catch (err) {
@@ -182,8 +178,8 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         artifactMap.set(project.name, artifacts);
     }
 
-    private async resolveClasspaths(runtimeOutputFolderMap: Map<string, string[]>,
-                                    runtimeArtifactMap: Map<string, string[]>,
+    private async resolveClasspaths(outputFolderMap: Map<string, string[]>,
+                                    artifactMap: Map<string, string[]>,
                                     testOutputFolderMap: Map<string, string[]>,
                                     testArtifactMap: Map<string, string[]>): Promise<IClasspath[]> {
         const regExp: RegExp = /\${(.*?)(:.*)?}/;
@@ -204,16 +200,16 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             }
             const projectName: string = (matchResult[2] === undefined) ? undefined : matchResult[2].substring(1);
             switch (matchResult[1]) {
-                case ExportJarConstants.RUNTIME_DEPENDENCIES:
-                    artifacts = artifacts.concat(this.getJarElementsFromClasspathMapping(matchResult, runtimeArtifactMap, projectName));
+                case ExportJarConstants.DEPENDENCIES:
+                    artifacts = artifacts.concat(this.getJarElementsFromClasspathMapping(matchResult, artifactMap, projectName));
                     break;
                 case ExportJarConstants.TEST_DEPENDENCIES:
                     artifacts = artifacts.concat(this.getJarElementsFromClasspathMapping(matchResult, testArtifactMap, projectName));
                     break;
                 case ExportJarConstants.COMPILE_OUTPUT:
-                    outputElements = outputElements.concat(this.getJarElementsFromClasspathMapping(matchResult, runtimeOutputFolderMap, projectName));
+                    outputElements = outputElements.concat(this.getJarElementsFromClasspathMapping(matchResult, outputFolderMap, projectName));
                     break;
-                case ExportJarConstants.TESTCOMPILE_OUTPUT:
+                case ExportJarConstants.TEST_COMPILE_OUTPUT:
                     outputElements = outputElements.concat(this.getJarElementsFromClasspathMapping(matchResult, testOutputFolderMap, projectName));
                     break;
             }

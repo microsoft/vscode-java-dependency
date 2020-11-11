@@ -31,6 +31,6 @@
   "taskDefinitions.java.project.exportJar.targetPath": "The output path of the exported jar. This will override configuration.java.project.exportJar.targetPath.",
   "taskDefinitions.java.project.exportJar.compileOutput": "The folders containing output class files in the runtime scope.",
   "taskDefinitions.java.project.exportJar.testCompileOutput": "The folders containing output class files in the test scope.",
-  "taskDefinitions.java.project.exportJar.runtimeDependencies": "The artifact dependencies in the runtime scope.",
+  "taskDefinitions.java.project.exportJar.dependencies": "The artifact dependencies in the runtime scope.",
   "taskDefinitions.java.project.exportJar.testDependencies": "The artifact dependencies in the test scope."
 }

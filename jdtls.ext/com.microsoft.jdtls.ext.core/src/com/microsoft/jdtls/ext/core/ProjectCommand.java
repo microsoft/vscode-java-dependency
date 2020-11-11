@@ -16,6 +16,7 @@ import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -169,11 +170,15 @@ public final class ProjectCommand {
                     writeArchive(new ZipFile(classpath.source), /* areDirectoryEntriesIncluded = */true,
                         /* isCompressed = */true, target, directories, monitor);
                 } else {
-                    writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true,
-                        /* isCompressed = */true, target, directories);
+                    try {
+                        writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true,
+                            /* isCompressed = */true, target, directories);
+                    } catch (CoreException e) {
+                        // TODO: Collect reports
+                    }
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             return new ExportResult(false, e.getMessage());
         }
         return new ExportResult(true);

@@ -93,14 +93,14 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
                 for (const project of stepMetadata.projectList) {
-                    const runTimeClasspaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
+                    const classpaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(runTimeClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true),
-                        ...await this.parseDependencyItems(runTimeClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, true));
+                        ...await this.parseDependencyItems(classpaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "runtime"),
+                        ...await this.parseDependencyItems(classpaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "runtime"));
                     const testClasspaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "test" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false),
-                        ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, false));
+                        ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "test"),
+                        ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "test"));
                 }
                 return resolve(pickItems);
             });
@@ -184,7 +184,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }
     }
 
-    private async parseDependencyItems(paths: string[], uriSet: Set<string>, projectPath: string, isRuntime: boolean): Promise<IJarQuickPickItem[]> {
+    private async parseDependencyItems(paths: string[], uriSet: Set<string>, projectPath: string, scope: string): Promise<IJarQuickPickItem[]> {
         const dependencyItems: IJarQuickPickItem[] = [];
         for (const classpath of paths) {
             if (await pathExists(classpath) === false) {
@@ -193,16 +193,15 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             const extName = extname(classpath);
             const baseName = Uri.parse(classpath).fsPath.startsWith(Uri.parse(projectPath).fsPath) ?
                 relative(projectPath, classpath) : basename(classpath);
-            const descriptionValue = (isRuntime) ? "Runtime" : "Test";
             const typeValue = (extName === ".jar") ? "artifact" : "outputFolder";
             if (!uriSet.has(classpath)) {
                 uriSet.add(classpath);
                 dependencyItems.push({
                     label: baseName,
-                    description: descriptionValue,
+                    description: scope,
                     path: classpath,
                     type: typeValue,
-                    picked: isRuntime,
+                    picked: scope === "runtime",
                 });
             }
         }
