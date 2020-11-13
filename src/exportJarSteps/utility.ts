@@ -2,20 +2,32 @@
 // Licensed under the MIT license.
 
 import { EOL, platform } from "os";
-import { commands, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
+import { posix, win32 } from "path";
+import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { ExportJarStep } from "../exportJarFileCommand";
 import { IStepMetadata } from "./IStepMetadata";
 
-export const SETTING_ASKUSER: string = "askUser";
+export namespace ExportJarTargets {
+    export const SETTING_ASKUSER: string = "askUser";
+    // tslint:disable-next-line: no-invalid-template-strings
+    export const DEFAULT_OUTPUT_PATH: string = "${workspaceFolder}/${workspaceFolderBasename}.jar";
+}
+
+export namespace ExportJarConstants {
+    export const DEPENDENCIES: string = "dependencies";
+    export const TEST_DEPENDENCIES: string = "testDependencies";
+    export const COMPILE_OUTPUT: string = "compileOutput";
+    export const TEST_COMPILE_OUTPUT: string = "testCompileOutput";
+}
 
 export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMetadata): void {
     if (resetTo === ExportJarStep.ResolveJavaProject) {
         stepMetadata.workspaceFolder = undefined;
         stepMetadata.projectList = undefined;
-        stepMetadata.mainMethod = undefined;
-    } else if (resetTo === ExportJarStep.ResolveMainMethod) {
-        stepMetadata.mainMethod = undefined;
+        stepMetadata.mainClass = undefined;
+    } else if (resetTo === ExportJarStep.ResolveMainClass) {
+        stepMetadata.mainClass = undefined;
     }
 }
 
@@ -80,4 +92,24 @@ export function successMessage(outputFileName: string) {
                 commands.executeCommand("revealFileInOS", Uri.file(outputFileName));
             }
         });
+}
+
+export function toPosixPath(inputPath: string): string {
+    return inputPath.split(win32.sep).join(posix.sep);
+}
+
+export function toWinPath(inputPath: string): string {
+    return inputPath.split(posix.sep).join(win32.sep);
+}
+
+export async function getExtensionApi(): Promise<any> {
+    const extension: Extension<any> | undefined = extensions.getExtension("redhat.java");
+    if (extension === undefined) {
+        throw new Error("Language Support for Java(TM) by Red Hat isn't running, the export process will be aborted.");
+    }
+    const extensionApi: any = await extension.activate();
+    if (extensionApi.getClasspaths === undefined) {
+        throw new Error("Export jar is not supported in the current version of language server, please check and update your Language Support for Java(TM) by Red Hat.");
+    }
+    return extensionApi;
 }

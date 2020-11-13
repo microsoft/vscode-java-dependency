@@ -44,26 +44,26 @@ import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
 public class PackageNode {
 
     /**
-     * Nature Id for the IProject
+     * Nature Id for the IProject.
      */
     private static final String NATURE_ID = "NatureId";
 
-    public final static String K_TYPE_KIND = "TypeKind";
+    public static final String K_TYPE_KIND = "TypeKind";
 
     /**
      * Kind constant for a class.
      */
-    public final static int K_CLASS = 1;
+    public static final int K_CLASS = 1;
 
     /**
      * Kind constant for an interface.
      */
-    public final static int K_INTERFACE = 2;
+    public static final int K_INTERFACE = 2;
 
     /**
      * Kind constant for an enum.
      */
-    public final static int K_ENUM = 3;
+    public static final int K_ENUM = 3;
 
     private static final String REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries";
     private static final String IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries (Read-only)";
@@ -75,47 +75,47 @@ public class PackageNode {
             REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
 
     /**
-     * The name of the PackageNode
+     * The name of the PackageNode.
      */
     private String name;
 
     /**
-     * The display name of the node
+     * The display name of the node.
      */
     private String displayName;
 
     /**
-     * The module name of the PackageNode for Java 9 and above
+     * The module name of the PackageNode for Java 9 and above.
      */
     private String moduleName;
 
     /**
-     * The type of {@link IPath} portable string value
+     * The type of {@link IPath} portable string value.
      */
     private String path;
 
     /**
-     * The handlerIdentifier
+     * The handlerIdentifier.
      */
     private String handlerIdentifier;
 
     /**
-     * The URI value of the PackageNode
+     * The URI value of the PackageNode.
      */
     private String uri;
 
     /**
-     * PackageNode kind
+     * PackageNode kind.
      */
     private NodeKind kind;
 
     /**
-     * PackageNode metaData
+     * PackageNode metaData.
      */
     private Map<String, Object> metaData;
 
     /**
-     * PackageNode children list
+     * PackageNode children list.
      */
     private List<PackageNode> children;
 
@@ -220,7 +220,7 @@ public class PackageNode {
     }
 
     /**
-     * Get the correspond node of classpath, it may be container or a package root
+     * Get the correspond node of classpath, it may be container or a package root.
      *
      * @param classpathEntry
      *            classpath entry
@@ -281,7 +281,7 @@ public class PackageNode {
     }
 
     /**
-     * Get correspond node of referenced variable
+     * Get correspond node of referenced variable.
      *
      * @param classpathEntry
      *            referenced variable's classpath entry

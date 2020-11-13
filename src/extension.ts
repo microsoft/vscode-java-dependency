@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, Event, Extension, ExtensionContext, extensions, Uri } from "vscode";
+import { commands, Event, Extension, ExtensionContext, extensions, tasks, Uri } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { Build, Context } from "./constants";
@@ -9,6 +9,7 @@ import { contextManager } from "./contextManager";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
+import { ExportJarTaskProvider } from "./exportJarSteps/ExportJarTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
 import { DependencyExplorer } from "./views/dependencyExplorer";
@@ -61,6 +62,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         context.subscriptions.push(new DependencyExplorer(context));
         context.subscriptions.push(contextManager);
         context.subscriptions.push(syncHandler);
+        context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
         contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
         contextManager.setContextValue(Context.SUPPORTED_BUILD_FILES, Build.FILE_NAMES);
 

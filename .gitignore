@@ -11,3 +11,4 @@ vscode-java-*.vsix
 packages/
 dist
 **/.settings
+**/.checkstyle

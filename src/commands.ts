@@ -68,7 +68,7 @@ export namespace Commands {
 
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
-    export const JAVA_PROJECT_GETMAINMETHOD = "java.project.getMainMethod";
+    export const JAVA_PROJECT_GETMAINCLASSES = "java.project.getMainClasses";
 
     export const JAVA_PROJECT_GENERATEJAR = "java.project.generateJar";
 

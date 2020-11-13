@@ -8,21 +8,21 @@ import { GenerateJarExecutor } from "./exportJarSteps/GenerateJarExecutor";
 import { IExportJarStepExecutor } from "./exportJarSteps/IExportJarStepExecutor";
 import { IStepMetadata } from "./exportJarSteps/IStepMetadata";
 import { ResolveJavaProjectExecutor } from "./exportJarSteps/ResolveJavaProjectExecutor";
-import { ResolveMainMethodExecutor } from "./exportJarSteps/ResolveMainMethodExecutor";
+import { ResolveMainClassExecutor } from "./exportJarSteps/ResolveMainClassExecutor";
 import { failMessage, successMessage } from "./exportJarSteps/utility";
 import { isStandardServerReady } from "./extension";
 import { INodeData } from "./java/nodeData";
 
 export enum ExportJarStep {
     ResolveJavaProject = "RESOLVEJAVAPROJECT",
-    ResolveMainMethod = "RESOLVEMAINMETHOD",
+    ResolveMainClass = "RESOLVEMAINCLASS",
     GenerateJar = "GENERATEJAR",
     Finish = "FINISH",
 }
 
 const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarStep, IExportJarStepExecutor>([
     [ExportJarStep.ResolveJavaProject, new ResolveJavaProjectExecutor()],
-    [ExportJarStep.ResolveMainMethod, new ResolveMainMethodExecutor()],
+    [ExportJarStep.ResolveMainClass, new ResolveMainClassExecutor()],
     [ExportJarStep.GenerateJar, new GenerateJarExecutor()],
 ]);
 

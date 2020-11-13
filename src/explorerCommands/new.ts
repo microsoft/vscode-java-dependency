@@ -5,8 +5,8 @@ import * as fse from "fs-extra";
 import * as path from "path";
 import { QuickPickItem, Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
-import { isJavaIdentifier, isKeyword } from "../utility";
 import { DataNode } from "../views/dataNode";
+import { checkJavaQualifiedName } from "./utils";
 
 export async function newJavaClass(node: DataNode): Promise<void> {
     const packageFsPath: string = await getPackageFsPath(node);
@@ -136,24 +136,6 @@ function getPackageRootPath(packageFsPath: string, packageName: string): string 
 
 function getNewPackagePath(packageRootPath: string, packageName: string): string {
     return path.join(packageRootPath, ...packageName.split("."));
-}
-
-function checkJavaQualifiedName(value: string): string {
-    if (!value || !value.trim()) {
-        return "Input cannot be empty.";
-    }
-
-    for (const part of value.split(".")) {
-        if (isKeyword(part)) {
-            return `Keyword '${part}' cannot be used.`;
-        }
-
-        if (!isJavaIdentifier(part)) {
-            return `Invalid Java qualified name.`;
-        }
-    }
-
-    return "";
 }
 
 interface ISourceRootPickItem extends QuickPickItem {

@@ -7,6 +7,7 @@ import { INodeData, NodeKind, TypeKind } from "../../src/java/nodeData";
 import { PackageRootKind } from "../../src/java/packageRootNodeData";
 import { ContainerNode } from "../../src/views/containerNode";
 import { FileNode } from "../../src/views/fileNode";
+import { FolderNode } from "../../src/views/folderNode";
 import { PackageNode } from "../../src/views/packageNode";
 import { PackageRootNode } from "../../src/views/packageRootNode";
 import { PrimaryTypeNode } from "../../src/views/PrimaryTypeNode";
@@ -83,6 +84,10 @@ suite("Context Value Tests", () => {
 
     test("test interface type node", async function() {
         assert.equal((await interfaceType.getTreeItem()).contextValue, "java:type+interface+uri");
+    });
+
+    test("test folder node", async function() {
+        assert.equal((await folder.getTreeItem()).contextValue, "java:folder+uri");
     });
 });
 
@@ -211,3 +216,9 @@ const interfaceType: PrimaryTypeNode = new PrimaryTypeNode({
         TypeKind: TypeKind.Interface,
     },
 }, sourcePackage);
+
+const folder: FolderNode = new FolderNode({
+    name: "static",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.Package,
+}, resourceRoot, mavenProject, resourceRoot);
