@@ -186,6 +186,21 @@
         },
         "java.project.exportJar.targetPath": {
           "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "${workspaceFolder}/${workspaceFolderBasename}.jar",
+                "askUser",
+                ""
+              ],
+              "enumDescriptions": [
+                "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
+                "%configuration.java.project.exportJar.targetPath.askUser%",
+                "%configuration.java.project.exportJar.targetPath.askUser%"
+              ]
+            },
+            "string"
+          ],
           "markdownDescription": "%configuration.java.project.exportJar.targetPath%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         }
