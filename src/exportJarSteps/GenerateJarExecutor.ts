@@ -4,7 +4,6 @@
 import { ensureDir, pathExists } from "fs-extra";
 import globby = require("globby");
 import * as _ from "lodash";
-
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";

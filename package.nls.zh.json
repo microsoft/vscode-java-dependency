@@ -24,7 +24,7 @@
   "configuration.java.dependency.autoRefresh": "在 Java 项目管理器中自动同步修改",
   "configuration.java.dependency.refreshDelay": "控制 Java 项目管理器刷新的延迟时间 (毫秒)",
   "configuration.java.dependency.packagePresentation": "Java 包显示方式: 平行显示或者分层显示",
-  "configuration.java.project.exportJar.targetPath": "导出 Jar 文件的默认路径，默认值为 `\"${workspaceFolder}/${workspaceFolderBasename}.jar\"`。为了在导出 jar 文件时手动选择输出目录，您可以将此选项置为`\"\"`或 `\"askUser\"`。"
+  "configuration.java.project.exportJar.targetPath": "导出 Jar 文件的默认路径，默认值为 `\"${workspaceFolder}/${workspaceFolderBasename}.jar\"`。为了在导出 jar 文件时手动选择输出目录，您可以将此选项置为`\"\"`或 `\"askUser\"`。",
   "taskDefinitions.java.project.exportJar.label": "导出 Jar 任务的名称。",
   "taskDefinitions.java.project.exportJar.elements": "导出 Jar 文件的内容列表。",
   "taskDefinitions.java.project.exportJar.mainClass": "导出 Jar 文件的 main 函数所在的类。",
