@@ -14,11 +14,13 @@ import { createPickBox } from "./utility";
 export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
 
     public getNextStep(): ExportJarStep {
-        return ExportJarStep.ResolveMainMethod;
+        return ExportJarStep.ResolveMainClass;
     }
 
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
-        await this.resolveJavaProject(stepMetadata);
+        if (stepMetadata.workspaceFolder === undefined) {
+            await this.resolveJavaProject(stepMetadata);
+        }
         return this.getNextStep();
     }
 

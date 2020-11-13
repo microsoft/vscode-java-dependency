@@ -466,6 +466,48 @@
         "contents": "You can create a new Java project by clicking the below button.\n[Create new Java project](command:java.project.create)",
         "when": "!java:projectManagerActivated || java:serverMode != Standard"
       }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "java",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "%taskDefinitions.java.project.exportJar.label%"
+          },
+          "mainClass": {
+            "type": "string",
+            "description": "%taskDefinitions.java.project.exportJar.mainClass%"
+          },
+          "targetPath": {
+            "type": "string",
+            "description": "%taskDefinitions.java.project.exportJar.targetPath%"
+          },
+          "elements": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "${compileOutput}",
+                    "${testCompileOutput}",
+                    "${dependencies}",
+                    "${testDependencies}"
+                  ],
+                  "enumDescriptions": [
+                    "%taskDefinitions.java.project.exportJar.compileOutput%",
+                    "%taskDefinitions.java.project.exportJar.testCompileOutput%",
+                    "%taskDefinitions.java.project.exportJar.dependencies%",
+                    "%taskDefinitions.java.project.exportJar.testDependencies%"
+                  ]
+                },
+                "string"
+              ]
+            },
+            "description": "%taskDefinitions.java.project.exportJar.elements%"
+          }
+        }
+      }
     ]
   },
   "scripts": {
@@ -496,6 +538,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "globby": "11.0.1",
     "fs-extra": "^7.0.1",
     "lodash": "^4.17.20",
     "minimatch": "^3.0.4",

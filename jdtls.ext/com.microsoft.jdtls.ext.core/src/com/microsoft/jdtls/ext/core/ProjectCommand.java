@@ -16,6 +16,7 @@ import static org.eclipse.jdt.internal.jarpackager.JarPackageUtil.writeFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -67,15 +68,19 @@ import com.microsoft.jdtls.ext.core.model.PackageNode;
 public final class ProjectCommand {
 
     private static class MainClassInfo {
-
         public String name;
-
         public String path;
 
         public MainClassInfo(String name, String path) {
             this.name = name;
             this.path = path;
         }
+    }
+
+    private static class Classpath {
+        public String source;
+        public String destination;
+        public boolean isArtifact;
     }
 
     private static class ExportResult {
@@ -150,50 +155,36 @@ public final class ProjectCommand {
         if (arguments.size() < 3) {
             return new ExportResult(false, "Invalid export Arguments");
         }
-        String mainMethod = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
-        String[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), String[].class);
+        String mainClass = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
+        Classpath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), Classpath[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        if (mainMethod.length() > 0) {
-            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainMethod);
+        if (mainClass.length() > 0) {
+            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
         }
         try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
             Set<String> directories = new HashSet<>();
-            for (String classpath : classpaths) {
-                if (classpath != null) {
-                    if (classpath.endsWith(".jar")) {
-                        ZipFile zip = new ZipFile(classpath);
-                        writeArchive(zip, true, true, target, directories, monitor);
-                    } else {
-                        File folder = new File(classpath);
-                        writeFileRecursively(folder, target, directories, folder.getAbsolutePath().length() + 1);
+            for (Classpath classpath : classpaths) {
+                if (classpath.isArtifact) {
+                    writeArchive(new ZipFile(classpath.source), /* areDirectoryEntriesIncluded = */true,
+                        /* isCompressed = */true, target, directories, monitor);
+                } else {
+                    try {
+                        writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true,
+                            /* isCompressed = */true, target, directories);
+                    } catch (CoreException e) {
+                        // TODO: Collect reports
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             return new ExportResult(false, e.getMessage());
         }
         return new ExportResult(true);
     }
 
-    private static void writeFileRecursively(File folder, JarOutputStream jarOutputStream, Set<String> directories,
-            int len) {
-        File[] files = folder.listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                writeFileRecursively(file, jarOutputStream, directories, len);
-            } else if (file.isFile()) {
-                try {
-                    writeFile(file, new Path(file.getAbsolutePath().substring(len)), true, true, jarOutputStream, directories);
-                } catch (Exception e) {
-                    // do nothing
-                }
-            }
-        }
-    }
-
-    public static List<MainClassInfo> getMainMethod(List<Object> arguments, IProgressMonitor monitor) throws Exception {
+    public static List<MainClassInfo> getMainClasses(List<Object> arguments, IProgressMonitor monitor) throws Exception {
         List<PackageNode> projectList = listProjects(arguments, monitor);
         final List<MainClassInfo> res = new ArrayList<>();
         List<IJavaElement> searchRoots = new ArrayList<>();

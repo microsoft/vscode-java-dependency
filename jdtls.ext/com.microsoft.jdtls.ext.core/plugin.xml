@@ -7,7 +7,7 @@
             <command id="java.project.list"/>
             <command id="java.getPackageData"/>
             <command id="java.resolvePath" />
-            <command id="java.project.getMainMethod" />
+            <command id="java.project.getMainClasses" />
             <command id="java.project.generateJar" />
         </delegateCommandHandler>
     </extension>

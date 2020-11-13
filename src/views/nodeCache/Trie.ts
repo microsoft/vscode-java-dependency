@@ -29,13 +29,16 @@ export class Trie<T extends IUriData> {
         currentNode.value = input;
     }
 
-    public find(fsPath: string): TrieNode<T> | undefined {
+    public find(fsPath: string, returnEarly: boolean = false): TrieNode<T> | undefined {
         let currentNode = this.root;
         const segments: string[] = fsPath.split(path.sep);
 
         for (const segment of segments) {
             if (!segment) {
                 continue;
+            }
+            if (returnEarly && currentNode.value) {
+                return currentNode;
             }
             if (currentNode.children[segment]) {
                 currentNode = currentNode.children[segment];
