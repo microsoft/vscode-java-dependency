@@ -35,5 +35,4 @@ export function init(context: vscode.ExtensionContext): void {
     // tslint:enable: no-string-literal
     expService = getExperimentationService(extensionName, extensionVersion,
         TargetPopulation.Public, new ExperimentationTelemetry(), context.globalState);
-
 }
