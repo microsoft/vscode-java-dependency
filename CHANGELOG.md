@@ -6,12 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.15.0
 ### Added
+- Support exporting jar with custom task. [PR#350](https://github.com/microsoft/vscode-java-dependency/pull/350)
 - Add `rename` into the view context menu. [PR#353](https://github.com/microsoft/vscode-java-dependency/pull/353)
-- Add context value for folder. [PR#365](https://github.com/microsoft/vscode-java-dependency/pull/365)
-- Support exporting jar with custom task. [#298](https://github.com/microsoft/vscode-java-dependency/issues/298)
+- Add context value for folder nodes in the Java Projects explorer. [PR#365](https://github.com/microsoft/vscode-java-dependency/pull/365)
 
 ### Changed
-- Upgrade the icon of exporting jar. [PR#360](https://github.com/microsoft/vscode-java-dependency/pull/360)
+- Update the icon of exporting jar. [PR#360](https://github.com/microsoft/vscode-java-dependency/pull/360)
 
 ### Fixed
 - [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.15.0+is%3Aclosed)
