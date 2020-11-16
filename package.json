@@ -543,6 +543,6 @@
     "lodash": "^4.17.20",
     "minimatch": "^3.0.4",
     "vscode-extension-telemetry-wrapper": "0.8.0",
-    "vscode-tas-client": "0.0.659"
+    "vscode-tas-client": "0.1.4"
   }
 }
