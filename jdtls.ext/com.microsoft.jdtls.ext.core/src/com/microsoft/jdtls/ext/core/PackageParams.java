@@ -27,6 +27,8 @@ public class PackageParams {
 
     private String handlerIdentifier;
 
+    private String rootPath;
+
     public PackageParams() {
     }
 
@@ -75,6 +77,14 @@ public class PackageParams {
 
     public void setHandlerIdentifier(String handlerIdentifier) {
         this.handlerIdentifier = handlerIdentifier;
+    }
+
+    public String getRootPath() {
+        return rootPath;
+    }
+
+    public void setRootPath(String rootPath) {
+        this.rootPath = rootPath;
     }
 
 }
