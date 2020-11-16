@@ -9,9 +9,9 @@ import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
 import { createPickBox, resetStepMetadata } from "./utility";
 
-export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
+export class ResolveMainClassExecutor implements IExportJarStepExecutor {
 
-    private static getName(data: MainMethodInfo) {
+    private static getName(data: IMainClassInfo) {
         return data.name.substring(data.name.lastIndexOf(".") + 1);
     }
 
@@ -20,10 +20,10 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
     }
 
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
-        if (stepMetadata.mainMethod !== undefined) {
+        if (stepMetadata.mainClass !== undefined) {
             return this.getNextStep();
         }
-        if (await this.resolveMainMethod(stepMetadata)) {
+        if (await this.resolveMainClass(stepMetadata)) {
             return this.getNextStep();
         }
         const lastStep: ExportJarStep = stepMetadata.steps.pop();
@@ -31,28 +31,28 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
         return lastStep;
     }
 
-    private async resolveMainMethod(stepMetadata: IStepMetadata): Promise<boolean> {
-        const mainMethods: MainMethodInfo[] = await window.withProgress({
+    private async resolveMainClass(stepMetadata: IStepMetadata): Promise<boolean> {
+        const mainClasses: IMainClassInfo[] = await window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving main classes...",
             cancellable: true,
         }, (_progress, token) => {
-            return new Promise<MainMethodInfo[] | undefined>(async (resolve, reject) => {
+            return new Promise<IMainClassInfo[] | undefined>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                resolve(await Jdtls.getMainMethod(stepMetadata.workspaceFolder.uri.toString()));
+                resolve(await Jdtls.getMainClasses(stepMetadata.workspaceFolder.uri.toString()));
             });
         });
-        if (mainMethods === undefined || mainMethods.length === 0) {
-            stepMetadata.mainMethod = "";
+        if (mainClasses === undefined || mainClasses.length === 0) {
+            stepMetadata.mainClass = "";
             return true;
         }
         const pickItems: QuickPickItem[] = [];
-        for (const mainMethod of mainMethods) {
+        for (const mainClass of mainClasses) {
             pickItems.push({
-                label: ResolveMainMethodExecutor.getName(mainMethod),
-                description: mainMethod.name,
+                label: ResolveMainClassExecutor.getName(mainClass),
+                description: mainClass.name,
             });
         }
         const noMainClassItem: QuickPickItem = {
@@ -76,8 +76,8 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
                         if (_.isEmpty(pickBox.selectedItems)) {
                             return;
                         }
-                        stepMetadata.mainMethod = pickBox.selectedItems[0].description;
-                        stepMetadata.steps.push(ExportJarStep.ResolveMainMethod);
+                        stepMetadata.mainClass = pickBox.selectedItems[0].description;
+                        stepMetadata.steps.push(ExportJarStep.ResolveMainClass);
                         return resolve(true);
                     }),
                     pickBox.onDidHide(() => {
@@ -96,7 +96,7 @@ export class ResolveMainMethodExecutor implements IExportJarStepExecutor {
     }
 }
 
-export class MainMethodInfo {
-    public name: string;
-    public path: string;
+export interface IMainClassInfo {
+    name: string;
+    path: string;
 }

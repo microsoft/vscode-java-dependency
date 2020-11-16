@@ -9,8 +9,15 @@ export interface IStepMetadata {
     entry?: INodeData;
     workspaceFolder?: WorkspaceFolder;
     projectList?: INodeData[];
-    mainMethod?: string;
-    outputPath?: string;
+    mainClass?: string;
     elements?: string[];
+    classpaths?: IClasspath[];
+    outputPath?: string;
     steps: ExportJarStep[];
+}
+
+export interface IClasspath {
+    source: string;
+    destination: string | undefined;
+    isArtifact: boolean;
 }

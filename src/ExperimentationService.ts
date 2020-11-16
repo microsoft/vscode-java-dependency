@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as vscode from "vscode";
-import { addContextProperty } from "vscode-extension-telemetry-wrapper";
+import { addContextProperty, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { getExperimentationService, IExperimentationService, IExperimentationTelemetry, TargetPopulation } from "vscode-tas-client";
 
 class ExperimentationTelemetry implements IExperimentationTelemetry {
@@ -11,8 +11,13 @@ class ExperimentationTelemetry implements IExperimentationTelemetry {
         addContextProperty(name, value);
     }
 
-    public postEvent(_eventName: string, _props: Map<string, string>): void {
-        // do nothing
+    public postEvent(eventName: string, props: Map<string, string>): void {
+        const payload: any = { __event_name__: eventName };
+        for (const [key, value] of props) {
+            payload[key] = value;
+        }
+
+        sendInfo("", payload);
     }
 }
 
@@ -31,10 +36,4 @@ export function init(context: vscode.ExtensionContext): void {
     expService = getExperimentationService(extensionName, extensionVersion,
         TargetPopulation.Public, new ExperimentationTelemetry(), context.globalState);
 
-    // Due to a bug in the tas-client module, a call to isFlightEnabledAsync is required to begin
-    // polling the TAS. Due to a separate bug, this call must be preceeded by a call to isCachedFlightEnabled.
-    const asyncDummyCheck = (_arg: any) => {
-        expService?.isFlightEnabledAsync("dummy").then((_v) => { return; }).catch((_r) => { return; });
-    };
-    expService?.isCachedFlightEnabled("dummy").then(asyncDummyCheck).catch(asyncDummyCheck);
 }

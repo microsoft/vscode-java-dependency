@@ -37,6 +37,7 @@ A lightweight extension to provide additional Java project explorer features. It
 | `java.dependency.autoRefresh` | Specify whether to automatically sync the change from editor to the Java Projects explorer. | `true` |
 | `java.dependency.refreshDelay` | The delay time (ms) the auto refresh is invoked when changes are detected. | `2000ms` |
 | `java.dependency.packagePresentation` | Specify how to display the package. Supported values are: `flat`, `hierarchical`.| `flat` |
+| `java.project.exportJar.targetPath` | The output path of export jar. When this setting is **empty** or equals `askUser`, a file explorer will pop up to let the user select the output location.| `${workspaceFolder}/${workspaceFolderBasename}.jar` |
 
 ## Contribution
 
