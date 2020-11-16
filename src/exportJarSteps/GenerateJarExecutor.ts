@@ -11,7 +11,7 @@ import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarTargets, failMessage, getExtensionApi,
+import { createPickBox, ExportJarTargets, getExtensionApi,
     resetStepMetadata, saveDialog, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
