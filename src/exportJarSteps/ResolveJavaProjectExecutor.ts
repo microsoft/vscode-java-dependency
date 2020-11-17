@@ -18,7 +18,9 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
     }
 
     public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
-        await this.resolveJavaProject(stepMetadata);
+        if (stepMetadata.workspaceFolder === undefined) {
+            await this.resolveJavaProject(stepMetadata);
+        }
         return this.getNextStep();
     }
 
