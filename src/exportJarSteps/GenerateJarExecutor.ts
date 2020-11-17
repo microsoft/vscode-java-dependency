@@ -108,7 +108,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
-            this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata);
+            await this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
