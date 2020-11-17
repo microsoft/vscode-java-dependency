@@ -4,6 +4,18 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.15.0
+### Added
+- Support exporting jar with custom task. [PR#350](https://github.com/microsoft/vscode-java-dependency/pull/350)
+- Add `rename` into the view context menu. [PR#353](https://github.com/microsoft/vscode-java-dependency/pull/353)
+- Add context value for folder nodes in the Java Projects explorer. [PR#365](https://github.com/microsoft/vscode-java-dependency/pull/365)
+
+### Changed
+- Update the icon of exporting jar. [PR#360](https://github.com/microsoft/vscode-java-dependency/pull/360)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.15.0+is%3Aclosed)
+
 ## 0.14.0
 ### Added
 - Add a new setting `java.project.exportJar.targetPath` to specify target path when exporting jar. [#330](https://github.com/microsoft/vscode-java-dependency/issues/330)
