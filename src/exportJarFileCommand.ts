@@ -57,7 +57,7 @@ export async function createJarFile(stepMetadata: IStepMetadata): Promise<void> 
                 step = await stepMap.get(step).execute(stepMetadata);
                 if (step === ExportJarStep.ResolveJavaProject) {
                     isExportingJar = false;
-                    executeExportJarTask(undefined);
+                    executeExportJarTask(stepMetadata.entry);
                     return reject();
                 }
             } catch (err) {
