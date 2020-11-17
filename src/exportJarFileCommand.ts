@@ -36,17 +36,30 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
         entry: node,
         steps: [],
     };
+    try {
+        await stepMap.get(ExportJarStep.ResolveJavaProject).execute(stepMetadata);
+    } catch (err) {
+        if (err) {
+            failMessage(`${err}`);
+        }
+        return;
+    }
     tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata));
     return;
 }
 
-export async function createJarFile(stepMetadata: IStepMetadata) {
+export async function createJarFile(stepMetadata: IStepMetadata): Promise<void> {
     isExportingJar = true;
-    let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
+    let step: ExportJarStep = ExportJarStep.ResolveMainClass;
     return new Promise<string>(async (resolve, reject) => {
         while (step !== ExportJarStep.Finish) {
             try {
                 step = await stepMap.get(step).execute(stepMetadata);
+                if (step === ExportJarStep.ResolveJavaProject) {
+                    isExportingJar = false;
+                    executeExportJarTask(undefined);
+                    return reject();
+                }
             } catch (err) {
                 return reject(err);
             }
