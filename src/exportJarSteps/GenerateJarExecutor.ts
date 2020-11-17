@@ -152,7 +152,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                                 };
                                 stepMetadata.classpaths.push(classpath);
                             } else {
-                                this.setStepMetadataFromOutputFolder(item.path, stepMetadata);
+                                await this.setStepMetadataFromOutputFolder(item.path, stepMetadata);
                             }
                         }
                         return resolve(true);
