@@ -341,7 +341,7 @@ public class PackageCommand {
 
     private static List<PackageNode> getPackages(PackageParams query, IProgressMonitor pm) {
         try {
-            IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(query.getHandlerIdentifier());
+            IPackageFragmentRoot packageRoot = getPackageFragmentRootFromQuery(query);
             if (packageRoot == null) {
                 throw new CoreException(
                         new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
@@ -352,6 +352,25 @@ public class PackageCommand {
             JdtlsExtActivator.logException("Problem load project package ", e);
         }
         return Collections.emptyList();
+    }
+
+    private static IPackageFragmentRoot getPackageFragmentRootFromQuery(PackageParams query) {
+        IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) JavaCore.create(query.getHandlerIdentifier());
+        if (packageRoot != null) {
+            return packageRoot;
+        }
+
+        // jar in Referenced Libraries must be constructed from path
+        IJavaProject javaProject = getJavaProject(query.getProjectUri());
+        if (javaProject != null) {
+            try {
+                packageRoot = javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
+            } catch (JavaModelException e) {
+                return null;
+            }
+        }
+
+        return packageRoot;
     }
 
     private static List<PackageNode> getRootTypes(PackageParams query, IProgressMonitor pm) {
