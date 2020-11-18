@@ -9,7 +9,7 @@ import {
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
-import { executeExportJarTask } from "../exportJarFileCommand";
+import { executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
 import { isLightWeightMode, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
