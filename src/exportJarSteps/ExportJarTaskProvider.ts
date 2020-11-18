@@ -28,6 +28,28 @@ interface IExportJarTaskDefinition extends TaskDefinition {
     elements?: string[];
 }
 
+let isExportingJar: boolean = false;
+
+export async function executeExportJarTask(node?: INodeData): Promise<void> {
+    if (!isStandardServerReady() || isExportingJar || await buildWorkspace() === false) {
+        return;
+    }
+    isExportingJar = true;
+    const stepMetadata: IStepMetadata = {
+        entry: node,
+        steps: [],
+    };
+    try {
+        await stepMap.get(ExportJarStep.ResolveJavaProject).execute(stepMetadata);
+    } catch (err) {
+        if (err) {
+            failMessage(`${err}`);
+        }
+        isExportingJar = false;
+        return;
+    }
+    tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata));
+}
 export class ExportJarTaskProvider implements TaskProvider {
 
     public static exportJarType: string = "java";
@@ -148,7 +170,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 this.stepMetadata.classpaths = await this.resolveClasspaths(outputFolderMap,
                     artifactMap, testOutputFolderMap, testArtifactMap);
             }
-            await ExportJarCommand.createJarFile(this.stepMetadata);
+            await this.createJarFile(this.stepMetadata);
         } catch (err) {
             if (err) {
                 failMessage(`${err}`);
@@ -160,6 +182,30 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     public close(): void {
 
+    }
+
+    private async createJarFile(stepMetadata: IStepMetadata): Promise<void> {
+        let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
+        while (step !== ExportJarStep.Finish) {
+            try {
+                step = await stepMap.get(step).execute(stepMetadata);
+                if (step === ExportJarStep.ResolveJavaProject) {
+                    // If the user comes back to the step resolving Java project, we need to finish
+                    // the current task and start a new task related to the new Java project.
+                    isExportingJar = false;
+                    executeExportJarTask(stepMetadata.entry);
+                    return;
+                }
+            } catch (err) {
+                if (err) {
+                    failMessage(`${err}`);
+                }
+                isExportingJar = false;
+                return;
+            }
+        }
+        isExportingJar = false;
+        successMessage(stepMetadata.outputPath);
     }
 
     private async setClasspathMap(project: INodeData, classpathScope: string,
@@ -286,55 +332,4 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         positivePath = toPosixPath(positivePath);
         return negative ? "!" + positivePath : positivePath;
     }
-}
-
-export class ExportJarCommand {
-
-    public static isExportingJar: boolean = false;
-
-    public static async executeExportJarTask(node?: INodeData): Promise<void> {
-        if (!isStandardServerReady() || ExportJarCommand.isExportingJar || await buildWorkspace() === false) {
-            return;
-        }
-        ExportJarCommand.isExportingJar = true;
-        const stepMetadata: IStepMetadata = {
-            entry: node,
-            steps: [],
-        };
-        try {
-            await stepMap.get(ExportJarStep.ResolveJavaProject).execute(stepMetadata);
-        } catch (err) {
-            if (err) {
-                failMessage(`${err}`);
-            }
-            ExportJarCommand.isExportingJar = false;
-            return;
-        }
-        tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata));
-    }
-
-    public static async createJarFile(stepMetadata: IStepMetadata): Promise<void> {
-        let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
-        while (step !== ExportJarStep.Finish) {
-            try {
-                step = await stepMap.get(step).execute(stepMetadata);
-                if (step === ExportJarStep.ResolveJavaProject) {
-                    // If the user comes back to the step resolving Java project, we need to finish
-                    // the current task and start a new task related to the new Java project.
-                    ExportJarCommand.isExportingJar = false;
-                    ExportJarCommand.executeExportJarTask(stepMetadata.entry);
-                    return;
-                }
-            } catch (err) {
-                if (err) {
-                    failMessage(`${err}`);
-                }
-                ExportJarCommand.isExportingJar = false;
-                return;
-            }
-        }
-        ExportJarCommand.isExportingJar = false;
-        successMessage(stepMetadata.outputPath);
-    }
-
 }
