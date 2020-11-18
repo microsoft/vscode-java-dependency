@@ -31,7 +31,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     public onDidChangeTreeData: Event<ExplorerNode | null | undefined> = this._onDidChangeTreeData.event;
 
     private _rootItems: ExplorerNode[] = null;
-    private _refreshDelayTrigger: ((element?: ExplorerNode) => void) & _.Cancelable;
+    private _refreshDelayTrigger: _.DebouncedFunc<((element?: ExplorerNode) => void)>;
 
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
