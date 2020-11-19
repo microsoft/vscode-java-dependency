@@ -32,6 +32,21 @@
         "preLaunchTask": "npm: compile"
     },
     {
+      "name": "Extension Tests - Simple Project",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/test/simple/",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/dist/test/simple-suite/index"
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+      "preLaunchTask": "npm: compile"
+  },
+    {
         "name": "Extension Tests - Maven Project",
         "type": "extensionHost",
         "request": "launch",

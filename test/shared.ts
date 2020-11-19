@@ -6,6 +6,11 @@ import { Uri } from "vscode";
 import { DataNode } from "../extension.bundle";
 
 export namespace Uris {
+    // Simple Project
+    export const SIMPLE_PROJECT_NODE = truePath("simple");
+    export const SIMPLE_MAIN_PACKAGE = truePath("simple", "src", "main", "java");
+    export const SIMPLE_MAIN_CLASS = truePath("simple", "src", "main", "java", "HelloWorld.java");
+
     // Maven Project
     export const MAVEN_PROJECT_NODE = truePath("maven");
     export const MAVEN_MAIN_PACKAGE = truePath("maven", "src", "main", "java");

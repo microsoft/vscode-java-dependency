@@ -32,6 +32,16 @@ async function main(): Promise<void> {
             ],
         });
 
+        // Run test for simple project
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./simple-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "simple"),
+            ],
+        });
+
         // Run test for maven project
         await runTests({
             vscodeExecutablePath,

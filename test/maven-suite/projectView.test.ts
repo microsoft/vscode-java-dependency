@@ -30,10 +30,10 @@ suite("Maven Project View Tests", () => {
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
         assert.equal(testPackage.name, "src/test/java", "Package name should be \"src/test/java\"");
         const systemLibrary = packageRoots[2] as ContainerNode;
-        const mavemDependency = packageRoots[3] as ContainerNode;
+        const mavenDependency = packageRoots[3] as ContainerNode;
         // only match prefix of system library since JDK version may differ
         assert.ok(systemLibrary.name.startsWith("JRE System Library"), "Container name should start with JRE System Library");
-        assert.equal(mavemDependency.name, "Maven Dependencies", "Container name should be \"Maven Dependencies\"");
+        assert.equal(mavenDependency.name, "Maven Dependencies", "Container name should be \"Maven Dependencies\"");
 
         // validate package nodes
         const mainSubPackages = await mainPackage.getChildren();
