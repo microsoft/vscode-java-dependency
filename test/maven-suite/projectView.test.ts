@@ -2,10 +2,10 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
-import * as path from "path";
-import { commands, extensions, Uri } from "vscode";
-import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer,
+import { commands, extensions } from "vscode";
+import { Commands, ContainerNode, contextManager, DependencyExplorer,
     PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
+import { fsPath, Uris } from "../shared";
 
 suite("Maven Project View Tests", () => {
     test("Can node render correctly", async function() {
@@ -73,24 +73,12 @@ suite("Maven Project View Tests", () => {
         const mainClass = (await mainSubPackage.getChildren())[0] as PrimaryTypeNode;
         const testClass = (await testSubPackage.getChildren())[0] as PrimaryTypeNode;
 
-        assert.equal(fsPath(projectNode), truePath("maven"), "Project uri incorrect");
-        assert.equal(fsPath(mainPackage), truePath("maven", "src", "main", "java"), "Main root package uri incorrect");
-        assert.equal(fsPath(testPackage), truePath("maven", "src", "test", "java"), "Test root package uri incorrect");
-        assert.equal(fsPath(mainSubPackage), truePath("maven", "src", "main", "java", "com", "mycompany", "app"), "Main subpackage uri incorrect");
-        assert.equal(fsPath(testSubPackage), truePath("maven", "src", "test", "java", "com", "mycompany", "app"), "Test subpackage uri incorrect");
-        assert.equal(fsPath(mainClass), truePath("maven", "src", "main", "java", "com", "mycompany", "app", "App.java"), "Main class uri incorrect");
-        assert.equal(fsPath(testClass), truePath("maven", "src", "test", "java", "com", "mycompany", "app", "AppTest.java"), "Test class uri incorrect");
+        assert.equal(fsPath(projectNode), Uris.MAVEN_PROJECT_NODE, "Project uri incorrect");
+        assert.equal(fsPath(mainPackage), Uris.MAVEN_MAIN_PACKAGE, "Main root package uri incorrect");
+        assert.equal(fsPath(testPackage), Uris.MAVEN_TEST_PACKAGE, "Test root package uri incorrect");
+        assert.equal(fsPath(mainSubPackage), Uris.MAVEN_MAIN_SUBPACKAGE, "Main subpackage uri incorrect");
+        assert.equal(fsPath(testSubPackage), Uris.MAVEN_TEST_SUBPACKAGE, "Test subpackage uri incorrect");
+        assert.equal(fsPath(mainClass), Uris.MAVEN_MAIN_CLASS, "Main class uri incorrect");
+        assert.equal(fsPath(testClass), Uris.MAVEN_TEST_CLASS, "Test class uri incorrect");
     });
 });
-
-function fsPath(node: DataNode): string {
-    if (!node.uri) {
-        return "";
-    }
-    return Uri.parse(node.uri).fsPath;
-}
-
-function truePath(...paths: string[]) {
-    const basePath = path.join(__dirname, "..", "..", "..", "test");
-    return path.join(basePath, ...paths);
-}

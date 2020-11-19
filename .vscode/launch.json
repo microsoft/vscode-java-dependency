@@ -31,27 +31,42 @@
         "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
         "preLaunchTask": "npm: compile"
     },
-      {
-          "name": "Extension Tests - Maven Project",
-          "type": "extensionHost",
-          "request": "launch",
-          "runtimeExecutable": "${execPath}",
-          "args": [
-            "${workspaceFolder}/test/maven/",
-            "--extensionDevelopmentPath=${workspaceFolder}",
-            "--extensionTestsPath=${workspaceFolder}/dist/test/maven-suite/index"
-          ],
-          "stopOnEntry": false,
-          "sourceMaps": true,
-          "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
-          "preLaunchTask": "npm: compile"
-      },
-      {
-        "type": "java",
-        "name": "Attach to Plugin",
-        "request": "attach",
-        "hostName": "localhost",
-        "port": 1044
-      }
+    {
+        "name": "Extension Tests - Maven Project",
+        "type": "extensionHost",
+        "request": "launch",
+        "runtimeExecutable": "${execPath}",
+        "args": [
+          "${workspaceFolder}/test/maven/",
+          "--extensionDevelopmentPath=${workspaceFolder}",
+          "--extensionTestsPath=${workspaceFolder}/dist/test/maven-suite/index"
+        ],
+        "stopOnEntry": false,
+        "sourceMaps": true,
+        "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+        "preLaunchTask": "npm: compile"
+    },
+    {
+      "name": "Extension Tests - Gradle Project",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/test/gradle/",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/dist/test/gradle-suite/index"
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+      "preLaunchTask": "npm: compile"
+  },
+    {
+      "type": "java",
+      "name": "Attach to Plugin",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 1044
+    }
   ]
 }

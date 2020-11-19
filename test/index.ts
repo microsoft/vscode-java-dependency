@@ -22,7 +22,7 @@ async function main(): Promise<void> {
 
         // Download VS Code, unzip it and run the integration test
 
-        // Run test for explorer
+        // Run general test
         await runTests({
             vscodeExecutablePath,
             extensionDevelopmentPath,
@@ -39,6 +39,16 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./maven-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "maven"),
+            ],
+        });
+
+        // Run test for gradle project
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./gradle-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "gradle"),
             ],
         });
     } catch (err) {
