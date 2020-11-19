@@ -17,17 +17,33 @@
           "preLaunchTask": "npm: watch"
       },
       {
-          "name": "Extension Tests",
+        "name": "Extension Tests - General",
+        "type": "extensionHost",
+        "request": "launch",
+        "runtimeExecutable": "${execPath}",
+        "args": [
+          "${workspaceFolder}/test/maven/",
+          "--extensionDevelopmentPath=${workspaceFolder}",
+          "--extensionTestsPath=${workspaceFolder}/dist/test/suite/index"
+        ],
+        "stopOnEntry": false,
+        "sourceMaps": true,
+        "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+        "preLaunchTask": "npm: compile"
+    },
+      {
+          "name": "Extension Tests - Maven Project",
           "type": "extensionHost",
           "request": "launch",
           "runtimeExecutable": "${execPath}",
           "args": [
+            "${workspaceFolder}/test/maven/",
             "--extensionDevelopmentPath=${workspaceFolder}",
-            "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+            "--extensionTestsPath=${workspaceFolder}/dist/test/maven-suite/index"
           ],
           "stopOnEntry": false,
           "sourceMaps": true,
-          "outFiles": [ "${workspaceFolder}/out/test/**/*.js" ],
+          "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
           "preLaunchTask": "npm: compile"
       },
       {

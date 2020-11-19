@@ -20,12 +20,27 @@ async function main(): Promise<void> {
         // Passed to `--extensionDevelopmentPath`
         const extensionDevelopmentPath: string = path.resolve(__dirname, "../../");
 
-        // The path to the extension test script
-        // Passed to --extensionTestsPath
-        const extensionTestsPath: string = path.resolve(__dirname, "./suite/index");
-
         // Download VS Code, unzip it and run the integration test
-        await runTests({ vscodeExecutablePath, extensionDevelopmentPath, extensionTestsPath });
+
+        // Run test for explorer
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "maven"),
+            ],
+        });
+
+        // Run test for maven project
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./maven-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "maven"),
+            ],
+        });
     } catch (err) {
         process.exit(1);
     }

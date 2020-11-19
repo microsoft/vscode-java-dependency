@@ -9,11 +9,12 @@ vscode/**
 tsconfig.json
 gulpfile.js
 .gitignore
-dist/**/*.map
+dist/**/test
 webpack.*.js
 tslint.json
 node_modules
 scripts
+extension.bundle.ts
 
 # Ignore output of code sign
 server/*.md

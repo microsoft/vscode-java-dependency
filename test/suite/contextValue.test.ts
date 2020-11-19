@@ -3,16 +3,8 @@
 
 import * as assert from "assert";
 import { Uri } from "vscode";
-import { INodeData, NodeKind, TypeKind } from "../../src/java/nodeData";
-import { PackageRootKind } from "../../src/java/packageRootNodeData";
-import { ContainerNode } from "../../src/views/containerNode";
-import { FileNode } from "../../src/views/fileNode";
-import { FolderNode } from "../../src/views/folderNode";
-import { PackageNode } from "../../src/views/packageNode";
-import { PackageRootNode } from "../../src/views/packageRootNode";
-import { PrimaryTypeNode } from "../../src/views/PrimaryTypeNode";
-import { ProjectNode } from "../../src/views/projectNode";
-import { WorkspaceNode } from "../../src/views/workspaceNode";
+import { ContainerNode, FileNode, FolderNode, INodeData, NodeKind, PackageNode, PackageRootKind,
+    PackageRootNode, PrimaryTypeNode, ProjectNode, TypeKind, WorkspaceNode } from "../../extension.bundle";
 
 // tslint:disable: only-arrow-functions
 // tslint:disable: no-object-literal-type-assertion
