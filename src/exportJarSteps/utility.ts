@@ -5,8 +5,24 @@ import { EOL, platform } from "os";
 import { posix, win32 } from "path";
 import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
-import { ExportJarStep } from "../exportJarFileCommand";
+import { GenerateJarExecutor } from "./GenerateJarExecutor";
+import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
+import { ResolveJavaProjectExecutor } from "./ResolveJavaProjectExecutor";
+import { ResolveMainClassExecutor } from "./ResolveMainClassExecutor";
+
+export enum ExportJarStep {
+    ResolveJavaProject = "RESOLVEJAVAPROJECT",
+    ResolveMainClass = "RESOLVEMAINCLASS",
+    GenerateJar = "GENERATEJAR",
+    Finish = "FINISH",
+}
+
+export const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<ExportJarStep, IExportJarStepExecutor>([
+    [ExportJarStep.ResolveJavaProject, new ResolveJavaProjectExecutor()],
+    [ExportJarStep.ResolveMainClass, new ResolveMainClassExecutor()],
+    [ExportJarStep.GenerateJar, new GenerateJarExecutor()],
+]);
 
 export namespace ExportJarTargets {
     export const SETTING_ASKUSER: string = "askUser";

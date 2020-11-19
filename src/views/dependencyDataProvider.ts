@@ -9,7 +9,7 @@ import {
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
-import { executeExportJarTask } from "../exportJarFileCommand";
+import { executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
 import { isLightWeightMode, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
@@ -31,7 +31,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     public onDidChangeTreeData: Event<ExplorerNode | null | undefined> = this._onDidChangeTreeData.event;
 
     private _rootItems: ExplorerNode[] = null;
-    private _refreshDelayTrigger: ((element?: ExplorerNode) => void) & _.Cancelable;
+    private _refreshDelayTrigger: _.DebouncedFunc<((element?: ExplorerNode) => void)>;
 
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
