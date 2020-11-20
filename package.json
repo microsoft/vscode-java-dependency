@@ -68,6 +68,10 @@
         "title": "%contributes.commands.java.project.clean.workspace%"
       },
       {
+        "command": "java.project.update",
+        "title": "%contributes.commands.java.project.update%"
+      },
+      {
         "command": "java.view.package.revealInProjectExplorer",
         "title": "%contributes.commands.java.view.package.revealInProjectExplorer%",
         "category": "Java"
@@ -295,6 +299,10 @@
           "when": "false"
         },
         {
+          "command": "java.project.update",
+          "when": "false"
+        },
+        {
           "command": "java.view.package.revealInProjectExplorer",
           "when": "false"
         }
@@ -455,6 +463,11 @@
           "command": "java.view.package.exportJar",
           "when": "view == javaProjectExplorer && viewItem =~ /java:workspace(?=.*?\\b\\+uri\\b)/ && java:serverMode!= LightWeight",
           "group": "inline"
+        },
+        {
+          "command": "java.project.update",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(maven|gradle)\\b)/",
+          "group": "9_sync@10"
         }
       ]
     },
