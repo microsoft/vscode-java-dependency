@@ -2,34 +2,41 @@
 {
   "version": "0.1.0",
   "configurations": [
-      {
-          "name": "Run Extension",
-          "type": "extensionHost",
-          "request": "launch",
-          "runtimeExecutable": "${execPath}",
-          "args": ["--extensionDevelopmentPath=${workspaceFolder}" ],
-          "env": {
-              "DEBUG_VSCODE_JAVA":"true"
-          },
-          "stopOnEntry": false,
-          "sourceMaps": true,
-          "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
-          "preLaunchTask": "npm: watch"
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}" ],
+      "env": {
+        "DEBUG_VSCODE_JAVA":"true"
       },
-      {
-        "name": "Extension Tests - General",
-        "type": "extensionHost",
-        "request": "launch",
-        "runtimeExecutable": "${execPath}",
-        "args": [
-          "${workspaceFolder}/test/maven/",
-          "--extensionDevelopmentPath=${workspaceFolder}",
-          "--extensionTestsPath=${workspaceFolder}/dist/test/suite/index"
-        ],
-        "stopOnEntry": false,
-        "sourceMaps": true,
-        "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
-        "preLaunchTask": "npm: compile"
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+      "preLaunchTask": "npm: watch"
+    },
+    {
+      "type": "java",
+      "name": "Attach to Plugin",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 1044
+    },
+    {
+      "name": "Extension Tests - General",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/test/java9/",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/dist/test/suite/index"
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+      "preLaunchTask": "npm: compile"
     },
     {
       "name": "Extension Tests - Simple Project",
@@ -45,21 +52,21 @@
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"
-  },
+    },
     {
-        "name": "Extension Tests - Maven Project",
-        "type": "extensionHost",
-        "request": "launch",
-        "runtimeExecutable": "${execPath}",
-        "args": [
-          "${workspaceFolder}/test/maven/",
-          "--extensionDevelopmentPath=${workspaceFolder}",
-          "--extensionTestsPath=${workspaceFolder}/dist/test/maven-suite/index"
-        ],
-        "stopOnEntry": false,
-        "sourceMaps": true,
-        "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
-        "preLaunchTask": "npm: compile"
+      "name": "Extension Tests - Maven Project",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/test/maven/",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/dist/test/maven-suite/index"
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+      "preLaunchTask": "npm: compile"
     },
     {
       "name": "Extension Tests - Gradle Project",
@@ -75,13 +82,6 @@
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"
-  },
-    {
-      "type": "java",
-      "name": "Attach to Plugin",
-      "request": "attach",
-      "hostName": "localhost",
-      "port": 1044
     }
   ]
 }

@@ -7,13 +7,16 @@ import { Commands, ContainerNode, contextManager, DependencyExplorer,
     PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, Uris } from "../shared";
 
+// tslint:disable: only-arrow-functions
 suite("Maven Project View Tests", () => {
-    test("Can node render correctly", async function() {
-        this.timeout(1 * 60 * 1000);
-        await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
 
+    suiteSetup(async function() {
+        await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
         // context would be initialized after this command
         await commands.executeCommand(Commands.JAVA_PROJECT_ACTIVATE);
+    });
+
+    test("Can node render correctly", async function() {
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
         // validate root nodes
@@ -57,11 +60,6 @@ suite("Maven Project View Tests", () => {
     });
 
     test("Can node have correct uri", async function() {
-        this.timeout(1 * 60 * 1000);
-        await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
-
-        // context would be initialized after this command
-        await commands.executeCommand(Commands.JAVA_PROJECT_ACTIVATE);
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
         const projectNode = (await explorer.dataProvider.getChildren())[0] as ProjectNode;

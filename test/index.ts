@@ -28,7 +28,7 @@ async function main(): Promise<void> {
             extensionDevelopmentPath,
             extensionTestsPath: path.resolve(__dirname, "./suite"),
             launchArgs: [
-                path.join(__dirname, "..", "..", "test", "maven"),
+                path.join(__dirname, "..", "..", "test", "java9"),
             ],
         });
 

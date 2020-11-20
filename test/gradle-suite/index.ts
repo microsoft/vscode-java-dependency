@@ -9,8 +9,9 @@ export function run(): Promise<void> {
     // Create the mocha test
     const mocha = new Mocha({
         ui: "tdd",
+        color: true,
+        timeout: 1 * 60 * 1000,
     });
-    mocha.useColors(true);
 
     const testsRoot = __dirname;
 
