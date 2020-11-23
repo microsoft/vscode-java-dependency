@@ -20,6 +20,15 @@ import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 
 export class DependencyExplorer implements Disposable {
 
+    public static getInstance(context: ExtensionContext): DependencyExplorer {
+        if (!this._instance) {
+            this._instance = new DependencyExplorer(context);
+        }
+        return this._instance;
+    }
+
+    private static _instance: DependencyExplorer;
+
     private _dependencyViewer: TreeView<ExplorerNode>;
 
     private _dataProvider: DependencyDataProvider;
@@ -111,5 +120,9 @@ export class DependencyExplorer implements Disposable {
         if (this._dependencyViewer.visible) {
             this._dependencyViewer.reveal(node);
         }
+    }
+
+    public get dataProvider(): DependencyDataProvider {
+        return this._dataProvider;
     }
 }
