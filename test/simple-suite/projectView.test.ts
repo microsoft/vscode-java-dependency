@@ -2,19 +2,14 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
-import { commands, extensions } from "vscode";
-import { Commands, ContainerNode, contextManager, DependencyExplorer,
+import { ContainerNode, contextManager, DependencyExplorer,
     PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
-import { fsPath, Uris } from "../shared";
+import { fsPath, setupTestEnv, Uris } from "../shared";
 
 // tslint:disable: only-arrow-functions
 suite("Simple Project View Tests", () => {
 
-    suiteSetup(async function() {
-        await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
-        // context would be initialized after this command
-        await commands.executeCommand(Commands.JAVA_PROJECT_ACTIVATE);
-    });
+    suiteSetup(setupTestEnv);
 
     test("Can node render correctly", async function() {
         const explorer = DependencyExplorer.getInstance(contextManager.context);
