@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as assert from "assert";
 import * as path from "path";
 import { commands, Event, extensions, Uri } from "vscode";
-import { Commands, contextManager, DataNode, LanguageServerMode } from "../extension.bundle";
+import { Commands, DataNode, LanguageServerMode } from "../extension.bundle";
 
 export namespace Uris {
     // Simple Project
@@ -40,19 +39,16 @@ export function truePath(...paths: string[]) {
 }
 
 export async function setupTestEnv() {
-    await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
-    // context would be initialized after this command
-    await commands.executeCommand(Commands.JAVA_PROJECT_ACTIVATE);
-
-    await new Promise((resolve) => {
+    await new Promise(async (resolve) => {
         const extensionApi: any = extensions.getExtension("redhat.java")!.exports;
-        assert.notEqual(extensionApi, undefined, "Language server Api should not be undefined");
-
-        const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
-        contextManager.context.subscriptions.push(onDidServerModeChange(async (mode: string) => {
+        extensionApi.onDidServerModeChange(async (mode: string) => {
             if (mode === LanguageServerMode.Standard) {
                 resolve();
             }
-        }));
+        });
+
+        await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
+        // context would be initialized after this command
+        await commands.executeCommand(Commands.JAVA_PROJECT_ACTIVATE);
     });
 }
