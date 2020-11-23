@@ -61,6 +61,9 @@ async function main(): Promise<void> {
                 path.join(__dirname, "..", "..", "test", "gradle"),
             ],
         });
+
+        process.exit(0);
+
     } catch (err) {
         process.exit(1);
     }
