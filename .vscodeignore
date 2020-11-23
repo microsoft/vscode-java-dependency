@@ -15,6 +15,7 @@ tslint.json
 node_modules
 scripts
 extension.bundle.ts
+javaConfig.json
 
 # Ignore output of code sign
 server/*.md
