@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-import { commands, Event, extensions, Uri } from "vscode";
+import { commands, extensions, Uri } from "vscode";
 import { Commands, DataNode, LanguageServerMode } from "../extension.bundle";
 
 export namespace Uris {
