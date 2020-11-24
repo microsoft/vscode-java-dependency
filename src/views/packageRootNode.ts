@@ -25,6 +25,7 @@ export class PackageRootNode extends DataNode {
         return Jdtls.getPackageData({
             kind: NodeKind.PackageRoot,
             projectUri: this._project.nodeData.uri,
+            rootPath: this.nodeData.path,
             handlerIdentifier: this.nodeData.handlerIdentifier,
         });
     }

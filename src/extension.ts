@@ -3,9 +3,9 @@
 
 import { commands, Event, Extension, ExtensionContext, extensions, tasks, Uri } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { contextManager } from "../extension.bundle";
 import { Commands } from "./commands";
 import { Build, Context } from "./constants";
-import { contextManager } from "./contextManager";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
@@ -59,7 +59,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         contextManager.initialize(context);
 
         context.subscriptions.push(new LibraryController(context));
-        context.subscriptions.push(new DependencyExplorer(context));
+        context.subscriptions.push(DependencyExplorer.getInstance(context));
         context.subscriptions.push(contextManager);
         context.subscriptions.push(syncHandler);
         context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
@@ -98,7 +98,7 @@ export function isSwitchingServer(): boolean {
 
 let serverMode: string | undefined;
 
-const enum LanguageServerMode {
+export const enum LanguageServerMode {
     LightWeight = "LightWeight",
     Standard = "Standard",
     Hybrid = "Hybrid",

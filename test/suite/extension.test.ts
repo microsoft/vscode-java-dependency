@@ -4,6 +4,7 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 
+// tslint:disable: only-arrow-functions
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Extension Tests", () => {
 
@@ -11,10 +12,8 @@ suite("Extension Tests", () => {
         assert.ok(vscode.extensions.getExtension("vscjava.vscode-java-dependency"));
     });
 
-    test("should activate", function() {
-        this.timeout(1 * 60 * 1000);
-        return vscode.extensions.getExtension("vscjava.vscode-java-dependency").activate().then((_api) => {
-            assert.ok(true);
-        });
+    test("should activate", async function() {
+        await vscode.extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
+        assert.ok(true);
     });
 });

@@ -5,6 +5,7 @@
 //@ts-check
 'use strict';
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -13,13 +14,26 @@ const config = {
         __dirname: false,
         __filename: false,
     },
-    entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+    entry: {
+        "extension.bundle": "./extension.bundle.ts",
+    }, // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: { // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
         path: path.resolve(__dirname, 'dist'),
-        filename: 'extension.js',
+        filename: '[name].js',
         libraryTarget: "commonjs2",
         devtoolModuleFilenameTemplate: "../[resource-path]",
     },
+    plugins: [
+        // Copy files to dist folder where the runtime can find them
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: path.join(__dirname, 'out', 'test'),
+                    to: path.join(__dirname, 'dist', 'test')
+                },
+            ]
+        }),
+    ],
     externals: {
         vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     },

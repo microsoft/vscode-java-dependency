@@ -3,11 +3,10 @@
 
 import * as _ from "lodash";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, window } from "vscode";
-import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, resetStepMetadata } from "./utility";
+import { createPickBox, ExportJarStep, resetStepMetadata } from "./utility";
 
 export class ResolveMainClassExecutor implements IExportJarStepExecutor {
 

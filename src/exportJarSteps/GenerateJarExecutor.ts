@@ -7,11 +7,10 @@ import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
-import { ExportJarStep } from "../exportJarFileCommand";
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarTargets, getExtensionApi,
+import { createPickBox, ExportJarStep, ExportJarTargets, getExtensionApi,
     resetStepMetadata, saveDialog, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
@@ -108,7 +107,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error("No classpath found. Please make sure your java project is valid.");
         } else if (dependencyItems.length === 1) {
-            this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata);
+            await this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
@@ -152,7 +151,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                                 };
                                 stepMetadata.classpaths.push(classpath);
                             } else {
-                                this.setStepMetadataFromOutputFolder(item.path, stepMetadata);
+                                await this.setStepMetadataFromOutputFolder(item.path, stepMetadata);
                             }
                         }
                         return resolve(true);
