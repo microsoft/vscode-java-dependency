@@ -13,7 +13,7 @@ suite("Extension Tests", () => {
     });
 
     test("should activate", async function() {
-        const _api = await vscode.extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
+        await vscode.extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
         assert.ok(true);
     });
 });

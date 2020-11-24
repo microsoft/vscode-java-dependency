@@ -27,6 +27,7 @@ export abstract class DataNode extends ExplorerNode {
             item.contextValue = this.computeContextValue();
             return item;
         }
+        return undefined;
     }
 
     public get nodeData(): INodeData {

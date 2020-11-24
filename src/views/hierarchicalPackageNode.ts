@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { ProviderResult, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { TreeItem, TreeItemCollapsibleState } from "vscode";
 import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
@@ -23,6 +23,7 @@ export class HierarchicalPackageNode extends PackageNode {
                 this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
             return { ...super.getTreeItem(), ...item };
         }
+        return undefined;
     }
 
     public async getChildren(): Promise<ExplorerNode[]> {

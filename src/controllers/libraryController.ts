@@ -5,13 +5,12 @@ import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as minimatch from "minimatch";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
+import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { Settings } from "../settings";
 import { Utility } from "../utility";
-import { ContainerNode } from "../views/containerNode";
 import { DataNode } from "../views/dataNode";
 
 export class LibraryController implements Disposable {

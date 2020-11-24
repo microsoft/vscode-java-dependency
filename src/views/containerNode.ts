@@ -59,6 +59,7 @@ function getContainerType(containerPath: string | undefined): string {
     } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary)) {
         return "referencedLibrary";
     }
+    return "";
 }
 
 const enum ContainerPath {

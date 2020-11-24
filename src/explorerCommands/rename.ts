@@ -7,7 +7,7 @@ import { Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
-import { checkJavaQualifiedName, isMutable } from "./utils";
+import { checkJavaQualifiedName, isMutable } from "./utility";
 
 export async function renameFile(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
     // if command not invoked by context menu, use selected node in explorer

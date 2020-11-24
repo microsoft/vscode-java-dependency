@@ -4,7 +4,7 @@
 import * as _ from "lodash";
 import {
     commands, Event, EventEmitter, ExtensionContext, extensions, ProviderResult,
-    Range, TreeDataProvider, TreeItem, Uri, window, workspace,
+    TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";

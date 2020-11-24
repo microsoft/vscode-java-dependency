@@ -8,7 +8,7 @@ export class Trie<T extends IUriData> {
     private _root: TrieNode<T>;
 
     constructor() {
-        this._root = new TrieNode(null, null);
+        this._root = new TrieNode(null);
     }
 
     public insert(input: T): void {
@@ -21,7 +21,7 @@ export class Trie<T extends IUriData> {
                 continue;
             }
             if (!currentNode.children[segment]) {
-                currentNode.children[segment] = new TrieNode(segment, null);
+                currentNode.children[segment] = new TrieNode(null);
             }
             currentNode = currentNode.children[segment];
         }
@@ -83,12 +83,10 @@ export interface IUriData {
 }
 
 export class TrieNode<T> {
-    private _key: string;
     private _value: T;
     private _children: INodeChildren<T>;
 
-    constructor(key: string, value: T) {
-        this._key = key;
+    constructor(value: T) {
         this._value = value;
         this._children = {};
     }

@@ -4,7 +4,7 @@
 import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
-import { isMutable } from "./utils";
+import { isMutable } from "./utility";
 
 const confirmMessage = "Move to Recycle Bin";
 
