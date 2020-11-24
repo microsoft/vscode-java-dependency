@@ -98,7 +98,7 @@ export function isSwitchingServer(): boolean {
 
 let serverMode: string | undefined;
 
-const enum LanguageServerMode {
+export const enum LanguageServerMode {
     LightWeight = "LightWeight",
     Standard = "Standard",
     Hybrid = "Hybrid",

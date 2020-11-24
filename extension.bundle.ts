@@ -20,3 +20,4 @@ export { WorkspaceNode } from "./src/views/workspaceNode";
 export { contextManager } from "./src/contextManager";
 export { DependencyExplorer } from "./src/views/dependencyExplorer";
 export { Commands } from "./src/commands";
+export { LanguageServerMode } from "./src/extension";
