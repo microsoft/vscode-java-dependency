@@ -57,6 +57,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             commands.executeCommand(Commands.JAVA_CLEAN_WORKSPACE)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_UPDATE, async (node: INodeData) => {
             if (!node.uri) {
+                window.showErrorMessage("The URI of the project is not available, you can try to update the project by right clicking the project configuration file (pom.xml or *.gradle) from the File Explorer.");
                 return;
             }
             const pattern: RelativePattern = new RelativePattern(Uri.parse(node.uri).fsPath, "{pom.xml,*.gradle}");
