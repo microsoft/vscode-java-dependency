@@ -4,7 +4,7 @@
 import * as _ from "lodash";
 import {
     commands, Event, EventEmitter, ExtensionContext, extensions, ProviderResult,
-    TreeDataProvider, TreeItem, Uri, window, workspace,
+    RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
@@ -55,6 +55,18 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CLEAN_WORKSPACE, () =>
             commands.executeCommand(Commands.JAVA_CLEAN_WORKSPACE)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_UPDATE, async (node: INodeData) => {
+            if (!node.uri) {
+                window.showErrorMessage("The URI of the project is not available, you can try to update the project by right clicking the project configuration file (pom.xml or *.gradle) from the File Explorer.");
+                return;
+            }
+            const pattern: RelativePattern = new RelativePattern(Uri.parse(node.uri).fsPath, "{pom.xml,*.gradle}");
+            const uris: Uri[] = await workspace.findFiles(pattern, null /*exclude*/, 1 /*maxResults*/);
+            if (uris.length >= 1) {
+                commands.executeCommand(Commands.JAVA_PROJECT_CONFIGURATION_UPDATE, uris[0]);
+            }
+        }));
+
         Settings.registerConfigurationListener((updatedConfig, oldConfig) => {
             if (updatedConfig.refreshDelay !== oldConfig.refreshDelay) {
                 this.setRefreshDelay(updatedConfig.refreshDelay);

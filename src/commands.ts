@@ -54,6 +54,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_CLEAN_WORKSPACE = "java.project.clean.workspace";
 
+    export const JAVA_PROJECT_UPDATE = "java.project.update";
+
     export const JAVA_PROJECT_EXPLORER_FOCUS = "javaProjectExplorer.focus";
 
     export const JAVA_PROJECT_ACTIVATE = "java.project.activate";
@@ -79,6 +81,8 @@ export namespace Commands {
     export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
 
     export const JAVA_CLEAN_WORKSPACE = "java.clean.workspace";
+
+    export const JAVA_PROJECT_CONFIGURATION_UPDATE = "java.projectConfiguration.update";
 
     export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
 }
