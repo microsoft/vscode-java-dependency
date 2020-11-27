@@ -212,6 +212,27 @@
     },
     "keybindings": [
       {
+        "command": "java.view.package.revealFileInOS",
+        "key": "ctrl+alt+r",
+        "win": "shift+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
+      },
+      {
+        "command": "java.view.package.copyFilePath",
+        "key": "ctrl+alt+c",
+        "win": "shift+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
+      },
+      {
+        "command": "java.view.package.copyRelativeFilePath",
+        "key": "ctrl+shift+alt+c",
+        "win": "ctrl+k ctrl+shift+c",
+        "mac": "cmd+shift+alt+c",
+        "when": "java:projectManagerActivated && focusedView == javaProjectExplorer"
+      },
+      {
         "command": "java.view.package.renameFile",
         "key": "F2",
         "mac": "enter",

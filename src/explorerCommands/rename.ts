@@ -6,18 +6,9 @@ import * as path from "path";
 import { Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
-import { ExplorerNode } from "../views/explorerNode";
-import { checkJavaQualifiedName, isMutable } from "./utility";
+import { checkJavaQualifiedName } from "./utility";
 
-export async function renameFile(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
-    // if command not invoked by context menu, use selected node in explorer
-    if (!node) {
-        node = selectedNode as DataNode;
-        if (!isMutable(node)) {
-            return;
-        }
-    }
-
+export async function renameFile(node: DataNode): Promise<void> {
     const oldFsPath = Uri.parse(node.uri).fsPath;
 
     const newName: string | undefined = await window.showInputBox({

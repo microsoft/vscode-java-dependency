@@ -9,6 +9,7 @@ import { Commands } from "../commands";
 import { Build } from "../constants";
 import { deleteFiles } from "../explorerCommands/delete";
 import { renameFile } from "../explorerCommands/rename";
+import { getVSCodeCmdHandler, handleKeyBindingCmd } from "../explorerCommands/utility";
 import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -84,15 +85,34 @@ export class DependencyExplorer implements Disposable {
             }),
         );
 
+        // register keybinding commands
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node: DataNode) => {
+                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], getVSCodeCmdHandler("revealFileInOS"));
+            }),
+        );
+
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node: DataNode) => {
+                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], getVSCodeCmdHandler("copyFilePath"));
+            }),
+        );
+
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node: DataNode) => {
+                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], getVSCodeCmdHandler("copyRelativeFilePath"));
+            }),
+        );
+
         context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_RENAME_FILE, (node: DataNode) => {
-                renameFile(node, this._dependencyViewer.selection[0]);
+                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], renameFile);
             }),
         );
 
         context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node: DataNode) => {
-                deleteFiles(node, this._dependencyViewer.selection[0]);
+                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], deleteFiles);
             }),
         );
     }
