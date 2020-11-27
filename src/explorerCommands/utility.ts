@@ -42,11 +42,12 @@ export function getVSCodeCmdHandler(command: string) {
 }
 
 export function handleKeyBindingCmd(node: DataNode, selectedNode: ExplorerNode,
-                                    handler: (node: DataNode) => Promise<void>) {
+                                    handler: (node: DataNode) => Promise<void>,
+                                    mutableCheck: boolean = false) {
     // if command not invoked by context menu, use selected node in explorer
     if (!node) {
         node = selectedNode as DataNode;
-        if (!isMutable(node)) {
+        if (mutableCheck && !isMutable(node)) {
             return;
         }
     }

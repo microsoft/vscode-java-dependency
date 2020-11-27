@@ -106,13 +106,13 @@ export class DependencyExplorer implements Disposable {
 
         context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_RENAME_FILE, (node: DataNode) => {
-                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], renameFile);
+                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], renameFile, true);
             }),
         );
 
         context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node: DataNode) => {
-                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], deleteFiles);
+                handleKeyBindingCmd(node, this._dependencyViewer.selection[0], deleteFiles, true);
             }),
         );
     }
