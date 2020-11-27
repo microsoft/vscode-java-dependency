@@ -3,10 +3,15 @@
 
 import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
+import { isMutable } from "./utility";
 
 const confirmMessage = "Move to Recycle Bin";
 
 export async function deleteFiles(node: DataNode): Promise<void> {
+    if (!isMutable(node) || !node.uri) {
+        return;
+    }
+
     const children = await node.getChildren();
     const isFolder = children && children.length !== 0;
     const message = getInformationMessage(node.name, isFolder);

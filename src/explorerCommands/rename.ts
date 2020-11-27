@@ -6,9 +6,13 @@ import * as path from "path";
 import { Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
-import { checkJavaQualifiedName } from "./utility";
+import { checkJavaQualifiedName, isMutable } from "./utility";
 
 export async function renameFile(node: DataNode): Promise<void> {
+    if (!isMutable(node) || !node.uri) {
+        return;
+    }
+
     const oldFsPath = Uri.parse(node.uri).fsPath;
 
     const newName: string | undefined = await window.showInputBox({
@@ -55,7 +59,7 @@ function getPrefillValue(node: DataNode): string {
     if (nodeKind === NodeKind.PrimaryType) {
         return node.name;
     }
-    return path.basename(node.uri);
+    return path.basename(node.uri!);
 }
 
 function getValueSelection(uri: string): [number, number] | undefined {

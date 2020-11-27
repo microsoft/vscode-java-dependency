@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, Uri } from "vscode";
 import { isJavaIdentifier, isKeyword } from "../utility";
 import { DataNode } from "../views/dataNode";
 import { ExplorerNode } from "../views/explorerNode";
@@ -33,24 +32,7 @@ export function checkJavaQualifiedName(value: string): string {
     return "";
 }
 
-export function getVSCodeCmdHandler(command: string) {
-    return async (node: DataNode) => {
-        if (node.uri) {
-            commands.executeCommand(command, Uri.parse(node.uri));
-        }
-    };
-}
-
-export function handleKeyBindingCmd(node: DataNode, selectedNode: ExplorerNode,
-                                    handler: (node: DataNode) => Promise<void>,
-                                    mutableCheck: boolean = false) {
+export function getCmdNode(selectedNode: ExplorerNode, node?: DataNode): DataNode {
     // if command not invoked by context menu, use selected node in explorer
-    if (!node) {
-        node = selectedNode as DataNode;
-        if (mutableCheck && !isMutable(node)) {
-            return;
-        }
-    }
-
-    handler(node);
+    return node ? node : selectedNode as DataNode;
 }
