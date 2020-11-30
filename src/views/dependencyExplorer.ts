@@ -9,6 +9,7 @@ import { Commands } from "../commands";
 import { Build } from "../constants";
 import { deleteFiles } from "../explorerCommands/delete";
 import { renameFile } from "../explorerCommands/rename";
+import { getCmdNode } from "../explorerCommands/utility";
 import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -84,15 +85,43 @@ export class DependencyExplorer implements Disposable {
             }),
         );
 
+        // register keybinding commands
         context.subscriptions.push(
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_RENAME_FILE, (node: DataNode) => {
-                renameFile(node, this._dependencyViewer.selection[0]);
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node?: DataNode) => {
+                const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
+                if (cmdNode.uri) {
+                    commands.executeCommand("revealFileInOS", Uri.parse(cmdNode.uri));
+                }
             }),
         );
 
         context.subscriptions.push(
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node: DataNode) => {
-                deleteFiles(node, this._dependencyViewer.selection[0]);
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node?: DataNode) => {
+                const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
+                if (cmdNode.uri) {
+                    commands.executeCommand("copyFilePath", Uri.parse(cmdNode.uri));
+                }
+            }),
+        );
+
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node?: DataNode) => {
+                const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
+                if (cmdNode.uri) {
+                    commands.executeCommand("copyRelativeFilePath", Uri.parse(cmdNode.uri));
+                }
+            }),
+        );
+
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_RENAME_FILE, (node?: DataNode) => {
+                renameFile(getCmdNode(this._dependencyViewer.selection[0], node));
+            }),
+        );
+
+        context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node?: DataNode) => {
+                deleteFiles(getCmdNode(this._dependencyViewer.selection[0], node));
             }),
         );
     }

@@ -3,18 +3,13 @@
 
 import { Uri, window, workspace } from "vscode";
 import { DataNode } from "../views/dataNode";
-import { ExplorerNode } from "../views/explorerNode";
 import { isMutable } from "./utility";
 
 const confirmMessage = "Move to Recycle Bin";
 
-export async function deleteFiles(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
-    // if command not invoked by context menu, use selected node in explorer
-    if (!node) {
-        node = selectedNode as DataNode;
-        if (!isMutable(node)) {
-            return;
-        }
+export async function deleteFiles(node: DataNode): Promise<void> {
+    if (!isMutable(node) || !node.uri) {
+        return;
     }
 
     const children = await node.getChildren();

@@ -6,16 +6,11 @@ import * as path from "path";
 import { Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
-import { ExplorerNode } from "../views/explorerNode";
 import { checkJavaQualifiedName, isMutable } from "./utility";
 
-export async function renameFile(node: DataNode, selectedNode: ExplorerNode): Promise<void> {
-    // if command not invoked by context menu, use selected node in explorer
-    if (!node) {
-        node = selectedNode as DataNode;
-        if (!isMutable(node)) {
-            return;
-        }
+export async function renameFile(node: DataNode): Promise<void> {
+    if (!isMutable(node) || !node.uri) {
+        return;
     }
 
     const oldFsPath = Uri.parse(node.uri).fsPath;
@@ -64,7 +59,7 @@ function getPrefillValue(node: DataNode): string {
     if (nodeKind === NodeKind.PrimaryType) {
         return node.name;
     }
-    return path.basename(node.uri);
+    return path.basename(node.uri!);
 }
 
 function getValueSelection(uri: string): [number, number] | undefined {
