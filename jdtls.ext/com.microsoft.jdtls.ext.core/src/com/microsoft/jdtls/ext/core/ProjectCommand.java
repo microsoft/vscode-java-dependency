@@ -124,7 +124,7 @@ public final class ProjectCommand {
             }
             PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
             if (Objects.equals(project.getName(), invisibleProjectName)) {
-                projectNode.setDisplayName(FilenameUtils.getBaseName(workspaceUri));
+                projectNode.setDisplayName(FilenameUtils.getBaseName(workspaceFolderPath.toOSString()));
             }
             children.add(projectNode);
         }
