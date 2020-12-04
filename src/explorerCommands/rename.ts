@@ -13,10 +13,6 @@ export async function renameFile(node: DataNode): Promise<void> {
         return;
     }
 
-    if (!node.uri) {
-        return;
-    }
-
     const oldFsPath = Uri.parse(node.uri).fsPath;
 
     const newName: string | undefined = await window.showInputBox({

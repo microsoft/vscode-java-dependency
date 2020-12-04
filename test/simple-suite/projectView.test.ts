@@ -16,8 +16,8 @@ suite("Simple Project View Tests", () => {
 
         // validate root nodes
         const roots = await explorer.dataProvider.getChildren();
-        assert.equal(roots.length, 1, "Number of root node should be 1");
-        const projectNode = roots[0] as ProjectNode;
+        assert.equal(roots!.length, 1, "Number of root node should be 1");
+        const projectNode = roots![0] as ProjectNode;
         assert.equal(projectNode.name, "1.helloworld", "Project name should be \"1.helloworld\"");
 
         // validate package root/dependency nodes
@@ -39,7 +39,7 @@ suite("Simple Project View Tests", () => {
     test("Can node have correct uri", async function() {
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
-        const projectNode = (await explorer.dataProvider.getChildren())[0] as ProjectNode;
+        const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
         const mainPackage = (await projectNode.getChildren())[0] as PackageRootNode;
         const mainClass = (await mainPackage.getChildren())[0] as PrimaryTypeNode;
 
