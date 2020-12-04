@@ -21,7 +21,7 @@ export class LibraryController implements Disposable {
         this.disposable = Disposable.from(
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_ADD_LIBRARIES, () => this.addLibraries()),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REMOVE_LIBRARY, (node: DataNode) =>
-                this.removeLibrary(Uri.parse(node.uri).fsPath)),
+                node.uri && this.removeLibrary(Uri.parse(node.uri).fsPath)),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, () =>
                 this.refreshLibraries()),
         );

@@ -88,7 +88,7 @@ const workspace: WorkspaceNode = new WorkspaceNode({
     name: "workspace",
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Workspace,
-}, null);
+}, undefined);
 
 const mavenProject: ProjectNode = new ProjectNode({
     name: "mavenProject",

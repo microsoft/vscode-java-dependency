@@ -13,9 +13,9 @@ export class HierarchicalPackageNodeData implements INodeData {
     }
 
     public name: string;
-    public children = [];
+    public children: HierarchicalPackageNodeData[] = [];
     public displayName: string;
-    private nodeData: INodeData = null;
+    private nodeData?: INodeData = undefined;
 
     public get uri() {
         return this.nodeData && this.nodeData.uri;
@@ -34,11 +34,11 @@ export class HierarchicalPackageNodeData implements INodeData {
     }
 
     public get isPackage() {
-        return this.nodeData !== null;
+        return this.nodeData !== undefined;
     }
 
     public get handlerIdentifier() {
-        return this.nodeData.handlerIdentifier;
+        return this.nodeData?.handlerIdentifier;
     }
 
     private constructor(displayName: string, parentName: string) {
@@ -68,7 +68,7 @@ export class HierarchicalPackageNodeData implements INodeData {
         if (childNode) {
             childNode.addSubPackage(packages, nodeData);
         } else {
-            const newNode = new HierarchicalPackageNodeData(subPackageDisplayName, this.name);
+            const newNode = new HierarchicalPackageNodeData(subPackageDisplayName as string, this.name);
             newNode.addSubPackage(packages, nodeData);
             this.children.push(newNode);
         }

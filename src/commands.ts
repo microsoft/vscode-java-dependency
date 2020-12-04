@@ -87,11 +87,11 @@ export namespace Commands {
     export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
 }
 
-export function executeJavaLanguageServerCommand(...rest) {
+export function executeJavaLanguageServerCommand(...rest: any[]) {
     return executeJavaExtensionCommand(Commands.EXECUTE_WORKSPACE_COMMAND, ...rest);
 }
 
-export async function executeJavaExtensionCommand(commandName: string, ...rest) {
+export async function executeJavaExtensionCommand(commandName: string, ...rest: any[]) {
     // TODO: need to handle error and trace telemetry
     return commands.executeCommand(commandName, ...rest);
 }

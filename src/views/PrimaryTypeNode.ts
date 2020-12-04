@@ -19,9 +19,9 @@ export class PrimaryTypeNode extends DataNode {
         super(nodeData, parent);
     }
 
-    protected async loadData(): Promise<SymbolInformation[] | DocumentSymbol[]> {
-        if (!this.hasChildren()) {
-            return null;
+    protected async loadData(): Promise<SymbolInformation[] | DocumentSymbol[] | undefined> {
+        if (!this.hasChildren() || !this.nodeData.uri) {
+            return undefined;
         }
 
         return workspace.openTextDocument(Uri.parse(this.nodeData.uri)).then((doc) => {
@@ -49,7 +49,7 @@ export class PrimaryTypeNode extends DataNode {
     }
 
     protected get iconPath(): string | ThemeIcon {
-        switch (this.nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
+        switch (this.nodeData.metaData![PrimaryTypeNode.K_TYPE_KIND]) {
             case TypeKind.Enum:
                 return new ThemeIcon("symbol-enum");
             case TypeKind.Interface:
@@ -63,7 +63,7 @@ export class PrimaryTypeNode extends DataNode {
         return Settings.showMembers();
     }
 
-    private async getSymbols(document: TextDocument): Promise<SymbolInformation[] | DocumentSymbol[]> {
+    private async getSymbols(document: TextDocument): Promise<SymbolInformation[] | DocumentSymbol[] | undefined> {
         let error;
         const operationId = createUuid();
         const startAt: number = Date.now();
@@ -92,7 +92,7 @@ export class PrimaryTypeNode extends DataNode {
 
     protected get contextValue(): string {
         const context = Explorer.ContextValueType.Type;
-        const type = this.nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND];
+        const type = this.nodeData.metaData?.[PrimaryTypeNode.K_TYPE_KIND];
 
         if (type === TypeKind.Enum) {
             return `${context}+enum`;

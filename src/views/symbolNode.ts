@@ -8,7 +8,7 @@ import { ExplorerNode } from "./explorerNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export class SymbolNode extends BaseSymbolNode {
-    private _children: SymbolInformation[];
+    private _children?: SymbolInformation[];
 
     constructor(symbolInfo: SymbolInformation, parent: PrimaryTypeNode) {
         super(symbolInfo, parent);
@@ -25,18 +25,15 @@ export class SymbolNode extends BaseSymbolNode {
     }
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
-        if (this.symbolInfo) {
-            const parentData = <ITypeRootNodeData>(<PrimaryTypeNode>this.getParent()).nodeData;
-            if (parentData && parentData.symbolTree) {
-                this._children = parentData.symbolTree.get(this.symbolInfo.name);
-            }
-            const item = new TreeItem(this.symbolInfo.name,
-                (this._children && this._children.length) ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
-            item.iconPath = this.iconPath;
-            item.command = this.command;
-            return item;
+        const parentData = <ITypeRootNodeData>(<PrimaryTypeNode>this.getParent()).nodeData;
+        if (parentData && parentData.symbolTree) {
+            this._children = parentData.symbolTree.get(this.symbolInfo.name);
         }
-        return undefined;
+        const item = new TreeItem(this.symbolInfo.name,
+            (this._children && this._children.length) ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
+        item.iconPath = this.iconPath;
+        item.command = this.command;
+        return item;
     }
 
     protected get range(): Range {

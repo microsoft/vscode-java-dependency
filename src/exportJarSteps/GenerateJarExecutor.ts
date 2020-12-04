@@ -23,9 +23,9 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (await this.generateJar(stepMetadata)) {
             return this.getNextStep();
         }
-        const lastStep: ExportJarStep = stepMetadata.steps.pop();
-        resetStepMetadata(lastStep, stepMetadata);
-        return lastStep;
+        const lastStep: ExportJarStep | undefined = stepMetadata.steps.pop();
+        resetStepMetadata(lastStep!, stepMetadata);
+        return lastStep!;
     }
 
     private async generateJar(stepMetadata: IStepMetadata): Promise<boolean> {
@@ -40,20 +40,20 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER) {
                 sendInfo("", { exportJarPath: stepMetadata.outputPath });
             }
-            const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
+            const outputUri: Uri | undefined = await saveDialog(stepMetadata.workspaceFolder!.uri, "Generate");
             if (outputUri === undefined) {
                 return Promise.reject();
             }
             destPath = outputUri.fsPath;
         } else {
             // Both the absolute path and the relative path (to workspace folder) are supported.
-            destPath = (isAbsolute(stepMetadata.outputPath)) ?
-                stepMetadata.outputPath :
-                join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath);
+            destPath = (isAbsolute(stepMetadata.outputPath!)) ?
+                stepMetadata.outputPath! :
+                join(stepMetadata.workspaceFolder!.uri.fsPath, stepMetadata.outputPath!);
             // Since both the specific target folder and the specific target file are supported,
             // we regard a path as a file if it ends with ".jar". Otherwise, it was regarded as a folder.
-            if (extname(stepMetadata.outputPath) !== ".jar") {
-                destPath = join(destPath, stepMetadata.workspaceFolder.name + ".jar");
+            if (extname(stepMetadata.outputPath!) !== ".jar") {
+                destPath = join(destPath, stepMetadata.workspaceFolder!.name + ".jar");
             }
             await ensureDir(dirname(destPath));
         }
@@ -67,12 +67,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainClass), stepMetadata.classpaths, destPath);
-                if (exportResult.result === true) {
+                const exportResult = await Jdtls.exportJar(basename(stepMetadata.mainClass!), stepMetadata.classpaths!, destPath);
+                if (exportResult && exportResult.result === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
                 } else {
-                    return reject(new Error("Export jar failed." + exportResult.message));
+                    return reject(new Error("Export jar failed." + exportResult?.message));
                 }
             });
         });
@@ -91,15 +91,15 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 });
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
-                for (const project of stepMetadata.projectList) {
+                for (const project of stepMetadata.projectList!) {
                     const classpaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(classpaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "runtime"),
-                        ...await this.parseDependencyItems(classpaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "runtime"));
+                        ...await this.parseDependencyItems(classpaths.classpaths, uriSet, stepMetadata.workspaceFolder!.uri.fsPath, "runtime"),
+                        ...await this.parseDependencyItems(classpaths.modulepaths, uriSet, stepMetadata.workspaceFolder!.uri.fsPath, "runtime"));
                     const testClasspaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "test" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "test"),
-                        ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "test"));
+                        ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder!.uri.fsPath, "test"),
+                        ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder!.uri.fsPath, "test"));
                 }
                 return resolve(pickItems);
             });
@@ -112,7 +112,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }
         dependencyItems.sort((node1, node2) => {
             if (node1.description !== node2.description) {
-                return node1.description.localeCompare(node2.description);
+                return node1.description!.localeCompare(node2.description!);
             }
             if (node1.type !== node2.type) {
                 return node2.type.localeCompare(node1.type);
@@ -149,7 +149,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                                     destination: undefined,
                                     isArtifact: true,
                                 };
-                                stepMetadata.classpaths.push(classpath);
+                                stepMetadata.classpaths!.push(classpath);
                             } else {
                                 await this.setStepMetadataFromOutputFolder(item.path, stepMetadata);
                             }
@@ -179,7 +179,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 destination: relative(posixPath, path),
                 isArtifact: false,
             };
-            stepMetadata.classpaths.push(classpath);
+            stepMetadata.classpaths!.push(classpath);
         }
     }
 

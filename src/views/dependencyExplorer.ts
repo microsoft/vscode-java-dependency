@@ -139,14 +139,14 @@ export class DependencyExplorer implements Disposable {
 
         let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
         if (!node) {
-            const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
+            const paths: INodeData[] | undefined = await Jdtls.resolvePath(uri.toString());
             if (!paths || paths.length === 0) {
                 return;
             }
             node = await this._dataProvider.revealPaths(paths);
         }
 
-        if (this._dependencyViewer.visible) {
+        if (node && this._dependencyViewer.visible) {
             this._dependencyViewer.reveal(node);
         }
     }

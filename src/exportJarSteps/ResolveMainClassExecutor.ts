@@ -25,13 +25,13 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
         if (await this.resolveMainClass(stepMetadata)) {
             return this.getNextStep();
         }
-        const lastStep: ExportJarStep = stepMetadata.steps.pop();
-        resetStepMetadata(lastStep, stepMetadata);
-        return lastStep;
+        const lastStep: ExportJarStep | undefined = stepMetadata.steps.pop();
+        resetStepMetadata(lastStep!, stepMetadata);
+        return lastStep!;
     }
 
     private async resolveMainClass(stepMetadata: IStepMetadata): Promise<boolean> {
-        const mainClasses: IMainClassInfo[] = await window.withProgress({
+        const mainClasses: IMainClassInfo[] | undefined = await window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving main classes...",
             cancellable: true,
@@ -40,7 +40,7 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                resolve(await Jdtls.getMainClasses(stepMetadata.workspaceFolder.uri.toString()));
+                resolve(await Jdtls.getMainClasses(stepMetadata.workspaceFolder!.uri.toString()));
             });
         });
         if (mainClasses === undefined || mainClasses.length === 0) {

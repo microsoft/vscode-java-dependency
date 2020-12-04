@@ -18,7 +18,7 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
         super(nodeData, parent, _project);
     }
 
-    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+    public async revealPaths(paths: INodeData[]): Promise<DataNode | undefined> {
         const hierarchicalNodeData = paths[0];
         const children: ExplorerNode[] = await this.getChildren();
         const childNode = <DataNode>children.find((child: DataNode) =>
@@ -31,7 +31,7 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result = [];
+        const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((data) => {
@@ -46,22 +46,22 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
                 }
             });
         }
-        return this.getHierarchicalPackageNodes().concat(result);
+        const hierarchicalPackageNodes = this.getHierarchicalPackageNodes();
+        return hierarchicalPackageNodes ? result.concat(hierarchicalPackageNodes) : result;
     }
 
     protected getHierarchicalPackageNodes(): ExplorerNode[] {
         const hierarchicalPackageNodeData = this.getHierarchicalPackageNodeData();
-        return hierarchicalPackageNodeData === null ? [] : hierarchicalPackageNodeData.children.map((hierarchicalChildrenNode) =>
+        return hierarchicalPackageNodeData === undefined ? [] : hierarchicalPackageNodeData.children.map((hierarchicalChildrenNode) =>
             new HierarchicalPackageNode(hierarchicalChildrenNode, this, this._project, this));
     }
 
-    private getHierarchicalPackageNodeData(): HierarchicalPackageNodeData {
+    private getHierarchicalPackageNodeData(): HierarchicalPackageNodeData  | undefined {
         if (this.nodeData.children && this.nodeData.children.length) {
             const nodeDataList = this.nodeData.children
                 .filter((child) => child.kind === NodeKind.Package);
             return HierarchicalPackageNodeData.createHierarchicalNodeDataByPackageList(nodeDataList);
-        } else {
-            return null;
         }
+        return undefined;
     }
 }

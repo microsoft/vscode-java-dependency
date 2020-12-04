@@ -24,10 +24,10 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
     }
 
     private async resolveJavaProject(stepMetadata: IStepMetadata): Promise<void> {
-        const folders = workspace.workspaceFolders;
+        const folders = workspace.workspaceFolders!;
         if (stepMetadata.entry instanceof WorkspaceNode) {
-            const workspaceUri: Uri = Uri.parse(stepMetadata.entry.uri);
-            for (const folder of workspace.workspaceFolders) {
+            const workspaceUri: Uri = Uri.parse(stepMetadata.entry.uri!);
+            for (const folder of workspace.workspaceFolders!) {
                 if (folder.uri.toString() === workspaceUri.toString()) {
                     stepMetadata.workspaceFolder = folder;
                 }
@@ -44,14 +44,14 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         const pickItems: IJavaProjectQuickPickItem[] = [];
         const projectMap: Map<string, INodeData[]> = new Map<string, INodeData[]>();
         for (const folder of folders) {
-            const projects: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
+            const projects: INodeData[] | undefined = await Jdtls.getProjects(folder.uri.toString());
             if (!_.isEmpty(projects)) {
                 pickItems.push({
                     label: folder.name,
                     description: folder.uri.fsPath,
                     workspaceFolder: folder,
                 });
-                projectMap.set(folder.uri.toString(), projects);
+                projectMap.set(folder.uri.toString(), projects!);
             }
         }
         if (_.isEmpty(pickItems)) {

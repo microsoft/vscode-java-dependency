@@ -65,7 +65,7 @@ export interface IMessageOption {
     arguments?: any;
 }
 
-export async function saveDialog(workSpaceUri: Uri, title: string): Promise<Uri> {
+export async function saveDialog(workSpaceUri: Uri, title: string): Promise<Uri | undefined> {
     const options: SaveDialogOptions = {
         saveLabel: title,
         defaultUri: workSpaceUri,
