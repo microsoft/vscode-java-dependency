@@ -17,9 +17,8 @@ export class WorkspaceNode extends DataNode {
     protected loadData(): Thenable<INodeData[] | undefined> {
         if (!this.nodeData.uri) {
             return Promise.resolve(undefined);
-        } else {
-            return Jdtls.getProjects(this.nodeData.uri);
         }
+        return Jdtls.getProjects(this.nodeData.uri);
     }
 
     protected createChildNodeList(): ExplorerNode[] {
