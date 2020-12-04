@@ -10,9 +10,9 @@ import { Build } from "../constants";
 import { deleteFiles } from "../explorerCommands/delete";
 import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
-import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
+import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { Settings } from "../settings";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
@@ -133,7 +133,7 @@ export class DependencyExplorer implements Disposable {
     }
 
     public async reveal(uri: Uri): Promise<void> {
-        if (!isStandardServerReady()) {
+        if (!await languageServerApiManager.isStandardServerReady()) {
             return;
         }
 

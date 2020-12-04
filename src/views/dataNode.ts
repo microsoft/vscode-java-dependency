@@ -9,6 +9,8 @@ import { ExplorerNode } from "./explorerNode";
 
 export abstract class DataNode extends ExplorerNode {
 
+    protected _childrenNodes: ExplorerNode[];
+
     protected _lock: Lock = new Lock();
 
     constructor(protected _nodeData: INodeData, parent: DataNode) {
@@ -67,9 +69,10 @@ export abstract class DataNode extends ExplorerNode {
             if (!this._nodeData.children) {
                 const data = await this.loadData();
                 this._nodeData.children = data;
-                return this.createChildNodeList();
+                this._childrenNodes = this.createChildNodeList();
+                return this._childrenNodes;
             }
-            return this.createChildNodeList();
+            return this._childrenNodes;
         } finally {
             this._lock.release();
         }

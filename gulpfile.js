@@ -16,7 +16,6 @@ gulp.task('build_server', () => {
 
     return gulp.src([
         server_dir + '/com.microsoft.jdtls.ext.core/target/com.microsoft.jdtls.ext.core*.jar',
-        server_dir + '/com.microsoft.jdtls.ext.activator/target/com.microsoft.jdtls.ext.activator*.jar',
       ])
       .pipe(gulp.dest('./server'))
 });
