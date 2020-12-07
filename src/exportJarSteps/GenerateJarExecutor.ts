@@ -5,15 +5,22 @@ import { ensureDir, pathExists } from "fs-extra";
 import globby = require("globby");
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
-import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window } from "vscode";
+import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window, WorkspaceFolder } from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Jdtls } from "../java/jdtls";
+import { INodeData } from "../java/nodeData";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarStep, ExportJarTargets, getExtensionApi,
-    resetStepMetadata, saveDialog, toPosixPath } from "./utility";
+import {
+    createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi,
+    resetStepMetadata, saveDialog, toPosixPath,
+} from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
+
+    public getStep(): ExportJarStep {
+        return ExportJarStep.GenerateJar;
+    }
 
     public getNextStep(): ExportJarStep {
         return ExportJarStep.Finish;
@@ -23,37 +30,48 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (await this.generateJar(stepMetadata)) {
             return this.getNextStep();
         }
-        const lastStep: ExportJarStep = stepMetadata.steps.pop();
-        resetStepMetadata(lastStep, stepMetadata);
-        return lastStep;
+        const previousStep: ExportJarStep | undefined = stepMetadata.steps.pop();
+        if (!previousStep) {
+            throw new Error(ExportJarMessages.stepErrorMessage(ExportJarMessages.StepAction.GOBACK, this.getStep()));
+        }
+        resetStepMetadata(previousStep, stepMetadata);
+        return previousStep;
     }
 
     private async generateJar(stepMetadata: IStepMetadata): Promise<boolean> {
         if (_.isEmpty(stepMetadata.elements)) {
+            // If the user uses wizard or custom task with a empty list of elements,
+            // the classpaths should be specified manually.
             stepMetadata.classpaths = [];
-            if (!(await this.generateElements(stepMetadata))) {
+            if (!(await this.generateClasspaths(stepMetadata))) {
                 return false;
             }
+        }
+        const folder: WorkspaceFolder | undefined = stepMetadata.workspaceFolder;
+        if (!folder) {
+            throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.getStep()));
         }
         let destPath = "";
         if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER || stepMetadata.outputPath === "") {
             if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER) {
                 sendInfo("", { exportJarPath: stepMetadata.outputPath });
             }
-            const outputUri: Uri = await saveDialog(stepMetadata.workspaceFolder.uri, "Generate");
-            if (outputUri === undefined) {
+            const outputUri: Uri | undefined = await saveDialog(folder.uri, "Generate");
+            if (!outputUri) {
                 return Promise.reject();
             }
             destPath = outputUri.fsPath;
         } else {
+            const outputPath: string | undefined = stepMetadata.outputPath;
+            if (outputPath === undefined) {
+                throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.OUTPUTPATH, this.getStep()));
+            }
             // Both the absolute path and the relative path (to workspace folder) are supported.
-            destPath = (isAbsolute(stepMetadata.outputPath)) ?
-                stepMetadata.outputPath :
-                join(stepMetadata.workspaceFolder.uri.fsPath, stepMetadata.outputPath);
+            destPath = (isAbsolute(outputPath)) ? outputPath : join(folder.uri.fsPath, outputPath);
             // Since both the specific target folder and the specific target file are supported,
             // we regard a path as a file if it ends with ".jar". Otherwise, it was regarded as a folder.
-            if (extname(stepMetadata.outputPath) !== ".jar") {
-                destPath = join(destPath, stepMetadata.workspaceFolder.name + ".jar");
+            if (extname(outputPath) !== ".jar") {
+                destPath = join(destPath, folder.name + ".jar");
             }
             await ensureDir(dirname(destPath));
         }
@@ -67,7 +85,15 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
-                const exportResult: IExportResult = await Jdtls.exportJar(basename(stepMetadata.mainClass), stepMetadata.classpaths, destPath);
+                const mainClass: string | undefined = stepMetadata.mainClass;
+                if (mainClass === undefined) {
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.MAINCLASS, this.getStep())));
+                }
+                const classpaths: IClasspath[] | undefined = stepMetadata.classpaths;
+                if (!classpaths) {
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.getStep())));
+                }
+                const exportResult: IExportResult = await Jdtls.exportJar(basename(mainClass), classpaths, destPath);
                 if (exportResult.result === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
@@ -78,7 +104,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         });
     }
 
-    private async generateElements(stepMetadata: IStepMetadata): Promise<boolean> {
+    private async generateClasspaths(stepMetadata: IStepMetadata): Promise<boolean> {
         const extensionApi: any = await getExtensionApi();
         const dependencyItems: IJarQuickPickItem[] = await window.withProgress({
             location: ProgressLocation.Window,
@@ -91,28 +117,39 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 });
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
-                for (const project of stepMetadata.projectList) {
+                const projectList: INodeData[] | undefined = stepMetadata.projectList;
+                if (!projectList) {
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.PROJECTLIST, this.getStep())));
+                }
+                const workspaceFolder: WorkspaceFolder | undefined = stepMetadata.workspaceFolder;
+                if (!workspaceFolder) {
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.getStep())));
+                }
+                for (const project of projectList) {
                     const classpaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(classpaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "runtime"),
-                        ...await this.parseDependencyItems(classpaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "runtime"));
+                        ...await this.parseDependencyItems(classpaths.classpaths, uriSet, workspaceFolder.uri.fsPath, "runtime"),
+                        ...await this.parseDependencyItems(classpaths.modulepaths, uriSet, workspaceFolder.uri.fsPath, "runtime"));
                     const testClasspaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "test" });
                     pickItems.push(
-                        ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "test"),
-                        ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, stepMetadata.workspaceFolder.uri.fsPath, "test"));
+                        ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, workspaceFolder.uri.fsPath, "test"),
+                        ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, workspaceFolder.uri.fsPath, "test"));
                 }
                 return resolve(pickItems);
             });
         });
         if (_.isEmpty(dependencyItems)) {
-            throw new Error("No classpath found. Please make sure your java project is valid.");
+            throw new Error(ExportJarMessages.PROJECT_EMPTY);
         } else if (dependencyItems.length === 1) {
-            await this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata);
+            if (!stepMetadata.classpaths) {
+                return Promise.reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.getStep())));
+            }
+            await this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata.classpaths);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
             if (node1.description !== node2.description) {
-                return node1.description.localeCompare(node2.description);
+                return node1.description!.localeCompare(node2.description!);
             }
             if (node1.type !== node2.type) {
                 return node2.type.localeCompare(node1.type);
@@ -142,6 +179,10 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                         if (_.isEmpty(pickBox.selectedItems)) {
                             return;
                         }
+                        if (!stepMetadata.classpaths) {
+                            return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS,
+                                this.getStep())));
+                        }
                         for (const item of pickBox.selectedItems) {
                             if (item.type === "artifact") {
                                 const classpath: IClasspath = {
@@ -151,7 +192,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                                 };
                                 stepMetadata.classpaths.push(classpath);
                             } else {
-                                await this.setStepMetadataFromOutputFolder(item.path, stepMetadata);
+                                await this.setStepMetadataFromOutputFolder(item.path, stepMetadata.classpaths);
                             }
                         }
                         return resolve(true);
@@ -171,7 +212,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         return result;
     }
 
-    private async setStepMetadataFromOutputFolder(folderPath: string, stepMetadata: IStepMetadata): Promise<void> {
+    private async setStepMetadataFromOutputFolder(folderPath: string, classpaths: IClasspath[]): Promise<void> {
         const posixPath: string = toPosixPath(folderPath);
         for (const path of await globby(posixPath)) {
             const classpath: IClasspath = {
@@ -179,7 +220,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 destination: relative(posixPath, path),
                 isArtifact: false,
             };
-            stepMetadata.classpaths.push(classpath);
+            classpaths.push(classpath);
         }
     }
 

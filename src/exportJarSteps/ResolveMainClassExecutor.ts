@@ -6,12 +6,16 @@ import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, window 
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarStep, resetStepMetadata } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarStep, resetStepMetadata } from "./utility";
 
 export class ResolveMainClassExecutor implements IExportJarStepExecutor {
 
     private static getName(data: IMainClassInfo) {
         return data.name.substring(data.name.lastIndexOf(".") + 1);
+    }
+
+    public getStep(): ExportJarStep {
+        return ExportJarStep.ResolveMainClass;
     }
 
     public getNextStep(): ExportJarStep {
@@ -25,9 +29,12 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
         if (await this.resolveMainClass(stepMetadata)) {
             return this.getNextStep();
         }
-        const lastStep: ExportJarStep = stepMetadata.steps.pop();
-        resetStepMetadata(lastStep, stepMetadata);
-        return lastStep;
+        const previousStep: ExportJarStep | undefined = stepMetadata.steps.pop();
+        if (!previousStep) {
+            throw new Error(ExportJarMessages.stepErrorMessage(ExportJarMessages.StepAction.GOBACK, this.getStep()));
+        }
+        resetStepMetadata(previousStep, stepMetadata);
+        return previousStep;
     }
 
     private async resolveMainClass(stepMetadata: IStepMetadata): Promise<boolean> {
@@ -36,10 +43,13 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
             title: "Exporting Jar : Resolving main classes...",
             cancellable: true,
         }, (_progress, token) => {
-            return new Promise<IMainClassInfo[] | undefined>(async (resolve, reject) => {
+            return new Promise<IMainClassInfo[]>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
                     return reject();
                 });
+                if (!stepMetadata.workspaceFolder) {
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.getStep())));
+                }
                 resolve(await Jdtls.getMainClasses(stepMetadata.workspaceFolder.uri.toString()));
             });
         });
