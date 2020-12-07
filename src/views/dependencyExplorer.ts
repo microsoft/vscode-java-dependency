@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as fse from "fs-extra";
+import * as _ from "lodash";
 import * as path from "path";
 import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
@@ -33,6 +34,8 @@ export class DependencyExplorer implements Disposable {
     private _dependencyViewer: TreeView<ExplorerNode>;
 
     private _dataProvider: DependencyDataProvider;
+
+    private _revealingUri: string;
 
     private readonly SUPPORTED_URI_SCHEMES: string[] = ["file", "jdt"];
 
@@ -137,17 +140,28 @@ export class DependencyExplorer implements Disposable {
             return;
         }
 
+        if (this._revealingUri === uri.toString()) {
+            return;
+        }
+        this._revealingUri = uri.toString();
+
         let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
         if (!node) {
             const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-            if (!paths || paths.length === 0) {
-                return;
+            if (!_.isEmpty(paths)) {
+                node = await this._dataProvider.revealPaths(paths);
             }
-            node = await this._dataProvider.revealPaths(paths);
         }
 
-        if (this._dependencyViewer.visible) {
-            this._dependencyViewer.reveal(node);
+        if (!node) {
+            this._revealingUri = undefined;
+            return;
+        }
+
+        try {
+            await this._dependencyViewer.reveal(node);
+        } catch (e) {
+            this._revealingUri = undefined;
         }
     }
 
