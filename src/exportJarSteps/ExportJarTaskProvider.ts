@@ -11,9 +11,9 @@ import {
     TaskProvider, TaskRevealKind, tasks, TerminalDimensions, Uri, workspace, WorkspaceFolder,
 } from "vscode";
 import { buildWorkspace } from "../build";
-import { isStandardServerReady } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
+import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { Settings } from "../settings";
 import { IUriData, Trie } from "../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
@@ -31,7 +31,7 @@ interface IExportJarTaskDefinition extends TaskDefinition {
 let isExportingJar: boolean = false;
 
 export async function executeExportJarTask(node?: INodeData): Promise<void> {
-    if (!isStandardServerReady() || isExportingJar || await buildWorkspace() === false) {
+    if (!await languageServerApiManager.isStandardServerReady() || isExportingJar || await buildWorkspace() === false) {
         return;
     }
     isExportingJar = true;

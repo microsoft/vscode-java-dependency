@@ -10,9 +10,9 @@ import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-
 import { Commands } from "../commands";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
 import { executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
-import { isLightWeightMode, isSwitchingServer } from "../extension";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
+import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { Settings } from "../settings";
 import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
@@ -99,11 +99,11 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[] | undefined | null> {
-        if (isLightWeightMode()) {
+        if (await languageServerApiManager.isLightWeightMode()) {
             return [];
         }
 
-        if (isSwitchingServer()) {
+        if (await languageServerApiManager.isSwitchingServer()) {
             await new Promise<void>((resolve: () => void): void => {
                 extensions.getExtension("redhat.java")!.exports.onDidServerModeChange(resolve);
             });

@@ -16,11 +16,20 @@ export class ProjectController implements Disposable {
     public constructor(public readonly context: ExtensionContext) {
         this.disposable = Disposable.from(
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject()),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_OPEN, () => this.openJavaProject()),
         );
     }
 
     public dispose() {
         this.disposable.dispose();
+    }
+
+    public async openJavaProject() {
+        const availableCommands: string[] = await commands.getCommands();
+        if (availableCommands.includes(Commands.WORKBENCH_ACTION_FILES_OPENFOLDER)) {
+            return commands.executeCommand(Commands.WORKBENCH_ACTION_FILES_OPENFOLDER);
+        }
+        return commands.executeCommand(Commands.WORKBENCH_ACTION_FILES_OPENFILEFOLDER);
     }
 
     public async createJavaProject() {

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import * as _ from "lodash";
 import { TreeItem, TreeItemCollapsibleState } from "vscode";
 import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData";
 import { INodeData, NodeKind } from "../java/nodeData";
@@ -30,6 +31,7 @@ export class HierarchicalPackageNode extends PackageNode {
             if (data) {
                 if (this.nodeData?.children) {
                     this.nodeData.children.push(...data);
+                    this.nodeData.children = _.uniqBy(this.nodeData.children, "path");
                 } else {
                     this.nodeData.children = data;
                 }

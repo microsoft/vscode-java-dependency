@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-import { commands, extensions, Uri } from "vscode";
-import { Commands, DataNode, LanguageServerMode } from "../extension.bundle";
+import { extensions, Uri } from "vscode";
+import { DataNode } from "../extension.bundle";
 
 export namespace Uris {
     // Simple Project
@@ -39,16 +39,6 @@ export function truePath(...paths: string[]) {
 }
 
 export async function setupTestEnv() {
-    await new Promise(async (resolve) => {
-        const extensionApi: any = extensions.getExtension("redhat.java")!.exports;
-        extensionApi.onDidServerModeChange(async (mode: string) => {
-            if (mode === LanguageServerMode.Standard) {
-                resolve();
-            }
-        });
-
-        await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
-        // context would be initialized after this command
-        await commands.executeCommand(Commands.JAVA_PROJECT_ACTIVATE);
-    });
+    await extensions.getExtension("redhat.java")!.activate();
+    await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
 }

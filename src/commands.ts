@@ -42,6 +42,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER = "java.view.package.revealInProjectExplorer";
 
+    export const JAVA_PROJECT_OPEN = "_java.project.open";
+
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
     export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
@@ -58,10 +60,6 @@ export namespace Commands {
 
     export const JAVA_PROJECT_EXPLORER_FOCUS = "javaProjectExplorer.focus";
 
-    export const JAVA_PROJECT_ACTIVATE = "java.project.activate";
-
-    export const JAVA_MAVEN_CREATE_PROJECT = "maven.archetype.generate";
-
     export const JAVA_PROJECT_LIST = "java.project.list";
 
     export const JAVA_PROJECT_REFRESH_LIB_SERVER = "java.project.refreshLib";
@@ -74,10 +72,6 @@ export namespace Commands {
 
     export const JAVA_PROJECT_GENERATEJAR = "java.project.generateJar";
 
-    export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
-
-    export const VSCODE_OPEN = "vscode.open";
-
     export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";
 
     export const JAVA_CLEAN_WORKSPACE = "java.clean.workspace";
@@ -85,6 +79,17 @@ export namespace Commands {
     export const JAVA_PROJECT_CONFIGURATION_UPDATE = "java.projectConfiguration.update";
 
     export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
+
+    /**
+     * Commands from Visual Studio Code
+     */
+    export const VSCODE_OPEN_FOLDER = "vscode.openFolder";
+
+    export const VSCODE_OPEN = "vscode.open";
+
+    export const WORKBENCH_ACTION_FILES_OPENFOLDER = "workbench.action.files.openFolder";
+
+    export const WORKBENCH_ACTION_FILES_OPENFILEFOLDER = "workbench.action.files.openFileFolder";
 }
 
 export function executeJavaLanguageServerCommand(...rest: any[]) {
