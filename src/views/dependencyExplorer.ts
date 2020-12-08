@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as fse from "fs-extra";
+import * as _ from "lodash";
 import * as path from "path";
 import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
@@ -14,6 +15,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { Settings } from "../settings";
+import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
@@ -29,6 +31,8 @@ export class DependencyExplorer implements Disposable {
     }
 
     private static _instance: DependencyExplorer;
+
+    private _lock: Lock = new Lock();
 
     private _dependencyViewer: TreeView<ExplorerNode>;
 
@@ -133,21 +137,28 @@ export class DependencyExplorer implements Disposable {
     }
 
     public async reveal(uri: Uri): Promise<void> {
-        if (!await languageServerApiManager.isStandardServerReady()) {
-            return;
-        }
+        try {
+            await this._lock.acquire();
 
-        let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
-        if (!node) {
-            const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-            if (!paths || paths.length === 0) {
+            if (!await languageServerApiManager.isStandardServerReady()) {
                 return;
             }
-            node = await this._dataProvider.revealPaths(paths);
-        }
 
-        if (this._dependencyViewer.visible) {
-            this._dependencyViewer.reveal(node);
+            let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
+            if (!node) {
+                const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
+                if (!_.isEmpty(paths)) {
+                    node = await this._dataProvider.revealPaths(paths);
+                }
+            }
+
+            if (!node) {
+                return;
+            }
+
+            await this._dependencyViewer.reveal(node);
+        } finally {
+            this._lock.release();
         }
     }
 
