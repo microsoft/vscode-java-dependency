@@ -15,6 +15,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { Settings } from "../settings";
+import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
@@ -31,11 +32,11 @@ export class DependencyExplorer implements Disposable {
 
     private static _instance: DependencyExplorer;
 
+    private _lock: Lock = new Lock();
+
     private _dependencyViewer: TreeView<ExplorerNode>;
 
     private _dataProvider: DependencyDataProvider;
-
-    private _revealingUri: string;
 
     private readonly SUPPORTED_URI_SCHEMES: string[] = ["file", "jdt"];
 
@@ -136,32 +137,28 @@ export class DependencyExplorer implements Disposable {
     }
 
     public async reveal(uri: Uri): Promise<void> {
-        if (!await languageServerApiManager.isStandardServerReady()) {
-            return;
-        }
-
-        if (this._revealingUri === uri.toString()) {
-            return;
-        }
-        this._revealingUri = uri.toString();
-
-        let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
-        if (!node) {
-            const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-            if (!_.isEmpty(paths)) {
-                node = await this._dataProvider.revealPaths(paths);
-            }
-        }
-
-        if (!node) {
-            this._revealingUri = undefined;
-            return;
-        }
-
         try {
+            await this._lock.acquire();
+
+            if (!await languageServerApiManager.isStandardServerReady()) {
+                return;
+            }
+
+            let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
+            if (!node) {
+                const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
+                if (!_.isEmpty(paths)) {
+                    node = await this._dataProvider.revealPaths(paths);
+                }
+            }
+
+            if (!node) {
+                return;
+            }
+
             await this._dependencyViewer.reveal(node);
-        } catch (e) {
-            this._revealingUri = undefined;
+        } finally {
+            this._lock.release();
         }
     }
 
