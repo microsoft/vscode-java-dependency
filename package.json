@@ -23,6 +23,7 @@
   "activationEvents": [
     "onCommand:java.project.create",
     "onCommand:_java.project.open",
+    "onCommand:java.view.package.revealInProjectExplorer",
     "onView:javaProjectExplorer"
   ],
   "license": "MIT",
