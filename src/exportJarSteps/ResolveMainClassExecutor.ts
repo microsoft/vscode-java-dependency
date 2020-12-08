@@ -39,7 +39,7 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
                 resolve(await Jdtls.getMainClasses(stepMetadata.workspaceFolder.uri.toString()));
             });
         });
-        if (mainClasses === undefined || mainClasses.length === 0) {
+        if (_.isEmpty(mainClasses)) {
             stepMetadata.mainClass = "";
             return true;
         }

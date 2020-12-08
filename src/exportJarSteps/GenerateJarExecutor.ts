@@ -25,7 +25,6 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(stepMetadata.elements)) {
             // If the user uses wizard or custom task with a empty list of elements,
             // the classpaths should be specified manually.
-            stepMetadata.classpaths = [];
             if (!(await this.generateClasspaths(stepMetadata))) {
                 return false;
             }
@@ -74,9 +73,9 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 if (mainClass === undefined) {
                     return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.MAINCLASS, this.currentStep)));
                 }
-                const classpaths: IClasspath[] | undefined = stepMetadata.classpaths;
-                if (!classpaths || _.isEmpty(classpaths)) {
-                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.currentStep)));
+                const classpaths: IClasspath[] = stepMetadata.classpaths;
+                if (_.isEmpty(classpaths)) {
+                    return reject(new Error(ExportJarMessages.CLASSPATHS_EMPTY));
                 }
                 const exportResult: IExportResult = await Jdtls.exportJar(basename(mainClass), classpaths, destPath);
                 if (exportResult.result === true) {
@@ -102,9 +101,9 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 });
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
-                const projectList: INodeData[] | undefined = stepMetadata.projectList;
-                if (!projectList || _.isEmpty(projectList)) {
-                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.PROJECTLIST, this.currentStep)));
+                const projectList: INodeData[] = stepMetadata.projectList;
+                if (_.isEmpty(projectList)) {
+                    return reject(new Error(ExportJarMessages.WORKSPACE_EMPTY));
                 }
                 const workspaceFolder: WorkspaceFolder | undefined = stepMetadata.workspaceFolder;
                 if (!workspaceFolder) {
@@ -126,9 +125,6 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         if (_.isEmpty(dependencyItems)) {
             throw new Error(ExportJarMessages.PROJECT_EMPTY);
         } else if (dependencyItems.length === 1) {
-            if (!stepMetadata.classpaths) {
-                return Promise.reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.currentStep)));
-            }
             await this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata.classpaths);
             return true;
         }
@@ -163,9 +159,6 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     pickBox.onDidAccept(async () => {
                         if (_.isEmpty(pickBox.selectedItems)) {
                             return;
-                        }
-                        if (!stepMetadata.classpaths) {
-                            return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.currentStep)));
                         }
                         for (const item of pickBox.selectedItems) {
                             if (item.type === "artifact") {

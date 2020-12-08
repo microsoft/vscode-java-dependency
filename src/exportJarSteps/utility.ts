@@ -53,12 +53,12 @@ export namespace ExportJarMessages {
         WORKSPACEFOLDER = "Workspace folder",
         OUTPUTPATH = "Target path",
         MAINCLASS = "Main class",
-        CLASSPATHS = "Elements",
-        PROJECTLIST = "Project list",
     }
 
-    export const JAVAPROJECTS_EMPTY = "No Java workspace found. Please make sure there is at least one valid Java workspace folder in your workspace folders.";
-    export const PROJECT_EMPTY = "No classpath found in the workspace. Please make sure your workspace contains valid Java project(s).";
+    export const JAVAWORKSPACES_EMPTY = "No Java workspace found. Please make sure there is at least one valid Java workspace folder in your workspace folders.";
+    export const WORKSPACE_EMPTY = "No Java project found in the workspace. Please make sure your workspace contains valid Java project(s).";
+    export const PROJECT_EMPTY = "No classpath found in the Java project. Please make sure your Java project is valid.";
+    export const CLASSPATHS_EMPTY = "No valid classpath found in the export jar configuration. Please make sure your configuration contains valid classpath(s).";
 
     export function fieldUndefinedMessage(field: Field, currentStep: ExportJarStep): string {
         return `The value of ${field} is invalid or has not been specified properly, current step: ${currentStep}. The export jar process will exit.`;
@@ -72,7 +72,7 @@ export namespace ExportJarMessages {
 export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMetadata): void {
     if (resetTo === ExportJarStep.ResolveJavaProject) {
         stepMetadata.workspaceFolder = undefined;
-        stepMetadata.projectList = undefined;
+        stepMetadata.projectList = [];
         stepMetadata.mainClass = undefined;
     } else if (resetTo === ExportJarStep.ResolveMainClass) {
         stepMetadata.mainClass = undefined;

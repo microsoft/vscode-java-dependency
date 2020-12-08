@@ -42,6 +42,9 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
     const stepMetadata: IStepMetadata = {
         entry: node,
         steps: [],
+        projectList: [],
+        elements: [],
+        classpaths: [],
     };
     try {
         const resolveJavaProjectExecutor: IExportJarStepExecutor | undefined = stepMap.get(ExportJarStep.ResolveJavaProject);
@@ -93,6 +96,8 @@ export class ExportJarTaskProvider implements TaskProvider {
                     workspaceFolder: folder,
                     projectList: await Jdtls.getProjects(folder.uri.toString()),
                     steps: [],
+                    elements: [],
+                    classpaths: [],
                 };
                 return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
             }));
@@ -101,14 +106,15 @@ export class ExportJarTaskProvider implements TaskProvider {
     }
 
     public async provideTasks(): Promise<Task[] | undefined> {
-        if (!workspace.workspaceFolders || _.isEmpty(workspace.workspaceFolders)) {
+        const folders: readonly WorkspaceFolder[] = workspace.workspaceFolders || [];
+        if (_.isEmpty(folders)) {
             return undefined;
         }
         if (!_.isEmpty(this.tasks)) {
             return this.tasks;
         }
         this.tasks = [];
-        for (const folder of workspace.workspaceFolders) {
+        for (const folder of folders) {
             const projectList: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
             const elementList: string[] = [];
             if (_.isEmpty(projectList)) {
@@ -137,6 +143,8 @@ export class ExportJarTaskProvider implements TaskProvider {
                         workspaceFolder: folder,
                         projectList: await Jdtls.getProjects(folder.uri.toString()),
                         steps: [],
+                        elements: [],
+                        classpaths: [],
                     };
                     return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
                 }), undefined);
@@ -161,7 +169,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         this.stepMetadata = stepMetadata;
         this.stepMetadata.mainClass = exportJarTaskDefinition.mainClass;
         this.stepMetadata.outputPath = exportJarTaskDefinition.targetPath;
-        this.stepMetadata.elements = exportJarTaskDefinition.elements;
+        this.stepMetadata.elements = exportJarTaskDefinition.elements || [];
     }
 
     public async open(_initialDimensions: TerminalDimensions | undefined): Promise<void> {
@@ -198,6 +206,8 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             if (exportResult === true) {
                 successMessage(this.stepMetadata.outputPath);
             } else if (exportResult === false) {
+                // We call `executeExportJarTask()` with the same entry here
+                // to help the user reselect the Java project.
                 executeExportJarTask(this.stepMetadata.entry);
             }
             this.closeEmitter.fire();
@@ -242,8 +252,8 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 }
             }
             if (step === ExportJarStep.ResolveJavaProject) {
-                // If the user comes back to the step resolving Java project, we need to finish
-                // the current task and start a new task related to the new Java project.
+                // It's possible for a user who comes back to the step selecting the Java project to change the workspace.
+                // Since a specific task corresponds to a specific workspace, we return "false" as a mark.
                 return false;
             }
         }
@@ -274,10 +284,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         const regExp: RegExp = /\${(.*?)(:.*)?}/;
         let outputElements: string[] = [];
         let artifacts: string[] = [];
-        if (!this.stepMetadata.elements || _.isEmpty(this.stepMetadata.elements)) {
-            return [];
-        }
-        for (const element of this.stepMetadata.elements!) {
+        for (const element of this.stepMetadata.elements) {
             if (element.length === 0) {
                 continue;
             }
@@ -293,7 +300,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 }
                 continue;
             }
-            const projectName: string | undefined = (matchResult[2] === undefined) ? undefined : matchResult[2].substring(1);
+            const projectName: string | undefined = matchResult[2]?.substring(1);
             switch (matchResult[1]) {
                 case ExportJarConstants.DEPENDENCIES:
                     artifacts = artifacts.concat(this.getJarElementsFromClasspathMapping(matchResult, artifactMap, projectName));
@@ -362,8 +369,8 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             return result;
         }
         if (projectName !== undefined) {
-            const entries: string[] | undefined = rawClasspathEntries.get(projectName);
-            if (!entries || _.isEmpty(entries)) {
+            const entries: string[] = rawClasspathEntries.get(projectName) || [];
+            if (_.isEmpty(entries)) {
                 return result;
             }
             for (const classpath of entries) {

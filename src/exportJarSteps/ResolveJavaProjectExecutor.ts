@@ -56,7 +56,7 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
             }
         }
         if (_.isEmpty(pickItems)) {
-            throw new Error(ExportJarMessages.JAVAPROJECTS_EMPTY);
+            throw new Error(ExportJarMessages.JAVAWORKSPACES_EMPTY);
         }
         const disposables: Disposable[] = [];
         try {
@@ -68,7 +68,11 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
                         if (_.isEmpty(pickBox.selectedItems)) {
                             return;
                         }
-                        stepMetadata.projectList = projectMap.get(pickBox.selectedItems[0].workspaceFolder.uri.toString());
+                        const projectList: INodeData[] = projectMap.get(pickBox.selectedItems[0].workspaceFolder.uri.toString()) || [];
+                        if (_.isEmpty(projectList)) {
+                            return reject(new Error(ExportJarMessages.WORKSPACE_EMPTY));
+                        }
+                        stepMetadata.projectList = projectList;
                         stepMetadata.workspaceFolder = pickBox.selectedItems[0].workspaceFolder;
                         stepMetadata.steps.push(ExportJarStep.ResolveJavaProject);
                         return resolve();
