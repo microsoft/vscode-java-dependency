@@ -46,14 +46,13 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
                 }
             });
         }
-        const hierarchicalPackageNodes = this.getHierarchicalPackageNodes();
-        return hierarchicalPackageNodes ? result.concat(hierarchicalPackageNodes) : result;
+        return result.concat(this.getHierarchicalPackageNodes());
     }
 
     protected getHierarchicalPackageNodes(): ExplorerNode[] {
         const hierarchicalPackageNodeData = this.getHierarchicalPackageNodeData();
-        return hierarchicalPackageNodeData === undefined ? [] : hierarchicalPackageNodeData.children.map((hierarchicalChildrenNode) =>
-            new HierarchicalPackageNode(hierarchicalChildrenNode, this, this._project, this));
+        return hierarchicalPackageNodeData?.children.map((hierarchicalChildrenNode) =>
+            new HierarchicalPackageNode(hierarchicalChildrenNode, this, this._project, this)) || [];
     }
 
     private getHierarchicalPackageNodeData(): HierarchicalPackageNodeData  | undefined {

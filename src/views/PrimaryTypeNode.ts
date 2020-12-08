@@ -49,7 +49,7 @@ export class PrimaryTypeNode extends DataNode {
     }
 
     protected get iconPath(): string | ThemeIcon {
-        switch (this.nodeData.metaData![PrimaryTypeNode.K_TYPE_KIND]) {
+        switch (this.nodeData.metaData?.[PrimaryTypeNode.K_TYPE_KIND]) {
             case TypeKind.Enum:
                 return new ThemeIcon("symbol-enum");
             case TypeKind.Interface:

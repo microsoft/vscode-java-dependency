@@ -54,7 +54,7 @@ async function getPackageFsPath(node: DataNode): Promise<string> {
             const packageNode: DataNode | undefined = childrenNodes.find((child) => {
                 return child.nodeData.kind === NodeKind.Package;
             });
-            if (packageNode && packageNode.uri) {
+            if (packageNode?.uri) {
                 return getPackageRootPath(Uri.parse(packageNode.uri).fsPath, packageNode.name);
             }
             return "";

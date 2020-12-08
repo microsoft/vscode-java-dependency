@@ -15,7 +15,7 @@ export class HierarchicalPackageNodeData implements INodeData {
     public name: string;
     public children: HierarchicalPackageNodeData[] = [];
     public displayName: string;
-    private nodeData?: INodeData = undefined;
+    private nodeData?: INodeData;
 
     public get uri() {
         return this.nodeData && this.nodeData.uri;
