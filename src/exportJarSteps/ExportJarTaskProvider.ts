@@ -212,14 +212,12 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         let step: ExportJarStep = ExportJarStep.ResolveJavaProject;
         let previousStep: ExportJarStep | undefined;
         let executor: IExportJarStepExecutor | undefined;
-        let result: boolean;
         while (step !== ExportJarStep.Finish) {
             executor = stepMap.get(step);
             if (!executor) {
                 throw new Error(ExportJarMessages.stepErrorMessage(ExportJarMessages.StepAction.FINDEXECUTOR, step));
             }
-            result = await executor.execute(stepMetadata);
-            if (!result) {
+            if (!await executor.execute(stepMetadata)) {
                 // Go back
                 previousStep = stepMetadata.steps.pop();
                 if (!previousStep) {

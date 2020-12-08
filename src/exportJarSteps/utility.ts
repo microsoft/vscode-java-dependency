@@ -61,7 +61,7 @@ export namespace ExportJarMessages {
     export const PROJECT_EMPTY = "No classpath found in the workspace. Please make sure your workspace contains valid Java project(s).";
 
     export function fieldUndefinedMessage(field: Field, currentStep: ExportJarStep): string {
-        return `${field} is not specified properly, current step: ${currentStep}. The export jar process will exit.`;
+        return `The value of ${field} is invalid or has not been specified properly, current step: ${currentStep}. The export jar process will exit.`;
     }
 
     export function stepErrorMessage(action: StepAction, currentStep: ExportJarStep): string {
