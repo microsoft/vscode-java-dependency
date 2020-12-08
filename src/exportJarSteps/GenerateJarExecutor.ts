@@ -11,31 +11,14 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import {
-    createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi,
-    resetStepMetadata, saveDialog, toPosixPath,
-} from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, saveDialog, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
-    public getStep(): ExportJarStep {
-        return ExportJarStep.GenerateJar;
-    }
+    private readonly currentStep: ExportJarStep = ExportJarStep.GenerateJar;
 
-    public getNextStep(): ExportJarStep {
-        return ExportJarStep.Finish;
-    }
-
-    public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
-        if (await this.generateJar(stepMetadata)) {
-            return this.getNextStep();
-        }
-        const previousStep: ExportJarStep | undefined = stepMetadata.steps.pop();
-        if (!previousStep) {
-            throw new Error(ExportJarMessages.stepErrorMessage(ExportJarMessages.StepAction.GOBACK, this.getStep()));
-        }
-        resetStepMetadata(previousStep, stepMetadata);
-        return previousStep;
+    public async execute(stepMetadata: IStepMetadata): Promise<boolean> {
+        return this.generateJar(stepMetadata);
     }
 
     private async generateJar(stepMetadata: IStepMetadata): Promise<boolean> {
@@ -49,7 +32,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }
         const folder: WorkspaceFolder | undefined = stepMetadata.workspaceFolder;
         if (!folder) {
-            throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.getStep()));
+            throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.currentStep));
         }
         let destPath = "";
         if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER || stepMetadata.outputPath === "") {
@@ -63,8 +46,8 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             destPath = outputUri.fsPath;
         } else {
             const outputPath: string | undefined = stepMetadata.outputPath;
-            if (outputPath === undefined) {
-                throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.OUTPUTPATH, this.getStep()));
+            if (!outputPath) {
+                throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.OUTPUTPATH, this.currentStep));
             }
             // Both the absolute path and the relative path (to workspace folder) are supported.
             destPath = (isAbsolute(outputPath)) ? outputPath : join(folder.uri.fsPath, outputPath);
@@ -86,12 +69,14 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     return reject();
                 });
                 const mainClass: string | undefined = stepMetadata.mainClass;
+                // For "no main class" option, we get an empty string in stepMetadata.mainClass,
+                // so this condition would be (mainClass === undefined)
                 if (mainClass === undefined) {
-                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.MAINCLASS, this.getStep())));
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.MAINCLASS, this.currentStep)));
                 }
                 const classpaths: IClasspath[] | undefined = stepMetadata.classpaths;
-                if (!classpaths) {
-                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.getStep())));
+                if (!classpaths || _.isEmpty(classpaths)) {
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.currentStep)));
                 }
                 const exportResult: IExportResult = await Jdtls.exportJar(basename(mainClass), classpaths, destPath);
                 if (exportResult.result === true) {
@@ -118,12 +103,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
                 const projectList: INodeData[] | undefined = stepMetadata.projectList;
-                if (!projectList) {
-                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.PROJECTLIST, this.getStep())));
+                if (!projectList || _.isEmpty(projectList)) {
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.PROJECTLIST, this.currentStep)));
                 }
                 const workspaceFolder: WorkspaceFolder | undefined = stepMetadata.workspaceFolder;
                 if (!workspaceFolder) {
-                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.getStep())));
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.currentStep)));
                 }
                 for (const project of projectList) {
                     const classpaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
@@ -142,14 +127,14 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             throw new Error(ExportJarMessages.PROJECT_EMPTY);
         } else if (dependencyItems.length === 1) {
             if (!stepMetadata.classpaths) {
-                return Promise.reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.getStep())));
+                return Promise.reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.currentStep)));
             }
             await this.setStepMetadataFromOutputFolder(dependencyItems[0].path, stepMetadata.classpaths);
             return true;
         }
         dependencyItems.sort((node1, node2) => {
             if (node1.description !== node2.description) {
-                return node1.description!.localeCompare(node2.description!);
+                return (node1.description || "").localeCompare(node2.description || "");
             }
             if (node1.type !== node2.type) {
                 return node2.type.localeCompare(node1.type);
@@ -180,8 +165,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                             return;
                         }
                         if (!stepMetadata.classpaths) {
-                            return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS,
-                                this.getStep())));
+                            return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.CLASSPATHS, this.currentStep)));
                         }
                         for (const item of pickBox.selectedItems) {
                             if (item.type === "artifact") {

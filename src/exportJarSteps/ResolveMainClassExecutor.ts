@@ -6,7 +6,7 @@ import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, window 
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarMessages, ExportJarStep, resetStepMetadata } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarStep } from "./utility";
 
 export class ResolveMainClassExecutor implements IExportJarStepExecutor {
 
@@ -14,27 +14,13 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
         return data.name.substring(data.name.lastIndexOf(".") + 1);
     }
 
-    public getStep(): ExportJarStep {
-        return ExportJarStep.ResolveMainClass;
-    }
+    private readonly currentStep: ExportJarStep = ExportJarStep.ResolveMainClass;
 
-    public getNextStep(): ExportJarStep {
-        return ExportJarStep.GenerateJar;
-    }
-
-    public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
+    public async execute(stepMetadata: IStepMetadata): Promise<boolean> {
         if (stepMetadata.mainClass !== undefined) {
-            return this.getNextStep();
+            return true;
         }
-        if (await this.resolveMainClass(stepMetadata)) {
-            return this.getNextStep();
-        }
-        const previousStep: ExportJarStep | undefined = stepMetadata.steps.pop();
-        if (!previousStep) {
-            throw new Error(ExportJarMessages.stepErrorMessage(ExportJarMessages.StepAction.GOBACK, this.getStep()));
-        }
-        resetStepMetadata(previousStep, stepMetadata);
-        return previousStep;
+        return this.resolveMainClass(stepMetadata);
     }
 
     private async resolveMainClass(stepMetadata: IStepMetadata): Promise<boolean> {
@@ -48,7 +34,7 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
                     return reject();
                 });
                 if (!stepMetadata.workspaceFolder) {
-                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.getStep())));
+                    return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.currentStep)));
                 }
                 resolve(await Jdtls.getMainClasses(stepMetadata.workspaceFolder.uri.toString()));
             });

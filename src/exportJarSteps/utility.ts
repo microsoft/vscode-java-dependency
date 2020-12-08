@@ -45,14 +45,15 @@ export namespace ExportJarMessages {
     export enum StepAction {
         FINDEXECUTOR = "find proper executor",
         GOBACK = "come back to previous step",
+        GOAHEAD = "go to next step",
     }
 
     export enum Field {
         ENTRY = "Entry",
         WORKSPACEFOLDER = "Workspace folder",
-        OUTPUTPATH = "Output path",
+        OUTPUTPATH = "Target path",
         MAINCLASS = "Main class",
-        CLASSPATHS = "Classpaths",
+        CLASSPATHS = "Elements",
         PROJECTLIST = "Project list",
     }
 
@@ -125,7 +126,7 @@ export function failMessage(message: string, option?: IMessageOption): void {
 }
 
 export function successMessage(outputFileName: string | undefined): void {
-    if (outputFileName === undefined) {
+    if (!outputFileName) {
         return;
     }
     let openInExplorer: string;

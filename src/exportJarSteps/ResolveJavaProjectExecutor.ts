@@ -12,27 +12,21 @@ import { createPickBox, ExportJarMessages, ExportJarStep } from "./utility";
 
 export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
 
-    public getStep(): ExportJarStep {
-        return ExportJarStep.ResolveJavaProject;
-    }
+    private readonly currentStep: ExportJarStep = ExportJarStep.ResolveJavaProject;
 
-    public getNextStep(): ExportJarStep {
-        return ExportJarStep.ResolveMainClass;
-    }
-
-    public async execute(stepMetadata: IStepMetadata): Promise<ExportJarStep> {
+    public async execute(stepMetadata: IStepMetadata): Promise<boolean> {
         if (stepMetadata.workspaceFolder === undefined) {
             await this.resolveJavaProject(stepMetadata);
         }
-        return this.getNextStep();
+        return true;
     }
 
     private async resolveJavaProject(stepMetadata: IStepMetadata): Promise<void> {
         // Guarded by workspaceFolderCount != 0 in package.json
         const folders = workspace.workspaceFolders!;
         if (stepMetadata.entry instanceof WorkspaceNode) {
-            if (!stepMetadata.entry || !stepMetadata.entry.uri) {
-                throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.ENTRY, this.getStep()));
+            if (!stepMetadata.entry?.uri) {
+                throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.ENTRY, this.currentStep));
             }
             const workspaceUri: Uri = Uri.parse(stepMetadata.entry.uri);
             for (const folder of folders) {
