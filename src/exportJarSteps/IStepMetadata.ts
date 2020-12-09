@@ -8,11 +8,11 @@ import { ExportJarStep } from "./utility";
 export interface IStepMetadata {
     entry?: INodeData;
     workspaceFolder?: WorkspaceFolder;
-    projectList?: INodeData[];
     mainClass?: string;
-    elements?: string[];
-    classpaths?: IClasspath[];
     outputPath?: string;
+    projectList: INodeData[];
+    elements: string[];
+    classpaths: IClasspath[];
     steps: ExportJarStep[];
 }
 

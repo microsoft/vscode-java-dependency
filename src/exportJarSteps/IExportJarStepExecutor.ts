@@ -2,9 +2,7 @@
 // Licensed under the MIT license.
 
 import { IStepMetadata } from "./IStepMetadata";
-import { ExportJarStep } from "./utility";
 
 export interface IExportJarStepExecutor {
-    getNextStep(): ExportJarStep;
-    execute(stepMetadata?: IStepMetadata): Promise<ExportJarStep>;
+    execute(stepMetadata?: IStepMetadata): Promise<boolean>;
 }
