@@ -38,7 +38,8 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER) {
                 sendInfo("", { exportJarPath: stepMetadata.outputPath });
             }
-            const outputUri: Uri | undefined = await saveDialog(folder.uri, "Generate");
+            const defaultFileUri: Uri = Uri.file(join(folder.uri.fsPath, `${folder.name}.jar`));
+            const outputUri: Uri | undefined = await saveDialog(defaultFileUri, "Generate");
             if (!outputUri) {
                 return Promise.reject();
             }
