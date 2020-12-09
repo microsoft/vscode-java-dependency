@@ -19,12 +19,9 @@ export class HierarchicalPackageNode extends PackageNode {
     }
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
-        if (this._nodeData) {
-            const item = new TreeItem(this.getHierarchicalNodeData().displayName,
+        const item = new TreeItem(this.getHierarchicalNodeData().displayName,
                 this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
-            return { ...super.getTreeItem(), ...item };
-        }
-        return undefined;
+        return { ...super.getTreeItem(), ...item };
     }
 
     public async getChildren(): Promise<ExplorerNode[]> {
@@ -45,7 +42,7 @@ export class HierarchicalPackageNode extends PackageNode {
         }
     }
 
-    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+    public async revealPaths(paths: INodeData[]): Promise<DataNode | undefined> {
         const hierarchicalNodeData = paths[0];
         if (hierarchicalNodeData.name === this.nodeData.name) {
             paths.shift();
@@ -55,17 +52,17 @@ export class HierarchicalPackageNode extends PackageNode {
             const children: ExplorerNode[] = await this.getChildren();
             const childNode = <DataNode>children.find((child: DataNode) =>
                 hierarchicalNodeData.name.startsWith(child.nodeData.name + ".") || hierarchicalNodeData.name === child.nodeData.name);
-            return childNode ? childNode.revealPaths(paths) : null;
+            return childNode ? childNode.revealPaths(paths) : undefined;
         }
     }
 
-    protected loadData(): Thenable<any[]> {
+    protected loadData(): Thenable<any[] | undefined> {
         // Load data only when current node is a package
         return this.getHierarchicalNodeData().isPackage ? super.loadData() : Promise.resolve([]);
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result = [];
+        const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((nodeData) => {

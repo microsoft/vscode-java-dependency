@@ -21,7 +21,7 @@ export class PackageRootNode extends DataNode {
         super(nodeData, parent);
     }
 
-    protected loadData(): Thenable<INodeData[]> {
+    protected loadData(): Thenable<INodeData[] | undefined> {
         return Jdtls.getPackageData({
             kind: NodeKind.PackageRoot,
             projectUri: this._project.nodeData.uri,
@@ -31,7 +31,7 @@ export class PackageRootNode extends DataNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result = [];
+        const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((data: INodeData) => {
@@ -51,7 +51,7 @@ export class PackageRootNode extends DataNode {
         return result;
     }
 
-    protected get description(): string | boolean {
+    protected get description(): string | boolean | undefined {
         const data = <IPackageRootNodeData>this.nodeData;
         if (data.entryKind === PackageRootKind.K_BINARY) {
             return data.path;
@@ -65,7 +65,7 @@ export class PackageRootNode extends DataNode {
         if (data.entryKind === PackageRootKind.K_BINARY) {
             let contextValue: string = Explorer.ContextValueType.Jar;
             const parent = <ContainerNode>this.getParent();
-            if (parent.path.startsWith("REFERENCED_LIBRARIES_PATH")) {
+            if (parent.path?.startsWith("REFERENCED_LIBRARIES_PATH")) {
                 contextValue += "+referencedLibrary";
             }
             return contextValue;

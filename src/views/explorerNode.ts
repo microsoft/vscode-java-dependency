@@ -5,14 +5,14 @@ import { Command, ProviderResult, TreeItem } from "vscode";
 
 export abstract class ExplorerNode {
 
-    constructor(private _parent: ExplorerNode) {
+    constructor(private _parent?: ExplorerNode) {
     }
 
-    public getParent(): ExplorerNode {
+    public getParent(): ExplorerNode | undefined {
         return this._parent;
     }
 
-    protected get command(): Command {
+    protected get command(): Command | undefined {
         return undefined;
     }
 

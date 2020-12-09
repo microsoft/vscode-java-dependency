@@ -11,6 +11,9 @@ export function isMutable(node: DataNode): boolean {
     const resourceOrTypeExp = /java:(file|type|folder)(?=.*?\b\+uri\b)/;
 
     const contextValue = node.computeContextValue();
+    if (!contextValue) {
+        return false;
+    }
     return packageExp.test(contextValue) || resourceOrTypeExp.test(contextValue);
 }
 

@@ -22,7 +22,7 @@ class ExplorerNodeCache {
      */
     public findBestMatchNodeByUri(uri: Uri): DataNode | undefined {
         const parentDir = path.dirname(uri.fsPath);
-        const ancestor: TrieNode<DataNode> = this.mutableNodeCache.findFirstAncestorNodeWithData(parentDir);
+        const ancestor = this.mutableNodeCache.findFirstAncestorNodeWithData(parentDir);
         return ancestor?.value;
     }
 
@@ -38,23 +38,23 @@ class ExplorerNodeCache {
         }
     }
 
-    public removeNodeChildren(node: ExplorerNode): void {
+    public removeNodeChildren(node?: ExplorerNode): void {
         if (!node) {
             this.removeChildren(this.mutableNodeCache.root);
             return;
         }
 
-        if (!(node instanceof DataNode)) {
+        if (!(node instanceof DataNode) || !node.uri) {
             return;
         }
 
-        const trieNode: TrieNode<DataNode> | undefined = this.mutableNodeCache.find(Uri.parse(node.uri).fsPath);
+        const trieNode = this.mutableNodeCache.find(Uri.parse(node.uri).fsPath);
         if (trieNode) {
             this.removeChildren(trieNode);
         }
     }
 
-    private removeChildren(trieNode: TrieNode<DataNode>) {
+    private removeChildren(trieNode: TrieNode<DataNode | undefined>) {
         trieNode.children = {};
         if (trieNode.value?.nodeData?.children) {
             trieNode.value.nodeData.children = undefined;

@@ -51,10 +51,10 @@ async function getPackageFsPath(node: DataNode): Promise<string> {
         });
         if (packageRoots.length < 1) {
             // This might happen for an invisible project with "_" as its root
-            const packageNode: DataNode = childrenNodes.find((child) => {
+            const packageNode: DataNode | undefined = childrenNodes.find((child) => {
                 return child.nodeData.kind === NodeKind.Package;
             });
-            if (packageNode) {
+            if (packageNode?.uri) {
                 return getPackageRootPath(Uri.parse(packageNode.uri).fsPath, packageNode.name);
             }
             return "";
@@ -76,7 +76,7 @@ async function getPackageFsPath(node: DataNode): Promise<string> {
         }
     }
 
-    return Uri.parse(node.uri).fsPath;
+    return node.uri ? Uri.parse(node.uri).fsPath : "";
 }
 
 function getNewFilePath(basePath: string, className: string): string {
@@ -87,6 +87,10 @@ function getNewFilePath(basePath: string, className: string): string {
 }
 
 export async function newPackage(node: DataNode): Promise<void> {
+    if (!node.uri) {
+        return;
+    }
+
     let defaultValue: string;
     let packageRootPath: string;
     const nodeKind = node.nodeData.kind;

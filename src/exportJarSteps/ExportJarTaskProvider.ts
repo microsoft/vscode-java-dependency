@@ -94,7 +94,7 @@ export class ExportJarTaskProvider implements TaskProvider {
                 const stepMetadata: IStepMetadata = {
                     entry: undefined,
                     workspaceFolder: folder,
-                    projectList: await Jdtls.getProjects(folder.uri.toString()),
+                    projectList: await Jdtls.getProjects(folder.uri.toString()) || [],
                     steps: [],
                     elements: [],
                     classpaths: [],
@@ -115,7 +115,7 @@ export class ExportJarTaskProvider implements TaskProvider {
         }
         this.tasks = [];
         for (const folder of folders) {
-            const projectList: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
+            const projectList: INodeData[] = await Jdtls.getProjects(folder.uri.toString()) || [];
             const elementList: string[] = [];
             if (_.isEmpty(projectList)) {
                 continue;
@@ -128,7 +128,7 @@ export class ExportJarTaskProvider implements TaskProvider {
                         "${" + ExportJarConstants.DEPENDENCIES + ":" + project.name + "}");
                 }
             }
-            const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
+            const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString()) || [];
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
                 label: `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
@@ -141,7 +141,7 @@ export class ExportJarTaskProvider implements TaskProvider {
                     const stepMetadata: IStepMetadata = {
                         entry: undefined,
                         workspaceFolder: folder,
-                        projectList: await Jdtls.getProjects(folder.uri.toString()),
+                        projectList: await Jdtls.getProjects(folder.uri.toString()) || [],
                         steps: [],
                         elements: [],
                         classpaths: [],
@@ -188,7 +188,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 const artifactMap: Map<string, string[]> = new Map<string, string[]>();
                 const testOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
                 const testArtifactMap: Map<string, string[]> = new Map<string, string[]>();
-                const projectList: INodeData[] = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
+                const projectList: INodeData[] | undefined = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString()) || [];
                 for (const project of projectList) {
                     await this.setClasspathMap(project, "runtime", outputFolderMap, artifactMap);
                     await this.setClasspathMap(project, "test", testOutputFolderMap, testArtifactMap);
@@ -333,7 +333,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         }
         const sources: IClasspath[] = [];
         for (const glob of await globby(globPatterns)) {
-            const tireNode: TrieNode<IUriData> | undefined = trie.find(
+            const tireNode: TrieNode<IUriData | undefined> | undefined = trie.find(
                 Uri.file(platform() === "win32" ? toWinPath(glob) : glob).fsPath, /* returnEarly = */true);
             if (!tireNode?.value?.uri) {
                 continue;

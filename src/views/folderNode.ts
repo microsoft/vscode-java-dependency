@@ -15,7 +15,7 @@ export class FolderNode extends DataNode {
         super(nodeData, parent);
     }
 
-    protected loadData(): Thenable<INodeData[]> {
+    protected loadData(): Thenable<INodeData[] | undefined> {
         return Jdtls.getPackageData({
             kind: NodeKind.Folder,
             projectUri: this._project.uri,
@@ -25,7 +25,7 @@ export class FolderNode extends DataNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result = [];
+        const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((nodeData) => {

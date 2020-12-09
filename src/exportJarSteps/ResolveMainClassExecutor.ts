@@ -24,7 +24,7 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
     }
 
     private async resolveMainClass(stepMetadata: IStepMetadata): Promise<boolean> {
-        const mainClasses: IMainClassInfo[] = await window.withProgress({
+        const mainClasses: IMainClassInfo[] | undefined = await window.withProgress({
             location: ProgressLocation.Window,
             title: "Exporting Jar : Resolving main classes...",
             cancellable: true,

@@ -18,11 +18,15 @@ import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export class ProjectNode extends DataNode {
 
-    constructor(nodeData: INodeData, parent: DataNode) {
+    constructor(nodeData: INodeData, parent?: DataNode) {
         super(nodeData, parent);
     }
 
-    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+    public async revealPaths(paths: INodeData[]): Promise<DataNode | undefined> {
+        if (!this.uri) {
+            return undefined;
+        }
+
         if (workspace.getWorkspaceFolder(Uri.parse(this.uri))) {
             return super.revealPaths(paths);
         }
@@ -48,7 +52,7 @@ export class ProjectNode extends DataNode {
         return (childNode && paths.length > 0) ? childNode.revealPaths(paths) : childNode;
     }
 
-    protected loadData(): Thenable<INodeData[]> {
+    protected loadData(): Thenable<INodeData[] | undefined> {
         let result: INodeData[] = [];
         return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
             if (!res) {
@@ -69,7 +73,13 @@ export class ProjectNode extends DataNode {
                         if (!rootPackages) {
                             return undefined;
                         }
-                        result = result.concat(...rootPackages);
+                        const packages: INodeData[][] = [];
+                        for (const root of rootPackages) {
+                            if (root !== undefined) {
+                                packages.push(root);
+                            }
+                        }
+                        result =  result.concat(...packages);
                         return result;
                     });
             } else {
@@ -80,8 +90,8 @@ export class ProjectNode extends DataNode {
 
     protected createChildNodeList(): ExplorerNode[] {
 
-        const result = [];
-        const packageData = [];
+        const result: ExplorerNode[] = [];
+        const packageData: any[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((data) => {
                 if (data.kind === NodeKind.Container) {
@@ -105,7 +115,7 @@ export class ProjectNode extends DataNode {
         if (packageData.length > 0) {
             if (Settings.isHierarchicalView()) {
                 const data: HierarchicalPackageNodeData = HierarchicalPackageNodeData.createHierarchicalNodeDataByPackageList(packageData);
-                const hierarchicalPackageNodes: HierarchicalPackageNode[] = data === null ? [] : data.children.map((hierarchicalChildrenNode) =>
+                const hierarchicalPackageNodes: HierarchicalPackageNode[] = data === undefined ? [] : data.children.map((hierarchicalChildrenNode) =>
                         new HierarchicalPackageNode(hierarchicalChildrenNode, this, this, this));
                 result.push(...hierarchicalPackageNodes);
             } else {
@@ -126,7 +136,7 @@ export class ProjectNode extends DataNode {
 
     protected get contextValue(): string {
         let contextValue: string = Explorer.ContextValueType.Project;
-        const natureIds: string[] | undefined = this.nodeData.metaData[NATURE_ID];
+        const natureIds: string[] | undefined = this.nodeData.metaData?.[NATURE_ID];
         if (natureIds) {
             const attributeString: string = getProjectTypeAttributes(natureIds);
             contextValue += attributeString;

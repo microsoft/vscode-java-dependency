@@ -23,15 +23,12 @@ export class DocumentSymbolNode extends BaseSymbolNode {
     }
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
-        if (this.symbolInfo) {
-            const item = new TreeItem(this.symbolInfo.name,
-                ((<DocumentSymbol>this.symbolInfo).children && (<DocumentSymbol>this.symbolInfo).children.length)
-                    ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
-            item.iconPath = this.iconPath;
-            item.command = this.command;
-            return item;
-        }
-        return undefined;
+        const item = new TreeItem(this.symbolInfo.name,
+            ((<DocumentSymbol>this.symbolInfo).children && (<DocumentSymbol>this.symbolInfo).children.length)
+                ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
+        item.iconPath = this.iconPath;
+        item.command = this.command;
+        return item;
     }
 
     protected get range(): Range {
