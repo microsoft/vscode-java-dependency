@@ -167,7 +167,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                                     destination: undefined,
                                     isArtifact: true,
                                 };
-                                stepMetadata.classpaths!.push(classpath);
+                                stepMetadata.classpaths.push(classpath);
                             } else {
                                 await this.setStepMetadataFromOutputFolder(item.path, stepMetadata.classpaths);
                             }

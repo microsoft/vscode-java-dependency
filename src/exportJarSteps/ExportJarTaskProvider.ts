@@ -76,7 +76,7 @@ export class ExportJarTaskProvider implements TaskProvider {
             elements: [],
             mainClass: undefined,
         };
-        const task: Task = new Task(defaultDefinition, stepMetadata.workspaceFolder!, "exportjar:default", ExportJarTaskProvider.exportJarType,
+        const task: Task = new Task(defaultDefinition, stepMetadata.workspaceFolder, "exportjar:default", ExportJarTaskProvider.exportJarType,
             new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
                 return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
             }));
@@ -111,7 +111,7 @@ export class ExportJarTaskProvider implements TaskProvider {
             return undefined;
         }
         if (!_.isEmpty(this.tasks)) {
-            return this.tasks!;
+            return this.tasks;
         }
         this.tasks = [];
         for (const folder of folders) {
@@ -119,11 +119,11 @@ export class ExportJarTaskProvider implements TaskProvider {
             const elementList: string[] = [];
             if (_.isEmpty(projectList)) {
                 continue;
-            } else if (projectList!.length === 1) {
+            } else if (projectList.length === 1) {
                 elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + "}",
                     "${" + ExportJarConstants.DEPENDENCIES + "}");
             } else {
-                for (const project of projectList!) {
+                for (const project of projectList) {
                     elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + ":" + project.name + "}",
                         "${" + ExportJarConstants.DEPENDENCIES + ":" + project.name + "}");
                 }
@@ -188,10 +188,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 const artifactMap: Map<string, string[]> = new Map<string, string[]>();
                 const testOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
                 const testArtifactMap: Map<string, string[]> = new Map<string, string[]>();
-                const projectList: INodeData[] | undefined = await Jdtls.getProjects(this.stepMetadata.workspaceFolder!.uri.toString());
-                if (!projectList) {
-                    throw new Error("No project found in workspace.");
-                }
+                const projectList: INodeData[] | undefined = await Jdtls.getProjects(this.stepMetadata.workspaceFolder!.uri.toString()) || [];
                 for (const project of projectList) {
                     await this.setClasspathMap(project, "runtime", outputFolderMap, artifactMap);
                     await this.setClasspathMap(project, "test", testOutputFolderMap, testArtifactMap);
@@ -287,7 +284,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         const regExp: RegExp = /\${(.*?)(:.*)?}/;
         let outputElements: string[] = [];
         let artifacts: string[] = [];
-        for (const element of this.stepMetadata.elements!) {
+        for (const element of this.stepMetadata.elements) {
             if (element.length === 0) {
                 continue;
             }
@@ -382,7 +379,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         } else {
             for (const classpaths of rawClasspathEntries.values()) {
                 for (const classpath of classpaths) {
-                    result.push(this.toAbsolutePosixPath(matchResult!.input!.replace(matchResult[0], classpath)));
+                    result.push(this.toAbsolutePosixPath(matchResult.input.replace(matchResult[0], classpath)));
                 }
             }
         }
@@ -396,7 +393,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         const negative: boolean = (path[0] === "!");
         let positivePath: string = negative ? path.substring(1) : path;
         if (!isAbsolute(positivePath)) {
-            positivePath = join(this.stepMetadata.workspaceFolder!.uri.fsPath, positivePath);
+            positivePath = join(this.stepMetadata.workspaceFolder.uri.fsPath, positivePath);
         }
         positivePath = toPosixPath(positivePath);
         return negative ? "!" + positivePath : positivePath;
