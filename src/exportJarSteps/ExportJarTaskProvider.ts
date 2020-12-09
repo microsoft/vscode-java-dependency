@@ -188,7 +188,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 const artifactMap: Map<string, string[]> = new Map<string, string[]>();
                 const testOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
                 const testArtifactMap: Map<string, string[]> = new Map<string, string[]>();
-                const projectList: INodeData[] | undefined = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
+                const projectList: INodeData[] = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString());
                 for (const project of projectList) {
                     await this.setClasspathMap(project, "runtime", outputFolderMap, artifactMap);
                     await this.setClasspathMap(project, "test", testOutputFolderMap, testArtifactMap);
