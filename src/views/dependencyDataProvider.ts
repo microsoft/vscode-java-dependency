@@ -172,8 +172,8 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                     this._rootItems = rootItems;
                     return rootItems;
                 } else {
-                    const result: INodeData[] | undefined = await Jdtls.getProjects(folders[0].uri.toString());
-                    result?.forEach((project) => {
+                    const result: INodeData[] = await Jdtls.getProjects(folders[0].uri.toString());
+                    result.forEach((project) => {
                         rootItems.push(new ProjectNode(project, undefined));
                     });
                     this._rootItems = rootItems;

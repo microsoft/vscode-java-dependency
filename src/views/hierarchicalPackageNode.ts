@@ -56,7 +56,7 @@ export class HierarchicalPackageNode extends PackageNode {
         }
     }
 
-    protected loadData(): Thenable<any[] | undefined> {
+    protected loadData(): Thenable<any[]> {
         // Load data only when current node is a package
         return this.getHierarchicalNodeData().isPackage ? super.loadData() : Promise.resolve([]);
     }

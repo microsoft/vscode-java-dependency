@@ -16,7 +16,7 @@ export class PackageNode extends DataNode {
         super(nodeData, parent);
     }
 
-    protected loadData(): Thenable<INodeData[] | undefined> {
+    protected loadData(): Thenable<INodeData[]> {
         return Jdtls.getPackageData({
             kind: NodeKind.Package,
             projectUri: this._project.nodeData.uri,

@@ -15,7 +15,7 @@ export class FolderNode extends DataNode {
         super(nodeData, parent);
     }
 
-    protected loadData(): Thenable<INodeData[] | undefined> {
+    protected loadData(): Thenable<INodeData[]> {
         return Jdtls.getPackageData({
             kind: NodeKind.Folder,
             projectUri: this._project.uri,

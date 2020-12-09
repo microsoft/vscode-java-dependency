@@ -52,12 +52,9 @@ export class ProjectNode extends DataNode {
         return (childNode && paths.length > 0) ? childNode.revealPaths(paths) : childNode;
     }
 
-    protected loadData(): Thenable<INodeData[] | undefined> {
+    protected loadData(): Thenable<INodeData[]> {
         let result: INodeData[] = [];
         return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
-            if (!res) {
-                return undefined;
-            }
             const sourceContainer: IContainerNodeData[] = [];
             res.forEach((node) => {
                 const containerNode = <IContainerNodeData>node;
@@ -70,16 +67,7 @@ export class ProjectNode extends DataNode {
             if (sourceContainer.length > 0) {
                 return Promise.all(sourceContainer.map((c) => Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this.uri, path: c.path })))
                     .then((rootPackages) => {
-                        if (!rootPackages) {
-                            return undefined;
-                        }
-                        const packages: INodeData[][] = [];
-                        for (const root of rootPackages) {
-                            if (root !== undefined) {
-                                packages.push(root);
-                            }
-                        }
-                        result =  result.concat(...packages);
+                        result =  result.concat(...rootPackages);
                         return result;
                     });
             } else {
