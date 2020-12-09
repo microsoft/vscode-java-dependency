@@ -11,7 +11,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, saveDialog, toPosixPath } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -38,7 +38,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER) {
                 sendInfo("", { exportJarPath: stepMetadata.outputPath });
             }
-            const outputUri: Uri | undefined = await saveDialog(folder.uri, "Generate");
+            const outputUri: Uri | undefined = await window.showSaveDialog({
+                defaultUri: Uri.file(join(folder.uri.fsPath, `${folder.name}.jar`)),
+                filters: {
+                    "Java Archive": ["jar"],
+                },
+            });
             if (!outputUri) {
                 return Promise.reject();
             }

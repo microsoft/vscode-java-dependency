@@ -3,7 +3,7 @@
 
 import { EOL, platform } from "os";
 import { posix, win32 } from "path";
-import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
+import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { GenerateJarExecutor } from "./GenerateJarExecutor";
@@ -95,17 +95,6 @@ export interface IMessageOption {
     title: string;
     command: string;
     arguments?: any;
-}
-
-export async function saveDialog(workSpaceUri: Uri, title: string): Promise<Uri | undefined> {
-    const options: SaveDialogOptions = {
-        saveLabel: title,
-        defaultUri: workSpaceUri,
-        filters: {
-            "Java Archive": ["jar"],
-        },
-    };
-    return Promise.resolve(await window.showSaveDialog(options));
 }
 
 export function failMessage(message: string, option?: IMessageOption): void {
