@@ -34,18 +34,18 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
                     stepMetadata.workspaceFolder = folder;
                 }
             }
-            stepMetadata.projectList = await Jdtls.getProjects(workspaceUri.toString()) || [];
+            stepMetadata.projectList = await Jdtls.getProjects(workspaceUri.toString());
             return;
         }
         if (folders.length === 1) {
             stepMetadata.workspaceFolder = folders[0];
-            stepMetadata.projectList = await Jdtls.getProjects(folders[0].uri.toString()) || [];
+            stepMetadata.projectList = await Jdtls.getProjects(folders[0].uri.toString());
             return;
         }
         const pickItems: IJavaProjectQuickPickItem[] = [];
         const projectMap: Map<string, INodeData[]> = new Map<string, INodeData[]>();
         for (const folder of folders) {
-            const projects: INodeData[] = await Jdtls.getProjects(folder.uri.toString()) || [];
+            const projects: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
             if (!_.isEmpty(projects)) {
                 pickItems.push({
                     label: folder.name,

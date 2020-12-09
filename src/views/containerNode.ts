@@ -20,7 +20,7 @@ export class ContainerNode extends DataNode {
         return this._project.uri && Uri.parse(this._project.uri).fsPath;
     }
 
-    protected loadData(): Thenable<INodeData[] | undefined> {
+    protected loadData(): Thenable<INodeData[]> {
         return Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this._project.uri, path: this.path });
     }
     protected createChildNodeList(): ExplorerNode[] {
