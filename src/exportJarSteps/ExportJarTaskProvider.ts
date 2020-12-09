@@ -128,11 +128,11 @@ export class ExportJarTaskProvider implements TaskProvider {
                         "${" + ExportJarConstants.DEPENDENCIES + ":" + project.name + "}");
                 }
             }
-            const mainClasses: IMainClassInfo[] | undefined = await Jdtls.getMainClasses(folder.uri.toString());
+            const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString()) || [];
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
                 label: `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
-                mainClass: mainClasses && mainClasses.length === 1 ? mainClasses[0].name : undefined,
+                mainClass: (mainClasses.length === 1) ? mainClasses[0].name : undefined,
                 targetPath: Settings.getExportJarTargetPath(),
                 elements: elementList,
             };
@@ -188,7 +188,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 const artifactMap: Map<string, string[]> = new Map<string, string[]>();
                 const testOutputFolderMap: Map<string, string[]> = new Map<string, string[]>();
                 const testArtifactMap: Map<string, string[]> = new Map<string, string[]>();
-                const projectList: INodeData[] | undefined = await Jdtls.getProjects(this.stepMetadata.workspaceFolder!.uri.toString()) || [];
+                const projectList: INodeData[] | undefined = await Jdtls.getProjects(this.stepMetadata.workspaceFolder.uri.toString()) || [];
                 for (const project of projectList) {
                     await this.setClasspathMap(project, "runtime", outputFolderMap, artifactMap);
                     await this.setClasspathMap(project, "test", testOutputFolderMap, testArtifactMap);

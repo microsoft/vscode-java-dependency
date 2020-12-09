@@ -16,7 +16,7 @@ suite("Simple Project View Tests", () => {
 
         // validate root nodes
         const roots = await explorer.dataProvider.getChildren();
-        assert.equal(roots!.length, 1, "Number of root node should be 1");
+        assert.equal(roots?.length, 1, "Number of root node should be 1");
         const projectNode = roots![0] as ProjectNode;
         assert.equal(projectNode.name, "1.helloworld", "Project name should be \"1.helloworld\"");
 
