@@ -97,17 +97,6 @@ export interface IMessageOption {
     arguments?: any;
 }
 
-export async function saveDialog(workSpaceUri: Uri, title: string): Promise<Uri | undefined> {
-    const options: SaveDialogOptions = {
-        saveLabel: title,
-        defaultUri: workSpaceUri,
-        filters: {
-            "Java Archive": ["jar"],
-        },
-    };
-    return Promise.resolve(await window.showSaveDialog(options));
-}
-
 export function failMessage(message: string, option?: IMessageOption): void {
     sendOperationError("", Commands.VIEW_PACKAGE_EXPORT_JAR, new Error(message));
     if (option === undefined) {
