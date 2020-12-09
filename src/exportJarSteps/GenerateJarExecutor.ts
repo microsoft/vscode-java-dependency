@@ -83,12 +83,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 if (_.isEmpty(classpaths)) {
                     return reject(new Error(ExportJarMessages.CLASSPATHS_EMPTY));
                 }
-                const exportResult: IExportResult = await Jdtls.exportJar(basename(mainClass), classpaths, destPath);
-                if (exportResult.result === true) {
+                const exportResult: IExportResult | undefined = await Jdtls.exportJar(basename(mainClass), classpaths, destPath);
+                if (exportResult?.result === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
                 } else {
-                    return reject(new Error("Export jar failed." + exportResult.message));
+                    return reject(new Error("Export jar failed." + exportResult?.message));
                 }
             });
         });

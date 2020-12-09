@@ -10,16 +10,19 @@ import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
 
 export class WorkspaceNode extends DataNode {
-    constructor(nodeData: INodeData, parent: DataNode) {
+    constructor(nodeData: INodeData, parent?: DataNode) {
         super(nodeData, parent);
     }
 
-    protected loadData(): Thenable<INodeData[]> {
+    protected loadData(): Thenable<INodeData[] | undefined> {
+        if (!this.nodeData.uri) {
+            return Promise.resolve(undefined);
+        }
         return Jdtls.getProjects(this.nodeData.uri);
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result = [];
+        const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((nodeData) => {
                 result.push(new ProjectNode(nodeData, this));

@@ -17,12 +17,12 @@ export class FileNode extends DataNode {
         return false;
     }
 
-    protected loadData(): Thenable<INodeData[]> {
-        return Promise.resolve(null);
+    protected loadData(): Thenable<INodeData[] | undefined> {
+        return Promise.resolve(undefined);
     }
 
-    protected createChildNodeList(): ExplorerNode[] {
-        return null;
+    protected createChildNodeList(): ExplorerNode[] | undefined {
+        return undefined;
     }
 
     protected get iconPath(): ThemeIcon {

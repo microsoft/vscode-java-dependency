@@ -5,14 +5,17 @@ import * as path from "path";
 import { Uri } from "vscode";
 
 export class Trie<T extends IUriData> {
-    private _root: TrieNode<T>;
+    private _root: TrieNode<T | undefined>;
 
     constructor() {
-        this._root = new TrieNode(null);
+        this._root = new TrieNode(undefined);
     }
 
     public insert(input: T): void {
-        let currentNode: TrieNode<T> = this.root;
+        if (!input.uri) {
+            return;
+        }
+        let currentNode: TrieNode<T | undefined> = this.root;
         const fsPath: string = Uri.parse(input.uri).fsPath;
         const segments: string[] = fsPath.split(path.sep);
 
@@ -21,7 +24,7 @@ export class Trie<T extends IUriData> {
                 continue;
             }
             if (!currentNode.children[segment]) {
-                currentNode.children[segment] = new TrieNode(null);
+                currentNode.children[segment] = new TrieNode(undefined);
             }
             currentNode = currentNode.children[segment];
         }
@@ -29,7 +32,7 @@ export class Trie<T extends IUriData> {
         currentNode.value = input;
     }
 
-    public find(fsPath: string, returnEarly: boolean = false): TrieNode<T> | undefined {
+    public find(fsPath: string, returnEarly: boolean = false): TrieNode<T | undefined> | undefined {
         let currentNode = this.root;
         const segments: string[] = fsPath.split(path.sep);
 
@@ -50,9 +53,9 @@ export class Trie<T extends IUriData> {
         return currentNode;
     }
 
-    public findFirstAncestorNodeWithData(fsPath: string): TrieNode<T> | undefined {
-        let currentNode: TrieNode<T> = this.root;
-        let res: TrieNode<T> | undefined;
+    public findFirstAncestorNodeWithData(fsPath: string): TrieNode<T | undefined> | undefined {
+        let currentNode: TrieNode<T | undefined> = this.root;
+        let res: TrieNode<T | undefined> | undefined;
         const segments: string[] = fsPath.split(path.sep);
 
         for (const segment of segments) {
@@ -73,17 +76,17 @@ export class Trie<T extends IUriData> {
         return res;
     }
 
-    public get root(): TrieNode<T> {
+    public get root(): TrieNode<T | undefined> {
         return this._root;
     }
 }
 
 export interface IUriData {
-    uri: string;
+    uri?: string;
 }
 
 export class TrieNode<T> {
-    private _value: T;
+    private _value?: T;
     private _children: INodeChildren<T>;
 
     constructor(value: T) {
@@ -99,7 +102,7 @@ export class TrieNode<T> {
         this._children = children;
     }
 
-    public set value(value: T) {
+    public set value(value: T | undefined) {
         this._value = value;
     }
 

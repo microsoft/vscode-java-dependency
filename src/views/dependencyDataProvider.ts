@@ -30,7 +30,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     // tslint:disable-next-line:member-ordering
     public onDidChangeTreeData: Event<ExplorerNode | null | undefined> = this._onDidChangeTreeData.event;
 
-    private _rootItems: ExplorerNode[] = null;
+    private _rootItems: ExplorerNode[] | undefined = undefined;
     private _refreshDelayTrigger: _.DebouncedFunc<((element?: ExplorerNode) => void)>;
 
     constructor(public readonly context: ExtensionContext) {
@@ -98,7 +98,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return element.getTreeItem();
     }
 
-    public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[]> {
+    public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[] | undefined | null> {
         if (await languageServerApiManager.isLightWeightMode()) {
             return [];
         }
@@ -109,9 +109,10 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             });
         }
 
-        const children: ExplorerNode[] = (!this._rootItems || !element) ?
+        const children = (!this._rootItems || !element) ?
             await this.getRootNodes() : await element.getChildren();
-        explorerNodeCache.saveNodes(children);
+
+        explorerNodeCache.saveNodes(children || []);
         return children;
     }
 
@@ -119,12 +120,12 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return element.getParent();
     }
 
-    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+    public async revealPaths(paths: INodeData[]): Promise<DataNode | undefined> {
         const projectNodeData = paths.shift();
         const projects = await this.getRootProjects();
         const project = projects ? <DataNode>projects.find((node: DataNode) =>
-            node.path === projectNodeData.path && node.nodeData.name === projectNodeData.name) : undefined;
-        return project ? project.revealPaths(paths) : null;
+            node.path === projectNodeData?.path && node.nodeData.name === projectNodeData?.name) : undefined;
+        return project ? project.revealPaths(paths) : undefined;
     }
 
     private doRefresh(element?: ExplorerNode): void {
@@ -140,10 +141,12 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         if (rootElements[0] instanceof ProjectNode) {
             return rootElements;
         } else {
-            let result = [];
+            let result: ExplorerNode[] = [];
             for (const rootWorkspace of rootElements) {
                 const projects = await rootWorkspace.getChildren();
-                result = result.concat(projects);
+                if (projects) {
+                    result = result.concat(projects);
+                }
             }
             return result;
         }
@@ -165,13 +168,13 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                         name: folder.name,
                         uri: folder.uri.toString(),
                         kind: NodeKind.Workspace,
-                    }, null)));
+                    }, undefined)));
                     this._rootItems = rootItems;
                     return rootItems;
                 } else {
-                    const result: INodeData[] = await Jdtls.getProjects(folders[0].uri.toString());
-                    result.forEach((project) => {
-                        rootItems.push(new ProjectNode(project, null));
+                    const result: INodeData[] | undefined = await Jdtls.getProjects(folders[0].uri.toString());
+                    result?.forEach((project) => {
+                        rootItems.push(new ProjectNode(project, undefined));
                     });
                     this._rootItems = rootItems;
                     return rootItems;

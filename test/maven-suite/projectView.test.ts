@@ -16,8 +16,8 @@ suite("Maven Project View Tests", () => {
 
         // validate root nodes
         const roots = await explorer.dataProvider.getChildren();
-        assert.equal(roots.length, 1, "Number of root node should be 1");
-        const projectNode = roots[0] as ProjectNode;
+        assert.equal(roots?.length, 1, "Number of root node should be 1");
+        const projectNode = roots![0] as ProjectNode;
         assert.equal(projectNode.name, "my-app", "Project name should be \"my-app\"");
 
         // validate package root/dependency nodes
@@ -57,7 +57,7 @@ suite("Maven Project View Tests", () => {
     test("Can node have correct uri", async function() {
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
-        const projectNode = (await explorer.dataProvider.getChildren())[0] as ProjectNode;
+        const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
         const packageRoots = await projectNode.getChildren();
         const mainPackage = packageRoots[0] as PackageRootNode;
         const testPackage = packageRoots[1] as PackageRootNode;

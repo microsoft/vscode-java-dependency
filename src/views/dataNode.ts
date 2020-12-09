@@ -13,23 +13,20 @@ export abstract class DataNode extends ExplorerNode {
 
     protected _lock: Lock = new Lock();
 
-    constructor(protected _nodeData: INodeData, parent: DataNode) {
+    constructor(protected _nodeData: INodeData, parent?: DataNode) {
         super(parent);
     }
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
-        if (this._nodeData) {
-            const item = new TreeItem(
-                this._nodeData.displayName || this._nodeData.name,
-                this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None,
-            );
-            item.description = this.description;
-            item.iconPath = this.iconPath;
-            item.command = this.command;
-            item.contextValue = this.computeContextValue();
-            return item;
-        }
-        return undefined;
+        const item = new TreeItem(
+            this._nodeData.displayName || this._nodeData.name,
+            this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None,
+        );
+        item.description = this.description;
+        item.iconPath = this.iconPath;
+        item.command = this.command;
+        item.contextValue = this.computeContextValue();
+        return item;
     }
 
     public get nodeData(): INodeData {
@@ -52,14 +49,14 @@ export abstract class DataNode extends ExplorerNode {
         return this._nodeData.name;
     }
 
-    public async revealPaths(paths: INodeData[]): Promise<DataNode> {
+    public async revealPaths(paths: INodeData[]): Promise<DataNode | undefined> {
         if (_.isEmpty(paths)) {
             return this;
         }
         const childNodeData = paths.shift();
         const children: ExplorerNode[] = await this.getChildren();
-        const childNode = children ? <DataNode>children.find((child: DataNode) =>
-            child.nodeData.name === childNodeData.name && child.path === childNodeData.path) : undefined;
+        const childNode = <DataNode>children?.find((child: DataNode) =>
+            child.nodeData.name === childNodeData?.name && child.path === childNodeData?.path);
         return (childNode && paths.length) ? childNode.revealPaths(paths) : childNode;
     }
 
@@ -69,7 +66,7 @@ export abstract class DataNode extends ExplorerNode {
             if (!this._nodeData.children) {
                 const data = await this.loadData();
                 this._nodeData.children = data;
-                this._childrenNodes = this.createChildNodeList();
+                this._childrenNodes = this.createChildNodeList() || [];
                 return this._childrenNodes;
             }
             return this._childrenNodes;
@@ -78,7 +75,7 @@ export abstract class DataNode extends ExplorerNode {
         }
     }
 
-    public computeContextValue(): string {
+    public computeContextValue(): string | undefined {
         let contextValue = this.contextValue;
         if (this.uri && this.uri.startsWith("file:")) {
             contextValue = `${contextValue || ""}+uri`;
@@ -90,7 +87,7 @@ export abstract class DataNode extends ExplorerNode {
     }
 
     protected sort() {
-        this.nodeData.children.sort((a: INodeData, b: INodeData) => {
+        this.nodeData.children?.sort((a: INodeData, b: INodeData) => {
             if (a.kind === b.kind) {
                 return a.name < b.name ? -1 : 1;
             } else {
@@ -103,17 +100,17 @@ export abstract class DataNode extends ExplorerNode {
         return true;
     }
 
-    protected get description(): string | boolean {
+    protected get description(): string | boolean | undefined {
         return undefined;
     }
 
-    protected get contextValue(): string {
+    protected get contextValue(): string | undefined {
         return undefined;
     }
 
     protected abstract get iconPath(): string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
-    protected abstract loadData(): Thenable<any[]>;
+    protected abstract loadData(): Thenable<any[] | undefined>;
 
-    protected abstract createChildNodeList(): ExplorerNode[];
+    protected abstract createChildNodeList(): ExplorerNode[] | undefined;
 }

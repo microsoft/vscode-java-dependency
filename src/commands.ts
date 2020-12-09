@@ -92,11 +92,11 @@ export namespace Commands {
     export const WORKBENCH_ACTION_FILES_OPENFILEFOLDER = "workbench.action.files.openFileFolder";
 }
 
-export function executeJavaLanguageServerCommand(...rest) {
+export function executeJavaLanguageServerCommand(...rest: any[]) {
     return executeJavaExtensionCommand(Commands.EXECUTE_WORKSPACE_COMMAND, ...rest);
 }
 
-export async function executeJavaExtensionCommand(commandName: string, ...rest) {
+export async function executeJavaExtensionCommand(commandName: string, ...rest: any[]) {
     // TODO: need to handle error and trace telemetry
     return commands.executeCommand(commandName, ...rest);
 }

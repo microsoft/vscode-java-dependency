@@ -18,7 +18,7 @@ class SyncHandler implements Disposable {
 
     private disposables: Disposable[] = [];
 
-    public updateFileWatcher(autoRefresh: boolean): void {
+    public updateFileWatcher(autoRefresh?: boolean): void {
         if (autoRefresh) {
             instrumentOperation(ENABLE_AUTO_REFRESH, () => this.enableAutoRefresh())();
         } else {
@@ -64,7 +64,7 @@ class SyncHandler implements Disposable {
 
     }
 
-    private getParentNodeInExplorer(uri: Uri): ExplorerNode {
+    private getParentNodeInExplorer(uri: Uri): ExplorerNode | undefined {
         let node: DataNode | undefined = explorerNodeCache.findBestMatchNodeByUri(uri);
 
         if (!node) {
@@ -80,7 +80,7 @@ class SyncHandler implements Disposable {
             return node;
         } else {
             // in flat view
-            if (path.extname(uri.fsPath) === ".java" &&
+            if (path.extname(uri.fsPath) === ".java" && node.uri &&
                     Uri.parse(node.uri).fsPath === path.dirname(uri.fsPath)) {
                 // if the returned node is direct parent of the input uri, refresh it.
                 return node;

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { basename } from "path";
-import { commands, DiagnosticSeverity, languages, Uri, window } from "vscode";
+import { commands, DiagnosticSeverity, languages, QuickPickItem, Uri, window } from "vscode";
 import { instrumentOperation, sendInfo, sendOperationError, setErrorCode } from "vscode-extension-telemetry-wrapper";
 import { Commands, executeJavaExtensionCommand } from "./commands";
 import { Jdtls } from "./java/jdtls";
@@ -71,14 +71,14 @@ function checkErrorsReportedByJavaExtension(): boolean {
 }
 
 async function showFixSuggestions(operationId: string) {
-    let buildFiles = [];
+    let buildFiles: string[] = [];
     try {
         buildFiles = await Jdtls.resolveBuildFiles();
     } catch (error) {
         // do nothing
     }
 
-    const pickitems = [];
+    const pickitems: QuickPickItem[] = [];
     pickitems.push({
         label: "Clean workspace cache",
         detail: "Clean the stale workspace and reload the window",

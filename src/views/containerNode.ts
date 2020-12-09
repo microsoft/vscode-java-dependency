@@ -8,6 +8,7 @@ import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { NodeFactory } from "./nodeFactory";
+import { PackageRootNode } from "./packageRootNode";
 import { ProjectNode } from "./projectNode";
 
 export class ContainerNode extends DataNode {
@@ -16,14 +17,14 @@ export class ContainerNode extends DataNode {
     }
 
     public get projectBasePath() {
-        return Uri.parse(this._project.uri).fsPath;
+        return this._project.uri && Uri.parse(this._project.uri).fsPath;
     }
 
-    protected loadData(): Thenable<INodeData[]> {
+    protected loadData(): Thenable<INodeData[] | undefined> {
         return Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this._project.uri, path: this.path });
     }
     protected createChildNodeList(): ExplorerNode[] {
-        const result = [];
+        const result: PackageRootNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((classpathNode) => {

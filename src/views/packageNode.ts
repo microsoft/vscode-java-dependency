@@ -16,7 +16,7 @@ export class PackageNode extends DataNode {
         super(nodeData, parent);
     }
 
-    protected loadData(): Thenable<INodeData[]> {
+    protected loadData(): Thenable<INodeData[] | undefined> {
         return Jdtls.getPackageData({
             kind: NodeKind.Package,
             projectUri: this._project.nodeData.uri,
@@ -26,7 +26,7 @@ export class PackageNode extends DataNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result = [];
+        const result: ExplorerNode[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.sort();
             this.nodeData.children.forEach((nodeData) => {
@@ -46,7 +46,7 @@ export class PackageNode extends DataNode {
         return new ThemeIcon("symbol-package");
     }
 
-    protected get contextValue(): string {
+    protected get contextValue(): string | undefined {
         const parentData = <IPackageRootNodeData> this._rootNode.nodeData;
         if (parentData.entryKind === PackageRootKind.K_SOURCE || parentData.kind === NodeKind.Project) {
             return `${Explorer.ContextValueType.Package}+source`;

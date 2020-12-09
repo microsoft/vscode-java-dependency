@@ -91,15 +91,15 @@ export class Settings {
     }
 
     public static showMembers(): boolean {
-        return this._dependencyConfig.get("showMembers");
+        return this._dependencyConfig.get("showMembers", false);
     }
 
     public static autoRefresh(): boolean {
-        return this._dependencyConfig.get("autoRefresh");
+        return this._dependencyConfig.get("autoRefresh", true);
     }
 
     public static syncWithFolderExplorer(): boolean {
-        return this._dependencyConfig.get("syncWithFolderExplorer");
+        return this._dependencyConfig.get("syncWithFolderExplorer", true);
     }
 
     public static isHierarchicalView(): boolean {
@@ -107,7 +107,7 @@ export class Settings {
     }
 
     public static refreshDelay(): number {
-        return this._dependencyConfig.get("refreshDelay");
+        return this._dependencyConfig.get("refreshDelay", 2000);
     }
 
     public static getExportJarTargetPath(): string {
