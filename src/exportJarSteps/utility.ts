@@ -3,7 +3,7 @@
 
 import { EOL, platform } from "os";
 import { posix, win32 } from "path";
-import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, SaveDialogOptions, Uri, window } from "vscode";
+import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { GenerateJarExecutor } from "./GenerateJarExecutor";
