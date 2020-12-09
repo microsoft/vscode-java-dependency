@@ -5,7 +5,7 @@ import { ensureDir, pathExists } from "fs-extra";
 import globby = require("globby");
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
-import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, SaveDialogOptions, Uri, window, WorkspaceFolder } from "vscode";
+import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window, WorkspaceFolder } from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -38,13 +38,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER) {
                 sendInfo("", { exportJarPath: stepMetadata.outputPath });
             }
-            const options: SaveDialogOptions = {
+            const outputUri: Uri | undefined = await window.showSaveDialog({
                 defaultUri: Uri.file(join(folder.uri.fsPath, `${folder.name}.jar`)),
                 filters: {
                     "Java Archive": ["jar"],
                 },
-            };
-            const outputUri: Uri | undefined = await window.showSaveDialog(options);
+            });
             if (!outputUri) {
                 return Promise.reject();
             }
