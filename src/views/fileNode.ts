@@ -17,7 +17,7 @@ export class FileNode extends DataNode {
         return false;
     }
 
-    protected loadData(): Thenable<INodeData[] | undefined> {
+    protected async loadData(): Promise<INodeData[] | undefined> {
         return Promise.resolve(undefined);
     }
 

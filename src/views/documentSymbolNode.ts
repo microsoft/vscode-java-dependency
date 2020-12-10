@@ -12,7 +12,7 @@ export class DocumentSymbolNode extends BaseSymbolNode {
         super(symbolInfo, parent);
     }
 
-    public getChildren(): ExplorerNode[] | Thenable<ExplorerNode[]> {
+    public getChildren(): ExplorerNode[] | Promise<ExplorerNode[]> {
         const res: ExplorerNode[] = [];
         if (this.symbolInfo && (<DocumentSymbol>this.symbolInfo).children && (<DocumentSymbol>this.symbolInfo).children.length) {
             (<DocumentSymbol>this.symbolInfo).children.forEach((child) => {
