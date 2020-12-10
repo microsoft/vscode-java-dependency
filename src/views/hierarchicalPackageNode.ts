@@ -31,7 +31,7 @@ export class HierarchicalPackageNode extends PackageNode {
             if (data) {
                 if (this.nodeData?.children) {
                     this.nodeData.children.push(...data);
-                    this.nodeData.children = _.uniqBy(this.nodeData.children, "path");
+                    this.nodeData.children = _.uniqBy(this.nodeData.children, (child: INodeData) => [child.path, child.name].join());
                 } else {
                     this.nodeData.children = data;
                 }
