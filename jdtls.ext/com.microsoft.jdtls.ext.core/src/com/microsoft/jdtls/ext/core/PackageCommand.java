@@ -582,9 +582,6 @@ public class PackageCommand {
         }
 
         for (IContainer container : containers) {
-            if (!(container instanceof IProject)) {
-                continue;
-            }
             IProject project = container.getProject();
             if (!project.exists()) {
                 return null;

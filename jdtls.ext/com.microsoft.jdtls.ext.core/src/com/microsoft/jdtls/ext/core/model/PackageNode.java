@@ -151,7 +151,7 @@ public class PackageNode {
     public static PackageNode createNodeForProject(IJavaElement javaElement) {
         IProject proj = javaElement.getJavaProject().getProject();
         PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
-        projectNode.setUri(proj.getLocationURI().toString());
+        projectNode.setUri(ProjectUtils.getProjectRealFolder(proj).toFile().toURI().toString());
         try {
             projectNode.setMetaDataValue(NATURE_ID, proj.getDescription().getNatureIds());
         } catch (CoreException e) {
