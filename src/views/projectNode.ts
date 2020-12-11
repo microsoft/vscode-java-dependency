@@ -52,7 +52,7 @@ export class ProjectNode extends DataNode {
         return (childNode && paths.length > 0) ? childNode.revealPaths(paths) : childNode;
     }
 
-    protected loadData(): Thenable<INodeData[]> {
+    protected async loadData(): Promise<INodeData[]> {
         let result: INodeData[] = [];
         return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
             const sourceContainer: IContainerNodeData[] = [];

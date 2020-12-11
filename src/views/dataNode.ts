@@ -110,7 +110,7 @@ export abstract class DataNode extends ExplorerNode {
 
     protected abstract get iconPath(): string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
-    protected abstract loadData(): Thenable<any[] | undefined>;
+    protected async abstract loadData(): Promise<any[] | undefined>;
 
     protected abstract createChildNodeList(): ExplorerNode[] | undefined;
 }

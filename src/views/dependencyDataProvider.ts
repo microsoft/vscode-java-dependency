@@ -94,7 +94,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         this._refreshDelayTrigger = _.debounce(this.doRefresh, wait);
     }
 
-    public getTreeItem(element: ExplorerNode): TreeItem | Thenable<TreeItem> {
+    public getTreeItem(element: ExplorerNode): TreeItem | Promise<TreeItem> {
         return element.getTreeItem();
     }
 

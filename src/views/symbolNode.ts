@@ -14,7 +14,7 @@ export class SymbolNode extends BaseSymbolNode {
         super(symbolInfo, parent);
     }
 
-    public getChildren(): ExplorerNode[] | Thenable<ExplorerNode[]> {
+    public getChildren(): ExplorerNode[] | Promise<ExplorerNode[]> {
         const res: ExplorerNode[] = [];
         if (this._children && this._children.length) {
             this._children.forEach((child) => {
