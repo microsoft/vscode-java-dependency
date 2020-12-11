@@ -16,7 +16,7 @@ export class WorkspaceNode extends DataNode {
 
     protected async loadData(): Promise<INodeData[] | undefined> {
         if (!this.nodeData.uri) {
-            return Promise.resolve(undefined);
+            return undefined;
         }
         return Jdtls.getProjects(this.nodeData.uri);
     }

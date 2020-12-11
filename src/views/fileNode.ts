@@ -18,7 +18,7 @@ export class FileNode extends DataNode {
     }
 
     protected async loadData(): Promise<INodeData[] | undefined> {
-        return Promise.resolve(undefined);
+        return undefined;
     }
 
     protected createChildNodeList(): ExplorerNode[] | undefined {
