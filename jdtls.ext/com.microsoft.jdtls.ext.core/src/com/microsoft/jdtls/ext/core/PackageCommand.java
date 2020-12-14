@@ -121,10 +121,6 @@ public class PackageCommand {
         String typeRootUri = (String) arguments.get(0);
         List<PackageNode> result = new ArrayList<>();
         URI uri = JDTUtils.toURI(typeRootUri);
-        // return empty list if uri doesn't belong to current project folder
-        if (JDTUtils.findResource(uri, ResourcesPlugin.getWorkspace().getRoot()::findFilesForLocationURI) == null) {
-            return result;
-        }
         ITypeRoot typeRoot = ExtUtils.JDT_SCHEME.equals(uri.getScheme()) ? JDTUtils.resolveClassFile(uri) : JDTUtils.resolveCompilationUnit(uri);
         if (typeRoot != null && typeRoot.findPrimaryType() != null) {
             // Add project node:

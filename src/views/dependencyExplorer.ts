@@ -4,7 +4,7 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
+import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window, workspace } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Build } from "../constants";
@@ -48,6 +48,10 @@ export class DependencyExplorer implements Disposable {
             window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
                 if (this._dependencyViewer.visible && textEditor && textEditor.document && Settings.syncWithFolderExplorer()) {
                     const uri: Uri = textEditor.document.uri;
+                    // if editor doesn't belong to workspace, do nothing
+                    if (uri.fsPath === workspace.asRelativePath(uri.fsPath)) {
+                        return;
+                    }
                     if (this.SUPPORTED_URI_SCHEMES.includes(uri.scheme)) {
                         this.reveal(uri);
                     }
