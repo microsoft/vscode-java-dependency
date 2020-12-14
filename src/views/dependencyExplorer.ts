@@ -48,8 +48,8 @@ export class DependencyExplorer implements Disposable {
             window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
                 if (this._dependencyViewer.visible && textEditor && textEditor.document && Settings.syncWithFolderExplorer()) {
                     const uri: Uri = textEditor.document.uri;
-                    // if editor doesn't belong to workspace, do nothing
-                    if (uri.fsPath === workspace.asRelativePath(uri.fsPath)) {
+                    // if active editor doesn't belong to workspace, do nothing
+                    if (!workspace.getWorkspaceFolder(uri)) {
                         return;
                     }
                     if (this.SUPPORTED_URI_SCHEMES.includes(uri.scheme)) {
