@@ -4,6 +4,18 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.16.0
+### Added
+- Add `Update Project` command into the project node in explorer. [PR#391](https://github.com/microsoft/vscode-java-dependency/pull/391)
+- Add more default keyboard shortcuts for the explorer commands. [PR#393](https://github.com/microsoft/vscode-java-dependency/pull/393)
+
+### Changed
+- Change the command name `Reveal in Java Projects` to `Reveal in Java Projects Explorer`. [PR#395](https://github.com/microsoft/vscode-java-dependency/pull/395)
+- Do not show the `Java Project` explorer in non-Java workspace. [#372](https://github.com/microsoft/vscode-java-dependency/issues/372)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.16.0+is%3Aclosed)
+
 ## 0.15.0
 ### Added
 - Support exporting jar with custom task. [PR#350](https://github.com/microsoft/vscode-java-dependency/pull/350)
