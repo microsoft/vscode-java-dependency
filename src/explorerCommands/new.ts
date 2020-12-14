@@ -54,7 +54,10 @@ async function getPackageFsPath(node: DataNode): Promise<string> {
             const packageNode: DataNode | undefined = childrenNodes.find((child) => {
                 return child.nodeData.kind === NodeKind.Package;
             });
-            if (packageNode?.uri) {
+            if (!packageNode && node.uri) {
+                // This means the .java files are in the default package.
+                return Uri.parse(node.uri).fsPath;
+            } else if (packageNode?.uri) {
                 return getPackageRootPath(Uri.parse(packageNode.uri).fsPath, packageNode.name);
             }
             return "";

@@ -30,12 +30,12 @@ export function fsPath(node: DataNode): string {
     if (!node.uri) {
         return "";
     }
-    return Uri.parse(node.uri).fsPath;
+    return path.resolve(Uri.parse(node.uri).fsPath);
 }
 
 export function truePath(...paths: string[]) {
     const basePath = path.join(__dirname, "..", "..", "test");
-    return path.join(basePath, ...paths);
+    return path.resolve(path.join(basePath, ...paths));
 }
 
 export async function setupTestEnv() {
