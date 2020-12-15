@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { window, workspace, WorkspaceFolder } from "vscode";
+import { Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { setUserError } from "vscode-extension-telemetry-wrapper";
+import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
+import { Settings } from "./settings";
 
 export class Utility {
 
@@ -19,6 +21,19 @@ export class Utility {
             return activeWorkspaceFolder;
         }
         return undefined;
+    }
+
+    public static async isRevealable(uri: Uri): Promise<boolean> {
+        if (!SUPPORTED_URI_SCHEMES.includes(uri.scheme)) {
+            return false;
+        }
+        if (uri.scheme === "file" && !workspace.getWorkspaceFolder(uri)) {
+            return false;
+        }
+        if (!Settings.syncWithFolderExplorer() || !await languageServerApiManager.isStandardServerReady()) {
+            return false;
+        }
+        return true;
     }
 
 }
@@ -60,6 +75,8 @@ const keywords: Set<string> = new Set([
     "interface", "static", "void", "char", "finally", "long", "strictfp", "volatile", "class", "float", "native", "super", "while",
     "const", "for", "new", "switch", "continue", "goto", "package", "synchronized", "true", "false", "null", "assert", "enum",
 ]);
+
+const SUPPORTED_URI_SCHEMES: string[] = ["file", "jdt"];
 
 export function isKeyword(identifier: string): boolean {
     return keywords.has(identifier);
