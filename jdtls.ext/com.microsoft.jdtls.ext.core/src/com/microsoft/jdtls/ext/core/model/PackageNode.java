@@ -48,6 +48,8 @@ public class PackageNode {
      */
     private static final String NATURE_ID = "NatureId";
 
+    private static final String UNMANAGED_FOLDER_INNER_PATH = "UnmanagedFolderInnerPath";
+
     public static final String K_TYPE_KIND = "TypeKind";
 
     /**
@@ -154,6 +156,9 @@ public class PackageNode {
         projectNode.setUri(ProjectUtils.getProjectRealFolder(proj).toFile().toURI().toString());
         try {
             projectNode.setMetaDataValue(NATURE_ID, proj.getDescription().getNatureIds());
+            if (!ProjectUtils.isVisibleProject(proj)) {
+                projectNode.setMetaDataValue(UNMANAGED_FOLDER_INNER_PATH, proj.getLocationURI().toString());
+            }
         } catch (CoreException e) {
             // do nothing
         }
