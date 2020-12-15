@@ -115,11 +115,18 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.currentStep)));
                 }
                 for (const project of projectList) {
-                    const classpaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "runtime" });
+                    const projectUri: string = project.metaData?.UnmanagedFolderInnerPath || project.uri;
+                    let classpaths: IClasspathResult;
+                    let testClasspaths: IClasspathResult;
+                    try {
+                        classpaths = await extensionApi.getClasspaths(projectUri, { scope: "runtime" });
+                        testClasspaths = await extensionApi.getClasspaths(projectUri, { scope: "test" });
+                    } catch (e) {
+                        return reject(new Error(e));
+                    }
                     pickItems.push(
                         ...await this.parseDependencyItems(classpaths.classpaths, uriSet, workspaceFolder.uri.fsPath, "runtime"),
                         ...await this.parseDependencyItems(classpaths.modulepaths, uriSet, workspaceFolder.uri.fsPath, "runtime"));
-                    const testClasspaths: IClasspathResult = await extensionApi.getClasspaths(project.uri, { scope: "test" });
                     pickItems.push(
                         ...await this.parseDependencyItems(testClasspaths.classpaths, uriSet, workspaceFolder.uri.fsPath, "test"),
                         ...await this.parseDependencyItems(testClasspaths.modulepaths, uriSet, workspaceFolder.uri.fsPath, "test"));
