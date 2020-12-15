@@ -4,7 +4,7 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window, workspace } from "vscode";
+import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Build } from "../constants";
@@ -13,8 +13,7 @@ import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
-import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
-import { Settings } from "../settings";
+import { Utility } from "../utility";
 import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
@@ -38,30 +37,22 @@ export class DependencyExplorer implements Disposable {
 
     private _dataProvider: DependencyDataProvider;
 
-    private readonly SUPPORTED_URI_SCHEMES: string[] = ["file", "jdt"];
-
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
         this._dependencyViewer = window.createTreeView("javaProjectExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
 
         context.subscriptions.push(
-            window.onDidChangeActiveTextEditor((textEditor: TextEditor) => {
-                if (this._dependencyViewer.visible && textEditor && textEditor.document && Settings.syncWithFolderExplorer()) {
+            window.onDidChangeActiveTextEditor((textEditor: TextEditor | undefined) => {
+                if (this._dependencyViewer.visible && textEditor?.document) {
                     const uri: Uri = textEditor.document.uri;
-                    // if active editor doesn't belong to workspace, do nothing
-                    if (!workspace.getWorkspaceFolder(uri)) {
-                        return;
-                    }
-                    if (this.SUPPORTED_URI_SCHEMES.includes(uri.scheme)) {
-                        this.reveal(uri);
-                    }
+                    this.reveal(uri);
                 }
             }),
         );
 
         context.subscriptions.push(
             this._dependencyViewer.onDidChangeVisibility((e: TreeViewVisibilityChangeEvent) => {
-                if (e.visible && window.activeTextEditor && Settings.syncWithFolderExplorer()) {
+                if (e.visible && window.activeTextEditor) {
                     this.reveal(window.activeTextEditor.document.uri);
                 }
             }),
@@ -69,7 +60,7 @@ export class DependencyExplorer implements Disposable {
 
         context.subscriptions.push(
             this._dataProvider.onDidChangeTreeData(() => {
-                if (window.activeTextEditor && Settings.syncWithFolderExplorer()) {
+                if (window.activeTextEditor) {
                     this.reveal(window.activeTextEditor.document.uri);
                 }
             }),
@@ -144,7 +135,7 @@ export class DependencyExplorer implements Disposable {
         try {
             await this._lock.acquire();
 
-            if (!await languageServerApiManager.isStandardServerReady()) {
+            if (!await Utility.isRevealable(uri)) {
                 return;
             }
 

@@ -125,7 +125,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         const projects = await this.getRootProjects();
         const project = projects ? <DataNode>projects.find((node: DataNode) =>
             node.path === projectNodeData?.path && node.nodeData.name === projectNodeData?.name) : undefined;
-        return project ? project.revealPaths(paths) : undefined;
+        return project?.revealPaths(paths);
     }
 
     private doRefresh(element?: ExplorerNode): void {
