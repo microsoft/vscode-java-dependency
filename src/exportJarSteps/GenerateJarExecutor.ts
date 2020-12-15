@@ -115,12 +115,12 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.currentStep)));
                 }
                 for (const project of projectList) {
-                    const classpath: string = (project.metaData?.UnmanagedFolderInnerPath) ? project.metaData.UnmanagedFolderInnerPath : project.uri;
+                    const projectUri: string = project.metaData?.UnmanagedFolderInnerPath || project.uri;
                     let classpaths: IClasspathResult;
                     let testClasspaths: IClasspathResult;
                     try {
-                        classpaths = await extensionApi.getClasspaths(classpath, { scope: "runtime" });
-                        testClasspaths = await extensionApi.getClasspaths(classpath, { scope: "test" });
+                        classpaths = await extensionApi.getClasspaths(projectUri, { scope: "runtime" });
+                        testClasspaths = await extensionApi.getClasspaths(projectUri, { scope: "test" });
                     } catch (e) {
                         return reject(new Error(e));
                     }
