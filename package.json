@@ -495,7 +495,9 @@
         {
           "id": "javaProjectExplorer",
           "name": "Java Projects",
-          "when": "java:serverMode"
+          "when": "java:serverMode",
+          "contextualTitle": "Java Projects",
+          "icon": "$(project)"
         }
       ]
     },
