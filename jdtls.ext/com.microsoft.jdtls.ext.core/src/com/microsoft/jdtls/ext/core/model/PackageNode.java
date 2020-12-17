@@ -151,6 +151,9 @@ public class PackageNode {
     }
 
     public static PackageNode createNodeForProject(IJavaElement javaElement) {
+        if (javaElement == null || javaElement.getJavaProject() == null) {
+            return null;
+        }
         IProject proj = javaElement.getJavaProject().getProject();
         PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
         projectNode.setUri(ProjectUtils.getProjectRealFolder(proj).toFile().toURI().toString());
