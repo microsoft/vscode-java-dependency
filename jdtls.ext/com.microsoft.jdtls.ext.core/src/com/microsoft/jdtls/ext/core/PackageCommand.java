@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -580,6 +581,12 @@ public class PackageCommand {
         if (containers.length == 0) {
             return null;
         }
+
+        // For multi-module scenario, findContainersForLocationURI API may return a container array,
+        // need put the result from the nearest project in front.
+        Arrays.sort(containers, (Comparator<IContainer>) (IContainer a, IContainer b) -> {
+            return a.getFullPath().toPortableString().length() - b.getFullPath().toPortableString().length();
+        });
 
         for (IContainer container : containers) {
             IProject project = container.getProject();
