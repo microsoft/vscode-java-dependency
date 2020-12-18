@@ -85,8 +85,8 @@ export class PrimaryTypeNode extends DataNode {
     protected get command(): Command {
         return {
             title: "Open source file content",
-            command: Commands.VIEW_PACKAGE_OPEN_FILE,
-            arguments: [this.uri],
+            command: Commands.VSCODE_OPEN,
+            arguments: [Uri.parse(this.uri || ""), { preserveFocus: true }],
         };
     }
 

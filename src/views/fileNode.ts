@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Command, ThemeIcon } from "vscode";
+import { Command, ThemeIcon, Uri } from "vscode";
 import { Commands } from "../commands";
 import { Explorer } from "../constants";
 import { INodeData } from "../java/nodeData";
@@ -32,8 +32,8 @@ export class FileNode extends DataNode {
     protected get command(): Command {
         return {
             title: "Open file",
-            command: Commands.VIEW_PACKAGE_OPEN_FILE,
-            arguments: [this.uri],
+            command: Commands.VSCODE_OPEN,
+            arguments: [Uri.parse(this.uri || ""), { preserveFocus: true }],
         };
     }
 

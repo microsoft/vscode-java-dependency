@@ -20,8 +20,6 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_REFRESH = "java.view.package.refresh";
 
-    export const VIEW_PACKAGE_OPEN_FILE = "java.view.package.openFile";
-
     export const VIEW_PACKAGE_OUTLINE = "java.view.package.outline";
 
     export const VIEW_PACKAGE_REVEAL_FILE_OS = "java.view.package.revealFileInOS";

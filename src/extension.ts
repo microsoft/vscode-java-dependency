@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { ExtensionContext, tasks } from "vscode";
-import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { contextManager } from "../extension.bundle";
 import { Build, Context } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
@@ -11,6 +11,7 @@ import { init as initExpService } from "./ExperimentationService";
 import { ExportJarTaskProvider } from "./exportJarSteps/ExportJarTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
+import { EventCounter } from "./utility";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
 export async function activate(context: ExtensionContext): Promise<void> {
@@ -33,6 +34,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 }
 
 // this method is called when your extension is deactivated
-export async function deactivate() {
+export async function deactivate(): Promise<void> {
+    sendInfo("", EventCounter.dict);
     await disposeTelemetryWrapper();
 }

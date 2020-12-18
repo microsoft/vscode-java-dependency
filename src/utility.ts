@@ -5,6 +5,7 @@ import { Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { setUserError } from "vscode-extension-telemetry-wrapper";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 import { Settings } from "./settings";
+import { Lock } from "./utils/Lock";
 
 export class Utility {
 
@@ -36,6 +37,22 @@ export class Utility {
         return true;
     }
 
+}
+
+export class EventCounter {
+    public static dict: {[key: string]: number} = {};
+
+    public static async increase(event: string) {
+        try {
+            await this._lock.acquire();
+            const count = this.dict[event] ?? 0;
+            this.dict[event] = count + 1;
+        } finally {
+            this._lock.release();
+        }
+    }
+
+    private static _lock: Lock = new Lock();
 }
 
 export class UserError extends Error {

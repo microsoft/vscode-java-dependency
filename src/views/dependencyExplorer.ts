@@ -4,8 +4,9 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, TextEditor, TreeView, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
-import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { commands, Disposable, ExtensionContext, TextEditor, TreeView,
+    TreeViewExpansionEvent, TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
+import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Build } from "../constants";
 import { deleteFiles } from "../explorerCommands/delete";
@@ -13,7 +14,7 @@ import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
-import { Utility } from "../utility";
+import { EventCounter, Utility } from "../utility";
 import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
@@ -41,6 +42,7 @@ export class DependencyExplorer implements Disposable {
         this._dataProvider = new DependencyDataProvider(context);
         this._dependencyViewer = window.createTreeView("javaProjectExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
 
+        // register reveal events
         context.subscriptions.push(
             window.onDidChangeActiveTextEditor((textEditor: TextEditor | undefined) => {
                 if (this._dependencyViewer.visible && textEditor?.document) {
@@ -52,8 +54,11 @@ export class DependencyExplorer implements Disposable {
 
         context.subscriptions.push(
             this._dependencyViewer.onDidChangeVisibility((e: TreeViewVisibilityChangeEvent) => {
-                if (e.visible && window.activeTextEditor) {
-                    this.reveal(window.activeTextEditor.document.uri);
+                if (e.visible) {
+                    sendInfo("", {projectManagerVisible: 1});
+                    if (window.activeTextEditor) {
+                        this.reveal(window.activeTextEditor.document.uri);
+                    }
                 }
             }),
         );
@@ -77,10 +82,29 @@ export class DependencyExplorer implements Disposable {
 
                 uri = Uri.file(fsPath);
                 if ((await fse.stat(fsPath)).isFile()) {
-                    await commands.executeCommand(Commands.VIEW_PACKAGE_OPEN_FILE, uri);
+                    await commands.executeCommand(Commands.VSCODE_OPEN, uri, { preserveFocus: true });
                 }
 
                 this.reveal(uri);
+            }),
+        );
+
+        // register telemetry events
+        context.subscriptions.push(
+            this._dependencyViewer.onDidChangeSelection(async (_e: TreeViewSelectionChangeEvent<ExplorerNode>) => {
+                await EventCounter.increase("didChangeSelection");
+            }),
+        );
+
+        context.subscriptions.push(
+            this._dependencyViewer.onDidCollapseElement(async (_e: TreeViewExpansionEvent<ExplorerNode>) => {
+                await EventCounter.increase("didCollapseElement");
+            }),
+        );
+
+        context.subscriptions.push(
+            this._dependencyViewer.onDidExpandElement(async (_e: TreeViewExpansionEvent<ExplorerNode>) => {
+                await EventCounter.increase("didExpandElement");
             }),
         );
 
