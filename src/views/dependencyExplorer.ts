@@ -50,9 +50,6 @@ export class DependencyExplorer implements Disposable {
                     this.reveal(uri);
                 }
             }),
-        );
-
-        context.subscriptions.push(
             this._dependencyViewer.onDidChangeVisibility((e: TreeViewVisibilityChangeEvent) => {
                 if (e.visible) {
                     sendInfo("", {projectManagerVisible: 1});
@@ -61,17 +58,11 @@ export class DependencyExplorer implements Disposable {
                     }
                 }
             }),
-        );
-
-        context.subscriptions.push(
             this._dataProvider.onDidChangeTreeData(() => {
                 if (window.activeTextEditor) {
                     this.reveal(window.activeTextEditor.document.uri);
                 }
             }),
-        );
-
-        context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER, async (uri: Uri) => {
                 await commands.executeCommand(Commands.JAVA_PROJECT_EXPLORER_FOCUS);
                 let fsPath: string = uri.fsPath;
@@ -91,20 +82,14 @@ export class DependencyExplorer implements Disposable {
 
         // register telemetry events
         context.subscriptions.push(
-            this._dependencyViewer.onDidChangeSelection(async (_e: TreeViewSelectionChangeEvent<ExplorerNode>) => {
-                await EventCounter.increase("didChangeSelection");
+            this._dependencyViewer.onDidChangeSelection((_e: TreeViewSelectionChangeEvent<ExplorerNode>) => {
+                EventCounter.increase("didChangeSelection");
             }),
-        );
-
-        context.subscriptions.push(
-            this._dependencyViewer.onDidCollapseElement(async (_e: TreeViewExpansionEvent<ExplorerNode>) => {
-                await EventCounter.increase("didCollapseElement");
+            this._dependencyViewer.onDidCollapseElement((_e: TreeViewExpansionEvent<ExplorerNode>) => {
+                EventCounter.increase("didCollapseElement");
             }),
-        );
-
-        context.subscriptions.push(
-            this._dependencyViewer.onDidExpandElement(async (_e: TreeViewExpansionEvent<ExplorerNode>) => {
-                await EventCounter.increase("didExpandElement");
+            this._dependencyViewer.onDidExpandElement((_e: TreeViewExpansionEvent<ExplorerNode>) => {
+                EventCounter.increase("didExpandElement");
             }),
         );
 
@@ -116,33 +101,21 @@ export class DependencyExplorer implements Disposable {
                     commands.executeCommand("revealFileInOS", Uri.parse(cmdNode.uri));
                 }
             }),
-        );
-
-        context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node?: DataNode) => {
                 const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
                 if (cmdNode.uri) {
                     commands.executeCommand("copyFilePath", Uri.parse(cmdNode.uri));
                 }
             }),
-        );
-
-        context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node?: DataNode) => {
                 const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
                 if (cmdNode.uri) {
                     commands.executeCommand("copyRelativeFilePath", Uri.parse(cmdNode.uri));
                 }
             }),
-        );
-
-        context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_RENAME_FILE, (node?: DataNode) => {
                 renameFile(getCmdNode(this._dependencyViewer.selection[0], node));
             }),
-        );
-
-        context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node?: DataNode) => {
                 deleteFiles(getCmdNode(this._dependencyViewer.selection[0], node));
             }),
