@@ -38,6 +38,15 @@ export class Utility {
 
 }
 
+export class EventCounter {
+    public static dict: {[key: string]: number} = {};
+
+    public static increase(event: string) {
+        const count = this.dict[event] ?? 0;
+        this.dict[event] = count + 1;
+    }
+}
+
 export class UserError extends Error {
     public context: ITroubleshootingMessage;
 

@@ -16,7 +16,7 @@ export class SymbolNode extends BaseSymbolNode {
 
     public getChildren(): ExplorerNode[] | Promise<ExplorerNode[]> {
         const res: ExplorerNode[] = [];
-        if (this._children && this._children.length) {
+        if (this._children?.length) {
             this._children.forEach((child) => {
                 res.push(new SymbolNode(child, this.getParent() as PrimaryTypeNode));
             });
