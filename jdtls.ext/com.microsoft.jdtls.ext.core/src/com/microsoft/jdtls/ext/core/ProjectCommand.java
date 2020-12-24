@@ -194,7 +194,7 @@ public final class ProjectCommand {
         for (PackageNode project : projectList) {
             IJavaProject javaProject = PackageCommand.getJavaProject(project.getUri());
             for (IPackageFragmentRoot packageFragmentRoot : javaProject.getAllPackageFragmentRoots()) {
-                if (!packageFragmentRoot.isExternal()) {
+                if (!packageFragmentRoot.isArchive()) {
                     searchRoots.add(packageFragmentRoot);
                 }
             }
