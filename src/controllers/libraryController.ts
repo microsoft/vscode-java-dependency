@@ -4,6 +4,7 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as minimatch from "minimatch";
+import { platform } from "os";
 import * as path from "path";
 import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
@@ -35,13 +36,13 @@ export class LibraryController implements Disposable {
         if (!libraryGlobs) {
             libraryGlobs = [];
             const workspaceFolder: WorkspaceFolder | undefined = Utility.getDefaultWorkspaceFolder();
-            const isWindows = process.platform.indexOf("win") === 0;
+            const isMac = platform() === "darwin";
             const results: Uri[] | undefined = await window.showOpenDialog({
                 defaultUri: workspaceFolder && workspaceFolder.uri,
                 canSelectFiles: true,
-                canSelectFolders: isWindows ? false : true,
+                canSelectFolders: isMac ? true : false,
                 canSelectMany: true,
-                openLabel: isWindows ? "Select jar files" : "Select jar files or directories",
+                openLabel: isMac ? "Select jar files or directories" : "Select jar files",
                 filters: { Library: ["jar"] },
             });
             if (!results) {
