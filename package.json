@@ -43,7 +43,13 @@
         "command": "java.project.addLibraries",
         "title": "%contributes.commands.java.project.addLibraries%",
         "category": "Java",
-        "icon": "$(add)"
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "java.project.addLibraryFolders",
+        "title": "%contributes.commands.java.project.addLibraryFolders%",
+        "category": "Java",
+        "icon": "$(new-folder)"
       },
       {
         "command": "java.project.removeLibrary",
@@ -286,6 +292,10 @@
           "when": "false"
         },
         {
+          "command": "java.project.addLibraryFolders",
+          "when": "false"
+        },
+        {
           "command": "java.project.removeLibrary",
           "when": "false"
         },
@@ -469,6 +479,11 @@
           "group": "inline@0"
         },
         {
+          "command": "java.project.addLibraryFolders",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:container(?=.*?\\b\\+referencedLibrary\\b)/",
+          "group": "inline@1"
+        },
+        {
           "command": "java.project.removeLibrary",
           "when": "view == javaProjectExplorer && viewItem =~ /java:jar(?=.*?\\b\\+referencedLibrary\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "inline"
@@ -476,7 +491,7 @@
         {
           "command": "java.project.refreshLibraries",
           "when": "view == javaProjectExplorer && viewItem =~ /java:container(?=.*?\\b\\+referencedLibrary\\b)/",
-          "group": "inline@1"
+          "group": "inline@2"
         },
         {
           "command": "java.view.package.exportJar",

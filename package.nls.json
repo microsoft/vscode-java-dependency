@@ -1,8 +1,9 @@
 {
   "description": "Manage Java projects in Visual Studio Code",
   "contributes.commands.java.project.create": "Create Java Project...",
-  "contributes.commands.java.project.addLibraries": "Add a jar file or a folder to project classpath",
-  "contributes.commands.java.project.removeLibrary": "Remove jar file from project classpath",
+  "contributes.commands.java.project.addLibraries": "Add Jar Libraries to Project Classpath...",
+  "contributes.commands.java.project.addLibraryFolders": "Add Library Folders to Project Classpath...",
+  "contributes.commands.java.project.removeLibrary": "Remove Library from Project Classpath",
   "contributes.commands.java.view.package.refresh": "Refresh",
   "contributes.commands.java.project.build.workspace": "Build Workspace",
   "contributes.commands.java.project.clean.workspace": "Clean Workspace",
