@@ -29,7 +29,17 @@ public class PackageParams {
 
     private String rootPath;
 
+    private boolean isHierarchicalView;
+
     public PackageParams() {
+    }
+
+    public boolean isHierarchicalView() {
+        return isHierarchicalView;
+    }
+
+    public void setHierarchicalView(boolean isHierarchicalView) {
+        this.isHierarchicalView = isHierarchicalView;
     }
 
     public PackageParams(NodeKind kind, String projectUri) {
