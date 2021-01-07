@@ -3,7 +3,7 @@
   "contributes.commands.java.project.create": "创建 Java 项目...",
   "contributes.commands.java.project.addLibraries": "TRANSLATION NEEDED...",
   "contributes.commands.java.project.addLibraryFolders": "TRANSLATION NEEDED...",
-  "contributes.commands.java.project.removeLibrary": "将该 Jar 文件从 Java 项目类路径中移除",
+  "contributes.commands.java.project.removeLibrary": "TRANSLATION NEEDED? (English wording changed slightly, see previous commit)",
   "contributes.commands.java.view.package.refresh": "刷新",
   "contributes.commands.java.project.build.workspace": "构建工作空间",
   "contributes.commands.java.project.clean.workspace": "清理工作空间",
