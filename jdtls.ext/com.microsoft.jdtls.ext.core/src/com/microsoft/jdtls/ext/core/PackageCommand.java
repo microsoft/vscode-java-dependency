@@ -484,8 +484,11 @@ public class PackageCommand {
             }
             Trie<IJavaElement> trie = new Trie<>(map);
             for (TrieNode<IJavaElement> node : trie.getAllNodes()) {
+                if (node.value == null) {
+                    continue;
+                }
                 IPackageFragment fragment = (IPackageFragment) node.value;
-                if (fragment != null && fragment.hasChildren() || fragment.getNonJavaResources().length > 0
+                if (fragment.hasChildren() || fragment.getNonJavaResources().length > 0
                         || !fragment.hasSubpackages() || node.children.size() > 1) {
                     result.add(fragment);
                 }
