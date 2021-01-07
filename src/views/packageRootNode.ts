@@ -6,6 +6,7 @@ import { Explorer } from "../constants";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
+import { Settings } from "../settings";
 import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
@@ -27,6 +28,7 @@ export class PackageRootNode extends DataNode {
             projectUri: this._project.nodeData.uri,
             rootPath: this.nodeData.path,
             handlerIdentifier: this.nodeData.handlerIdentifier,
+            isHierarchicalView: Settings.isHierarchicalView(),
         });
     }
 

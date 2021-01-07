@@ -63,6 +63,8 @@ import com.google.gson.GsonBuilder;
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 import com.microsoft.jdtls.ext.core.model.PackageRootNode;
+import com.microsoft.jdtls.ext.core.model.Trie;
+import com.microsoft.jdtls.ext.core.model.TrieNode;
 
 public class PackageCommand {
 
@@ -347,7 +349,7 @@ public class PackageCommand {
                 throw new CoreException(
                         new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
             }
-            Object[] result = getPackageFragmentRootContent(packageRoot, pm);
+            Object[] result = getPackageFragmentRootContent(packageRoot, query.isHierarchicalView(), pm);
             return convertToPackageNode(result, packageRoot, pm);
         } catch (CoreException e) {
             JdtlsExtActivator.logException("Problem load project package ", e);
@@ -461,18 +463,45 @@ public class PackageCommand {
         return Collections.emptyList();
     }
 
-    private static Object[] getPackageFragmentRootContent(IPackageFragmentRoot root, IProgressMonitor pm) throws CoreException {
+    /**
+     * Return the packages of the package root. Note that when the explorer is in hierarchical mode,
+     * We also need to return the deepest common parent packages, for example:
+     * - com.microsoft.example <-- this common parent package should be returned.
+     *   +-- model
+     *   +-- handler
+     * Here we use a Trie to find all these packages.
+     *
+     * @param root the package fragment root
+     * @param isHierarchicalView whether the explorer is in hierarchical mode or not
+     * @param pm the progress monitor
+     */
+    private static Object[] getPackageFragmentRootContent(IPackageFragmentRoot root, boolean isHierarchicalView, IProgressMonitor pm) throws CoreException {
         ArrayList<Object> result = new ArrayList<>();
-        for (IJavaElement child : root.getChildren()) {
-            IPackageFragment fragment = (IPackageFragment) child;
-            if (fragment.hasChildren()) {
-                result.add(child);
-            } else if (fragment.getNonJavaResources().length > 0) { // some package has non-java files
-                result.add(fragment);
-            } else if (!fragment.hasSubpackages()) {
-                result.add(fragment);
+        if (isHierarchicalView) {
+            Map<String, IJavaElement> map = new HashMap<>();
+            for (IJavaElement child : root.getChildren()) {
+                map.put(child.getElementName(), child);
+            }
+            Trie<IJavaElement> trie = new Trie<>(map);
+            for (TrieNode<IJavaElement> node : trie.getAllNodes()) {
+                if (node.value == null) {
+                    continue;
+                }
+                IPackageFragment fragment = (IPackageFragment) node.value;
+                if (fragment.hasChildren() || fragment.getNonJavaResources().length > 0
+                        || !fragment.hasSubpackages() || node.children.size() > 1) {
+                    result.add(fragment);
+                }
+            }
+        } else {
+            for (IJavaElement child : root.getChildren()) {
+                IPackageFragment fragment = (IPackageFragment) child;
+                if (fragment.hasChildren() || fragment.getNonJavaResources().length > 0 || !fragment.hasSubpackages()) {
+                    result.add(fragment);
+                }
             }
         }
+
         Object[] nonJavaResources = root.getNonJavaResources();
         Collections.addAll(result, nonJavaResources);
 
