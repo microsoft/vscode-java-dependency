@@ -463,6 +463,20 @@ public class PackageCommand {
         return Collections.emptyList();
     }
 
+    /**
+     * Return the packages of the package root. Note that when the explorer is in hierarchical mode,
+     * We also need to return the deepest common parent packages, for example:
+     * - com.microsoft.example <-- this common parent package should be returned.
+     *   +-- model
+     *   +-- handler
+     * Here we use a Trie to find all these packages.
+     * 
+     * @param root the package fragment root
+     * @param isHierarchicalView whether the explorer is in hierarchical mode or not
+     * @param pm the progress monitor
+     * @return
+     * @throws CoreException
+     */
     private static Object[] getPackageFragmentRootContent(IPackageFragmentRoot root, boolean isHierarchicalView, IProgressMonitor pm) throws CoreException {
         ArrayList<Object> result = new ArrayList<>();
         if (isHierarchicalView) {
