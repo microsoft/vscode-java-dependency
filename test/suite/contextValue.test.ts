@@ -11,75 +11,87 @@ import { ContainerNode, FileNode, FolderNode, INodeData, NodeKind, PackageNode, 
 suite("Context Value Tests", () => {
 
     test("test workspace node", async function() {
-        assert.equal((await workspace.getTreeItem()).contextValue, "java:workspaceFolder+uri");
+        assert.ok(/java:workspaceFolder(?=.*?\b\+uri\b)/.test((await workspace.getTreeItem()).contextValue || ""));
     });
 
     test("test Maven project node", async function() {
-        assert.equal((await mavenProject.getTreeItem()).contextValue, "java:project+java+maven+uri");
+        assert.ok(/java:project(?=.*?\b\+java\b)(?=.*?\b\+maven\b)(?=.*?\b\+uri\b)/.test((await mavenProject.getTreeItem()).contextValue || ""));
     });
 
     test("test Gradle project node", async function() {
-        assert.equal((await gradleProject.getTreeItem()).contextValue, "java:project+java+gradle+uri");
+        assert.ok(/java:project(?=.*?\b\+java\b)(?=.*?\b\+gradle\b)(?=.*?\b\+uri\b)/.test((await gradleProject.getTreeItem()).contextValue || ""));
     });
 
     test("test JRE container node", async function() {
-        assert.equal((await jreContainer.getTreeItem()).contextValue, "java:container+jre+uri");
+        assert.ok(/java:container(?=.*?\b\+jre\b)(?=.*?\b\+uri\b)/.test((await jreContainer.getTreeItem()).contextValue || ""));
     });
 
     test("test Maven container node", async function() {
-        assert.equal((await mavenContainer.getTreeItem()).contextValue, "java:container+maven+uri");
+        assert.ok(/java:container(?=.*?\b\+maven\b)(?=.*?\b\+uri\b)/.test((await mavenContainer.getTreeItem()).contextValue || ""));
     });
 
     test("test Gradle container node", async function() {
-        assert.equal((await gradleContainer.getTreeItem()).contextValue, "java:container+gradle+uri");
+        assert.ok(/java:container(?=.*?\b\+gradle\b)(?=.*?\b\+uri\b)/.test((await gradleContainer.getTreeItem()).contextValue || ""));
     });
 
     test("test Referenced Libraries container node", async function() {
-        assert.equal((await referencedLibrariesContainer.getTreeItem()).contextValue, "java:container+referencedLibrary+uri");
+        assert.ok(/java:container(?=.*?\b\+referencedLibrary\b)(?=.*?\b\+uri\b)/.test((await referencedLibrariesContainer.getTreeItem()).contextValue || ""));
     });
 
     test("test source root node", async function() {
-        assert.equal((await sourceRoot.getTreeItem()).contextValue, "java:packageRoot+source+uri");
+        assert.ok(/java:packageRoot(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/.test((await sourceRoot.getTreeItem()).contextValue || ""));
+    });
+
+    test("test test-source root node", async function() {
+        assert.ok(/java:packageRoot(?=.*?\b\+source\b)(?=.*?\b\+uri\b)(?=.*?\b\+test\b)/.test((await testSourceRoot.getTreeItem()).contextValue || ""));
     });
 
     test("test resource root node", async function() {
-        assert.equal((await resourceRoot.getTreeItem()).contextValue, "java:packageRoot+resource+uri");
+        assert.ok(/java:packageRoot(?=.*?\b\+resource\b)(?=.*?\b\+uri\b)/.test((await resourceRoot.getTreeItem()).contextValue || ""));
     });
 
     test("test dependency jar node", async function() {
-        assert.equal((await dependencyJar.getTreeItem()).contextValue, "java:jar+uri");
+        assert.ok(/java:jar(?=.*?\b\+uri\b)/.test((await dependencyJar.getTreeItem()).contextValue || ""));
     });
 
     test("test referenced library jar node", async function() {
-        assert.equal((await referencedLibraryJar.getTreeItem()).contextValue, "java:jar+referencedLibrary+uri");
+        assert.ok(/java:jar(?=.*?\b\+referencedLibrary\b)(?=.*?\b\+uri\b)/.test((await referencedLibraryJar.getTreeItem()).contextValue || ""));
     });
 
     test("test source package node", async function() {
-        assert.equal((await sourcePackage.getTreeItem()).contextValue, "java:package+source+uri");
+        assert.ok(/java:package(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/.test((await sourcePackage.getTreeItem()).contextValue || ""));
+    });
+
+    test("test source package node", async function() {
+        assert.ok(/java:package(?=.*?\b\+source\b)(?=.*?\b\+test\b)(?=.*?\b\+uri\b)/.test((await testSourcePackage.getTreeItem()).contextValue || ""));
     });
 
     test("test binary package node", async function() {
-        assert.equal((await binaryPackage.getTreeItem()).contextValue, "java:package+binary+uri");
+        assert.ok(/java:package(?=.*?\b\+binary\b)(?=.*?\b\+uri\b)/.test((await binaryPackage.getTreeItem()).contextValue || ""));
     });
 
     test("test file node", async function() {
-        assert.equal((await file.getTreeItem()).contextValue, "java:file+uri");
+        assert.ok(/java:file(?=.*?\b\+uri\b)/.test((await file.getTreeItem()).contextValue || ""));
     });
 
     test("test class type node", async function() {
-        assert.equal((await classType.getTreeItem()).contextValue, "java:type+class+uri");
+        assert.ok(/java:type(?=.*?\b\+class\b)(?=.*?\b\+uri\b)/.test((await classType.getTreeItem()).contextValue || ""));
+    });
+
+    test("test test-class type node", async function() {
+        assert.ok(/java:type(?=.*?\b\+class\b)(?=.*?\b\+test\b)(?=.*?\b\+uri\b)/.test((await testClassType.getTreeItem()).contextValue || ""));
     });
 
     test("test enum type node", async function() {
-        assert.equal((await enumType.getTreeItem()).contextValue, "java:type+enum+uri");
+        assert.ok(/java:type(?=.*?\b\+enum\b)(?=.*?\b\+uri\b)/.test((await enumType.getTreeItem()).contextValue || ""));
     });
 
     test("test interface type node", async function() {
-        assert.equal((await interfaceType.getTreeItem()).contextValue, "java:type+interface+uri");
+        assert.ok(/java:type(?=.*?\b\+interface\b)(?=.*?\b\+uri\b)/.test((await interfaceType.getTreeItem()).contextValue || ""));
     });
 
     test("test folder node", async function() {
-        assert.equal((await folder.getTreeItem()).contextValue, "java:folder+uri");
+        assert.ok(/java:folder(?=.*?\b\+uri\b)/.test((await folder.getTreeItem()).contextValue || ""));
     });
 });
 
@@ -143,6 +155,16 @@ const sourceRoot: PackageRootNode = new PackageRootNode({
     entryKind: PackageRootKind.K_SOURCE,
 } as INodeData, mavenContainer, mavenProject);
 
+const testSourceRoot: PackageRootNode = new PackageRootNode({
+    name: "src/main/java",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.PackageRoot,
+    entryKind: PackageRootKind.K_SOURCE,
+    metaData: {
+        test: "true"
+    }
+} as INodeData, mavenContainer, mavenProject);
+
 const resourceRoot: PackageRootNode = new PackageRootNode({
     name: "src/main/resources",
     uri: Uri.file(__dirname).toString(),
@@ -170,6 +192,12 @@ const sourcePackage: PackageNode = new PackageNode({
     kind: NodeKind.Package,
 }, sourceRoot, mavenProject, sourceRoot);
 
+const testSourcePackage: PackageNode = new PackageNode({
+    name: "com.microsoft.java",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.Package,
+}, testSourceRoot, mavenProject, testSourceRoot);
+
 const binaryPackage: PackageNode = new PackageNode({
     name: "junit",
     uri: Uri.file(__dirname).toString(),
@@ -189,7 +217,16 @@ const classType: PrimaryTypeNode = new PrimaryTypeNode({
     metaData: {
         TypeKind: TypeKind.Class,
     },
-}, sourcePackage);
+}, sourcePackage, sourceRoot);
+
+const testClassType: PrimaryTypeNode = new PrimaryTypeNode({
+    name: "App",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.PrimaryType,
+    metaData: {
+        TypeKind: TypeKind.Class,
+    },
+}, testSourcePackage, testSourceRoot);
 
 const enumType: PrimaryTypeNode = new PrimaryTypeNode({
     name: "LanguageServerMode",
@@ -198,7 +235,7 @@ const enumType: PrimaryTypeNode = new PrimaryTypeNode({
     metaData: {
         TypeKind: TypeKind.Enum,
     },
-}, sourcePackage);
+}, sourcePackage, sourceRoot);
 
 const interfaceType: PrimaryTypeNode = new PrimaryTypeNode({
     name: "Controller",
@@ -207,7 +244,7 @@ const interfaceType: PrimaryTypeNode = new PrimaryTypeNode({
     metaData: {
         TypeKind: TypeKind.Interface,
     },
-}, sourcePackage);
+}, sourcePackage, sourceRoot);
 
 const folder: FolderNode = new FolderNode({
     name: "static",

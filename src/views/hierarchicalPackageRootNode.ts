@@ -41,7 +41,7 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
                     result.push(new FolderNode(data, this, this._project, this));
                 } else if (data.kind === NodeKind.PrimaryType) {
                     if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(data, this));
+                        result.push(new PrimaryTypeNode(data, this, this));
                     }
                 }
             });

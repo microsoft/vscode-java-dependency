@@ -94,7 +94,7 @@ export class ProjectNode extends DataNode {
                     // For invisible project with empty named package root with a default package,
                     // types will be the project node's children
                     if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(data, this));
+                        result.push(new PrimaryTypeNode(data, this, undefined));
                     }
                 }
             });

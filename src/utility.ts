@@ -3,6 +3,7 @@
 
 import { Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { setUserError } from "vscode-extension-telemetry-wrapper";
+import { INodeData } from "./java/nodeData";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 import { Settings } from "./settings";
 
@@ -94,4 +95,26 @@ export function isKeyword(identifier: string): boolean {
 const identifierRegExp: RegExp = /^([a-zA-Z_$][a-zA-Z\d_$]*)$/;
 export function isJavaIdentifier(identifier: string): boolean {
     return identifierRegExp.test(identifier);
+}
+
+export function isTest(nodeData: INodeData | undefined): boolean {
+    if (!nodeData) {
+        return false;
+    }
+
+    if (nodeData.metaData?.test === "true") {
+        return true;
+    }
+
+    const mavenScope: string = nodeData.metaData?.["maven.scope"] || "";
+    if (mavenScope.toLocaleLowerCase().includes("test")) {
+        return true;
+    }
+
+    const gradleScope: string = nodeData.metaData?.gradle_scope || "";
+    if (gradleScope.toLocaleLowerCase().includes("test")) {
+        return true;
+    }
+
+    return false;
 }

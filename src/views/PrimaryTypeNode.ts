@@ -7,6 +7,7 @@ import { Commands } from "../commands";
 import { Explorer } from "../constants";
 import { INodeData, TypeKind } from "../java/nodeData";
 import { Settings } from "../settings";
+import { isTest } from "../utility";
 import { DataNode } from "./dataNode";
 import { DocumentSymbolNode } from "./documentSymbolNode";
 import { ExplorerNode } from "./explorerNode";
@@ -15,7 +16,7 @@ export class PrimaryTypeNode extends DataNode {
 
     public static K_TYPE_KIND = "TypeKind";
 
-    constructor(nodeData: INodeData, parent: DataNode) {
+    constructor(nodeData: INodeData, parent: DataNode, protected _rootNode?: DataNode) {
         super(nodeData, parent);
     }
 
@@ -91,15 +92,21 @@ export class PrimaryTypeNode extends DataNode {
     }
 
     protected get contextValue(): string {
-        const context = Explorer.ContextValueType.Type;
+        let contextValue: string = Explorer.ContextValueType.Type;
         const type = this.nodeData.metaData?.[PrimaryTypeNode.K_TYPE_KIND];
 
         if (type === TypeKind.Enum) {
-            return `${context}+enum`;
+            contextValue += "+enum";
         } else if (type === TypeKind.Interface) {
-            return `${context}+interface`;
+            contextValue += "+interface";
         } else {
-            return `${context}+class`;
+            contextValue += "+class";
         }
+
+        if (isTest(this._rootNode?.nodeData)) {
+            contextValue += "+test";
+        }
+
+        return contextValue;
     }
 }
