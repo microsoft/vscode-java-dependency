@@ -35,7 +35,8 @@ suite("Context Value Tests", () => {
     });
 
     test("test Referenced Libraries container node", async function() {
-        assert.ok(/java:container(?=.*?\b\+referencedLibrary\b)(?=.*?\b\+uri\b)/.test((await referencedLibrariesContainer.getTreeItem()).contextValue || ""));
+        assert.ok(/java:container(?=.*?\b\+referencedLibrary\b)(?=.*?\b\+uri\b)/
+            .test((await referencedLibrariesContainer.getTreeItem()).contextValue || ""));
     });
 
     test("test source root node", async function() {
@@ -43,7 +44,8 @@ suite("Context Value Tests", () => {
     });
 
     test("test test-source root node", async function() {
-        assert.ok(/java:packageRoot(?=.*?\b\+source\b)(?=.*?\b\+uri\b)(?=.*?\b\+test\b)/.test((await testSourceRoot.getTreeItem()).contextValue || ""));
+        assert.ok(/java:packageRoot(?=.*?\b\+source\b)(?=.*?\b\+uri\b)(?=.*?\b\+test\b)/
+            .test((await testSourceRoot.getTreeItem()).contextValue || ""));
     });
 
     test("test resource root node", async function() {
@@ -63,7 +65,8 @@ suite("Context Value Tests", () => {
     });
 
     test("test source package node", async function() {
-        assert.ok(/java:package(?=.*?\b\+source\b)(?=.*?\b\+test\b)(?=.*?\b\+uri\b)/.test((await testSourcePackage.getTreeItem()).contextValue || ""));
+        assert.ok(/java:package(?=.*?\b\+source\b)(?=.*?\b\+test\b)(?=.*?\b\+uri\b)/
+            .test((await testSourcePackage.getTreeItem()).contextValue || ""));
     });
 
     test("test binary package node", async function() {
@@ -161,8 +164,8 @@ const testSourceRoot: PackageRootNode = new PackageRootNode({
     kind: NodeKind.PackageRoot,
     entryKind: PackageRootKind.K_SOURCE,
     metaData: {
-        test: "true"
-    }
+        test: "true",
+    },
 } as INodeData, mavenContainer, mavenProject);
 
 const resourceRoot: PackageRootNode = new PackageRootNode({
