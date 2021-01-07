@@ -470,12 +470,10 @@ public class PackageCommand {
      *   +-- model
      *   +-- handler
      * Here we use a Trie to find all these packages.
-     * 
+     *
      * @param root the package fragment root
      * @param isHierarchicalView whether the explorer is in hierarchical mode or not
      * @param pm the progress monitor
-     * @return
-     * @throws CoreException
      */
     private static Object[] getPackageFragmentRootContent(IPackageFragmentRoot root, boolean isHierarchicalView, IProgressMonitor pm) throws CoreException {
         ArrayList<Object> result = new ArrayList<>();
