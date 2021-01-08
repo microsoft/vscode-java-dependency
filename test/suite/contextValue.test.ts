@@ -8,6 +8,12 @@ import { ContainerNode, FileNode, FolderNode, INodeData, NodeKind, PackageNode, 
 
 // tslint:disable: only-arrow-functions
 // tslint:disable: no-object-literal-type-assertion
+
+/**
+ * This suite is to test the context value of different nodes in the explorer,
+ * Users can register their commands to the nodes by writing RegExp to match the metadata.
+ * More details, please see: https://github.com/microsoft/vscode-java-dependency/wiki/Register-Command-onto-the-Nodes-of-Project-View
+ */
 suite("Context Value Tests", () => {
 
     test("test workspace node", async function() {
