@@ -303,11 +303,9 @@ public class PackageCommand {
 
                             IClasspathEntry resolvedClasspathEntry = fragmentRoot.getResolvedClasspathEntry();
                             if (resolvedClasspathEntry != null) {
-                                Map<String, String> attributes = new HashMap<>();
                                 for (IClasspathAttribute attribute : resolvedClasspathEntry.getExtraAttributes()) {
-                                    attributes.put(attribute.getName(), attribute.getValue());
+                                    node.setMetaDataValue(attribute.getName(), attribute.getValue());
                                 }
-                                node.setAttributes(attributes);
                             }
 
                             children.add(node);

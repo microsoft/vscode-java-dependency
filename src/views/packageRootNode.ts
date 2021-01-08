@@ -7,6 +7,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
 import { Settings } from "../settings";
+import { isTest } from "../utility";
 import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
@@ -45,7 +46,7 @@ export class PackageRootNode extends DataNode {
                     result.push(new FolderNode(data, this, this._project, this));
                 } else if (data.kind === NodeKind.PrimaryType) {
                     if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(data, this));
+                        result.push(new PrimaryTypeNode(data, this, this));
                     }
                 }
             });
@@ -64,20 +65,28 @@ export class PackageRootNode extends DataNode {
 
     protected get contextValue(): string {
         const data = <IPackageRootNodeData>this.nodeData;
+        let contextValue: string;
         if (data.entryKind === PackageRootKind.K_BINARY) {
-            let contextValue: string = Explorer.ContextValueType.Jar;
+            contextValue = Explorer.ContextValueType.Jar;
             const parent = <ContainerNode>this.getParent();
             if (parent.path?.startsWith("REFERENCED_LIBRARIES_PATH")) {
                 contextValue += "+referencedLibrary";
             }
             return contextValue;
-        } else if (resourceRoots.includes(this._nodeData.name)) {
-            // APIs in JDT does not have a consistent result telling whether a package root
-            // is a source root or resource root, so we hard code some common resources root
-            // here as a workaround.
-            return `${Explorer.ContextValueType.PackageRoot}+resource`;
         } else {
-            return `${Explorer.ContextValueType.PackageRoot}+source`;
+            contextValue = Explorer.ContextValueType.PackageRoot;
+            if (isTest(data)) {
+                contextValue += "+test";
+            }
+            if (resourceRoots.includes(this._nodeData.name)) {
+                // APIs in JDT does not have a consistent result telling whether a package root
+                // is a source root or resource root, so we hard code some common resources root
+                // here as a workaround.
+                contextValue += "+resource";
+            } else {
+                contextValue += "+source";
+            }
+            return contextValue;
         }
     }
 

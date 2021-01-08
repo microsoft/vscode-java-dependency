@@ -39,6 +39,7 @@
             "log",
             "error"
         ],
-        "no-namespace": false
+        "no-namespace": false,
+        "prefer-conditional-expression": false
     }
 }
