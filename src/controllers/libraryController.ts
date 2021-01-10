@@ -3,6 +3,7 @@
 
 import * as _ from "lodash";
 import * as minimatch from "minimatch";
+import { platform } from "os";
 import * as path from "path";
 import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
@@ -38,15 +39,16 @@ export class LibraryController implements Disposable {
         Settings.updateReferencedLibraries(setting);
     }
 
-    public async addLibraries(folders?: boolean) {
+    public async addLibraries(canSelectFolders?: boolean) {
         const workspaceFolder: WorkspaceFolder | undefined = Utility.getDefaultWorkspaceFolder();
+        const isMac = platform() === "darwin";
         const results: Uri[] | undefined = await window.showOpenDialog({
             defaultUri: workspaceFolder && workspaceFolder.uri,
-            canSelectFiles: !folders,
-            canSelectFolders: folders,
+            canSelectFiles: !canSelectFolders,
+            canSelectFolders: canSelectFolders || isMac,
             canSelectMany: true,
-            openLabel: folders ? "Select Library Folders" : "Select Jar Libraries",
-            filters: folders ? { Folders: ["*"] } : { "Jar Files": ["jar"] },
+            openLabel: canSelectFolders ? "Select Library Folders" : "Select Jar Libraries",
+            filters: canSelectFolders ? { Folders: ["*"] } : { "Jar Files": ["jar"] },
         });
         if (!results) {
             return;
@@ -55,7 +57,7 @@ export class LibraryController implements Disposable {
             // keep the param: `includeWorkspaceFolder` to false here
             // since the multi-root is not supported well for invisible projects
             const uriPath = workspace.asRelativePath(uri, false);
-            return folders ? uriPath + "/**/*.jar" : uriPath;
+            return canSelectFolders ? uriPath + "/**/*.jar" : uriPath;
         })));
     }
 
