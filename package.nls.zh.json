@@ -1,9 +1,9 @@
 {
   "description": "在 Visual Studio Code 中管理 Java 项目",
   "contributes.commands.java.project.create": "创建 Java 项目...",
-  "contributes.commands.java.project.addLibraries": "TRANSLATION NEEDED...",
-  "contributes.commands.java.project.addLibraryFolders": "TRANSLATION NEEDED...",
-  "contributes.commands.java.project.removeLibrary": "TRANSLATION NEEDED? (English wording changed slightly, see previous commit)",
+  "contributes.commands.java.project.addLibraries": "添加 Jar 文件至项目 Classpath...",
+  "contributes.commands.java.project.addLibraryFolders": "添加文件夹至项目 Classpath...",
+  "contributes.commands.java.project.removeLibrary": "从项目 Classpath 中移除",
   "contributes.commands.java.view.package.refresh": "刷新",
   "contributes.commands.java.project.build.workspace": "构建工作空间",
   "contributes.commands.java.project.clean.workspace": "清理工作空间",
