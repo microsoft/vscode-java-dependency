@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as minimatch from "minimatch";
 import { platform } from "os";
@@ -57,7 +58,8 @@ export class LibraryController implements Disposable {
             // keep the param: `includeWorkspaceFolder` to false here
             // since the multi-root is not supported well for invisible projects
             const uriPath = workspace.asRelativePath(uri, false);
-            return canSelectFolders ? uriPath + "/**/*.jar" : uriPath;
+            const isLibraryFolder = canSelectFolders || isMac && (await fse.stat(uri.fsPath)).isDirectory();
+            return isLibraryFolder ? uriPath + "/**/*.jar" : uriPath;
         })));
     }
 
