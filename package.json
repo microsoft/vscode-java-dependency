@@ -247,32 +247,32 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "java.view.package.exportJar",
+          "when": "java:serverMode == Standard"
+        },
+        {
           "command": "java.view.package.refresh",
-          "when": "java:serverMode == Standard && java:projectManagerActivated"
+          "when": "false"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
-          "when": "java:serverMode == Standard && java:projectManagerActivated"
+          "when": "false"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
-          "when": "java:serverMode == Standard && java:projectManagerActivated"
+          "when": "false"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
-          "when": "java:serverMode == Standard && java:projectManagerActivated"
+          "when": "false"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
-          "when": "java:serverMode == Standard && java:projectManagerActivated"
+          "when": "false"
         },
         {
           "command": "java.view.package.revealFileInOS",
           "when": "false"
-        },
-        {
-          "command": "java.view.package.exportJar",
-          "when": "java:serverMode == Standard"
         },
         {
           "command": "java.view.package.copyFilePath",
