@@ -21,8 +21,9 @@
   "homepage": "https://github.com/Microsoft/vscode-java-dependency/blob/master/README.md",
   "icon": "logo.png",
   "activationEvents": [
-    "onCommand:java.project.create",
     "onCommand:_java.project.open",
+    "onCommand:java.project.create",
+    "onCommand:java.view.package.exportJar",
     "onCommand:java.view.package.revealInProjectExplorer",
     "onView:javaProjectExplorer"
   ],
@@ -247,23 +248,23 @@
       "commandPalette": [
         {
           "command": "java.view.package.refresh",
-          "when": "java:serverMode == Standard"
+          "when": "java:serverMode == Standard && java:projectManagerActivated"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
-          "when": "java:serverMode == Standard"
+          "when": "java:serverMode == Standard && java:projectManagerActivated"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
-          "when": "java:serverMode == Standard"
+          "when": "java:serverMode == Standard && java:projectManagerActivated"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
-          "when": "java:serverMode == Standard"
+          "when": "java:serverMode == Standard && java:projectManagerActivated"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
-          "when": "java:serverMode == Standard"
+          "when": "java:serverMode == Standard && java:projectManagerActivated"
         },
         {
           "command": "java.view.package.revealFileInOS",
@@ -480,7 +481,7 @@
         },
         {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace(?=.*?\\b\\+uri\\b)/ && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace(?=.*?\\b\\+uri\\b)/ && java:serverMode == Standard",
           "group": "inline"
         },
         {
