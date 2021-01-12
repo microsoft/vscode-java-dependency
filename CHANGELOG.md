@@ -4,6 +4,19 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.17.0
+### Added
+- Add contextual title and icon for `Java Project` explorer. [PR#423](https://github.com/microsoft/vscode-java-dependency/pull/423)
+- Allow adding library folder in `Java Project` explorer for unmanaged folders. [PR#434](https://github.com/microsoft/vscode-java-dependency/pull/434)
+
+### Changed
+- Make openFile experience consistent. [PR#426](https://github.com/microsoft/vscode-java-dependency/pull/426)
+- Hide main classes from libraries in export jar wizard. [PR#428](https://github.com/microsoft/vscode-java-dependency/pull/428)
+- Hide view related commands in the command palette. [PR#439](https://github.com/microsoft/vscode-java-dependency/pull/439)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.17.0+is%3Aclosed)
+
 ## 0.16.0
 ### Added
 - Add `Update Project` command into the project node in explorer. [PR#391](https://github.com/microsoft/vscode-java-dependency/pull/391)
