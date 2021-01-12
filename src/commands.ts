@@ -46,6 +46,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
 
+    export const JAVA_PROJECT_ADD_LIBRARY_FOLDERS = "java.project.addLibraryFolders";
+
     export const JAVA_PROJECT_REMOVE_LIBRARY = "java.project.removeLibrary";
 
     export const JAVA_PROJECT_REFRESH_LIBRARIES = "java.project.refreshLibraries";

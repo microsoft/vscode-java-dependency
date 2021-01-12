@@ -47,6 +47,12 @@
         "icon": "$(add)"
       },
       {
+        "command": "java.project.addLibraryFolders",
+        "title": "%contributes.commands.java.project.addLibraryFolders%",
+        "category": "Java",
+        "icon": "$(new-folder)"
+      },
+      {
         "command": "java.project.removeLibrary",
         "title": "%contributes.commands.java.project.removeLibrary%",
         "category": "Java",
@@ -287,6 +293,10 @@
           "when": "false"
         },
         {
+          "command": "java.project.addLibraryFolders",
+          "when": "false"
+        },
+        {
           "command": "java.project.removeLibrary",
           "when": "false"
         },
@@ -466,6 +476,7 @@
         },
         {
           "command": "java.project.addLibraries",
+          "alt": "java.project.addLibraryFolders",
           "when": "view == javaProjectExplorer && viewItem =~ /java:container(?=.*?\\b\\+referencedLibrary\\b)/",
           "group": "inline@0"
         },
