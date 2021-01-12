@@ -21,8 +21,9 @@
   "homepage": "https://github.com/Microsoft/vscode-java-dependency/blob/master/README.md",
   "icon": "logo.png",
   "activationEvents": [
-    "onCommand:java.project.create",
     "onCommand:_java.project.open",
+    "onCommand:java.project.create",
+    "onCommand:java.view.package.exportJar",
     "onCommand:java.view.package.revealInProjectExplorer",
     "onView:javaProjectExplorer"
   ],
@@ -252,32 +253,32 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "java.view.package.refresh",
+          "command": "java.view.package.exportJar",
           "when": "java:serverMode == Standard"
+        },
+        {
+          "command": "java.view.package.refresh",
+          "when": "false"
         },
         {
           "command": "java.view.package.changeToHierarchicalPackageView",
-          "when": "java:serverMode == Standard"
+          "when": "false"
         },
         {
           "command": "java.view.package.changeToFlatPackageView",
-          "when": "java:serverMode == Standard"
+          "when": "false"
         },
         {
           "command": "java.view.package.linkWithFolderExplorer",
-          "when": "java:serverMode == Standard"
+          "when": "false"
         },
         {
           "command": "java.view.package.unlinkWithFolderExplorer",
-          "when": "java:serverMode == Standard"
+          "when": "false"
         },
         {
           "command": "java.view.package.revealFileInOS",
           "when": "false"
-        },
-        {
-          "command": "java.view.package.exportJar",
-          "when": "java:serverMode == Standard"
         },
         {
           "command": "java.view.package.copyFilePath",
@@ -491,7 +492,7 @@
         },
         {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace(?=.*?\\b\\+uri\\b)/ && java:serverMode!= LightWeight",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:workspace(?=.*?\\b\\+uri\\b)/ && java:serverMode == Standard",
           "group": "inline"
         },
         {

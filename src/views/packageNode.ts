@@ -6,6 +6,7 @@ import { Explorer } from "../constants";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
+import { isTest } from "../utility";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
@@ -34,7 +35,7 @@ export class PackageNode extends DataNode {
                     result.push(new FileNode(nodeData, this));
                 } else if (nodeData.kind === NodeKind.PrimaryType) {
                     if (nodeData.metaData && nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(nodeData, this));
+                        result.push(new PrimaryTypeNode(nodeData, this, this._rootNode));
                     }
                 }
             });
@@ -48,11 +49,15 @@ export class PackageNode extends DataNode {
 
     protected get contextValue(): string | undefined {
         const parentData = <IPackageRootNodeData> this._rootNode.nodeData;
+        let contextValue: string = Explorer.ContextValueType.Package;
         if (parentData.entryKind === PackageRootKind.K_SOURCE || parentData.kind === NodeKind.Project) {
-            return `${Explorer.ContextValueType.Package}+source`;
+            contextValue += "+source";
         } else if (parentData.entryKind === PackageRootKind.K_BINARY) {
-            return `${Explorer.ContextValueType.Package}+binary`;
+            contextValue += "+binary";
         }
-        return undefined;
+        if (isTest(parentData)) {
+            contextValue += "+test";
+        }
+        return contextValue;
     }
 }
