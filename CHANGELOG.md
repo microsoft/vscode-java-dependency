@@ -6,13 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.17.0
 ### Added
-- Add contextual title and icon for `Java Project` explorer. [PR#423](https://github.com/microsoft/vscode-java-dependency/pull/423)
-- Allow adding library folder in `Java Project` explorer for unmanaged folders. [PR#434](https://github.com/microsoft/vscode-java-dependency/pull/434)
+- Add contextual title and icon for `Java Project` explorer. [#396](https://github.com/microsoft/vscode-java-dependency/issues/396)
+- Allow adding library folders into the `Referenced Libraries` on Windows and Linux (Press `Alt` to toggle out the button). [PR#434](https://github.com/microsoft/vscode-java-dependency/pull/434)
 
 ### Changed
-- Make openFile experience consistent. [PR#426](https://github.com/microsoft/vscode-java-dependency/pull/426)
-- Hide main classes from libraries in export jar wizard. [PR#428](https://github.com/microsoft/vscode-java-dependency/pull/428)
-- Hide view related commands in the command palette. [PR#439](https://github.com/microsoft/vscode-java-dependency/pull/439)
+- Opening files from the `Java Project` explorer now has the same experience as the `File` explorer. [PR#426](https://github.com/microsoft/vscode-java-dependency/pull/426)
+- Remove main classes in libraries from the export jar wizard. [#428](https://github.com/microsoft/vscode-java-dependency/issues/428)
+- Add test metadata to the nodes which are under test source paths. [PR#437](https://github.com/microsoft/vscode-java-dependency/pull/437)
+- Remove explorer related commands from the command palette. [PR#439](https://github.com/microsoft/vscode-java-dependency/pull/439)
 
 ### Fixed
 - [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.17.0+is%3Aclosed)
