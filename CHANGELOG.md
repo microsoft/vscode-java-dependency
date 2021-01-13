@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## 0.17.0
 ### Added
 - Add contextual title and icon for `Java Project` explorer. [#396](https://github.com/microsoft/vscode-java-dependency/issues/396)
-- Allow adding library folders into the `Referenced Libraries` on Windows and Linux (Press `Alt` or `shift` to toggle out the button). [PR#434](https://github.com/microsoft/vscode-java-dependency/pull/434)
+- Allow adding library folders into the `Referenced Libraries` on Windows and Linux (Press `Alt` or `Shift` to toggle out the button). [PR#434](https://github.com/microsoft/vscode-java-dependency/pull/434)
 - Add test metadata to the nodes which are under test source paths. [PR#437](https://github.com/microsoft/vscode-java-dependency/pull/437)
 
 ### Changed
