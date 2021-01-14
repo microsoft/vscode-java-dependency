@@ -289,10 +289,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
                 continue;
             }
             const matchResult: RegExpMatchArray | null = element.match(regExp);
-            if (matchResult === null) {
-                continue;
-            }
-            if (_.isEmpty(matchResult) || matchResult.length <= 2) {
+            if (matchResult === null || _.isEmpty(matchResult) || matchResult.length <= 2) {
                 if (extname(element) === ".jar") {
                     artifacts.push(this.toAbsolutePosixPath(element));
                 } else {
