@@ -33,6 +33,9 @@ public class Trie<T> {
 
     public void insert(String name, T value) {
         if (StringUtils.isBlank(name)) {
+            // default package
+            root.value = value;
+            allNodes.add(root);
             return;
         }
 
