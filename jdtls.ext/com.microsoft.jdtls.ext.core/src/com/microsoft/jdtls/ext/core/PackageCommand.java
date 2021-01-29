@@ -610,7 +610,8 @@ public class PackageCommand {
         }
 
         // For multi-module scenario, findContainersForLocationURI API may return a container array,
-        // need put the result from the nearest project in front.
+        // need filter out non-Java project and put the result from the nearest project in front.
+        containers = Arrays.stream(containers).filter(c -> ProjectUtils.isJavaProject(c.getProject())).toArray(IContainer[]::new);
         Arrays.sort(containers, (Comparator<IContainer>) (IContainer a, IContainer b) -> {
             return a.getFullPath().toPortableString().length() - b.getFullPath().toPortableString().length();
         });
