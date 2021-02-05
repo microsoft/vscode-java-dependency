@@ -80,7 +80,7 @@ jobs:
       run: npm install
 
     - name: Install Gulp
-      run: npm install -g gulp
+      run: npm install -g gulp --force
 
     - name: Install VSCE
       run: npm install -g vsce
