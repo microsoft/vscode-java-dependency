@@ -2,7 +2,7 @@
 
 > Manage Java projects in Visual Studio Code
 
-[![Travis CI](https://travis-ci.org/Microsoft/vscode-java-dependency.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-java-dependency)
+[![GitHub Actions](https://img.shields.io/github/workflow/status/microsoft/vscode-java-dependency/CI/master?style=flat-square)](https://github.com/microsoft/vscode-java-dependency/actions?query=workflow%3ACI+branch%3Amaster)
 
 ## Overview
 
