@@ -3,7 +3,7 @@
 
 import * as _ from "lodash";
 import { ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
-import { INodeData } from "../java/nodeData";
+import { INodeData, NodeKind } from "../java/nodeData";
 import { Lock } from "../utils/Lock";
 import { ExplorerNode } from "./explorerNode";
 
@@ -26,6 +26,18 @@ export abstract class DataNode extends ExplorerNode {
         item.iconPath = this.iconPath;
         item.command = this.command;
         item.contextValue = this.computeContextValue();
+        if (this.uri) {
+            switch (this._nodeData.kind) {
+                case NodeKind.PackageRoot:
+                case NodeKind.Package:
+                case NodeKind.PrimaryType:
+                case NodeKind.Folder:
+                case NodeKind.File:
+                    item.resourceUri = Uri.parse(this.uri);
+                    break;
+            }
+        }
+
         return item;
     }
 
