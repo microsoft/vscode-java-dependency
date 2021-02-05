@@ -49,6 +49,9 @@ jobs:
     - name: Build OSGi bundle
       run: npm run build-server
 
+    - name: Build VSIX file
+      run: vsce package
+
     - name: Test extension
       run: DISPLAY=:99 npm test
 
@@ -91,6 +94,9 @@ jobs:
     - name: Build OSGi bundle
       run: npm run build-server
 
+    - name: Build VSIX file
+      run: vsce package
+
     - name: Test extension
       run: npm test
 
@@ -132,6 +138,9 @@ jobs:
 
     - name: Build OSGi bundle
       run: npm run build-server
+
+    - name: Build VSIX file
+      run: vsce package
 
     - name: Test extension
       run: npm test
