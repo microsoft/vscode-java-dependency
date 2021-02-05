@@ -16,6 +16,7 @@ node_modules
 scripts
 extension.bundle.ts
 javaConfig.json
+.github/**
 
 # Ignore output of code sign
 server/*.md
