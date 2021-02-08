@@ -14,6 +14,7 @@ import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
+import { Settings } from "../settings";
 import { EventCounter, Utility } from "../utility";
 import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
@@ -76,7 +77,7 @@ export class DependencyExplorer implements Disposable {
                     await commands.executeCommand(Commands.VSCODE_OPEN, uri, { preserveFocus: true });
                 }
 
-                this.reveal(uri);
+                this.reveal(uri, false /*force to reveal even the sync setting is turned off*/);
             }),
         );
 
@@ -128,9 +129,13 @@ export class DependencyExplorer implements Disposable {
         }
     }
 
-    public async reveal(uri: Uri): Promise<void> {
+    public async reveal(uri: Uri, needCheckSyncSetting: boolean = true): Promise<void> {
         try {
             await this._lock.acquire();
+
+            if (needCheckSyncSetting && !Settings.syncWithFolderExplorer()) {
+                return;
+            }
 
             if (!await Utility.isRevealable(uri)) {
                 return;

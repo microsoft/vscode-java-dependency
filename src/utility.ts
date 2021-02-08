@@ -31,7 +31,7 @@ export class Utility {
         if (uri.scheme === "file" && !workspace.getWorkspaceFolder(uri)) {
             return false;
         }
-        if (!Settings.syncWithFolderExplorer() || !await languageServerApiManager.isStandardServerReady()) {
+        if (!await languageServerApiManager.isStandardServerReady()) {
             return false;
         }
         return true;
