@@ -5,7 +5,6 @@ import { Uri, window, workspace, WorkspaceFolder } from "vscode";
 import { setUserError } from "vscode-extension-telemetry-wrapper";
 import { INodeData } from "./java/nodeData";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
-import { Settings } from "./settings";
 
 export class Utility {
 
