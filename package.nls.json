@@ -38,5 +38,6 @@
   "taskDefinitions.java.project.exportJar.dependencies": "The artifact dependencies in the runtime scope.",
   "taskDefinitions.java.project.exportJar.testDependencies": "The artifact dependencies in the test scope.",
   "viewsWelcome.workbench.createNewJavaProject": "You can also [open a Java project](command:_java.project.open), or create a new Java project by clicking the below button.\n[Create Java Project](command:java.project.create)",
+  "viewsWelcome.workbench.noJavaProject": "No Java projects found in the current workspace. You can [open a Java project](command:_java.project.open), or create a new Java project by clicking the below button.\n[Create Java Project](command:java.project.create)",
   "viewsWelcome.workbench.inLightWeightMode": "No projects are listed because the Java Language Server is currently running in [LightWeight Mode](https://aka.ms/vscode-java-lightweight). To show projects, click on the button to switch to Standard Mode.\n[Switch to Standard Mode](command:java.server.mode.switch?%5B%22Standard%22,true%5D)"
 }

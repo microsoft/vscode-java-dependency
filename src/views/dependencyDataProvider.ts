@@ -7,6 +7,7 @@ import {
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
 import { executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
@@ -20,6 +21,7 @@ import { ExplorerNode } from "./explorerNode";
 import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
+import { Context } from "../constants";
 
 export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
@@ -168,18 +170,18 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                         kind: NodeKind.Workspace,
                     }, undefined)));
                     this._rootItems = rootItems;
-                    return rootItems;
                 } else {
                     const result: INodeData[] = await Jdtls.getProjects(folders[0].uri.toString());
                     result.forEach((project) => {
                         rootItems.push(new ProjectNode(project, undefined));
                     });
                     this._rootItems = rootItems;
-                    return rootItems;
                 }
-            } else {
-                throw new Error("No workspace folder found, please open a folder into the workspace first.");
             }
+            if (_.isEmpty(rootItems)) {
+                contextManager.setContextValue(Context.NO_JAVA_PEOJECT, true);
+            }
+            return rootItems;
         } finally {
             this._lock.release();
         }

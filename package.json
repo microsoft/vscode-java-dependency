@@ -369,12 +369,12 @@
         },
         {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
           "group": "navigation@20"
         },
         {
           "command": "java.view.package.refresh",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
           "group": "navigation@30"
         },
         {
@@ -399,12 +399,12 @@
         },
         {
           "command": "java.project.build.workspace",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
           "group": "overflow_20@10"
         },
         {
           "command": "java.project.clean.workspace",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard && workspaceFolderCount != 0",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
           "group": "overflow_20@20"
         }
       ],
@@ -518,6 +518,11 @@
         "view": "explorer",
         "contents": "%viewsWelcome.workbench.createNewJavaProject%",
         "when": "workspaceFolderCount == 0"
+      },
+      {
+        "view": "javaProjectExplorer",
+        "contents": "%viewsWelcome.workbench.noJavaProject%",
+        "when": "java:noJavaProjects"
       },
       {
         "view": "javaProjectExplorer",
