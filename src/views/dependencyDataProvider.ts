@@ -178,9 +178,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                     this._rootItems = rootItems;
                 }
             }
-            if (_.isEmpty(rootItems)) {
-                contextManager.setContextValue(Context.NO_JAVA_PEOJECT, true);
-            }
+            contextManager.setContextValue(Context.NO_JAVA_PEOJECT, _.isEmpty(rootItems));
             return rootItems;
         } finally {
             this._lock.release();
