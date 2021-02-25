@@ -9,6 +9,7 @@ import {
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
+import { Context } from "../constants";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
 import { executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
 import { Jdtls } from "../java/jdtls";
@@ -21,7 +22,6 @@ import { ExplorerNode } from "./explorerNode";
 import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
-import { Context } from "../constants";
 
 export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
