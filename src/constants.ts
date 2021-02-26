@@ -4,6 +4,7 @@
 export namespace Context {
     export const EXTENSION_ACTIVATED: string = "java:projectManagerActivated";
     export const SUPPORTED_BUILD_FILES: string = "java:supportedBuildFiles";
+    export const NO_JAVA_PEOJECT: string = "java:noJavaProjects";
 }
 
 export namespace Explorer {
