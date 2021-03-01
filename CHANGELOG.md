@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Apply the new extension icon. [PR#462](https://github.com/microsoft/vscode-java-dependency/pull/462)
 
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.1+is%3Aclosed)
+
 ## 0.18.0
 ### Added
 - Adopt the resource URI API to the Java Project explorer. [PR#453](https://github.com/microsoft/vscode-java-dependency/pull/453)
