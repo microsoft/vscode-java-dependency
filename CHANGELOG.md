@@ -4,6 +4,13 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+### 0.18.1
+### Added
+- Add welcome view in Java Proejct explorer when there is no Java projects in the workspace. [PR#461](https://github.com/microsoft/vscode-java-dependency/pull/461)
+
+### Changed
+- Apply the new extension icon. [PR#462](https://github.com/microsoft/vscode-java-dependency/pull/462)
+
 ## 0.18.0
 ### Added
 - Adopt the resource URI API to the Java Project explorer. [PR#453](https://github.com/microsoft/vscode-java-dependency/pull/453)
