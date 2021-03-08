@@ -36,7 +36,7 @@ async function handleBuildFailure(operationId: string, err: any): Promise<boolea
     });
     setErrorCode(error, Number(err));
     sendOperationError(operationId, "build", error);
-    // workaround: Since VS Code 1.53, the contributed command would no longer throw exact error message when an error occurs.
+    // Workaround: Since VS Code 1.53, the contributed command would no longer throw exact error message when an error occurs.
     // This change breaks the existing build error reporting, so we make a workaround here.
     // Related issue: https://github.com/microsoft/vscode/issues/116932
     if (err instanceof Error || err === Jdtls.CompileWorkspaceStatus.Witherror || err === Jdtls.CompileWorkspaceStatus.Failed) {
