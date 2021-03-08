@@ -10,6 +10,7 @@ import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-t
 import { Commands } from "../commands";
 import { Build } from "../constants";
 import { deleteFiles } from "../explorerCommands/delete";
+import { newJavaClass, newPackage } from "../explorerCommands/new";
 import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
 import { Jdtls } from "../java/jdtls";
@@ -96,6 +97,12 @@ export class DependencyExplorer implements Disposable {
 
         // register keybinding commands
         context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, (node?: DataNode) => {
+                newJavaClass(getCmdNode(this._dependencyViewer.selection[0], node));
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_PACKAGE, (node?: DataNode) => {
+                newPackage(getCmdNode(this._dependencyViewer.selection[0], node));
+            }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node?: DataNode) => {
                 const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
                 if (cmdNode.uri) {
