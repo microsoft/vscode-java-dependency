@@ -125,15 +125,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return project?.revealPaths(paths);
     }
 
-    private doRefresh(element?: ExplorerNode): void {
-        if (!element) {
-            this._rootItems = undefined;
-        }
-        explorerNodeCache.removeNodeChildren(element);
-        this._onDidChangeTreeData.fire(element);
-    }
-
-    private async getRootProjects(): Promise<ExplorerNode[]> {
+    public async getRootProjects(): Promise<ExplorerNode[]> {
         const rootElements = await this.getRootNodes();
         if (rootElements[0] instanceof ProjectNode) {
             return rootElements;
@@ -147,6 +139,14 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             }
             return result;
         }
+    }
+
+    private doRefresh(element?: ExplorerNode): void {
+        if (!element) {
+            this._rootItems = undefined;
+        }
+        explorerNodeCache.removeNodeChildren(element);
+        this._onDidChangeTreeData.fire(element);
     }
 
     private async getRootNodes(): Promise<ExplorerNode[]> {

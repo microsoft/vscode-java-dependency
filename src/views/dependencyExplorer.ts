@@ -4,7 +4,7 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, TextEditor, TreeView,
+import { commands, Disposable, ExtensionContext, QuickPickItem, TextEditor, TreeView,
     TreeViewExpansionEvent, TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
 import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
@@ -97,35 +97,43 @@ export class DependencyExplorer implements Disposable {
 
         // register keybinding commands
         context.subscriptions.push(
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, (node?: DataNode) => {
-                newJavaClass(getCmdNode(this._dependencyViewer.selection[0], node));
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode) => {
+                let cmdNode = getCmdNode(this._dependencyViewer.selection, node);
+                if (!cmdNode) {
+                    cmdNode = await this.promptForProjectNode();
+                }
+                newJavaClass(cmdNode);
             }),
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_PACKAGE, (node?: DataNode) => {
-                newPackage(getCmdNode(this._dependencyViewer.selection[0], node));
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_PACKAGE, async (node?: DataNode) => {
+                let cmdNode = getCmdNode(this._dependencyViewer.selection, node);
+                if (!cmdNode) {
+                    cmdNode = await this.promptForProjectNode();
+                }
+                newPackage(cmdNode);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node?: DataNode) => {
-                const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
-                if (cmdNode.uri) {
+                const cmdNode = getCmdNode(this._dependencyViewer.selection, node);
+                if (cmdNode?.uri) {
                     commands.executeCommand("revealFileInOS", Uri.parse(cmdNode.uri));
                 }
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, (node?: DataNode) => {
-                const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
-                if (cmdNode.uri) {
+                const cmdNode = getCmdNode(this._dependencyViewer.selection, node);
+                if (cmdNode?.uri) {
                     commands.executeCommand("copyFilePath", Uri.parse(cmdNode.uri));
                 }
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, (node?: DataNode) => {
-                const cmdNode = getCmdNode(this._dependencyViewer.selection[0], node);
-                if (cmdNode.uri) {
+                const cmdNode = getCmdNode(this._dependencyViewer.selection, node);
+                if (cmdNode?.uri) {
                     commands.executeCommand("copyRelativeFilePath", Uri.parse(cmdNode.uri));
                 }
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_RENAME_FILE, (node?: DataNode) => {
-                renameFile(getCmdNode(this._dependencyViewer.selection[0], node));
+                renameFile(getCmdNode(this._dependencyViewer.selection, node));
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node?: DataNode) => {
-                deleteFiles(getCmdNode(this._dependencyViewer.selection[0], node));
+                deleteFiles(getCmdNode(this._dependencyViewer.selection, node));
             }),
         );
     }
@@ -169,4 +177,31 @@ export class DependencyExplorer implements Disposable {
     public get dataProvider(): DependencyDataProvider {
         return this._dataProvider;
     }
+
+    private async promptForProjectNode(): Promise<DataNode | undefined> {
+        const projects = await this._dataProvider.getRootProjects();
+        if (projects.length === 0) {
+            window.showInformationMessage("There is no Java projects in current workspace.");
+            return undefined;
+        } else if (projects.length === 1) {
+            return projects[0] as DataNode;
+        } else {
+            const options: IProjectPickItem[] = projects.map((p: DataNode) => {
+                return {
+                    label: p.name,
+                    node: p,
+                };
+            });
+            const choice: IProjectPickItem | undefined = await window.showQuickPick(options, {
+                placeHolder: "Choose a project",
+                ignoreFocusOut: true,
+            });
+
+            return choice?.node as DataNode;
+        }
+    }
+}
+
+interface IProjectPickItem extends QuickPickItem {
+    node: ExplorerNode;
 }

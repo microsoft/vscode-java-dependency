@@ -8,7 +8,7 @@ import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { checkJavaQualifiedName } from "./utility";
 
-export async function newJavaClass(node: DataNode): Promise<void> {
+export async function newJavaClass(node?: DataNode): Promise<void> {
     if (!node?.uri || !canCreateClass(node)) {
         return;
     }
@@ -106,7 +106,7 @@ function getNewFilePath(basePath: string, className: string): string {
     return path.join(basePath, ...className.split(".")) + ".java";
 }
 
-export async function newPackage(node: DataNode): Promise<void> {
+export async function newPackage(node?: DataNode): Promise<void> {
     if (!node?.uri || !canCreatePackage(node)) {
         return;
     }

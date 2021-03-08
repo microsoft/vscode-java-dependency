@@ -8,8 +8,8 @@ import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { checkJavaQualifiedName, isMutable } from "./utility";
 
-export async function renameFile(node: DataNode): Promise<void> {
-    if (!isMutable(node) || !node.uri) {
+export async function renameFile(node?: DataNode): Promise<void> {
+    if (!node?.uri || !isMutable(node)) {
         return;
     }
 
