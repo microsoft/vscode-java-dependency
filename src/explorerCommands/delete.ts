@@ -7,8 +7,8 @@ import { isMutable } from "./utility";
 
 const confirmMessage = "Move to Recycle Bin";
 
-export async function deleteFiles(node: DataNode): Promise<void> {
-    if (!isMutable(node) || !node.uri) {
+export async function deleteFiles(node?: DataNode): Promise<void> {
+    if (!node?.uri || !isMutable(node)) {
         return;
     }
 

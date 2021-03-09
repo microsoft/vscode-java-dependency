@@ -8,7 +8,11 @@ import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { checkJavaQualifiedName } from "./utility";
 
-export async function newJavaClass(node: DataNode): Promise<void> {
+export async function newJavaClass(node?: DataNode): Promise<void> {
+    if (!node?.uri || !canCreateClass(node)) {
+        return;
+    }
+
     const packageFsPath: string = await getPackageFsPath(node);
     if (!packageFsPath) {
         return;
@@ -41,6 +45,17 @@ export async function newJavaClass(node: DataNode): Promise<void> {
     const fsPath: string = getNewFilePath(packageFsPath, className);
     workspaceEdit.createFile(Uri.file(fsPath));
     workspace.applyEdit(workspaceEdit);
+}
+
+function canCreateClass(node: DataNode): boolean {
+    if (node.nodeData.kind === NodeKind.Project ||
+        node.nodeData.kind === NodeKind.PackageRoot ||
+        node.nodeData.kind === NodeKind.Package ||
+        node.nodeData.kind === NodeKind.PrimaryType) {
+        return true;
+    }
+
+    return false;
 }
 
 async function getPackageFsPath(node: DataNode): Promise<string> {
@@ -77,6 +92,8 @@ async function getPackageFsPath(node: DataNode): Promise<string> {
             );
             return choice ? choice.fsPath : "";
         }
+    } else if (node.nodeData.kind === NodeKind.PrimaryType) {
+        return node.uri ? path.dirname(Uri.parse(node.uri).fsPath) : "";
     }
 
     return node.uri ? Uri.parse(node.uri).fsPath : "";
@@ -89,8 +106,8 @@ function getNewFilePath(basePath: string, className: string): string {
     return path.join(basePath, ...className.split(".")) + ".java";
 }
 
-export async function newPackage(node: DataNode): Promise<void> {
-    if (!node.uri) {
+export async function newPackage(node?: DataNode): Promise<void> {
+    if (!node?.uri || !canCreatePackage(node)) {
         return;
     }
 
@@ -134,6 +151,16 @@ export async function newPackage(node: DataNode): Promise<void> {
     }
 
     await fse.ensureDir(getNewPackagePath(packageRootPath, packageName));
+}
+
+function canCreatePackage(node: DataNode): boolean {
+    if (node.nodeData.kind === NodeKind.Project ||
+        node.nodeData.kind === NodeKind.PackageRoot ||
+        node.nodeData.kind === NodeKind.Package) {
+        return true;
+    }
+
+    return false;
 }
 
 function getPackageRootPath(packageFsPath: string, packageName: string): string {
