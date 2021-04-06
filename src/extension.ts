@@ -15,6 +15,7 @@ import { EventCounter } from "./utility";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
 export async function activate(context: ExtensionContext): Promise<void> {
+    await initExpService(context);
     contextManager.initialize(context);
     await initializeFromJsonFile(context.asAbsolutePath("./package.json"), { firstParty: true });
     await instrumentOperation("activation", activateExtension)(context);
@@ -30,7 +31,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(contextManager);
     context.subscriptions.push(syncHandler);
     context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
-    initExpService(context);
 }
 
 // this method is called when your extension is deactivated
