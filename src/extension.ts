@@ -15,9 +15,9 @@ import { EventCounter } from "./utility";
 import { DependencyExplorer } from "./views/dependencyExplorer";
 
 export async function activate(context: ExtensionContext): Promise<void> {
-    await initExpService(context);
     contextManager.initialize(context);
     await initializeFromJsonFile(context.asAbsolutePath("./package.json"), { firstParty: true });
+    await initExpService(context);
     await instrumentOperation("activation", activateExtension)(context);
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
     contextManager.setContextValue(Context.SUPPORTED_BUILD_FILES, Build.FILE_NAMES);
