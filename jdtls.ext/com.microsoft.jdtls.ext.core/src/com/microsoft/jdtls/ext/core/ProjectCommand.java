@@ -199,7 +199,7 @@ public final class ProjectCommand {
                 }
             }
         }
-        IJavaSearchScope scope = SearchEngine.createJavaSearchScope(searchRoots.toArray(IJavaElement[]::new));
+        IJavaSearchScope scope = SearchEngine.createJavaSearchScope(searchRoots.toArray(new IJavaElement[0]));
         SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
                 IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE);
         SearchRequestor requestor = new SearchRequestor() {

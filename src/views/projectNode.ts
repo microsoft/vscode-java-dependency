@@ -152,6 +152,8 @@ function getProjectType(natureId: string): string {
             return ReadableNature.Maven;
         case NatureId.Gradle:
             return ReadableNature.Gradle;
+        case NatureId.UnmanagedFolder:
+            return ReadableNature.UnmanagedFolder;
         default:
             return "";
     }
@@ -160,12 +162,14 @@ function getProjectType(natureId: string): string {
 enum NatureId {
     Maven = "org.eclipse.m2e.core.maven2Nature",
     Gradle = "org.eclipse.buildship.core.gradleprojectnature",
+    UnmanagedFolder = "org.eclipse.jdt.ls.core.unmanagedFodler",
     Java = "org.eclipse.jdt.core.javanature",
 }
 
 enum ReadableNature {
     Maven = "maven",
     Gradle = "gradle",
+    UnmanagedFolder = "unmanagedFolder",
     Java = "java",
 }
 
