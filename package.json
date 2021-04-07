@@ -498,7 +498,7 @@
         {
           "command": "java.project.update",
           "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(maven|gradle)\\b)/",
-          "group": "9_sync@10"
+          "group": "9_configuration@10"
         }
       ]
     },
