@@ -78,7 +78,7 @@ public class PackageNode {
     private static final String UNMANAGED_FOLDER_INNER_PATH = "UnmanagedFolderInnerPath";
 
     /**
-     * Nature Id for the unmanaged folder
+     * Nature Id for the unmanaged folder.
      */
     private static final String UNMANAGED_FOLDER_NATURE_ID = "org.eclipse.jdt.ls.core.unmanagedFodler";
 
