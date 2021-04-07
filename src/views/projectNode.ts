@@ -162,7 +162,7 @@ function getProjectType(natureId: string): string {
 enum NatureId {
     Maven = "org.eclipse.m2e.core.maven2Nature",
     Gradle = "org.eclipse.buildship.core.gradleprojectnature",
-    UnmanagedFolder = "org.eclipse.jdt.ls.core.unmanagedFodler",
+    UnmanagedFolder = "org.eclipse.jdt.ls.core.unmanagedFolder",
     Java = "org.eclipse.jdt.core.javanature",
 }
 

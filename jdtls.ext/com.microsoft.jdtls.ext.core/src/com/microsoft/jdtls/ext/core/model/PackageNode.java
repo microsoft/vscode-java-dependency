@@ -80,7 +80,7 @@ public class PackageNode {
     /**
      * Nature Id for the unmanaged folder.
      */
-    private static final String UNMANAGED_FOLDER_NATURE_ID = "org.eclipse.jdt.ls.core.unmanagedFodler";
+    private static final String UNMANAGED_FOLDER_NATURE_ID = "org.eclipse.jdt.ls.core.unmanagedFolder";
 
     /**
      * The name of the PackageNode.

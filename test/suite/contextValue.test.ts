@@ -139,7 +139,7 @@ const unmanagedFolder: ProjectNode = new ProjectNode({
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Project,
     metaData: {
-        NatureId: ["org.eclipse.jdt.core.javanature", "org.eclipse.jdt.ls.core.unmanagedFodler"],
+        NatureId: ["org.eclipse.jdt.core.javanature", "org.eclipse.jdt.ls.core.unmanagedFolder"],
     },
 }, workspace);
 
