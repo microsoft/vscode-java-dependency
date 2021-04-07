@@ -28,6 +28,11 @@ suite("Context Value Tests", () => {
         assert.ok(/java:project(?=.*?\b\+java\b)(?=.*?\b\+gradle\b)(?=.*?\b\+uri\b)/.test((await gradleProject.getTreeItem()).contextValue || ""));
     });
 
+    test("test unmanaged folder node", async function() {
+        assert.ok(/java:project(?=.*?\b\+java\b)(?=.*?\b\+unmanagedFolder\b)(?=.*?\b\+uri\b)/
+                .test((await unmanagedFolder.getTreeItem()).contextValue || ""));
+    });
+
     test("test JRE container node", async function() {
         assert.ok(/java:container(?=.*?\b\+jre\b)(?=.*?\b\+uri\b)/.test((await jreContainer.getTreeItem()).contextValue || ""));
     });
@@ -70,7 +75,7 @@ suite("Context Value Tests", () => {
         assert.ok(/java:package(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/.test((await sourcePackage.getTreeItem()).contextValue || ""));
     });
 
-    test("test source package node", async function() {
+    test("test source(test) package node", async function() {
         assert.ok(/java:package(?=.*?\b\+source\b)(?=.*?\b\+test\b)(?=.*?\b\+uri\b)/
             .test((await testSourcePackage.getTreeItem()).contextValue || ""));
     });
@@ -126,6 +131,15 @@ const gradleProject: ProjectNode = new ProjectNode({
     kind: NodeKind.Project,
     metaData: {
         NatureId: ["org.eclipse.jdt.core.javanature", "org.eclipse.buildship.core.gradleprojectnature"],
+    },
+}, workspace);
+
+const unmanagedFolder: ProjectNode = new ProjectNode({
+    name: "unmanagedFolder",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.Project,
+    metaData: {
+        NatureId: ["org.eclipse.jdt.core.javanature", "org.eclipse.jdt.ls.core.unmanagedFolder"],
     },
 }, workspace);
 

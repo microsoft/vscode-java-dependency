@@ -12,6 +12,8 @@
 package com.microsoft.jdtls.ext.core.model;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,13 +45,6 @@ import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
  */
 public class PackageNode {
 
-    /**
-     * Nature Id for the IProject.
-     */
-    private static final String NATURE_ID = "NatureId";
-
-    private static final String UNMANAGED_FOLDER_INNER_PATH = "UnmanagedFolderInnerPath";
-
     public static final String K_TYPE_KIND = "TypeKind";
 
     /**
@@ -67,14 +62,25 @@ public class PackageNode {
      */
     public static final int K_ENUM = 3;
 
+    public static final String REFERENCED_LIBRARIES_PATH = "REFERENCED_LIBRARIES_PATH";
     private static final String REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries";
     private static final String IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries (Read-only)";
-
-    public static final String REFERENCED_LIBRARIES_PATH = "REFERENCED_LIBRARIES_PATH";
     public static final ContainerNode REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH,
             NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
     public static final ContainerNode IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME,
             REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
+
+    /**
+     * Nature Id for the IProject.
+     */
+    private static final String NATURE_ID = "NatureId";
+
+    private static final String UNMANAGED_FOLDER_INNER_PATH = "UnmanagedFolderInnerPath";
+
+    /**
+     * Nature Id for the unmanaged folder.
+     */
+    private static final String UNMANAGED_FOLDER_NATURE_ID = "org.eclipse.jdt.ls.core.unmanagedFolder";
 
     /**
      * The name of the PackageNode.
@@ -158,10 +164,12 @@ public class PackageNode {
         PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
         projectNode.setUri(ProjectUtils.getProjectRealFolder(proj).toFile().toURI().toString());
         try {
-            projectNode.setMetaDataValue(NATURE_ID, proj.getDescription().getNatureIds());
+            List<String> natureIds = new ArrayList<>(Arrays.asList(proj.getDescription().getNatureIds()));
             if (!ProjectUtils.isVisibleProject(proj)) {
+                natureIds.add(UNMANAGED_FOLDER_NATURE_ID);
                 projectNode.setMetaDataValue(UNMANAGED_FOLDER_INNER_PATH, proj.getLocationURI().toString());
             }
+            projectNode.setMetaDataValue(NATURE_ID, natureIds);
         } catch (CoreException e) {
             // do nothing
         }
