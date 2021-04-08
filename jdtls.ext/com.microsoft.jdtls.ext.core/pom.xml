@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.microsoft.jdtls.ext</groupId>
         <artifactId>jdtls-ext-parent</artifactId>
-        <version>0.18.2</version>
+        <version>0.18.3</version>
     </parent>
     <artifactId>com.microsoft.jdtls.ext.core</artifactId>
     <packaging>eclipse-plugin</packaging>

@@ -25,6 +25,7 @@ const config = {
     },
     plugins: [
         // Copy files to dist folder where the runtime can find them
+        // @ts-ignore
         new CopyWebpackPlugin({
             patterns: [
                 {
