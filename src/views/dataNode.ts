@@ -4,14 +4,12 @@
 import * as _ from "lodash";
 import { ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { INodeData, NodeKind } from "../java/nodeData";
-import { Lock } from "../utils/Lock";
+import { explorerLock } from "../utils/Lock";
 import { ExplorerNode } from "./explorerNode";
 
 export abstract class DataNode extends ExplorerNode {
 
     protected _childrenNodes: ExplorerNode[];
-
-    protected _lock: Lock = new Lock();
 
     constructor(protected _nodeData: INodeData, parent?: DataNode) {
         super(parent);
@@ -74,7 +72,7 @@ export abstract class DataNode extends ExplorerNode {
 
     public async getChildren(): Promise<ExplorerNode[]> {
         try {
-            await this._lock.acquire();
+            await explorerLock.acquireAsync();
             if (!this._nodeData.children) {
                 const data = await this.loadData();
                 this._nodeData.children = data;
@@ -83,7 +81,7 @@ export abstract class DataNode extends ExplorerNode {
             }
             return this._childrenNodes;
         } finally {
-            this._lock.release();
+            explorerLock.release();
         }
     }
 

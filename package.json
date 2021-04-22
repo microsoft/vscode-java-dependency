@@ -602,6 +602,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "await-lock": "^2.1.0",
     "fs-extra": "^7.0.1",
     "globby": "11.0.1",
     "lodash": "^4.17.21",

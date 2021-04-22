@@ -5,6 +5,7 @@ import * as _ from "lodash";
 import { TreeItem, TreeItemCollapsibleState } from "vscode";
 import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData";
 import { INodeData, NodeKind } from "../java/nodeData";
+import { explorerLock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
@@ -26,7 +27,7 @@ export class HierarchicalPackageNode extends PackageNode {
 
     public async getChildren(): Promise<ExplorerNode[]> {
         try {
-            await this._lock.acquire();
+            await explorerLock.acquireAsync();
             const data = await this.loadData();
             if (data) {
                 if (this.nodeData?.children) {
@@ -38,7 +39,7 @@ export class HierarchicalPackageNode extends PackageNode {
             }
             return this.createChildNodeList();
         } finally {
-            this._lock.release();
+            explorerLock.release();
         }
     }
 
