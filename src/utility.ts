@@ -30,6 +30,8 @@ export class Utility {
         if (uri.scheme === "file" && !workspace.getWorkspaceFolder(uri)) {
             return false;
         }
+
+        await languageServerApiManager.awaitSwitchingServerFinished();
         if (!await languageServerApiManager.isStandardServerReady()) {
             return false;
         }

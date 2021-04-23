@@ -3,7 +3,7 @@
 
 import * as _ from "lodash";
 import {
-    commands, Event, EventEmitter, ExtensionContext, extensions, ProviderResult,
+    commands, Event, EventEmitter, ExtensionContext, ProviderResult,
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
@@ -15,7 +15,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { Settings } from "../settings";
-import { Lock } from "../utils/Lock";
+import { explorerLock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
@@ -25,8 +25,6 @@ import { WorkspaceNode } from "./workspaceNode";
 export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     private _onDidChangeTreeData: EventEmitter<ExplorerNode | null | undefined> = new EventEmitter<ExplorerNode | null | undefined>();
-
-    private _lock: Lock = new Lock();
 
     // tslint:disable-next-line:member-ordering
     public onDidChangeTreeData: Event<ExplorerNode | null | undefined> = this._onDidChangeTreeData.event;
@@ -100,11 +98,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             return [];
         }
 
-        if (await languageServerApiManager.isSwitchingServer()) {
-            await new Promise<void>((resolve: () => void): void => {
-                extensions.getExtension("redhat.java")!.exports.onDidServerModeChange(resolve);
-            });
-        }
+        await languageServerApiManager.awaitSwitchingServerFinished();
 
         const children = (!this._rootItems || !element) ?
             await this.getRootNodes() : await element.getChildren();
@@ -151,7 +145,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     private async getRootNodes(): Promise<ExplorerNode[]> {
         try {
-            await this._lock.acquire();
+            await explorerLock.acquireAsync();
 
             if (this._rootItems) {
                 return this._rootItems;
@@ -178,7 +172,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             contextManager.setContextValue(Context.NO_JAVA_PEOJECT, _.isEmpty(rootItems));
             return rootItems;
         } finally {
-            this._lock.release();
+            explorerLock.release();
         }
     }
 }

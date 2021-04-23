@@ -28,9 +28,13 @@ class LanguageServerApiManager {
         return this.serverMode === LanguageServerMode.LightWeight;
     }
 
-    public async isSwitchingServer(): Promise<boolean> {
+    public async awaitSwitchingServerFinished(): Promise<void> {
         await this.checkServerMode();
-        return this.serverMode === LanguageServerMode.Hybrid;
+        if (this.serverMode === LanguageServerMode.Hybrid) {
+            await new Promise<void>((resolve: () => void): void => {
+                extensions.getExtension("redhat.java")!.exports.onDidServerModeChange(resolve);
+            });
+        }
     }
 
     private async checkServerMode(): Promise<void> {
@@ -63,8 +67,17 @@ class LanguageServerApiManager {
             if (extensionApi.onDidServerModeChange) {
                 const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
                 contextManager.context.subscriptions.push(onDidServerModeChange(async (mode: LanguageServerMode) => {
-                    this.serverMode = mode;
-                    commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
+                    if (this.serverMode !== mode) {
+                        let needRefresh: boolean = true;
+                        if (this.serverMode === "Hybrid") {
+                            // Explorer will await when JLS is in Hybrid mode (activating),
+                            needRefresh = false;
+                        }
+                        this.serverMode = mode;
+                        if (needRefresh) {
+                            commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
+                        }
+                    }
                 }));
             }
 

@@ -4,8 +4,10 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
-import { commands, Disposable, ExtensionContext, QuickPickItem, TextEditor, TreeView,
-    TreeViewExpansionEvent, TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, Uri, window } from "vscode";
+import {
+    commands, Disposable, ExtensionContext, QuickPickItem, TextEditor, TreeView,
+    TreeViewExpansionEvent, TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, Uri, window,
+} from "vscode";
 import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Build } from "../constants";
@@ -17,7 +19,6 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { Settings } from "../settings";
 import { EventCounter, Utility } from "../utility";
-import { Lock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
 import { ExplorerNode } from "./explorerNode";
@@ -33,8 +34,6 @@ export class DependencyExplorer implements Disposable {
     }
 
     private static _instance: DependencyExplorer;
-
-    private _lock: Lock = new Lock();
 
     private _dependencyViewer: TreeView<ExplorerNode>;
 
@@ -54,7 +53,7 @@ export class DependencyExplorer implements Disposable {
             }),
             this._dependencyViewer.onDidChangeVisibility((e: TreeViewVisibilityChangeEvent) => {
                 if (e.visible) {
-                    sendInfo("", {projectManagerVisible: 1});
+                    sendInfo("", { projectManagerVisible: 1 });
                     if (window.activeTextEditor) {
                         this.reveal(window.activeTextEditor.document.uri);
                     }
@@ -145,33 +144,27 @@ export class DependencyExplorer implements Disposable {
     }
 
     public async reveal(uri: Uri, needCheckSyncSetting: boolean = true): Promise<void> {
-        try {
-            await this._lock.acquire();
-
-            if (needCheckSyncSetting && !Settings.syncWithFolderExplorer()) {
-                return;
-            }
-
-            if (!await Utility.isRevealable(uri)) {
-                return;
-            }
-
-            let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
-            if (!node) {
-                const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-                if (!_.isEmpty(paths)) {
-                    node = await this._dataProvider.revealPaths(paths);
-                }
-            }
-
-            if (!node) {
-                return;
-            }
-
-            await this._dependencyViewer.reveal(node);
-        } finally {
-            this._lock.release();
+        if (needCheckSyncSetting && !Settings.syncWithFolderExplorer()) {
+            return;
         }
+
+        if (!await Utility.isRevealable(uri)) {
+            return;
+        }
+
+        let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
+        if (!node) {
+            const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
+            if (!_.isEmpty(paths)) {
+                node = await this._dataProvider.revealPaths(paths);
+            }
+        }
+
+        if (!node) {
+            return;
+        }
+
+        await this._dependencyViewer.reveal(node);
     }
 
     public get dataProvider(): DependencyDataProvider {
