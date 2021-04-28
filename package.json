@@ -5,7 +5,6 @@
   "version": "0.18.3",
   "publisher": "vscjava",
   "preview": true,
-  "enableProposedApi": true,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
   "keywords": [
     "java",
