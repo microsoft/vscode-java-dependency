@@ -20,6 +20,10 @@
   },
   "homepage": "https://github.com/Microsoft/vscode-java-dependency/blob/master/README.md",
   "icon": "logo.png",
+  "workspaceTrust": {
+    "request": "onDemand",
+    "description": "Extension may require your trust on workspace for code execution."
+  },
   "activationEvents": [
     "onCommand:_java.project.open",
     "onCommand:java.project.create",
