@@ -11,7 +11,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, toPosixPath } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, revealTerminal, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -82,12 +82,14 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 if (_.isEmpty(classpaths)) {
                     return reject(new Error(ExportJarMessages.CLASSPATHS_EMPTY));
                 }
-                const exportResult: IExportResult | undefined = await Jdtls.exportJar(basename(mainClass), classpaths, destPath, token);
-                if (exportResult?.result === true) {
+                revealTerminal(stepMetadata.taskLabel);
+                const exportResult: boolean | undefined = await Jdtls.exportJar(basename(mainClass),
+                    classpaths, destPath, stepMetadata.taskLabel, token);
+                if (exportResult === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
                 } else {
-                    return reject(new Error("Export jar failed." + exportResult?.message));
+                    return reject(new Error("Export jar failed."));
                 }
             });
         });
@@ -248,10 +250,4 @@ export interface IClasspathResult {
 interface IJarQuickPickItem extends QuickPickItem {
     path: string;
     type: string;
-}
-
-export interface IExportResult {
-    result: boolean;
-    message: string;
-    log?: string;
 }

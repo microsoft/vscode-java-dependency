@@ -7,6 +7,7 @@ import { ExportJarStep } from "./utility";
 
 export interface IStepMetadata {
     entry?: INodeData;
+    taskLabel: string;
     workspaceFolder?: WorkspaceFolder;
     mainClass?: string;
     outputPath?: string;

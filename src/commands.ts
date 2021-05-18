@@ -30,6 +30,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_EXPORT_JAR = "java.view.package.exportJar";
 
+    export const EXPORT_JAR_REPORT = "java.view.package.exportJarReport";
+
     export const VIEW_PACKAGE_NEW_JAVA_CLASS = "java.view.package.newJavaClass";
 
     export const VIEW_PACKAGE_NEW_JAVA_PACKAGE = "java.view.package.newPackage";

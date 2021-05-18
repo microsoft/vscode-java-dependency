@@ -4,7 +4,7 @@
 import { lstat } from "fs-extra";
 import * as globby from "globby";
 import * as _ from "lodash";
-import { platform } from "os";
+import { EOL, platform } from "os";
 import { dirname, extname, isAbsolute, join, relative } from "path";
 import {
     CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
@@ -44,6 +44,7 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
     isExportingJar = true;
     const stepMetadata: IStepMetadata = {
         entry: node,
+        taskLabel: "exportjar:default",
         steps: [],
         projectList: [],
         elements: [],
@@ -55,7 +56,7 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
             throw new Error(ExportJarMessages.stepErrorMessage(ExportJarMessages.StepAction.FINDEXECUTOR, ExportJarStep.ResolveJavaProject));
         }
         await resolveJavaProjectExecutor.execute(stepMetadata);
-        tasks.executeTask(ExportJarTaskProvider.getTask(stepMetadata));
+        tasks.executeTask(ExportJarTaskProvider.getDefaultTask(stepMetadata));
     } catch (err) {
         if (err) {
             failMessage(`${err}`);
@@ -68,13 +69,13 @@ export class ExportJarTaskProvider implements TaskProvider {
 
     public static exportJarType: string = "java";
 
-    public static getTask(stepMetadata: IStepMetadata): Task {
+    public static getDefaultTask(stepMetadata: IStepMetadata): Task {
         if (!stepMetadata.workspaceFolder) {
             throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, ExportJarStep.ResolveTask));
         }
         const defaultDefinition: IExportJarTaskDefinition = {
             type: ExportJarTaskProvider.exportJarType,
-            label: `${ExportJarTaskProvider.exportJarType}: exportjar:default`,
+            label: "exportjar:default",
             targetPath: Settings.getExportJarTargetPath(),
             elements: [],
             mainClass: undefined,
@@ -93,9 +94,10 @@ export class ExportJarTaskProvider implements TaskProvider {
         const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>task.definition;
         const folder: WorkspaceFolder = <WorkspaceFolder>task.scope;
         const resolvedTask: Task = new Task(definition, folder, task.name, ExportJarTaskProvider.exportJarType,
-            new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
+            new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
                 const stepMetadata: IStepMetadata = {
                     entry: undefined,
+                    taskLabel: resolvedDefinition.label || `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
                     workspaceFolder: folder,
                     projectList: await Jdtls.getProjects(folder.uri.toString()),
                     steps: [],
@@ -139,10 +141,11 @@ export class ExportJarTaskProvider implements TaskProvider {
                 targetPath: Settings.getExportJarTargetPath(),
                 elements: elementList,
             };
-            const defaultTask: Task = new Task(defaultDefinition, folder, `exportjar:${folder.name}`,
-                ExportJarTaskProvider.exportJarType, new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
+            const defaultTask: Task = new Task(defaultDefinition, folder, `exportjar:${folder.name}`, ExportJarTaskProvider.exportJarType,
+                new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
                     const stepMetadata: IStepMetadata = {
                         entry: undefined,
+                        taskLabel: resolvedDefinition.label || `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
                         workspaceFolder: folder,
                         projectList: await Jdtls.getProjects(folder.uri.toString()),
                         steps: [],
@@ -170,9 +173,14 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     constructor(exportJarTaskDefinition: IExportJarTaskDefinition, stepMetadata: IStepMetadata) {
         this.stepMetadata = stepMetadata;
+        this.stepMetadata.taskLabel = exportJarTaskDefinition.label || "";
         this.stepMetadata.mainClass = exportJarTaskDefinition.mainClass;
         this.stepMetadata.outputPath = exportJarTaskDefinition.targetPath;
         this.stepMetadata.elements = exportJarTaskDefinition.elements || [];
+    }
+
+    public handleInput(data: string): void {
+        this.writeEmitter.fire(data + EOL);
     }
 
     public async open(_initialDimensions: TerminalDimensions | undefined): Promise<void> {
