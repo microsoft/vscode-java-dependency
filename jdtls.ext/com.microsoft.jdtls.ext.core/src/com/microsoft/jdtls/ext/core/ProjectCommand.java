@@ -155,6 +155,9 @@ public final class ProjectCommand {
         if (arguments.size() < 3) {
             return new ExportResult(false, "Invalid export Arguments");
         }
+        if (monitor.isCanceled()) {
+            return new ExportResult(false, "User cancelled");
+        }
         String mainClass = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
         Classpath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), Classpath[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
@@ -166,6 +169,9 @@ public final class ProjectCommand {
         try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
             Set<String> directories = new HashSet<>();
             for (Classpath classpath : classpaths) {
+                if (monitor.isCanceled()) {
+                    return new ExportResult(false, "User cancelled");
+                }
                 if (classpath.isArtifact) {
                     writeArchive(new ZipFile(classpath.source), /* areDirectoryEntriesIncluded = */true,
                         /* isCompressed = */true, target, directories, monitor);
