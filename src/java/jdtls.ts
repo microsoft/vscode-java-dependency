@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands } from "vscode";
+import { CancellationToken, commands } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { IExportResult } from "../exportJarSteps/GenerateJarExecutor";
 import { IClasspath } from "../exportJarSteps/IStepMetadata";
@@ -29,9 +29,10 @@ export namespace Jdtls {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINCLASSES, params) || [];
     }
 
-    export async function exportJar(mainClass: string, classpaths: IClasspath[], destination: string): Promise<IExportResult | undefined> {
+    export async function exportJar(mainClass: string, classpaths: IClasspath[],
+                                    destination: string, token: CancellationToken): Promise<IExportResult | undefined> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR,
-            mainClass, classpaths, destination);
+            mainClass, classpaths, destination, token);
     }
 
     export enum CompileWorkspaceStatus {
