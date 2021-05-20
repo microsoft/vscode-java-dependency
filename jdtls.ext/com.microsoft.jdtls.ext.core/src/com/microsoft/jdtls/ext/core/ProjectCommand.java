@@ -164,7 +164,7 @@ public final class ProjectCommand {
                     int severity = resultStatus.getSeverity();
                     if (severity == IStatus.OK) {
                         java.nio.file.Path path = java.nio.file.Paths.get(classpath.source);
-                        reportExportJarMessage(taskLabel, IStatus.OK, "successfully export " + path.getFileName().toString());
+                        reportExportJarMessage(taskLabel, IStatus.OK, "Successfully added the file to the exported jar: " + path.getFileName().toString());
                         continue;
                     }
                     if (resultStatus.isMultiStatus()) {
@@ -178,7 +178,7 @@ public final class ProjectCommand {
                     try {
                         writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true,
                             /* isCompressed = */true, target, directories);
-                        reportExportJarMessage(taskLabel, IStatus.OK, "successfully export " + classpath.destination);
+                        reportExportJarMessage(taskLabel, IStatus.OK, "Successfully added the file to the exported jar: " + classpath.destination);
                     } catch (CoreException e) {
                         reportExportJarMessage(taskLabel, IStatus.ERROR, e.getMessage());
                     }
@@ -258,7 +258,7 @@ public final class ProjectCommand {
         if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(taskLabel)) {
             String readableSeverity = getSeverityString(severity);
             JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT,
-                taskLabel, readableSeverity + ": " + message);
+                taskLabel, "[" + readableSeverity + "] " + message);
         }
     }
 
