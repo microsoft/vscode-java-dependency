@@ -97,7 +97,7 @@ export class ExportJarTaskProvider implements TaskProvider {
             new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
                 const stepMetadata: IStepMetadata = {
                     entry: undefined,
-                    taskLabel: resolvedDefinition.label || `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
+                    taskLabel: resolvedDefinition.label || `exportjar:${folder.name}`,
                     workspaceFolder: folder,
                     projectList: await Jdtls.getProjects(folder.uri.toString()),
                     steps: [],
@@ -136,7 +136,6 @@ export class ExportJarTaskProvider implements TaskProvider {
             const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
             const defaultDefinition: IExportJarTaskDefinition = {
                 type: ExportJarTaskProvider.exportJarType,
-                label: `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
                 mainClass: (mainClasses.length === 1) ? mainClasses[0].name : undefined,
                 targetPath: Settings.getExportJarTargetPath(),
                 elements: elementList,
@@ -145,7 +144,7 @@ export class ExportJarTaskProvider implements TaskProvider {
                 new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
                     const stepMetadata: IStepMetadata = {
                         entry: undefined,
-                        taskLabel: resolvedDefinition.label || `${ExportJarTaskProvider.exportJarType}: exportjar:${folder.name}`,
+                        taskLabel: resolvedDefinition.label || `exportjar:${folder.name}`,
                         workspaceFolder: folder,
                         projectList: await Jdtls.getProjects(folder.uri.toString()),
                         steps: [],
