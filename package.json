@@ -22,7 +22,9 @@
   "icon": "logo.png",
   "capabilities": {
     "virtualWorkspaces": false,
-    "untrustedWorkspaces": false
+    "untrustedWorkspaces": {
+      "supported": false
+    }
   },
   "activationEvents": [
     "onCommand:_java.project.open",
