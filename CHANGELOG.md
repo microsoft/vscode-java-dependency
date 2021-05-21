@@ -4,6 +4,12 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.18.4
+### Added
+- Show reports when exporting jar. [#374](https://github.com/microsoft/vscode-java-dependency/issues/374)
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.4+is%3Aclosed)
+
 ## 0.18.3
 ### Added
 - Add new unmanaged folder metadata for the project node. [PR#479](https://github.com/microsoft/vscode-java-dependency/pull/479)
