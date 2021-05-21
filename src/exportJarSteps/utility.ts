@@ -153,3 +153,19 @@ export async function getExtensionApi(): Promise<any> {
     }
     return extensionApi;
 }
+
+export function showExportJarReport(taskLabel: string, message: string) {
+    const terminals = window.terminals;
+    const presenterTerminals = terminals.filter((terminal) => terminal.name.indexOf(taskLabel) >= 0);
+    if (presenterTerminals.length > 0) {
+        presenterTerminals[presenterTerminals.length - 1].sendText(message);
+    }
+}
+
+export function revealTerminal(terminalName: string) {
+    const terminals = window.terminals;
+    const presenterTerminals = terminals.filter((terminal) => terminal.name.indexOf(terminalName) >= 0);
+    if (presenterTerminals.length > 0) {
+        presenterTerminals[presenterTerminals.length - 1].show();
+    }
+}

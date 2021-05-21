@@ -3,7 +3,6 @@
 
 import { CancellationToken, commands } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
-import { IExportResult } from "../exportJarSteps/GenerateJarExecutor";
 import { IClasspath } from "../exportJarSteps/IStepMetadata";
 import { IMainClassInfo } from "../exportJarSteps/ResolveMainClassExecutor";
 import { INodeData } from "./nodeData";
@@ -17,7 +16,7 @@ export namespace Jdtls {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_REFRESH_LIB_SERVER, params);
     }
 
-    export async function getPackageData(params: {[key: string]: any}): Promise<INodeData[]> {
+    export async function getPackageData(params: { [key: string]: any }): Promise<INodeData[]> {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_GETPACKAGEDATA, params) || [];
     }
 
@@ -30,9 +29,9 @@ export namespace Jdtls {
     }
 
     export async function exportJar(mainClass: string, classpaths: IClasspath[],
-                                    destination: string, token: CancellationToken): Promise<IExportResult | undefined> {
+                                    destination: string, taskLabel: string, token: CancellationToken): Promise<boolean | undefined> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR,
-            mainClass, classpaths, destination, token);
+            mainClass, classpaths, destination, taskLabel, token);
     }
 
     export enum CompileWorkspaceStatus {
