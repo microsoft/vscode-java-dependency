@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## 0.18.4
 ### Added
 - Show reports when exporting jar. [#374](https://github.com/microsoft/vscode-java-dependency/issues/374)
-- Extension is unavailable in virtual workspaces currently. [#490](https://github.com/microsoft/vscode-java-dependency/issues/490)
-- Extension may require your trust on workspace for code execution. [PR#486](https://github.com/microsoft/vscode-java-dependency/pull/486)
 ### Fixed
 - [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.4+is%3Aclosed)
 
