@@ -97,12 +97,12 @@ export interface IMessageOption {
     arguments?: any;
 }
 
-export function failMessage(message: string, option?: IMessageOption): void {
+export async function failMessage(message: string, option?: IMessageOption): Promise<void> {
     sendOperationError("", Commands.VIEW_PACKAGE_EXPORT_JAR, new Error(message));
     if (option === undefined) {
-        window.showErrorMessage(message, "Done");
+        await window.showErrorMessage(message, "Done");
     } else {
-        window.showErrorMessage(message, option.title, "Done").then((result) => {
+        await window.showErrorMessage(message, option.title, "Done").then((result) => {
             if (result === option.title) {
                 if (option.arguments === undefined) {
                     commands.executeCommand(option.command);
@@ -114,7 +114,7 @@ export function failMessage(message: string, option?: IMessageOption): void {
     }
 }
 
-export function successMessage(outputFileName: string | undefined): void {
+export async function successMessage(outputFileName: string | undefined): Promise<void> {
     if (!outputFileName) {
         return;
     }
@@ -126,7 +126,7 @@ export function successMessage(outputFileName: string | undefined): void {
     } else {
         openInExplorer = "Open Containing Folder";
     }
-    window.showInformationMessage("Successfully exported jar to" + EOL + outputFileName,
+    await window.showInformationMessage("Successfully exported jar to" + EOL + outputFileName,
         openInExplorer, "Done").then((messageResult) => {
             if (messageResult === openInExplorer) {
                 commands.executeCommand("revealFileInOS", Uri.file(outputFileName));

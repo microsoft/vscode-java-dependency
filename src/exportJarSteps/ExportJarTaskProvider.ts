@@ -209,17 +209,18 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             exportResult = await this.createJarFile(this.stepMetadata);
         } catch (err) {
             if (err) {
-                failMessage(`${err}`);
+                await failMessage(`${err}`);
             }
         } finally {
             isExportingJar = false;
             if (exportResult === true) {
-                successMessage(this.stepMetadata.outputPath);
+                await successMessage(this.stepMetadata.outputPath);
             } else if (exportResult === false) {
                 // We call `executeExportJarTask()` with the same entry here
                 // to help the user reselect the Java project.
                 executeExportJarTask(this.stepMetadata.entry);
             }
+            // close terminal after user operation
             this.closeEmitter.fire();
         }
     }
