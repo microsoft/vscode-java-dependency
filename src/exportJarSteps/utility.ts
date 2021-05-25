@@ -127,7 +127,7 @@ export function successMessage(outputFileName: string | undefined): void {
         openInExplorer = "Open Containing Folder";
     }
     window.showInformationMessage("Successfully exported jar to" + EOL + outputFileName,
-        openInExplorer, "Done").then((messageResult) => {
+        openInExplorer).then((messageResult) => {
             if (messageResult === openInExplorer) {
                 commands.executeCommand("revealFileInOS", Uri.file(outputFileName));
             }
