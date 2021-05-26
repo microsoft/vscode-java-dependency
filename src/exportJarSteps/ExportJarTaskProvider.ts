@@ -424,7 +424,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     }
 }
 
-export function showExportJarReport(terminalId: string, message: string): void {
+export function appendOutput(terminalId: string, message: string): void {
     const terminal = activeTerminalMap.get(terminalId);
     if (!terminal) {
         return;
