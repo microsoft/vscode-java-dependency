@@ -72,14 +72,6 @@ public final class ProjectCommand {
 
     private static String COMMAND_EXPORT_JAR_REPORT = "java.view.package.exportJarReport";
 
-    private static enum ExportJarReportType {
-        MESSAGE,
-        SUCCESS,
-        CANCEL,
-        ERROR,
-        EXIT,
-    }
-
     private static class MainClassInfo {
         public String name;
         public String path;
@@ -265,7 +257,7 @@ public final class ProjectCommand {
     private static void reportExportJarMessage(String terminalId, int severity, String message) {
         if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(terminalId)) {
             String readableSeverity = getSeverityString(severity);
-            JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT, ExportJarReportType.MESSAGE,
+            JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT, 
                 terminalId, "[" + readableSeverity + "] " + message);
         }
     }

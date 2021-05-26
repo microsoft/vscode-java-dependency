@@ -4,15 +4,13 @@
 import { lstat } from "fs-extra";
 import * as globby from "globby";
 import * as _ from "lodash";
-import { platform } from "os";
+import { EOL, platform } from "os";
 import { dirname, extname, isAbsolute, join, relative } from "path";
 import {
-    commands,
     CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
     TaskProvider, TaskRevealKind, tasks, TerminalDimensions, Uri, workspace, WorkspaceFolder,
 } from "vscode";
 import { buildWorkspace } from "../build";
-import { Commands } from "../commands";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
@@ -23,7 +21,7 @@ import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
 import { IMainClassInfo } from "./ResolveMainClassExecutor";
 import {
-    ExportJarConstants, ExportJarMessages, ExportJarReportType, ExportJarStep, failMessage, getExtensionApi,
+    ExportJarConstants, ExportJarMessages, ExportJarStep, failMessage, getExtensionApi,
     resetStepMetadata, revealTerminal, stepMap, successMessage, toPosixPath, toWinPath,
 } from "./utility";
 
@@ -35,7 +33,8 @@ interface IExportJarTaskDefinition extends TaskDefinition {
 }
 
 let isExportingJar: boolean = false;
-export let activeTerminals: ExportJarTaskTerminal[] = [];
+// key: terminalId, value: ExportJarTaskTerminal
+const activeTerminalMap: Map<string, ExportJarTaskTerminal> = new Map<string, ExportJarTaskTerminal>();
 
 export async function executeExportJarTask(node?: INodeData): Promise<void> {
     // save the workspace first
@@ -184,24 +183,18 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         this.terminalId = this.stepMetadata.terminalId;
     }
 
-    public exit(type: ExportJarReportType) {
-        switch (type) {
-            case ExportJarReportType.CANCEL:
-                this.writeEmitter.fire("[CANCEL] Export Jar process is cancelled by user");
-                break;
-            case ExportJarReportType.SUCCESS:
-                this.writeEmitter.fire("[SUCCESS] Export Jar process is finished successfully");
-                break;
-            case ExportJarReportType.ERROR:
-                this.writeEmitter.fire("[ERROR] An error occurs during export Jar process");
-                break;
+    public exit(message?: string) {
+        if (message) {
+            this.writeEmitter.fire(message);
         }
-        activeTerminals.splice(activeTerminals.indexOf(this));
-        this.closeEmitter.fire();
+        if (activeTerminalMap.has(this.terminalId)) {
+            activeTerminalMap.delete(this.terminalId);
+            this.closeEmitter.fire();
+        }
     }
 
     public async open(_initialDimensions: TerminalDimensions | undefined): Promise<void> {
-        activeTerminals.push(this);
+        activeTerminalMap.set(this.terminalId, this);
         revealTerminal(this.stepMetadata.taskLabel);
         let exportResult: boolean | undefined;
         try {
@@ -228,24 +221,23 @@ class ExportJarTaskTerminal implements Pseudoterminal {
             }
             exportResult = await this.createJarFile(this.stepMetadata);
         } catch (err) {
-            if (err === ExportJarReportType.CANCEL) {
-                commands.executeCommand(Commands.EXPORT_JAR_REPORT, ExportJarReportType.CANCEL, this.stepMetadata.terminalId);
-            } else if (err) {
+            if (err) {
                 failMessage(`${err}`);
-                commands.executeCommand(Commands.EXPORT_JAR_REPORT, ExportJarReportType.ERROR, this.stepMetadata.terminalId);
+                this.exit("[ERROR] An error occurs during export Jar process");
             } else {
-                commands.executeCommand(Commands.EXPORT_JAR_REPORT, ExportJarReportType.EXIT, this.stepMetadata.terminalId);
+                this.exit("[CANCEL] Export Jar process is cancelled by user");
             }
         } finally {
             isExportingJar = false;
             if (exportResult === true) {
                 successMessage(this.stepMetadata.outputPath);
-                commands.executeCommand(Commands.EXPORT_JAR_REPORT, ExportJarReportType.SUCCESS, this.stepMetadata.terminalId);
+                this.exit("[SUCCESS] Export Jar process is finished successfully");
             } else if (exportResult === false) {
                 // We call `executeExportJarTask()` with the same entry here
                 // to help the user reselect the Java project.
                 executeExportJarTask(this.stepMetadata.entry);
             }
+            this.exit();
         }
     }
 
@@ -430,4 +422,12 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         positivePath = toPosixPath(positivePath);
         return negative ? "!" + positivePath : positivePath;
     }
+}
+
+export function showExportJarReport(terminalId: string, message: string): void {
+    const terminal = activeTerminalMap.get(terminalId);
+    if (!terminal) {
+        return;
+    }
+    terminal.writeEmitter.fire(message + EOL);
 }

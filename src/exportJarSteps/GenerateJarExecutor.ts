@@ -11,7 +11,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarMessages, ExportJarReportType, ExportJarStep, ExportJarTargets, getExtensionApi, toPosixPath } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -70,7 +70,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }, (_progress, token) => {
             return new Promise<boolean>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
-                    return reject(ExportJarReportType.CANCEL);
+                    return reject();
                 });
                 const mainClass: string | undefined = stepMetadata.mainClass;
                 // For "no main class" option, we get an empty string in stepMetadata.mainClass,
@@ -106,7 +106,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }, (_progress, token) => {
             return new Promise<IJarQuickPickItem[]>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
-                    return reject(ExportJarReportType.CANCEL);
+                    return reject();
                 });
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();
