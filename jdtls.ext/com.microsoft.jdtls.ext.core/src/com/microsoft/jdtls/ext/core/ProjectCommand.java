@@ -159,7 +159,8 @@ public final class ProjectCommand {
         return false;
     }
 
-    private static boolean exportJarExecution(String mainClass, Classpath[] classpaths, String destination, String terminalId, IProgressMonitor monitor) throws OperationCanceledException {
+    private static boolean exportJarExecution(String mainClass, Classpath[] classpaths, String destination, 
+            String terminalId, IProgressMonitor monitor) throws OperationCanceledException {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         if (mainClass.length() > 0) {
