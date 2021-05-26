@@ -22,7 +22,7 @@ import { IClasspath, IStepMetadata } from "./IStepMetadata";
 import { IMainClassInfo } from "./ResolveMainClassExecutor";
 import {
     ExportJarConstants, ExportJarMessages, ExportJarStep, failMessage, getExtensionApi,
-    resetStepMetadata, stepMap, successMessage, toPosixPath, toWinPath,
+    resetStepMetadata, revealTerminal, stepMap, successMessage, toPosixPath, toWinPath,
 } from "./utility";
 
 interface IExportJarTaskDefinition extends TaskDefinition {
@@ -33,6 +33,8 @@ interface IExportJarTaskDefinition extends TaskDefinition {
 }
 
 let isExportingJar: boolean = false;
+// key: terminalId, value: ExportJarTaskTerminal
+const activeTerminalMap: Map<string, ExportJarTaskTerminal> = new Map<string, ExportJarTaskTerminal>();
 
 export async function executeExportJarTask(node?: INodeData): Promise<void> {
     // save the workspace first
@@ -168,21 +170,32 @@ class ExportJarTaskTerminal implements Pseudoterminal {
     public onDidWrite: Event<string> = this.writeEmitter.event;
     public onDidClose?: Event<void> = this.closeEmitter.event;
 
+    public terminalId: string;
     private stepMetadata: IStepMetadata;
 
     constructor(exportJarTaskDefinition: IExportJarTaskDefinition, stepMetadata: IStepMetadata) {
         this.stepMetadata = stepMetadata;
         this.stepMetadata.taskLabel = exportJarTaskDefinition.label || "";
+        this.stepMetadata.terminalId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString();
         this.stepMetadata.mainClass = exportJarTaskDefinition.mainClass;
         this.stepMetadata.outputPath = exportJarTaskDefinition.targetPath;
         this.stepMetadata.elements = exportJarTaskDefinition.elements || [];
+        this.terminalId = this.stepMetadata.terminalId;
     }
 
-    public handleInput(data: string): void {
-        this.writeEmitter.fire(data + EOL);
+    public exit(message?: string) {
+        if (message) {
+            this.writeEmitter.fire(message);
+        }
+        if (activeTerminalMap.has(this.terminalId)) {
+            activeTerminalMap.delete(this.terminalId);
+            this.closeEmitter.fire();
+        }
     }
 
     public async open(_initialDimensions: TerminalDimensions | undefined): Promise<void> {
+        activeTerminalMap.set(this.terminalId, this);
+        revealTerminal(this.stepMetadata.taskLabel);
         let exportResult: boolean | undefined;
         try {
             if (!this.stepMetadata.workspaceFolder) {
@@ -210,17 +223,21 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         } catch (err) {
             if (err) {
                 failMessage(`${err}`);
+                this.exit("[ERROR] An error occurs during export Jar process");
+            } else {
+                this.exit("[CANCEL] Export Jar process is cancelled by user");
             }
         } finally {
             isExportingJar = false;
             if (exportResult === true) {
                 successMessage(this.stepMetadata.outputPath);
+                this.exit("[SUCCESS] Export Jar process is finished successfully");
             } else if (exportResult === false) {
                 // We call `executeExportJarTask()` with the same entry here
                 // to help the user reselect the Java project.
                 executeExportJarTask(this.stepMetadata.entry);
             }
-            this.closeEmitter.fire();
+            this.exit();
         }
     }
 
@@ -405,4 +422,12 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         positivePath = toPosixPath(positivePath);
         return negative ? "!" + positivePath : positivePath;
     }
+}
+
+export function appendOutput(terminalId: string, message: string): void {
+    const terminal = activeTerminalMap.get(terminalId);
+    if (!terminal) {
+        return;
+    }
+    terminal.writeEmitter.fire(message + EOL);
 }

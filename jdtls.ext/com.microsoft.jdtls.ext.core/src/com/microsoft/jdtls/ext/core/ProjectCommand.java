@@ -146,7 +146,7 @@ public final class ProjectCommand {
         String mainClass = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
         Classpath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), Classpath[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
-        String taskLabel = gson.fromJson(gson.toJson(arguments.get(3)), String.class);
+        String terminalId = gson.fromJson(gson.toJson(arguments.get(3)), String.class);
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         if (mainClass.length() > 0) {
@@ -164,28 +164,28 @@ public final class ProjectCommand {
                     int severity = resultStatus.getSeverity();
                     if (severity == IStatus.OK) {
                         java.nio.file.Path path = java.nio.file.Paths.get(classpath.source);
-                        reportExportJarMessage(taskLabel, IStatus.OK, "Successfully added the file to the exported jar: " + path.getFileName().toString());
+                        reportExportJarMessage(terminalId, IStatus.OK, "Successfully extracted the file to the exported jar: " + path.getFileName().toString());
                         continue;
                     }
                     if (resultStatus.isMultiStatus()) {
                         for (IStatus childStatus : resultStatus.getChildren()) {
-                            reportExportJarMessage(taskLabel, severity, childStatus.getMessage());
+                            reportExportJarMessage(terminalId, severity, childStatus.getMessage());
                         }
                     } else {
-                        reportExportJarMessage(taskLabel, severity, resultStatus.getMessage());
+                        reportExportJarMessage(terminalId, severity, resultStatus.getMessage());
                     }
                 } else {
                     try {
                         writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true,
                             /* isCompressed = */true, target, directories);
-                        reportExportJarMessage(taskLabel, IStatus.OK, "Successfully added the file to the exported jar: " + classpath.destination);
+                        reportExportJarMessage(terminalId, IStatus.OK, "Successfully added the file to the exported jar: " + classpath.destination);
                     } catch (CoreException e) {
-                        reportExportJarMessage(taskLabel, IStatus.ERROR, e.getMessage());
+                        reportExportJarMessage(terminalId, IStatus.ERROR, e.getMessage());
                     }
                 }
             }
         } catch (IOException e) {
-            reportExportJarMessage(taskLabel, IStatus.ERROR, e.getMessage());
+            reportExportJarMessage(terminalId, IStatus.ERROR, e.getMessage());
             return false;
         }
         return true;
@@ -254,11 +254,11 @@ public final class ProjectCommand {
         }
     }
 
-    private static void reportExportJarMessage(String taskLabel, int severity, String message) {
-        if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(taskLabel)) {
+    private static void reportExportJarMessage(String terminalId, int severity, String message) {
+        if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(terminalId)) {
             String readableSeverity = getSeverityString(severity);
             JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT,
-                taskLabel, "[" + readableSeverity + "] " + message);
+                terminalId, "[" + readableSeverity + "] " + message);
         }
     }
 

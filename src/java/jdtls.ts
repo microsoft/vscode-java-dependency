@@ -29,9 +29,9 @@ export namespace Jdtls {
     }
 
     export async function exportJar(mainClass: string, classpaths: IClasspath[],
-                                    destination: string, taskLabel: string, token: CancellationToken): Promise<boolean | undefined> {
+                                    destination: string, terminalId: string, token: CancellationToken): Promise<boolean | undefined> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR,
-            mainClass, classpaths, destination, taskLabel, token);
+            mainClass, classpaths, destination, terminalId, token);
     }
 
     export enum CompileWorkspaceStatus {
