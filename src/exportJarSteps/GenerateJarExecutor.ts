@@ -11,7 +11,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, revealTerminal, toPosixPath } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarReportType, ExportJarStep, ExportJarTargets, getExtensionApi, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -70,7 +70,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }, (_progress, token) => {
             return new Promise<boolean>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
-                    return reject();
+                    return reject(ExportJarReportType.CANCEL);
                 });
                 const mainClass: string | undefined = stepMetadata.mainClass;
                 // For "no main class" option, we get an empty string in stepMetadata.mainClass,
@@ -82,9 +82,11 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 if (_.isEmpty(classpaths)) {
                     return reject(new Error(ExportJarMessages.CLASSPATHS_EMPTY));
                 }
-                revealTerminal(stepMetadata.taskLabel);
+                if (!stepMetadata.terminalId) {
+                    return reject(new Error("Can't find related terminal."));
+                }
                 const exportResult: boolean | undefined = await Jdtls.exportJar(basename(mainClass),
-                    classpaths, destPath, stepMetadata.taskLabel, token);
+                    classpaths, destPath, stepMetadata.terminalId, token);
                 if (exportResult === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
@@ -104,7 +106,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }, (_progress, token) => {
             return new Promise<IJarQuickPickItem[]>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
-                    return reject();
+                    return reject(ExportJarReportType.CANCEL);
                 });
                 const pickItems: IJarQuickPickItem[] = [];
                 const uriSet: Set<string> = new Set<string>();

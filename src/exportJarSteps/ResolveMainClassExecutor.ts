@@ -6,7 +6,7 @@ import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, window 
 import { Jdtls } from "../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarMessages, ExportJarStep } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarReportType, ExportJarStep } from "./utility";
 
 export class ResolveMainClassExecutor implements IExportJarStepExecutor {
 
@@ -31,7 +31,7 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
         }, (_progress, token) => {
             return new Promise<IMainClassInfo[]>(async (resolve, reject) => {
                 token.onCancellationRequested(() => {
-                    return reject();
+                    return reject(ExportJarReportType.CANCEL);
                 });
                 if (!stepMetadata.workspaceFolder) {
                     return reject(new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.currentStep)));

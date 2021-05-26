@@ -6,6 +6,7 @@ import { posix, win32 } from "path";
 import { commands, Extension, extensions, QuickInputButtons, QuickPick, QuickPickItem, Uri, window } from "vscode";
 import { sendOperationError } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
+import { activeTerminals } from "./ExportJarTaskProvider";
 import { GenerateJarExecutor } from "./GenerateJarExecutor";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
@@ -67,6 +68,14 @@ export namespace ExportJarMessages {
     export function stepErrorMessage(action: StepAction, currentStep: ExportJarStep): string {
         return `Cannot ${action} in the wizard, current step: ${currentStep}. The export jar process will exit.`;
     }
+}
+
+export enum ExportJarReportType {
+    MESSAGE,
+    SUCCESS,
+    CANCEL,  // user cancels when generating jar
+    ERROR,
+    EXIT,  // user exits when picking
 }
 
 export function resetStepMetadata(resetTo: ExportJarStep, stepMetadata: IStepMetadata): void {
@@ -154,11 +163,15 @@ export async function getExtensionApi(): Promise<any> {
     return extensionApi;
 }
 
-export function showExportJarReport(taskLabel: string, message: string) {
-    const terminals = window.terminals;
-    const presenterTerminals = terminals.filter((terminal) => terminal.name.indexOf(taskLabel) >= 0);
-    if (presenterTerminals.length > 0) {
-        presenterTerminals[presenterTerminals.length - 1].sendText(message);
+export function showExportJarReport(type: ExportJarReportType, terminalId: string, message?: string) {
+    for (const terminal of activeTerminals) {
+        if (terminal.terminalId === terminalId) {
+            if (type !== ExportJarReportType.MESSAGE) {
+                terminal.exit(type);
+            } else if (message) {
+                terminal.writeEmitter.fire(message + EOL);
+            }
+        }
     }
 }
 
