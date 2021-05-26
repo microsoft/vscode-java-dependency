@@ -40,6 +40,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -147,6 +148,19 @@ public final class ProjectCommand {
         Classpath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), Classpath[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
         String terminalId = gson.fromJson(gson.toJson(arguments.get(3)), String.class);
+        try {
+            return exportJarExecution(mainClass, classpaths, destination, terminalId, monitor);
+        } catch (OperationCanceledException e) {
+            File jarFile = new File(destination);
+            if (jarFile.exists()) {
+                jarFile.delete();
+            }
+        }
+        return false;
+    }
+
+    private static boolean exportJarExecution(String mainClass, Classpath[] classpaths, String destination,
+            String terminalId, IProgressMonitor monitor) throws OperationCanceledException {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         if (mainClass.length() > 0) {
