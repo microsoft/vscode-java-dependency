@@ -257,7 +257,7 @@ public final class ProjectCommand {
     private static void reportExportJarMessage(String terminalId, int severity, String message) {
         if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(terminalId)) {
             String readableSeverity = getSeverityString(severity);
-            JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT, 
+            JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT,
                 terminalId, "[" + readableSeverity + "] " + message);
         }
     }
