@@ -21,11 +21,11 @@ A lightweight extension to provide additional Java project explorer features. It
 
 ![export jar](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/export-jar.png)
 
-### Manage Dependency
+### Manage Dependencies
 
 You can work with JAR files directly without any build tools. Go to `JAVA PROJECTS` view, find the `Referenced Libraries` node and click the `+` icon:
 
-![Reference JAR Files](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/manage-dependency.gif)
+![Reference JAR Files](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/manage-dependencies.gif)
 
 If you want to fine-tune this, go to `settings.json` and look for the `java.project.referencedLibraries` entry.
 
