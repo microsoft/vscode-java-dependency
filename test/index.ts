@@ -66,6 +66,17 @@ async function main(): Promise<void> {
             ],
         });
 
+        // Run test for invisible project
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./invisible-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "invisible"),
+                "--disable-workspace-trust",
+            ],
+        });
+
         process.exit(0);
 
     } catch (err) {

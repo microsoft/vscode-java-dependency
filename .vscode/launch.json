@@ -82,6 +82,34 @@
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"
-    }
+    },
+    {
+      "name": "Extension Tests - Invisible Project",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/test/invisible/",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/dist/test/invisible-suite/index"
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+      "preLaunchTask": "npm: compile"
+    },
+    {
+      "name": "Debug UI Command Tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/vscode-extension-tester/out/cli.js",
+      "args": [
+        "setup-and-run",
+        "${workspaceFolder}/dist/test/ui/command.test.js",
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "npm: compile"
+    },
   ]
 }
