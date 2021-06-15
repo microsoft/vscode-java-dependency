@@ -165,10 +165,10 @@ export class ExportJarTaskProvider implements TaskProvider {
 class ExportJarTaskTerminal implements Pseudoterminal {
 
     public writeEmitter = new EventEmitter<string>();
-    public closeEmitter = new EventEmitter<void>();
+    public closeEmitter = new EventEmitter<number>();
 
     public onDidWrite: Event<string> = this.writeEmitter.event;
-    public onDidClose?: Event<void> = this.closeEmitter.event;
+    public onDidClose?: Event<number> = this.closeEmitter.event;
 
     public terminalId: string;
     private stepMetadata: IStepMetadata;
@@ -189,7 +189,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         }
         if (activeTerminalMap.has(this.terminalId)) {
             activeTerminalMap.delete(this.terminalId);
-            this.closeEmitter.fire();
+            this.closeEmitter.fire(0);
         }
     }
 
