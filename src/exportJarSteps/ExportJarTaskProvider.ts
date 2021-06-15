@@ -4,7 +4,7 @@
 import { lstat } from "fs-extra";
 import * as globby from "globby";
 import * as _ from "lodash";
-import { EOL, platform } from "os";
+import { platform } from "os";
 import { dirname, extname, isAbsolute, join, relative } from "path";
 import {
     CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
@@ -429,5 +429,5 @@ export function appendOutput(terminalId: string, message: string): void {
     if (!terminal) {
         return;
     }
-    terminal.writeEmitter.fire(message + EOL);
+    terminal.writeEmitter.fire(message + "\r\n");
 }
