@@ -17,6 +17,7 @@ scripts
 extension.bundle.ts
 javaConfig.json
 .github/**
+images
 
 # Ignore output of code sign
 server/*.md

@@ -110,8 +110,8 @@
         "title": "%contributes.commands.java.view.package.linkWithFolderExplorer%",
         "category": "Java",
         "icon": {
-          "dark": "images/dark/icon-unlink.svg",
-          "light": "images/light/icon-unlink.svg"
+          "dark": "icons/dark/icon-unlink.svg",
+          "light": "icons/light/icon-unlink.svg"
         }
       },
       {
@@ -119,8 +119,8 @@
         "title": "%contributes.commands.java.view.package.unlinkWithFolderExplorer%",
         "category": "Java",
         "icon": {
-          "dark": "images/dark/icon-link.svg",
-          "light": "images/light/icon-link.svg"
+          "dark": "icons/dark/icon-link.svg",
+          "light": "icons/light/icon-link.svg"
         }
       },
       {
