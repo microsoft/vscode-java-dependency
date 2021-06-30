@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-import { commands, Disposable, FileSystemWatcher, Uri, workspace } from "vscode";
+import { commands, Disposable, FileSystemWatcher, RelativePattern, Uri, workspace } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { NodeKind } from "./java/nodeData";
@@ -19,10 +19,11 @@ class SyncHandler implements Disposable {
     private disposables: Disposable[] = [];
 
     public updateFileWatcher(autoRefresh?: boolean): void {
+        this.dispose();
         if (autoRefresh) {
             instrumentOperation(ENABLE_AUTO_REFRESH, () => this.enableAutoRefresh())();
         } else {
-            instrumentOperation(DISABLE_AUTO_REFRESH, () => this.dispose())();
+            instrumentOperation(DISABLE_AUTO_REFRESH, () => {})();
         }
     }
 
@@ -40,9 +41,25 @@ class SyncHandler implements Disposable {
             this.refresh();
         }));
 
-        const fileSystemWatcher: FileSystemWatcher = workspace.createFileSystemWatcher("**/{*.java,src/**}");
-        this.setupWatchers(fileSystemWatcher);
-        this.disposables.push(fileSystemWatcher);
+        try {
+            const result: IListCommandResult | undefined = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND,
+                Commands.JAVA_PROJECT_LIST_SOURCE_PATHS);
+            if (!result || !result.status || !result.data || result.data.length === 0) {
+                throw new Error("Failed to list the source paths");
+            }
+
+            for (const sourcePathData of result.data) {
+                const normalizedPath: string = Uri.file(sourcePathData.path).fsPath;
+                const pattern: RelativePattern = new RelativePattern(normalizedPath, "**/*");
+                const watcher: FileSystemWatcher = workspace.createFileSystemWatcher(pattern);
+                this.disposables.push(watcher);
+                this.setupWatchers(watcher);
+            }
+        } catch (e) {
+            const fileSystemWatcher: FileSystemWatcher = workspace.createFileSystemWatcher("**/{*.java,src/**}");
+            this.disposables.push(fileSystemWatcher);
+            this.setupWatchers(fileSystemWatcher);
+        }
     }
 
     private setupWatchers(watcher: FileSystemWatcher): void {
@@ -98,6 +115,19 @@ class SyncHandler implements Disposable {
     private refresh(node?: ExplorerNode): void {
         commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true, node);
     }
+}
+
+interface ISourcePath {
+    path: string;
+    displayPath: string;
+    projectName: string;
+    projectType: string;
+}
+
+interface IListCommandResult {
+    status: boolean;
+    message: string;
+    data?: ISourcePath[];
 }
 
 export const syncHandler: SyncHandler = new SyncHandler();

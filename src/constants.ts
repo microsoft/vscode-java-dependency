@@ -24,3 +24,7 @@ export namespace Explorer {
 export namespace Build {
     export const FILE_NAMES: string[] = ["pom.xml", "build.gradle"];
 }
+
+export namespace ExtensionName {
+    export const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
+}

@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { ExtensionContext, tasks } from "vscode";
+import { Event, Extension, ExtensionContext, extensions, tasks, Uri } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { contextManager } from "../extension.bundle";
-import { Build, Context } from "./constants";
+import { Build, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
@@ -31,6 +31,31 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(contextManager);
     context.subscriptions.push(syncHandler);
     context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
+
+    const javaLanguageSupport: Extension<any> | undefined = extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT);
+    if (!javaLanguageSupport) {
+        return;
+    }
+    javaLanguageSupport.activate().then(() => {
+        const extensionApi: any = javaLanguageSupport.exports;
+        if (!extensionApi) {
+            return;
+        }
+
+        if (extensionApi.onDidClasspathUpdate) {
+            const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
+            context.subscriptions.push(onDidClasspathUpdate(async () => {
+                syncHandler.updateFileWatcher(Settings.autoRefresh());
+            }));
+        }
+
+        if (extensionApi.onDidServerModeChange) {
+            const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
+            context.subscriptions.push(onDidServerModeChange(async () => {
+                syncHandler.updateFileWatcher(Settings.autoRefresh());
+            }));
+        }
+    });
 }
 
 // this method is called when your extension is deactivated

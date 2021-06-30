@@ -60,7 +60,7 @@ export class DependencyExplorer implements Disposable {
                 }
             }),
             this._dataProvider.onDidChangeTreeData(() => {
-                if (window.activeTextEditor) {
+                if (this._dependencyViewer.visible && window.activeTextEditor) {
                     this.reveal(window.activeTextEditor.document.uri);
                 }
             }),
