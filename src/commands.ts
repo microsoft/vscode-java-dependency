@@ -80,6 +80,8 @@ export namespace Commands {
 
     export const JAVA_RESOLVE_BUILD_FILES = "vscode.java.resolveBuildFiles";
 
+    export const JAVA_PROJECT_LIST_SOURCE_PATHS = "java.project.listSourcePaths";
+
     /**
      * Commands from Visual Studio Code
      */
