@@ -82,12 +82,16 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 if (_.isEmpty(classpaths)) {
                     return reject(new Error(ExportJarMessages.CLASSPATHS_EMPTY));
                 }
-                const exportResult: IExportResult | undefined = await Jdtls.exportJar(basename(mainClass), classpaths, destPath);
-                if (exportResult?.result === true) {
+                if (!stepMetadata.terminalId) {
+                    return reject(new Error("Can't find related terminal."));
+                }
+                const exportResult: boolean | undefined = await Jdtls.exportJar(basename(mainClass),
+                    classpaths, destPath, stepMetadata.terminalId, token);
+                if (exportResult === true) {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
                 } else {
-                    return reject(new Error("Export jar failed." + exportResult?.message));
+                    return reject(new Error("Export jar failed."));
                 }
             });
         });
@@ -248,10 +252,4 @@ export interface IClasspathResult {
 interface IJarQuickPickItem extends QuickPickItem {
     path: string;
     type: string;
-}
-
-export interface IExportResult {
-    result: boolean;
-    message: string;
-    log?: string;
 }

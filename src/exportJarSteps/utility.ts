@@ -127,7 +127,7 @@ export function successMessage(outputFileName: string | undefined): void {
         openInExplorer = "Open Containing Folder";
     }
     window.showInformationMessage("Successfully exported jar to" + EOL + outputFileName,
-        openInExplorer, "Done").then((messageResult) => {
+        openInExplorer).then((messageResult) => {
             if (messageResult === openInExplorer) {
                 commands.executeCommand("revealFileInOS", Uri.file(outputFileName));
             }
@@ -152,4 +152,12 @@ export async function getExtensionApi(): Promise<any> {
         throw new Error("Export jar is not supported in the current version of language server, please check and update your Language Support for Java(TM) by Red Hat.");
     }
     return extensionApi;
+}
+
+export function revealTerminal(terminalName: string) {
+    const terminals = window.terminals;
+    const presenterTerminals = terminals.filter((terminal) => terminal.name.indexOf(terminalName) >= 0);
+    if (presenterTerminals.length > 0) {
+        presenterTerminals[presenterTerminals.length - 1].show();
+    }
 }

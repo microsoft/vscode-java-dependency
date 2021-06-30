@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands } from "vscode";
+import { CancellationToken, commands } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
-import { IExportResult } from "../exportJarSteps/GenerateJarExecutor";
 import { IClasspath } from "../exportJarSteps/IStepMetadata";
 import { IMainClassInfo } from "../exportJarSteps/ResolveMainClassExecutor";
 import { INodeData } from "./nodeData";
@@ -17,7 +16,7 @@ export namespace Jdtls {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_REFRESH_LIB_SERVER, params);
     }
 
-    export async function getPackageData(params: {[key: string]: any}): Promise<INodeData[]> {
+    export async function getPackageData(params: { [key: string]: any }): Promise<INodeData[]> {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_GETPACKAGEDATA, params) || [];
     }
 
@@ -29,9 +28,10 @@ export namespace Jdtls {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINCLASSES, params) || [];
     }
 
-    export async function exportJar(mainClass: string, classpaths: IClasspath[], destination: string): Promise<IExportResult | undefined> {
+    export async function exportJar(mainClass: string, classpaths: IClasspath[],
+                                    destination: string, terminalId: string, token: CancellationToken): Promise<boolean | undefined> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR,
-            mainClass, classpaths, destination);
+            mainClass, classpaths, destination, terminalId, token);
     }
 
     export enum CompileWorkspaceStatus {

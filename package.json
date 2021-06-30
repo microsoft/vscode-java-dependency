@@ -2,7 +2,7 @@
   "name": "vscode-java-dependency",
   "displayName": "Project Manager for Java",
   "description": "%description%",
-  "version": "0.18.3",
+  "version": "0.18.5",
   "publisher": "vscjava",
   "preview": true,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -18,11 +18,13 @@
     "type": "git",
     "url": "https://github.com/Microsoft/vscode-java-dependency.git"
   },
-  "homepage": "https://github.com/Microsoft/vscode-java-dependency/blob/master/README.md",
+  "homepage": "https://github.com/Microsoft/vscode-java-dependency/blob/main/README.md",
   "icon": "logo.png",
-  "workspaceTrust": {
-    "request": "onDemand",
-    "description": "Extension may require your trust on workspace for code execution."
+  "capabilities": {
+    "virtualWorkspaces": false,
+    "untrustedWorkspaces": {
+      "supported": false
+    }
   },
   "activationEvents": [
     "onCommand:_java.project.open",
@@ -35,7 +37,7 @@
   "main": "./main.js",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.18.3.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.18.5.jar"
     ],
     "commands": [
       {
@@ -108,8 +110,8 @@
         "title": "%contributes.commands.java.view.package.linkWithFolderExplorer%",
         "category": "Java",
         "icon": {
-          "dark": "images/dark/icon-unlink.svg",
-          "light": "images/light/icon-unlink.svg"
+          "dark": "icons/dark/icon-unlink.svg",
+          "light": "icons/light/icon-unlink.svg"
         }
       },
       {
@@ -117,8 +119,8 @@
         "title": "%contributes.commands.java.view.package.unlinkWithFolderExplorer%",
         "category": "Java",
         "icon": {
-          "dark": "images/dark/icon-link.svg",
-          "light": "images/light/icon-link.svg"
+          "dark": "icons/dark/icon-link.svg",
+          "light": "icons/light/icon-link.svg"
         }
       },
       {

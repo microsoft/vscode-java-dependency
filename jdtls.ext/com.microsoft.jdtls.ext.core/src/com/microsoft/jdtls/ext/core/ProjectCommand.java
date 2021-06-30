@@ -29,6 +29,7 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -36,7 +37,10 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -67,6 +71,8 @@ import com.microsoft.jdtls.ext.core.model.PackageNode;
 
 public final class ProjectCommand {
 
+    private static String COMMAND_EXPORT_JAR_REPORT = "java.view.package.exportJarReport";
+
     private static class MainClassInfo {
         public String name;
         public String path;
@@ -81,23 +87,6 @@ public final class ProjectCommand {
         public String source;
         public String destination;
         public boolean isArtifact;
-    }
-
-    private static class ExportResult {
-        public boolean result;
-        public String message;
-        public String log;
-
-        ExportResult(boolean result) {
-            this.result = result;
-            this.log = "";
-        }
-
-        ExportResult(boolean result, String message) {
-            this.result = result;
-            this.message = message;
-            this.log = "";
-        }
     }
 
     private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new CollectionTypeAdapter.Factory())
@@ -151,13 +140,27 @@ public final class ProjectCommand {
         return ResourcesPlugin.getWorkspace().getRoot();
     }
 
-    public static ExportResult exportJar(List<Object> arguments, IProgressMonitor monitor) {
-        if (arguments.size() < 3) {
-            return new ExportResult(false, "Invalid export Arguments");
+    public static boolean exportJar(List<Object> arguments, IProgressMonitor monitor) {
+        if (arguments.size() < 4) {
+            return false;
         }
         String mainClass = gson.fromJson(gson.toJson(arguments.get(0)), String.class);
         Classpath[] classpaths = gson.fromJson(gson.toJson(arguments.get(1)), Classpath[].class);
         String destination = gson.fromJson(gson.toJson(arguments.get(2)), String.class);
+        String terminalId = gson.fromJson(gson.toJson(arguments.get(3)), String.class);
+        try {
+            return exportJarExecution(mainClass, classpaths, destination, terminalId, monitor);
+        } catch (OperationCanceledException e) {
+            File jarFile = new File(destination);
+            if (jarFile.exists()) {
+                jarFile.delete();
+            }
+        }
+        return false;
+    }
+
+    private static boolean exportJarExecution(String mainClass, Classpath[] classpaths, String destination,
+            String terminalId, IProgressMonitor monitor) throws OperationCanceledException {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         if (mainClass.length() > 0) {
@@ -166,22 +169,40 @@ public final class ProjectCommand {
         try (JarOutputStream target = new JarOutputStream(new FileOutputStream(destination), manifest)) {
             Set<String> directories = new HashSet<>();
             for (Classpath classpath : classpaths) {
+                if (monitor.isCanceled()) {
+                    return false;
+                }
                 if (classpath.isArtifact) {
-                    writeArchive(new ZipFile(classpath.source), /* areDirectoryEntriesIncluded = */true,
-                        /* isCompressed = */true, target, directories, monitor);
+                    MultiStatus resultStatus = writeArchive(new ZipFile(classpath.source),
+                        /* areDirectoryEntriesIncluded = */true, /* isCompressed = */true, target, directories, monitor);
+                    int severity = resultStatus.getSeverity();
+                    if (severity == IStatus.OK) {
+                        java.nio.file.Path path = java.nio.file.Paths.get(classpath.source);
+                        reportExportJarMessage(terminalId, IStatus.OK, "Successfully extracted the file to the exported jar: " + path.getFileName().toString());
+                        continue;
+                    }
+                    if (resultStatus.isMultiStatus()) {
+                        for (IStatus childStatus : resultStatus.getChildren()) {
+                            reportExportJarMessage(terminalId, severity, childStatus.getMessage());
+                        }
+                    } else {
+                        reportExportJarMessage(terminalId, severity, resultStatus.getMessage());
+                    }
                 } else {
                     try {
                         writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true,
                             /* isCompressed = */true, target, directories);
+                        reportExportJarMessage(terminalId, IStatus.OK, "Successfully added the file to the exported jar: " + classpath.destination);
                     } catch (CoreException e) {
-                        // TODO: Collect reports
+                        reportExportJarMessage(terminalId, IStatus.ERROR, e.getMessage());
                     }
                 }
             }
         } catch (IOException e) {
-            return new ExportResult(false, e.getMessage());
+            reportExportJarMessage(terminalId, IStatus.ERROR, e.getMessage());
+            return false;
         }
-        return new ExportResult(true);
+        return true;
     }
 
     public static List<MainClassInfo> getMainClasses(List<Object> arguments, IProgressMonitor monitor) throws Exception {
@@ -247,4 +268,28 @@ public final class ProjectCommand {
         }
     }
 
+    private static void reportExportJarMessage(String terminalId, int severity, String message) {
+        if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(terminalId)) {
+            String readableSeverity = getSeverityString(severity);
+            JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT,
+                terminalId, "[" + readableSeverity + "] " + message);
+        }
+    }
+
+    private static String getSeverityString(int severity) {
+        switch (severity) {
+            case IStatus.INFO:
+                return "INFO";
+            case IStatus.WARNING:
+                return "WARNING";
+            case IStatus.ERROR:
+                return "ERROR";
+            case IStatus.CANCEL:
+                return "CANCEL";
+            case IStatus.OK:
+                return "OK";
+            default:
+                return "UNKNOWN STATUS";
+        }
+    }
 }

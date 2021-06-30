@@ -10,7 +10,7 @@ import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-
 import { contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { Context } from "../constants";
-import { executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
+import { appendOutput, executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
@@ -35,6 +35,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     constructor(public readonly context: ExtensionContext) {
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
             this.refreshWithLog(debounce, element)));
+        context.subscriptions.push(commands.registerCommand(Commands.EXPORT_JAR_REPORT, (terminalId: string, message: string) => {
+            appendOutput(terminalId, message);
+        }));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, async (node: INodeData) => {
             executeExportJarTask(node);
         }));
