@@ -129,6 +129,9 @@ public class PackageCommand {
             // Add project node:
             result.add(PackageNode.createNodeForProject(typeRoot));
             IPackageFragment packageFragment = (IPackageFragment) typeRoot.getAncestor(IJavaElement.PACKAGE_FRAGMENT);
+            if (!packageFragment.exists()) {
+                return Collections.emptyList();
+            }
             IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
             // TODO: Let the client handle the display instead. Server side should always
             // provide the container node.
