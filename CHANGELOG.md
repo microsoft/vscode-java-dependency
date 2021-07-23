@@ -4,6 +4,14 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.18.6
+
+### Changed
+- Set the output path to `bin` by default when creating projects without build tools. [#523](https://github.com/microsoft/vscode-java-dependency/issues/523)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.6+is%3Aclosed)
+
 ## 0.18.5
 ### Fixed
 - [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.5+is%3Aclosed)
