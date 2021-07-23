@@ -29,6 +29,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "java9"),
+                "--disable-workspace-trust",
             ],
         });
 
@@ -39,6 +40,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./simple-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "simple"),
+                "--disable-workspace-trust",
             ],
         });
 
@@ -49,6 +51,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./maven-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "maven"),
+                "--disable-workspace-trust",
             ],
         });
 
@@ -59,6 +62,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./gradle-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "gradle"),
+                "--disable-workspace-trust",
             ],
         });
 
