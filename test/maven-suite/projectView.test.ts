@@ -8,6 +8,7 @@ import * as vscode from "vscode";
 import { Commands, ContainerNode, contextManager, DependencyExplorer, IMainClassInfo,
     INodeData, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, setupTestEnv, Uris } from "../shared";
+import { sleep } from "../util";
 
 // tslint:disable: only-arrow-functions
 suite("Maven Project View Tests", () => {
@@ -136,7 +137,7 @@ suite("Maven Project View Tests", () => {
         const mainClass = (await mainSubPackage.getChildren())[0] as PrimaryTypeNode;
 
         await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, mainClass);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await sleep(1000);
         const content = await clipboardy.read();
         const contentUri = vscode.Uri.file(content);
         const dataUri = mainClass.nodeData.uri;
@@ -155,7 +156,7 @@ suite("Maven Project View Tests", () => {
         const mainClass = (await mainSubPackage.getChildren())[0] as PrimaryTypeNode;
 
         await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, mainClass);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await sleep(1000);
         const content = await clipboardy.read();
         const dataUri = mainClass.nodeData.uri;
         assert.ok(dataUri, `Class node should have correct uri`);

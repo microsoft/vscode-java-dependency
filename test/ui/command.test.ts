@@ -8,6 +8,7 @@ import * as path from "path";
 import * as seleniumWebdriver from "selenium-webdriver";
 import { EditorView, InputBox, ModalDialog, SideBarView, StatusBar, TextEditor, TreeItem, Workbench } from "vscode-extension-tester";
 import { DialogHandler, OpenDialog } from "vscode-extension-tester-native";
+import { sleep } from "../util";
 
 // tslint:disable: only-arrow-functions
 const newProjectName = "helloworld";
@@ -247,9 +248,13 @@ describe("Command Tests", function() {
         const buttons = await referencedItem.getActionButtons();
         await buttons[0].click();
         const dialog: OpenDialog = await DialogHandler.getOpenDialog();
-        await dialog.selectPath(path.join(invisibleProjectPath, "libSource", "jcommander-1.72.jar"));
+        await dialog.selectPath(path.join(invisibleProjectPath, "libSource", "simple.jar"));
         await dialog.confirm();
-        assert.ok(await section.findItem("jcommander-1.72.jar"), `Library "jcommander-1.72.jar" should be found`);
+        const simpleItem = await section.findItem("simple.jar") as TreeItem;
+        assert.ok(simpleItem, `Library "simple.jar" should be found`);
+        await simpleItem!.click();
+        const libraryButtons = await simpleItem!.getActionButtons();
+        await libraryButtons[0].click();
     });
 
     it("Test java.project.addLibraryFolders", async function() {
@@ -267,13 +272,12 @@ describe("Command Tests", function() {
             .keyUp(seleniumWebdriver.Key.ALT)
             .perform();
         const dialog: OpenDialog = await DialogHandler.getOpenDialog();
-        await dialog.selectPath(path.join(invisibleProjectPath, "libSourceFolder"));
+        await dialog.selectPath(path.join(invisibleProjectPath, "libSource"));
         await dialog.confirm();
         await sleep(3000);
         referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
         await referencedItem.expand();
-        assert.ok(await section.findItem("junit-jupiter-api-5.4.1.jar"), `Library "junit-jupiter-api-5.4.1.jar" should be found`);
-        assert.ok(await section.findItem("testng-6.8.7.jar"), `Library "testng-6.8.7.jar" should be found`);
+        assert.ok(await section.findItem("simple.jar"), `Library "simple.jar" should be found`);
     });
 
     it("Test java.project.create", async function() {
@@ -309,8 +313,4 @@ async function waitForImporting(time: number) {
             }
         }, time);
     });
-}
-
-async function sleep(time: number) {
-    await new Promise((resolve) => setTimeout(resolve, time));
 }

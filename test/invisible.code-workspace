@@ -5,9 +5,6 @@
 		}
 	],
 	"settings": {
-		"java.server.launchMode": "Standard",
-		"java.project.referencedLibraries": [
-			"lib/**/*.jar"
-		]
+		"java.server.launchMode": "Standard"
 	}
 }

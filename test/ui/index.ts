@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
+import * as os from "os";
 import { ExTester } from "vscode-extension-tester";
 
 async function main(): Promise<void> {
@@ -17,6 +18,7 @@ async function main(): Promise<void> {
         await exTester.setupRequirements({vscodeVersion: "1.57.0"});
         process.exit(await exTester.runTests(testPath, {vscodeVersion: "1.57.0"}));
     } catch (err) {
+        process.stdout.write(`${err}${os.EOL}`);
         process.exit(1);
     }
 }

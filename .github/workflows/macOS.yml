@@ -33,12 +33,6 @@ jobs:
     - name: Install VSCE
       run: npm install -g vsce
 
-    - name: Lint
-      run: gulp tslint
-
-    - name: Checkstyle
-      run: gulp checkstyle
-
     - name: Build OSGi bundle
       run: npm run build-server
 
