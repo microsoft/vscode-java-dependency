@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "invisible"
+		}
+	],
+	"settings": {
+		"java.server.launchMode": "Standard"
+	}
+}
