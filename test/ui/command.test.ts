@@ -20,7 +20,7 @@ const targetPath = path.join(__dirname, "..", "..", "..", "test", "newProject");
 
 describe("Command Tests", function() {
 
-    this.timeout(120000);
+    this.timeout(2 * 60 * 1000 /*ms*/);
 
     before(async function() {
         sleep(5000);
@@ -57,7 +57,7 @@ describe("Command Tests", function() {
         await sleep(1000);
         const fileSections = await new SideBarView().getContent().getSections();
         await fileSections[0].collapse();
-        await sleep(60000);
+        await sleep(60 * 1000 /*ms*/);
     });
 
     it("Test javaProjectExplorer.focus", async function() {
@@ -232,7 +232,7 @@ describe("Command Tests", function() {
         await folderNode.expand();
         const fileNode = await fileExplorerSections[0].findItem("App.java") as TreeItem;
         await fileNode.click();
-        await sleep(60000);
+        await sleep(60 * 1000 /*ms*/);
         const fileSections = await new SideBarView().getContent().getSections();
         await fileSections[0].collapse();
         await new Workbench().executeCommand("javaProjectExplorer.focus");
