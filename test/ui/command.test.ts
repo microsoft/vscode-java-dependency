@@ -6,7 +6,7 @@ import * as fse from "fs-extra";
 import { platform } from "os";
 import * as path from "path";
 import * as seleniumWebdriver from "selenium-webdriver";
-import { EditorView, InputBox, ModalDialog, SideBarView, StatusBar, TextEditor, TreeItem, Workbench } from "vscode-extension-tester";
+import { EditorView, InputBox, ModalDialog, SideBarView, TextEditor, TreeItem, Workbench } from "vscode-extension-tester";
 import { DialogHandler, OpenDialog } from "vscode-extension-tester-native";
 import { sleep } from "../util";
 
@@ -20,7 +20,7 @@ const targetPath = path.join(__dirname, "..", "..", "..", "test", "newProject");
 
 describe("Command Tests", function() {
 
-    this.timeout(60000);
+    this.timeout(2 * 60 * 1000 /*ms*/);
 
     before(async function() {
         sleep(5000);
@@ -57,7 +57,7 @@ describe("Command Tests", function() {
         await sleep(1000);
         const fileSections = await new SideBarView().getContent().getSections();
         await fileSections[0].collapse();
-        await waitForImporting(1000);
+        await sleep(60 * 1000 /*ms*/);
     });
 
     it("Test javaProjectExplorer.focus", async function() {
@@ -232,7 +232,7 @@ describe("Command Tests", function() {
         await folderNode.expand();
         const fileNode = await fileExplorerSections[0].findItem("App.java") as TreeItem;
         await fileNode.click();
-        await waitForImporting(1000);
+        await sleep(60 * 1000 /*ms*/);
         const fileSections = await new SideBarView().getContent().getSections();
         await fileSections[0].collapse();
         await new Workbench().executeCommand("javaProjectExplorer.focus");
@@ -302,15 +302,3 @@ describe("Command Tests", function() {
         assert.ok(await fse.pathExists(path.join(targetPath, newProjectName, "README.md")), `The template README file should be created`);
     });
 });
-
-async function waitForImporting(time: number) {
-    await new Promise<void>(async (resolve) => {
-        const interval = setInterval(async () => {
-            const item = await new StatusBar().getItem("ServiceReady");
-            if (item) {
-                clearInterval(interval);
-                resolve();
-            }
-        }, time);
-    });
-}
