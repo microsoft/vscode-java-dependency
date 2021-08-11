@@ -32,30 +32,40 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(syncHandler);
     context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
 
-    const javaLanguageSupport: Extension<any> | undefined = extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT);
-    if (!javaLanguageSupport) {
-        return;
-    }
-    javaLanguageSupport.activate().then(() => {
-        const extensionApi: any = javaLanguageSupport.exports;
-        if (!extensionApi) {
+    const pollingJLS = () => {
+        const javaLanguageSupport: Extension<any> | undefined = extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT);
+        if (!javaLanguageSupport) {
             return;
         }
 
-        if (extensionApi.onDidClasspathUpdate) {
-            const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
-            context.subscriptions.push(onDidClasspathUpdate(async () => {
-                syncHandler.updateFileWatcher(Settings.autoRefresh());
-            }));
-        }
+        if (javaLanguageSupport.isActive) {
+            const extensionApi: any = javaLanguageSupport.exports;
+            if (!extensionApi) {
+                return;
+            }
 
-        if (extensionApi.onDidServerModeChange) {
-            const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
-            context.subscriptions.push(onDidServerModeChange(async () => {
+            if (extensionApi.onDidClasspathUpdate) {
+                const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
+                context.subscriptions.push(onDidClasspathUpdate(async () => {
+                    syncHandler.updateFileWatcher(Settings.autoRefresh());
+                }));
+            }
+
+            if (extensionApi.serverMode === "Standard") {
                 syncHandler.updateFileWatcher(Settings.autoRefresh());
-            }));
+            } else {
+                if (extensionApi.onDidServerModeChange) {
+                    const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
+                    context.subscriptions.push(onDidServerModeChange(async () => {
+                        syncHandler.updateFileWatcher(Settings.autoRefresh());
+                    }));
+                }
+            }
+        } else {
+            setTimeout(pollingJLS, 3 * 1000 /*ms*/);
         }
-    });
+    };
+    pollingJLS();
 }
 
 // this method is called when your extension is deactivated
