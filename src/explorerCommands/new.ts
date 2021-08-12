@@ -73,9 +73,23 @@ async function newUntiledJavaFile(): Promise<void> {
 }
 
 async function inferPackageFsPath(): Promise<string> {
+    let sourcePaths: string[] | undefined;
+    try {
+        const result = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
+        if (result && result.data && result.data.length) {
+            sourcePaths = result.data.map((entry) => entry.path);
+        }
+    } catch (e) {
+        // do nothing
+    }
+
     if (!window.activeTextEditor) {
+        if (sourcePaths?.length === 1) {
+            return sourcePaths[0];
+        }
         return "";
     }
+
     const fileUri: Uri = window.activeTextEditor.document.uri;
     const workspaceFolder: WorkspaceFolder | undefined = workspace.getWorkspaceFolder(fileUri);
     if (!workspaceFolder) {
@@ -83,17 +97,12 @@ async function inferPackageFsPath(): Promise<string> {
     }
 
     const filePath: string = window.activeTextEditor.document.uri.fsPath;
-    try {
-        const result = await commands.executeCommand<ListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
-        if (result && result.data && result.data.length) {
-            for (const sourcePath of result.data) {
-                if (!path.relative(sourcePath.path, filePath).startsWith("..")) {
-                    return path.dirname(window.activeTextEditor.document.uri.fsPath);
-                }
+    if (sourcePaths) {
+        for (const sourcePath of sourcePaths) {
+            if (!path.relative(sourcePath, filePath).startsWith("..")) {
+                return path.dirname(window.activeTextEditor.document.uri.fsPath);
             }
         }
-    } catch (e) {
-        // do nothing
     }
 
     return "";
@@ -228,13 +237,13 @@ interface ISourceRootPickItem extends QuickPickItem {
     fsPath: string;
 }
 
-interface ListCommandResult {
+interface IListCommandResult {
     status: boolean;
     message: string;
-    data?: SourcePath[];
+    data?: ISourcePath[];
 }
 
-interface SourcePath {
+interface ISourcePath {
     path: string;
     displayPath: string;
     projectName: string;
