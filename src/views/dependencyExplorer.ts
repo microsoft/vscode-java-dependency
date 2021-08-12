@@ -97,11 +97,7 @@ export class DependencyExplorer implements Disposable {
         // register keybinding commands
         context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode) => {
-                let cmdNode = getCmdNode(this._dependencyViewer.selection, node);
-                if (!cmdNode) {
-                    cmdNode = await this.promptForProjectNode();
-                }
-                newJavaClass(cmdNode);
+                newJavaClass(node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_PACKAGE, async (node?: DataNode) => {
                 let cmdNode = getCmdNode(this._dependencyViewer.selection, node);

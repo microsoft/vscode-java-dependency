@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.53.0"
+    "vscode": "^1.59.0"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,7 @@
     "onCommand:java.project.create",
     "onCommand:java.view.package.exportJar",
     "onCommand:java.view.package.revealInProjectExplorer",
+    "onCommand:java.view.package.newJavaClass",
     "onView:javaProjectExplorer"
   ],
   "license": "MIT",
@@ -257,6 +258,11 @@
       }
     ],
     "menus": {
+      "file/newFile": [
+        {
+          "command": "java.view.package.newJavaClass"
+        }
+      ],
       "commandPalette": [
         {
           "command": "java.view.package.exportJar",
@@ -308,10 +314,6 @@
         },
         {
           "command": "java.project.refreshLibraries",
-          "when": "false"
-        },
-        {
-          "command": "java.view.package.newJavaClass",
           "when": "false"
         },
         {
@@ -595,7 +597,7 @@
     "@types/mocha": "^8.2.1",
     "@types/node": "^8.10.66",
     "@types/semver": "^7.3.8",
-    "@types/vscode": "1.53.0",
+    "@types/vscode": "1.59.0",
     "copy-webpack-plugin": "^6.4.1",
     "glob": "^7.1.6",
     "gulp": "^4.0.2",
