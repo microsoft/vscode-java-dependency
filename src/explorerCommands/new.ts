@@ -3,19 +3,29 @@
 
 import * as fse from "fs-extra";
 import * as path from "path";
-import { QuickPickItem, Uri, window, workspace, WorkspaceEdit } from "vscode";
+import { commands, languages, QuickPickItem, SnippetString, TextEditor, Uri, window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
+import { Commands } from "../../extension.bundle";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { checkJavaQualifiedName } from "./utility";
 
 export async function newJavaClass(node?: DataNode): Promise<void> {
-    if (!node?.uri || !canCreateClass(node)) {
-        return;
+    let packageFsPath: string | undefined;
+    if (!node) {
+        packageFsPath = await inferPackageFsPath();
+    } else {
+        if (!node?.uri || !canCreateClass(node)) {
+            return;
+        }
+
+        packageFsPath = await getPackageFsPath(node);
     }
 
-    const packageFsPath: string = await getPackageFsPath(node);
-    if (!packageFsPath) {
+    if (packageFsPath === undefined) {
+        // User canceled
         return;
+    } else if (packageFsPath.length === 0) {
+        return newUntiledJavaFile();
     }
 
     const className: string | undefined = await window.showInputBox({
@@ -27,7 +37,7 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
                 return checkMessage;
             }
 
-            if (await fse.pathExists(getNewFilePath(packageFsPath, value))) {
+            if (await fse.pathExists(getNewFilePath(packageFsPath!, value))) {
                 return "Class already exists.";
             }
 
@@ -47,6 +57,57 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
     workspace.applyEdit(workspaceEdit);
 }
 
+async function newUntiledJavaFile(): Promise<void> {
+    await commands.executeCommand("workbench.action.files.newUntitledFile");
+    const textEditor: TextEditor | undefined = window.activeTextEditor;
+    if (!textEditor) {
+        return;
+    }
+    await languages.setTextDocumentLanguage(textEditor.document, "java");
+    const snippets: string[] = [];
+    snippets.push(`public \${1|class,interface,enum,abstract class,@interface|} \${2:Main} {`);
+    snippets.push(`\t\${0}`);
+    snippets.push("}");
+    snippets.push("");
+    textEditor.insertSnippet(new SnippetString(snippets.join("\n")));
+}
+
+async function inferPackageFsPath(): Promise<string> {
+    let sourcePaths: string[] | undefined;
+    try {
+        const result = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
+        if (result && result.data && result.data.length) {
+            sourcePaths = result.data.map((entry) => entry.path);
+        }
+    } catch (e) {
+        // do nothing
+    }
+
+    if (!window.activeTextEditor) {
+        if (sourcePaths?.length === 1) {
+            return sourcePaths[0];
+        }
+        return "";
+    }
+
+    const fileUri: Uri = window.activeTextEditor.document.uri;
+    const workspaceFolder: WorkspaceFolder | undefined = workspace.getWorkspaceFolder(fileUri);
+    if (!workspaceFolder) {
+        return "";
+    }
+
+    const filePath: string = window.activeTextEditor.document.uri.fsPath;
+    if (sourcePaths) {
+        for (const sourcePath of sourcePaths) {
+            if (!path.relative(sourcePath, filePath).startsWith("..")) {
+                return path.dirname(window.activeTextEditor.document.uri.fsPath);
+            }
+        }
+    }
+
+    return "";
+}
+
 function canCreateClass(node: DataNode): boolean {
     if (node.nodeData.kind === NodeKind.Project ||
         node.nodeData.kind === NodeKind.PackageRoot ||
@@ -58,7 +119,7 @@ function canCreateClass(node: DataNode): boolean {
     return false;
 }
 
-async function getPackageFsPath(node: DataNode): Promise<string> {
+async function getPackageFsPath(node: DataNode): Promise<string | undefined> {
     if (node.nodeData.kind === NodeKind.Project) {
         const childrenNodes: DataNode[] = await node.getChildren() as DataNode[];
         const packageRoots: any[] = childrenNodes.filter((child) => {
@@ -90,7 +151,7 @@ async function getPackageFsPath(node: DataNode): Promise<string> {
                     ignoreFocusOut: true,
                 },
             );
-            return choice ? choice.fsPath : "";
+            return choice?.fsPath;
         }
     } else if (node.nodeData.kind === NodeKind.PrimaryType) {
         return node.uri ? path.dirname(Uri.parse(node.uri).fsPath) : "";
@@ -116,7 +177,7 @@ export async function newPackage(node?: DataNode): Promise<void> {
     const nodeKind = node.nodeData.kind;
     if (nodeKind === NodeKind.Project) {
         defaultValue = "";
-        packageRootPath = await getPackageFsPath(node);
+        packageRootPath = await getPackageFsPath(node) || "";
     } else if (nodeKind === NodeKind.PackageRoot) {
         defaultValue = "";
         packageRootPath = Uri.parse(node.uri).fsPath;
@@ -174,4 +235,17 @@ function getNewPackagePath(packageRootPath: string, packageName: string): string
 
 interface ISourceRootPickItem extends QuickPickItem {
     fsPath: string;
+}
+
+interface IListCommandResult {
+    status: boolean;
+    message: string;
+    data?: ISourcePath[];
+}
+
+interface ISourcePath {
+    path: string;
+    displayPath: string;
+    projectName: string;
+    projectType: string;
 }

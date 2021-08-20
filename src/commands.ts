@@ -94,6 +94,11 @@ export namespace Commands {
     export const WORKBENCH_ACTION_FILES_OPENFOLDER = "workbench.action.files.openFolder";
 
     export const WORKBENCH_ACTION_FILES_OPENFILEFOLDER = "workbench.action.files.openFileFolder";
+
+    /**
+     * Commands from JLS
+     */
+    export const LIST_SOURCEPATHS = "java.project.listSourcePaths";
 }
 
 export function executeJavaLanguageServerCommand(...rest: any[]) {
