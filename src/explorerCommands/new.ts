@@ -3,8 +3,10 @@
 
 import * as fse from "fs-extra";
 import * as path from "path";
-import { commands, languages, QuickPickItem, SnippetString, TextEditor, Uri, window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
+import { commands, Extension, extensions, languages, QuickPickItem, SnippetString, TextEditor, Uri,
+    window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
 import { Commands } from "../../extension.bundle";
+import { ExtensionName } from "../constants";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { checkJavaQualifiedName } from "./utility";
@@ -12,6 +14,7 @@ import { checkJavaQualifiedName } from "./utility";
 export async function newJavaClass(node?: DataNode): Promise<void> {
     let packageFsPath: string | undefined;
     if (!node) {
+        // from the new file menu entry
         packageFsPath = await inferPackageFsPath();
     } else {
         if (!node?.uri || !canCreateClass(node)) {
@@ -73,6 +76,20 @@ async function newUntiledJavaFile(): Promise<void> {
 }
 
 async function inferPackageFsPath(): Promise<string> {
+    const javaLanguageSupport: Extension<any> | undefined = extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT);
+    if (!javaLanguageSupport || !javaLanguageSupport.isActive) {
+        return "";
+    }
+
+    const extensionApi: any = javaLanguageSupport.exports;
+    if (!extensionApi) {
+        return "";
+    }
+
+    if (extensionApi.serverMode !== "Standard" || extensionApi.status !== "Started") {
+        return "";
+    }
+
     let sourcePaths: string[] | undefined;
     try {
         const result = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
