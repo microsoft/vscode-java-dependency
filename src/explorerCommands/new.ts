@@ -5,6 +5,7 @@ import * as fse from "fs-extra";
 import * as path from "path";
 import { commands, Extension, extensions, languages, QuickPickItem, SnippetString, TextEditor, Uri,
     window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
+import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../../extension.bundle";
 import { ExtensionName } from "../constants";
 import { NodeKind } from "../java/nodeData";
@@ -15,8 +16,14 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
     let packageFsPath: string | undefined;
     if (!node) {
         // from the new file menu entry
+        sendInfo("", {
+            triggerNewFileFrom: "menuBar",
+        });
         packageFsPath = await inferPackageFsPath();
     } else {
+        sendInfo("", {
+            triggerNewFileFrom: "projectExplorer",
+        });
         if (!node?.uri || !canCreateClass(node)) {
             return;
         }
