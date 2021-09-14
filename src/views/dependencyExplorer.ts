@@ -10,7 +10,6 @@ import {
 } from "vscode";
 import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
-import { Build } from "../constants";
 import { deleteFiles } from "../explorerCommands/delete";
 import { newJavaClass, newPackage } from "../explorerCommands/new";
 import { renameFile } from "../explorerCommands/rename";
@@ -68,10 +67,9 @@ export class DependencyExplorer implements Disposable {
                 await commands.executeCommand(Commands.JAVA_PROJECT_EXPLORER_FOCUS);
                 let fsPath: string = uri.fsPath;
                 const fileName: string = path.basename(fsPath);
-                if (Build.FILE_NAMES.includes(fileName)) {
+                if (/(.*\.gradle)|(.*\.gradle\.kts)|(pom\.xml)$/.test(fileName)) {
                     fsPath = path.dirname(fsPath);
                 }
-
                 uri = Uri.file(fsPath);
                 if ((await fse.stat(fsPath)).isFile()) {
                     await commands.executeCommand(Commands.VSCODE_OPEN, uri, { preserveFocus: true });

@@ -31,13 +31,8 @@ export class Utility {
             return false;
         }
 
-        await languageServerApiManager.awaitSwitchingServerFinished();
-        if (!await languageServerApiManager.isStandardServerReady()) {
-            return false;
-        }
-        return true;
+        return languageServerApiManager.ready();
     }
-
 }
 
 export class EventCounter {

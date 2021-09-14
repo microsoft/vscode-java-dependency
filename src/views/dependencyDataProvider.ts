@@ -97,11 +97,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[] | undefined | null> {
-        if (await languageServerApiManager.isLightWeightMode()) {
+        if (!await languageServerApiManager.ready()) {
             return [];
         }
-
-        await languageServerApiManager.awaitSwitchingServerFinished();
 
         const children = (!this._rootItems || !element) ?
             await this.getRootNodes() : await element.getChildren();
@@ -172,7 +170,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                     this._rootItems = rootItems;
                 }
             }
-            contextManager.setContextValue(Context.NO_JAVA_PEOJECT, _.isEmpty(rootItems));
+            contextManager.setContextValue(Context.NO_JAVA_PROJECT, _.isEmpty(rootItems));
             return rootItems;
         } finally {
             explorerLock.release();

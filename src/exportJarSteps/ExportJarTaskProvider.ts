@@ -40,7 +40,7 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
     // save the workspace first
     await workspace.saveAll(false /*includeUntitled*/);
 
-    if (!await languageServerApiManager.isStandardServerReady() || isExportingJar || await buildWorkspace() === false) {
+    if (!await languageServerApiManager.ready() || isExportingJar || await buildWorkspace() === false) {
         return;
     }
     isExportingJar = true;

@@ -27,12 +27,16 @@
     }
   },
   "activationEvents": [
+    "onLanguage:java",
+    "workspaceContains:pom.xml",
+    "workspaceContains:build.gradle",
+    "workspaceContains:settings.gradle",
+    "workspaceContains:build.gradle.kts",
+    "workspaceContains:settings.gradle.kts",
+    "workspaceContains:.classpath",
     "onCommand:_java.project.open",
     "onCommand:java.project.create",
-    "onCommand:java.view.package.exportJar",
-    "onCommand:java.view.package.revealInProjectExplorer",
-    "onCommand:java.view.package.newJavaClass",
-    "onView:javaProjectExplorer"
+    "onCommand:java.view.package.newJavaClass"
   ],
   "license": "MIT",
   "main": "./main.js",
@@ -348,7 +352,7 @@
       "explorer/context": [
         {
           "command": "java.view.package.revealInProjectExplorer",
-          "when": "resourceFilename in java:supportedBuildFiles && java:serverMode == Standard",
+          "when": "resourceFilename =~ /(.*\\.gradle)|(.*\\.gradle\\.kts)|(pom\\.xml)$/ && java:serverMode == Standard",
           "group": "navigation@100"
         },
         {
@@ -360,7 +364,7 @@
       "editor/title/context": [
         {
           "command": "java.view.package.revealInProjectExplorer",
-          "when": "resourceFilename in java:supportedBuildFiles && java:serverMode == Standard",
+          "when": "resourceFilename =~ /(.*\\.gradle)|(.*\\.gradle\\.kts)|(pom\\.xml)$/ && java:serverMode == Standard",
           "group": "2_files@100"
         },
         {
@@ -372,7 +376,7 @@
       "view/title": [
         {
           "command": "java.project.create",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard",
+          "when": "view == javaProjectExplorer",
           "group": "navigation@10"
         },
         {
@@ -515,9 +519,9 @@
         {
           "id": "javaProjectExplorer",
           "name": "Java Projects",
-          "when": "java:serverMode",
           "contextualTitle": "Java Projects",
-          "icon": "$(project)"
+          "icon": "$(project)",
+          "when": "resourceLangId == java || java:workspaceContainsBuildFiles || java:serverMode"
         }
       ]
     },
@@ -536,6 +540,11 @@
         "view": "javaProjectExplorer",
         "contents": "%viewsWelcome.workbench.inLightWeightMode%",
         "when": "java:serverMode == LightWeight"
+      },
+      {
+        "view": "javaProjectExplorer",
+        "contents": "%viewsWelcome.workbench.installLanguageSupport%",
+        "when": "java:projectManagerActivated && !java:languageSupportInstalled"
       }
     ],
     "taskDefinitions": [
