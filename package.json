@@ -270,7 +270,7 @@
       "commandPalette": [
         {
           "command": "java.view.package.exportJar",
-          "when": "java:serverMode == Standard"
+          "when": "java:serverMode == Standard && !java:noJavaProjects"
         },
         {
           "command": "java.view.package.refresh",
