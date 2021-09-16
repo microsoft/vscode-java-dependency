@@ -42,7 +42,7 @@ class LanguageServerApiManager implements Disposable {
         if (!this.extensionChangeListener) {
             this.extensionChangeListener = extensions.onDidChange(() => {
                 if (this.serverMode === null) {
-                    this.initializeJavaLanguageServerApi(false);
+                    commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
                 }
             });
         }
