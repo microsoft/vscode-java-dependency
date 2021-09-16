@@ -3,8 +3,9 @@
 
 export namespace Context {
     export const EXTENSION_ACTIVATED: string = "java:projectManagerActivated";
-    export const SUPPORTED_BUILD_FILES: string = "java:supportedBuildFiles";
-    export const NO_JAVA_PEOJECT: string = "java:noJavaProjects";
+    export const LANGUAGE_SUPPORT_INSTALLED: string = "java:languageSupportInstalled";
+    export const NO_JAVA_PROJECT: string = "java:noJavaProjects";
+    export const WORKSPACE_CONTAINS_BUILD_FILES: string = "java:workspaceContainsBuildFiles";
 }
 
 export namespace Explorer {
@@ -19,10 +20,6 @@ export namespace Explorer {
         Type = "type",
         Folder = "folder",
     }
-}
-
-export namespace Build {
-    export const FILE_NAMES: string[] = ["pom.xml", "build.gradle"];
 }
 
 export namespace ExtensionName {
