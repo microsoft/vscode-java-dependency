@@ -4,6 +4,13 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.18.8
+### Changed
+- Adopt the new `folder-library` icon. [PR#545](https://github.com/microsoft/vscode-java-dependency/pull/545)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.8+is%3Aclosed)
+
 ## 0.18.7
 ### Added
 - Support creating new Java class from `File` > `New File...`. [PR#533](https://github.com/microsoft/vscode-java-dependency/pull/533)
