@@ -40,5 +40,5 @@
   "viewsWelcome.workbench.createNewJavaProject": "您也可以[打开一个 Java 项目目录](command:_java.project.open)，或点击下方按钮创建一个新的 Java 项目。\n[创建 Java 项目](command:java.project.create)",
   "viewsWelcome.workbench.noJavaProject": "当前工作空间未发现 Java 项目，您可以[打开一个 Java 项目目录](command:_java.project.open)，或点击下方按钮创建一个新的 Java 项目。\n[创建 Java 项目](command:java.project.create)",
   "viewsWelcome.workbench.inLightWeightMode": "要浏览项目信息，你可以将项目导入到工作空间中。\n[导入项目](command:java.server.mode.switch?%5B%22Standard%22,true%5D)",
-  "viewsWelcome.workbench.installLanguageSupport": "Java 项目视图需要安装并激活 [Extension Pack for Java](command:extension.open?%5B%22vscjava.vscode-java-pack%22%5D) 以提供完整的功能。\n[安装](command:workbench.extensions.installExtension?%5B%22redhat.java%22%5D)"
+  "viewsWelcome.workbench.installLanguageSupport": "Java 项目视图需要安装并激活 [Extension Pack for Java](command:extension.open?%5B%22vscjava.vscode-java-pack%22%5D) 以提供完整的功能。\n[安装](command:workbench.extensions.installExtension?%5B%22vscjava.vscode-java-pack%22%5D)"
 }
