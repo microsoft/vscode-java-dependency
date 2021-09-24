@@ -84,6 +84,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_LIST_SOURCE_PATHS = "java.project.listSourcePaths";
 
+    export const INSTALL_EXTENSION = "java.project.installExtension";
+
     /**
      * Commands from Visual Studio Code
      */

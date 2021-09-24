@@ -17,6 +17,13 @@ export class ProjectController implements Disposable {
         this.disposable = Disposable.from(
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject()),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_OPEN, () => this.openJavaProject()),
+            instrumentOperationAsVsCodeCommand(Commands.INSTALL_EXTENSION, (extensionId: string) => {
+                commands.executeCommand("workbench.extensions.installExtension", extensionId);
+                // So far there is no API to query the extension's state, so we open the extension's homepage
+                // here, where users can check the state: installing, disabled, installed, etc...
+                // See: https://github.com/microsoft/vscode/issues/14444
+                commands.executeCommand("extension.open", extensionId);
+            }),
         );
     }
 
@@ -101,11 +108,7 @@ async function ensureExtension(typeName: string, metaData: IProjectTypeMetadata)
 async function promptInstallExtension(projectType: string, metaData: IProjectTypeMetadata): Promise<void> {
     const choice: string | undefined = await window.showInformationMessage(`${metaData.extensionName} is required to create ${projectType} projects. Please re-run the command 'Java: Create Java Project...' after the extension is installed.`, "Install");
     if (choice === "Install") {
-        commands.executeCommand("workbench.extensions.installExtension", metaData.extensionId);
-        // So far there is no API to query the extension's state, so we open the extension's homepage
-        // here, where users can check the state: installing, disabled, installed, etc...
-        // See: https://github.com/microsoft/vscode/issues/14444
-        commands.executeCommand("extension.open", metaData.extensionId);
+        commands.executeCommand(Commands.INSTALL_EXTENSION, metaData.extensionId);
     }
 }
 
