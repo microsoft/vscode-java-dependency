@@ -6,23 +6,23 @@ import * as fse from "fs-extra";
 import { platform } from "os";
 import * as path from "path";
 import * as seleniumWebdriver from "selenium-webdriver";
-import { EditorView, InputBox, ModalDialog, SideBarView, TextEditor, TreeItem, Workbench } from "vscode-extension-tester";
-import { DialogHandler, OpenDialog } from "vscode-extension-tester-native";
+import { EditorView, InputBox, ModalDialog, SideBarView, TextEditor, TreeItem, VSBrowser, Workbench } from "vscode-extension-tester";
 import { sleep } from "../util";
 
 // tslint:disable: only-arrow-functions
 const newProjectName = "helloworld";
-const mavenProjectPath = path.join(__dirname, "..", "..", "..", "test", "maven");
-const mavenWorkspacePath = path.join(__dirname, "..", "..", "..", "test", "maven.code-workspace");
-const invisibleProjectPath = path.join(__dirname, "..", "..", "..", "test", "invisible");
-const invisibleWorkspacePath = path.join(__dirname, "..", "..", "..", "test", "invisible.code-workspace");
-const targetPath = path.join(__dirname, "..", "..", "..", "test", "newProject");
+const testFolder = path.join(__dirname, "..", "..", "..", "test");
+const mavenProjectPath = path.join(testFolder, "maven");
+const invisibleProjectPath = path.join(testFolder, "invisible");
+const targetPath = path.join(testFolder, "newProject");
 
 describe("Command Tests", function() {
 
+    let browser: VSBrowser;
     this.timeout(2 * 60 * 1000 /*ms*/);
 
     before(async function() {
+        browser = VSBrowser.instance;
         sleep(5000);
     });
 
@@ -31,10 +31,7 @@ describe("Command Tests", function() {
     });
 
     it("Test open maven project", async function() {
-        await new Workbench().executeCommand("Workspaces: Open Workspace...");
-        const dialog: OpenDialog = await DialogHandler.getOpenDialog();
-        await dialog.selectPath(mavenWorkspacePath);
-        await dialog.confirm();
+        await browser.openResources(mavenProjectPath);
         // Close welcome editors
         let editorView = new EditorView();
         let editorGroups = await editorView.getEditorGroups();
@@ -42,8 +39,6 @@ describe("Command Tests", function() {
             await editorGroup.closeAllEditors();
         }
         const settingsEditor = await new Workbench().openSettings();
-        const setting = await settingsEditor.findSetting("Dialog Style", "Window");
-        await setting.setValue("custom");
         const refreshSetting = await settingsEditor.findSetting("Auto Refresh", "Java", "Dependency");
         await refreshSetting.setValue(true);
         const viewSetting = await settingsEditor.findSetting("Package Presentation", "Java", "Dependency");
@@ -222,10 +217,7 @@ describe("Command Tests", function() {
     });
 
     it("Test change to invisible project", async function() {
-        await new Workbench().executeCommand("Workspaces: Open Workspace...");
-        const dialog: OpenDialog = await DialogHandler.getOpenDialog();
-        await dialog.selectPath(invisibleWorkspacePath);
-        await dialog.confirm();
+        await browser.openResources(invisibleProjectPath);
         await sleep(1000);
         const fileExplorerSections = await new SideBarView().getContent().getSections();
         const folderNode = await fileExplorerSections[0].findItem("src") as TreeItem;
@@ -243,18 +235,22 @@ describe("Command Tests", function() {
         const projectItem = await section.findItem("invisible") as TreeItem;
         await projectItem.expand();
         await sleep(1000);
-        const referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
+        let referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
         await referencedItem.click();
         const buttons = await referencedItem.getActionButtons();
         await buttons[0].click();
-        const dialog: OpenDialog = await DialogHandler.getOpenDialog();
-        await dialog.selectPath(path.join(invisibleProjectPath, "libSource", "simple.jar"));
-        await dialog.confirm();
+        const input = await InputBox.create();
+        await input.setText(path.join(invisibleProjectPath, "libSource", "simple.jar"));
+        await input.confirm();
+        await sleep(5000);
+        referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
+        await referencedItem.expand();
         const simpleItem = await section.findItem("simple.jar") as TreeItem;
         assert.ok(simpleItem, `Library "simple.jar" should be found`);
-        await simpleItem!.click();
-        const libraryButtons = await simpleItem!.getActionButtons();
+        await simpleItem.click();
+        const libraryButtons = await simpleItem.getActionButtons();
         await libraryButtons[0].click();
+        await sleep(5000);
     });
 
     it("Test java.project.addLibraryFolders", async function() {
@@ -271,17 +267,17 @@ describe("Command Tests", function() {
             .click(buttons[0])
             .keyUp(seleniumWebdriver.Key.ALT)
             .perform();
-        const dialog: OpenDialog = await DialogHandler.getOpenDialog();
-        await dialog.selectPath(path.join(invisibleProjectPath, "libSource"));
-        await dialog.confirm();
-        await sleep(3000);
+        await sleep(5000);
+        const input = await InputBox.create();
+        await input.setText(path.join(invisibleProjectPath, "libSource"));
+        await input.confirm();
+        await sleep(5000);
         referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
         await referencedItem.expand();
         assert.ok(await section.findItem("simple.jar"), `Library "simple.jar" should be found`);
     });
 
     it("Test java.project.create", async function() {
-        await fse.remove(targetPath);
         await fse.ensureDir(targetPath);
         await new Workbench().executeCommand("java.project.create");
         let inputBox = await InputBox.create();
@@ -291,9 +287,11 @@ describe("Command Tests", function() {
                 await quickPick.click();
             }
         }
-        const dialog: OpenDialog = await DialogHandler.getOpenDialog();
-        await dialog.selectPath(targetPath);
-        await dialog.confirm();
+        await sleep(3000);
+        inputBox = await InputBox.create();
+        await inputBox.setText(targetPath);
+        await inputBox.confirm();
+        await sleep(3000);
         inputBox = await InputBox.create();
         await inputBox.setText(newProjectName);
         await inputBox.confirm();

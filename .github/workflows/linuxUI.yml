@@ -46,8 +46,34 @@ jobs:
     - name: Build VSIX file
       run: vsce package
 
-    - name: Test extension
+    - name: UI Test
+      continue-on-error: true
+      id: test
       run: DISPLAY=:99 npm run test-ui
+
+    - name: Retry UI Test 1
+      continue-on-error: true
+      if: steps.test.outcome=='failure'
+      id: retry1
+      run: |
+        git reset --hard
+        git clean -fd
+        DISPLAY=:99 npm run test-ui
+
+    - name: Retry UI Test 2
+      continue-on-error: true
+      if: steps.retry1.outcome=='failure'
+      id: retry2
+      run: |
+        git reset --hard
+        git clean -fd
+        DISPLAY=:99 npm run test-ui
+
+    - name: Set test status
+      if: ${{ steps.test.outcome=='failure' && steps.retry1.outcome=='failure' && steps.retry2.outcome=='failure' }}
+      run: |
+        echo "Tests failed"
+        exit 1
 
     - name: Print language server Log
       if: ${{ failure() }}
