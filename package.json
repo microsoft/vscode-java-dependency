@@ -521,7 +521,7 @@
           "name": "Java Projects",
           "contextualTitle": "Java Projects",
           "icon": "$(project)",
-          "when": "resourceLangId == java || java:workspaceContainsBuildFiles || java:serverMode"
+          "when": "java:projectManagerActivated"
         }
       ]
     },
