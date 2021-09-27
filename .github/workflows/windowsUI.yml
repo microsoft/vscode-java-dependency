@@ -27,17 +27,15 @@ jobs:
     - name: Install Node.js modules
       run: npm install
 
-    - name: Install Gulp
-      run: npm install -g gulp --force
-
     - name: Install VSCE
       run: npm install -g vsce
 
     - name: Lint
-      run: gulp tslint
+      run: npm run tslint
 
     - name: Checkstyle
-      run: gulp checkstyle
+      working-directory: .\jdtls.ext
+      run: .\mvnw.cmd checkstyle:check
 
     - name: Build OSGi bundle
       run: npm run build-server

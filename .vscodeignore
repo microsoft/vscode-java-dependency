@@ -7,7 +7,7 @@ src/**
 jdtls.ext/**
 vscode/**
 tsconfig.json
-gulpfile.js
+scripts/build/**
 .gitignore
 dist/**/test
 webpack.*.js

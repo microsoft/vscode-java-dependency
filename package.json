@@ -595,8 +595,9 @@
     "watch": "webpack --mode development --watch",
     "test": "tsc -p . && node ./dist/test/index.js",
     "test-ui": "tsc -p . && node ./dist/test/ui/index.js",
-    "build-server": "./node_modules/.bin/gulp build_server",
-    "vscode:prepublish": "tsc -p ./ && webpack --mode production"
+    "build-server": "node scripts/buildJdtlsExt.js",
+    "vscode:prepublish": "tsc -p ./ && webpack --mode production",
+    "tslint": "tslint -t verbose --project tsconfig.json"
   },
   "devDependencies": {
     "@types/fs-extra": "^5.1.0",
@@ -609,9 +610,6 @@
     "@types/vscode": "1.60.0",
     "copy-webpack-plugin": "^6.4.1",
     "glob": "^7.1.6",
-    "gulp": "^4.0.2",
-    "gulp-copy": "^4.0.1",
-    "gulp-tslint": "^8.1.4",
     "mocha": "^8.3.1",
     "semver": "^7.3.5",
     "ts-loader": "^9.2.6",

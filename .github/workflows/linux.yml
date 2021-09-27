@@ -34,9 +34,6 @@ jobs:
     - name: Install Node.js modules
       run: npm install
 
-    - name: Install Gulp
-      run: npm install -g gulp
-
     - name: Install VSCE
       run: npm install -g vsce
 
