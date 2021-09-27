@@ -80,9 +80,8 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 
 * Go to root folder:
 ```
-npm install -g gulp
 npm install
-gulp build_server
+npm run build_server
 ```
 
 ## Telemetry
