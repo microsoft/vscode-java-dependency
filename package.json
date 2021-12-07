@@ -568,6 +568,9 @@
             "items": {
               "anyOf": [
                 {
+                  "type": "string"
+                },
+                {
                   "enum": [
                     "${compileOutput}",
                     "${testCompileOutput}",
@@ -579,8 +582,7 @@
                     "%taskDefinitions.java.project.exportJar.testCompileOutput%",
                     "%taskDefinitions.java.project.exportJar.dependencies%",
                     "%taskDefinitions.java.project.exportJar.testDependencies%"
-                  ],
-                  "type":"string"
+                  ]
                 }
               ]
             },
