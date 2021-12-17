@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.18.9
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.9+is%3Aclosed)
+
 ## 0.18.8
 ### Changed
 - Adopt the new `folder-library` icon. [PR#545](https://github.com/microsoft/vscode-java-dependency/pull/545)
