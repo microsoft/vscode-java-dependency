@@ -28,6 +28,7 @@
   "configuration.java.dependency.packagePresentation": "Package presentation mode: flat or hierarchical",
   "configuration.java.project.exportJar.targetPath": "Specifies the output path of export jar. The default value is `${workspaceFolder}/${workspaceFolderBasename}.jar`. You can leave it empty to select the output location manually each time exporting the jar file.",
   "configuration.java.project.exportJar.targetPath.workspaceFolder": "Export the jar file into the workspace folder. Its name is the same as the folder's.",
+  "configuration.java.project.exportJar.targetPath.select": "You will select the output location manually each time exporting the jar file.",
   "taskDefinitions.java.project.exportJar.label": "The label of export jar task.",
   "taskDefinitions.java.project.exportJar.elements": "The content list of the exported jar.",
   "taskDefinitions.java.project.exportJar.mainClass": "The main class in the manifest of the exported jar.",

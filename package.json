@@ -213,7 +213,8 @@
                 ""
               ],
               "enumDescriptions": [
-                "%configuration.java.project.exportJar.targetPath.workspaceFolder%"
+                "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
+                "%configuration.java.project.exportJar.targetPath.select%"
               ]
             },
             "string"
