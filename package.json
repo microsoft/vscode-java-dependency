@@ -210,13 +210,10 @@
             {
               "enum": [
                 "${workspaceFolder}/${workspaceFolderBasename}.jar",
-                "askUser",
                 ""
               ],
               "enumDescriptions": [
-                "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
-                "%configuration.java.project.exportJar.targetPath.askUser%",
-                "%configuration.java.project.exportJar.targetPath.askUser%"
+                "%configuration.java.project.exportJar.targetPath.workspaceFolder%"
               ]
             },
             "string"
