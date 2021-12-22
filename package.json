@@ -219,7 +219,7 @@
             },
             "string"
           ],
-          "markdownDescription": "%configuration.java.project.exportJar.targetPath%",
+          "markdownDescription": "%configuration.java.project.exportJar.targetPath.customization%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         }
       }
@@ -574,7 +574,7 @@
                 ]
               }
             ],
-            "description": "%taskDefinitions.java.project.exportJar.targetPath%"
+            "description": "%configuration.java.project.exportJar.targetPath.customization%"
           },
           "elements": {
             "type": "array",
