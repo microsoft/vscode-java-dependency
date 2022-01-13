@@ -4,6 +4,7 @@
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
+import * as semver from "semver";
 import { commands, Disposable, Extension, ExtensionContext, extensions, QuickPickItem, Uri, window, workspace } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
@@ -58,6 +59,8 @@ export class ProjectController implements Disposable {
 
         if (choice.metadata.type === ProjectType.NoBuildTool) {
             await scaffoldSimpleProject(this.context);
+        } else if (choice.metadata.createCommandId && choice.metadata.createCommandArgs) {
+            await commands.executeCommand(choice.metadata.createCommandId, ...choice.metadata.createCommandArgs);
         } else if (choice.metadata.createCommandId) {
             await commands.executeCommand(choice.metadata.createCommandId);
         }
@@ -75,7 +78,9 @@ interface IProjectTypeMetadata {
     type: ProjectType;
     extensionId: string;
     extensionName: string;
+    leastExtensionVersion?: string;
     createCommandId: string;
+    createCommandArgs?: any[];
 }
 
 interface IProjectTypeQuickPick extends QuickPickItem {
@@ -88,6 +93,7 @@ enum ProjectType {
     SpringBoot = "SpringBoot",
     Quarkus = "Quarkus",
     MicroProfile = "MicroProfile",
+    JavaFX = "JavaFX",
 }
 
 async function ensureExtension(typeName: string, metaData: IProjectTypeMetadata): Promise<boolean> {
@@ -101,6 +107,11 @@ async function ensureExtension(typeName: string, metaData: IProjectTypeMetadata)
         return false;
     }
 
+    if (metaData.leastExtensionVersion && semver.lt(extension.packageJSON.version, metaData.leastExtensionVersion)) {
+        await promptUpdateExtension(typeName, metaData);
+        return false;
+    }
+
     await extension.activate();
     return true;
 }
@@ -108,6 +119,13 @@ async function ensureExtension(typeName: string, metaData: IProjectTypeMetadata)
 async function promptInstallExtension(projectType: string, metaData: IProjectTypeMetadata): Promise<void> {
     const choice: string | undefined = await window.showInformationMessage(`${metaData.extensionName} is required to create ${projectType} projects. Please re-run the command 'Java: Create Java Project...' after the extension is installed.`, "Install");
     if (choice === "Install") {
+        commands.executeCommand(Commands.INSTALL_EXTENSION, metaData.extensionId);
+    }
+}
+
+async function promptUpdateExtension(projectType: string, metaData: IProjectTypeMetadata): Promise<void> {
+    const choice: string | undefined = await window.showInformationMessage(`${metaData.extensionName} needs to be updated to create ${projectType} projects. Please re-run the command 'Java: Create Java Project...' after the extension is updated.`, "Update");
+    if (choice === "Update") {
         commands.executeCommand(Commands.INSTALL_EXTENSION, metaData.extensionId);
     }
 }
@@ -203,6 +221,22 @@ const projectTypes: IProjectType[] = [
             extensionId: "microprofile-community.mp-starter-vscode-ext",
             extensionName: "MicroProfile Starter",
             createCommandId: "extension.microProfileStarter",
+        },
+    },
+    {
+        displayName: "JavaFX",
+        description: "create from archetype",
+        metadata: {
+            type: ProjectType.JavaFX,
+            extensionId: "vscjava.vscode-maven",
+            extensionName: "Maven for Java",
+            leastExtensionVersion: "0.35.0",
+            createCommandId: "maven.archetype.generate",
+            createCommandArgs: [{
+                archetypeGroupId: "org.openjfx",
+                archetypeArtifactId: "javafx-archetype-fxml",
+                archetypeVersion: "RELEASE",
+            }],
         },
     },
 ];

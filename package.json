@@ -613,7 +613,6 @@
     "copy-webpack-plugin": "^6.4.1",
     "glob": "^7.2.0",
     "mocha": "^8.3.1",
-    "semver": "^7.3.5",
     "ts-loader": "^9.2.6",
     "tslint": "^5.20.1",
     "typescript": "^4.5.4",
@@ -628,6 +627,7 @@
     "globby": "^11.1.0",
     "lodash": "^4.17.21",
     "minimatch": "^3.0.4",
+    "semver": "^7.3.5",
     "vscode-extension-telemetry-wrapper": "^0.11.0",
     "vscode-tas-client": "^0.1.27"
   }
