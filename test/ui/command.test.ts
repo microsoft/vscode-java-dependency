@@ -282,11 +282,8 @@ describe("Command Tests", function() {
         await new Workbench().executeCommand("java.project.create");
         let inputBox = await InputBox.create();
         const picks = await inputBox.getQuickPicks();
-        for (const quickPick of picks) {
-            if (await quickPick.getLabel() === "No build tools") {
-                await quickPick.click();
-            }
-        }
+        assert.equal("No build tools", await picks[0].getLabel());
+        await picks[0].select();
         await sleep(3000);
         inputBox = await InputBox.create();
         await inputBox.setText(targetPath);
