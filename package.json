@@ -210,18 +210,16 @@
             {
               "enum": [
                 "${workspaceFolder}/${workspaceFolderBasename}.jar",
-                "askUser",
                 ""
               ],
               "enumDescriptions": [
                 "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
-                "%configuration.java.project.exportJar.targetPath.askUser%",
-                "%configuration.java.project.exportJar.targetPath.askUser%"
+                "%configuration.java.project.exportJar.targetPath.select%"
               ]
             },
             "string"
           ],
-          "markdownDescription": "%configuration.java.project.exportJar.targetPath%",
+          "markdownDescription": "%configuration.java.project.exportJar.targetPath.customization%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         }
       }
@@ -561,7 +559,22 @@
           },
           "targetPath": {
             "type": "string",
-            "description": "%taskDefinitions.java.project.exportJar.targetPath%"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "${workspaceFolder}/${workspaceFolderBasename}.jar",
+                  ""
+                ],
+                "enumDescriptions": [
+                  "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
+                  "%configuration.java.project.exportJar.targetPath.select%"
+                ]
+              }
+            ],
+            "description": "%configuration.java.project.exportJar.targetPath.customization%"
           },
           "elements": {
             "type": "array",
