@@ -90,6 +90,7 @@ interface IProjectTypeQuickPick extends QuickPickItem {
 enum ProjectType {
     NoBuildTool = "NoBuildTool",
     Maven = "Maven",
+    Gradle = "Gradle",
     SpringBoot = "SpringBoot",
     Quarkus = "Quarkus",
     MicroProfile = "MicroProfile",
@@ -194,6 +195,16 @@ const projectTypes: IProjectType[] = [
             extensionId: "vscjava.vscode-maven",
             extensionName: "Maven for Java",
             createCommandId: "maven.archetype.generate",
+        },
+    },
+    {
+        displayName: "Gradle",
+        metadata: {
+            type: ProjectType.Gradle,
+            extensionId: "vscjava.vscode-gradle",
+            extensionName: "Gradle for Java",
+            leastExtensionVersion: "3.10.0",
+            createCommandId: "gradle.createProject",
         },
     },
     {
