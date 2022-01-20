@@ -4,6 +4,15 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.19.0
+### Added
+- Support creating new JavaFX project via Maven archetype. [PR#581](https://github.com/microsoft/vscode-java-dependency/pull/581)
+- Support creating new Gradle project. [PR#583](https://github.com/microsoft/vscode-java-dependency/pull/583)
+
+### Changed
+- Now you can simply leave the setting `java.project.exportJar.targetPath` empty when you want to specify the location of exported jar manually. [PR#575](https://github.com/microsoft/vscode-java-dependency/pull/575)
+- Add the `java.project.referencedLibraries` setting by default when creating an unmanaged folder project. [PR#584](https://github.com/microsoft/vscode-java-dependency/pull/584)
+
 ## 0.18.9
 ### Fixed
 - [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.18.9+is%3Aclosed)
