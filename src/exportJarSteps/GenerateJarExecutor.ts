@@ -5,7 +5,7 @@ import { ensureDir, pathExists } from "fs-extra";
 import globby = require("globby");
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
-import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window, WorkspaceFolder } from "vscode";
+import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, QuickPickItemKind, Uri, window, WorkspaceFolder } from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -145,14 +145,15 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             return true;
         }
         dependencyItems.sort((node1, node2) => {
-            if (node1.description !== node2.description) {
-                return (node1.description || "").localeCompare(node2.description || "");
+            if (node1.scope !== node2.scope) {
+                return (node1.scope || "").localeCompare(node2.scope || "");
             }
             if (node1.type !== node2.type) {
                 return node2.type.localeCompare(node1.type);
             }
             return node1.label.localeCompare(node2.label);
         });
+        this.addQuickPickSeparators(dependencyItems);
         const pickedDependencyItems: IJarQuickPickItem[] = [];
         for (const item of dependencyItems) {
             if (item.picked) {
@@ -217,6 +218,24 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         }
     }
 
+    private async addQuickPickSeparators(items: IJarQuickPickItem[]): Promise<void> {
+        if (_.isEmpty(items)) {
+            return;
+        }
+        for (let i = 0; i < items.length; i++) {
+            if (i === 0 || !_.isEmpty(items[i - 1].scope) && items[i].scope !== items[i - 1].scope) {
+                items.splice(i, 0, {
+                    label: items[i].scope,
+                    kind: QuickPickItemKind.Separator,
+                    // only label can affect the Separator
+                    path: "",
+                    scope: "",
+                    type: ""
+                });
+            }
+        }
+    }
+
     private async parseDependencyItems(paths: string[], uriSet: Set<string>, projectPath: string, scope: string): Promise<IJarQuickPickItem[]> {
         const dependencyItems: IJarQuickPickItem[] = [];
         for (const classpath of paths) {
@@ -231,7 +250,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                 uriSet.add(classpath);
                 dependencyItems.push({
                     label: baseName,
-                    description: scope,
+                    scope: scope,
                     path: classpath,
                     type: typeValue,
                     picked: scope === "runtime",
@@ -252,4 +271,5 @@ export interface IClasspathResult {
 interface IJarQuickPickItem extends QuickPickItem {
     path: string;
     type: string;
+    scope: string;
 }
