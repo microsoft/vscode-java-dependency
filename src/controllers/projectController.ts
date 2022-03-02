@@ -6,7 +6,7 @@ import * as _ from "lodash";
 import * as path from "path";
 import * as semver from "semver";
 import { commands, Disposable, Extension, ExtensionContext, extensions, QuickPickItem, Uri, window, workspace } from "vscode";
-import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { Utility } from "../utility";
 
@@ -56,7 +56,7 @@ export class ProjectController implements Disposable {
         if (!choice || !await ensureExtension(choice.label, choice.metadata)) {
             return;
         }
-
+        sendInfo("", {projectCreationType: choice.metadata.type});
         if (choice.metadata.type === ProjectType.NoBuildTool) {
             await scaffoldSimpleProject(this.context);
         } else if (choice.metadata.createCommandId && choice.metadata.createCommandArgs) {
