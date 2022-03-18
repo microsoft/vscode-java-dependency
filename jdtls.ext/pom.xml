@@ -117,9 +117,9 @@
     </profiles>
     <repositories>
         <repository>
-        <id>202006</id>
+        <id>202203</id>
         <layout>p2</layout>
-        <url>https://download.eclipse.org/releases/2021-09/202109151000/</url>
+        <url>https://download.eclipse.org/releases/2022-03/202203161000/</url>
         </repository>
         <repository>
             <id>oss.sonatype.org</id>
@@ -137,11 +137,6 @@
             <id>LSP4J</id>
             <layout>p2</layout>
             <url>https://download.eclipse.org/lsp4j/updates/releases/0.11.0/</url>
-        </repository>
-        <repository>
-            <id>JBOLL.TOOLS</id>
-            <layout>p2</layout>
-            <url>https://download.jboss.org/jbosstools/updates/m2e-extensions/m2e-apt/1.5.3-2019-11-08_11-04-22-H22/</url>
         </repository>
         <repository>
             <id>orbit</id>
