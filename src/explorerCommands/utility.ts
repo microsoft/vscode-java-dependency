@@ -35,7 +35,7 @@ export function checkJavaQualifiedName(value: string): string {
     return "";
 }
 
-export function getCmdNode(selectedNodes: ExplorerNode[], node?: DataNode): DataNode | undefined {
+export function getCmdNode(selectedNodes: readonly ExplorerNode[], node?: DataNode): DataNode | undefined {
     // if command not invoked by context menu, use selected node in explorer
     if (node) {
         return node;
