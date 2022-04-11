@@ -11,6 +11,7 @@
 
 package com.microsoft.jdtls.ext.core;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -29,6 +30,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JarEntryDirectory;
 import org.eclipse.jdt.internal.core.JarEntryFile;
+import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 
@@ -112,7 +114,15 @@ public final class ExtUtils {
         switch (container.getKind()) {
             case IClasspathContainer.K_DEFAULT_SYSTEM: // JRE Container
             case IClasspathContainer.K_SYSTEM:
-                return JavaRuntime.getVMInstall(javaProject).getInstallLocation().toURI();
+                IVMInstall vmInstall = JavaRuntime.getVMInstall(javaProject);
+                if (vmInstall == null) {
+                    return null;
+                }
+                File installLocation = vmInstall.getInstallLocation();
+                if (installLocation == null) {
+                    return null;
+                }
+                return installLocation.toURI();
             case IClasspathContainer.K_APPLICATION: // Plugin Container, Maven Container, etc
                 return null; // TODO: find out a good way to detect these containers' uri
             default: // Persistent container (e.g. /src/main/java)
