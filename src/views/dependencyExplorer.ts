@@ -126,7 +126,10 @@ export class DependencyExplorer implements Disposable {
                 renameFile(getCmdNode(this._dependencyViewer.selection, node));
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_MOVE_FILE_TO_TRASH, (node?: DataNode) => {
-                deleteFiles(getCmdNode(this._dependencyViewer.selection, node));
+                deleteFiles(getCmdNode(this._dependencyViewer.selection, node), true);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_DELETE_FILE_PERMANENTELY, (node?: DataNode) => {
+                deleteFiles(getCmdNode(this._dependencyViewer.selection, node), false);
             }),
         );
     }
