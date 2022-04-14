@@ -166,8 +166,8 @@
         "category": "Java"
       },
       {
-        "command": "java.view.package.deleteFilePermanentely",
-        "title": "%contributes.commands.java.view.package.deleteFilePermanentely%",
+        "command": "java.view.package.deleteFilePermanently",
+        "title": "%contributes.commands.java.view.package.deleteFilePermanently%",
         "category": "Java"
       },
       {
@@ -264,7 +264,7 @@
         "when": "java:serverMode == Standard && focusedView == javaProjectExplorer && explorerResourceMoveableToTrash"
       },
       {
-        "command": "java.view.package.deleteFilePermanentely",
+        "command": "java.view.package.deleteFilePermanently",
         "key": "delete",
         "mac": "cmd+backspace",
         "when": "java:serverMode == Standard && focusedView == javaProjectExplorer && !explorerResourceMoveableToTrash"
@@ -342,7 +342,7 @@
           "when": "false"
         },
         {
-          "command": "java.view.package.deleteFilePermanentely",
+          "command": "java.view.package.deleteFilePermanently",
           "when": "false"
         },
         {
@@ -470,12 +470,12 @@
           "group": "7_modification@20"
         },
         {
-          "command": "java.view.package.deleteFilePermanentely",
+          "command": "java.view.package.deleteFilePermanently",
           "when": "view == javaProjectExplorer && !explorerResourceMoveableToTrash && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+(source|resource)\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "7_modification@20"
         },
         {
-          "command": "java.view.package.deleteFilePermanentely",
+          "command": "java.view.package.deleteFilePermanently",
           "when": "view == javaProjectExplorer && !explorerResourceMoveableToTrash && viewItem =~ /java:(file|type|folder)(?=.*?\\b\\+uri\\b)/",
           "group": "7_modification@20"
         },

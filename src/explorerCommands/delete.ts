@@ -37,7 +37,7 @@ export async function deleteFiles(node: DataNode | undefined, useTrash: boolean)
 
 function getInformationMessage(name: string, isFolder: boolean, useTrash: boolean): string {
     const folderMsg = isFolder ? " and its contents" : "";
-    let msg = `Are you sure you want to ${useTrash ? "" : "permanentely "}delete \'${name}\'${folderMsg}?`;
+    let msg = `Are you sure you want to ${useTrash ? "" : "permanently "}delete \'${name}\'${folderMsg}?`;
 
     if (useTrash) {
         msg += "\n\nYou can restore from the Recycle Bin.";

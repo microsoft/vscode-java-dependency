@@ -21,7 +21,7 @@
   "contributes.commands.java.view.package.newPackage": "New Package",
   "contributes.commands.java.view.package.renameFile": "Rename",
   "contributes.commands.java.view.package.moveFileToTrash": "Delete",
-  "contributes.commands.java.view.package.deleteFilePermanentely": "Delete Permanentely",
+  "contributes.commands.java.view.package.deleteFilePermanently": "Delete Permanently",
   "configuration.java.dependency.showMembers": "Show the members in the explorer",
   "configuration.java.dependency.syncWithFolderExplorer": "Synchronize Java Projects explorer selection with folder explorer",
   "configuration.java.dependency.autoRefresh": "Synchronize Java Projects explorer with changes",
