@@ -21,6 +21,7 @@
   "contributes.commands.java.view.package.newPackage": "创建包",
   "contributes.commands.java.view.package.renameFile": "重命名",
   "contributes.commands.java.view.package.moveFileToTrash": "删除",
+  "contributes.commands.java.view.package.deleteFilePermanently": "永久删除",
   "configuration.java.dependency.showMembers": "在 Java 项目管理器中显示成员",
   "configuration.java.dependency.syncWithFolderExplorer": "在 Java 项目管理器中同步关联当前打开的文件",
   "configuration.java.dependency.autoRefresh": "在 Java 项目管理器中自动同步修改",

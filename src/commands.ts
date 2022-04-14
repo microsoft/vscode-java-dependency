@@ -40,6 +40,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_MOVE_FILE_TO_TRASH = "java.view.package.moveFileToTrash";
 
+    export const VIEW_PACKAGE_DELETE_FILE_PERMANENTLY = "java.view.package.deleteFilePermanently";
+
     export const VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER = "java.view.package.revealInProjectExplorer";
 
     export const JAVA_PROJECT_OPEN = "_java.project.open";
