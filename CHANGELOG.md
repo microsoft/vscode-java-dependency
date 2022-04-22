@@ -4,6 +4,9 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.19.1
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.19.1+is%3Aclosed)
+
 ## 0.19.0
 ### Added
 - Support creating new JavaFX project via Maven archetype. [PR#581](https://github.com/microsoft/vscode-java-dependency/pull/581)
