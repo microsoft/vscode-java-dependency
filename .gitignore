@@ -11,5 +11,8 @@ vscode-java-*.vsix
 packages/
 dist
 **/.settings
+**/.classpath
+**/.project
 **/.checkstyle
 test-resources/
+**/.gradle
