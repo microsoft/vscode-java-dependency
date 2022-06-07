@@ -20,7 +20,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     await initializeFromJsonFile(context.asAbsolutePath("./package.json"), { firstParty: true });
     await initExpService(context);
     await instrumentOperation("activation", activateExtension)(context);
-    languageServerApiManager.initializeJavaLanguageServerApi(false);
+    languageServerApiManager.initializeJavaLanguageServerApis(false);
     // the when clause does not support 'workspaceContains' we used for activation event,
     // so we manually find the target files and set it to a context value.
     workspace.findFiles("{*.gradle,*.gradle.kts,pom.xml,.classpath}", undefined, 1).then((uris: Uri[]) => {
