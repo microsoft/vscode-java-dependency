@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { ExtensionContext, tasks, Uri, workspace } from "vscode";
+import { commands, Extension, ExtensionContext, extensions, tasks, Uri, workspace } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
-import { contextManager } from "../extension.bundle";
-import { Context } from "./constants";
+import { Commands, contextManager } from "../extension.bundle";
+import { Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
 import { ExportJarTaskProvider } from "./exportJarSteps/ExportJarTaskProvider";
-import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
 import { EventCounter } from "./utility";
@@ -20,7 +19,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     await initializeFromJsonFile(context.asAbsolutePath("./package.json"), { firstParty: true });
     await initExpService(context);
     await instrumentOperation("activation", activateExtension)(context);
-    languageServerApiManager.initializeJavaLanguageServerApi(false);
+    addExtensionChangeListener(context);
     // the when clause does not support 'workspaceContains' we used for activation event,
     // so we manually find the target files and set it to a context value.
     workspace.findFiles("{*.gradle,*.gradle.kts,pom.xml,.classpath}", undefined, 1).then((uris: Uri[]) => {
@@ -32,7 +31,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
-    context.subscriptions.push(languageServerApiManager);
     context.subscriptions.push(new ProjectController(context));
     Settings.initialize(context);
     context.subscriptions.push(new LibraryController(context));
@@ -46,4 +44,18 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 export async function deactivate(): Promise<void> {
     sendInfo("", EventCounter.dict);
     await disposeTelemetryWrapper();
+}
+
+function addExtensionChangeListener(context: ExtensionContext): void {
+    const extension: Extension<any> | undefined = extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT);
+    if (!extension) {
+        // java language support is not installed or disabled
+        const extensionChangeListener = extensions.onDidChange(() => {
+            if (extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT)) {
+                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
+                extensionChangeListener.dispose();
+            }
+        });
+        context.subscriptions.push(extensionChangeListener);
+    }
 }
