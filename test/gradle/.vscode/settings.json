@@ -1,4 +1,4 @@
 {
     "java.server.launchMode": "Standard",
-    "java.import.gradle.version": "6.8"
+    "java.import.gradle.version": "7.3"
 }
