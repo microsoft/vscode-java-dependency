@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, Disposable, Event, Extension, extensions, Uri, window } from "vscode";
+import { commands, Event, Extension, extensions, Uri, window } from "vscode";
 import { Commands } from "../commands";
 import { Context, ExtensionName } from "../constants";
 import { contextManager } from "../contextManager";
@@ -9,12 +9,10 @@ import { Settings } from "../settings";
 import { syncHandler } from "../syncHandler";
 import { LanguageServerMode } from "./LanguageServerMode";
 
-class LanguageServerApiManager implements Disposable {
+class LanguageServerApiManager {
     private extensionApi: any;
 
     private isReady: boolean = false;
-
-    private extensionChangeListener: Disposable;
 
     public async ready(): Promise<boolean> {
         if (this.isReady) {
@@ -35,7 +33,7 @@ class LanguageServerApiManager implements Disposable {
         return true;
     }
 
-    public async initializeJavaLanguageServerApis(forceActivate: boolean = true): Promise<void> {
+    public async initializeJavaLanguageServerApis(): Promise<void> {
         if (this.isApiInitialized()) {
             return;
         }
@@ -43,9 +41,6 @@ class LanguageServerApiManager implements Disposable {
         const extension: Extension<any> | undefined = extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT);
         if (extension) {
             contextManager.setContextValue(Context.LANGUAGE_SUPPORT_INSTALLED, true);
-            if (!forceActivate) {
-                return;
-            }
             await extension.activate();
             const extensionApi: any = extension.exports;
             if (!extensionApi) {
@@ -80,19 +75,7 @@ class LanguageServerApiManager implements Disposable {
                     }));
                 }
             }
-        } else if (!this.extensionChangeListener) {
-            // java language support is not installed or disabled
-            this.extensionChangeListener = extensions.onDidChange(() => {
-                if (extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT)) {
-                    commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
-                    this.extensionChangeListener.dispose();
-                }
-            });
         }
-    }
-
-    public dispose() {
-        this.extensionChangeListener.dispose();
     }
 
     private isApiInitialized(): boolean {
