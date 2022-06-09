@@ -6,6 +6,7 @@ import { commands, Disposable, FileSystemWatcher, RelativePattern, Uri, workspac
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { NodeKind } from "./java/nodeData";
+import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 import { Settings } from "./settings";
 import { DataNode } from "./views/dataNode";
 import { ExplorerNode } from "./views/explorerNode";
@@ -37,6 +38,10 @@ class SyncHandler implements Disposable {
     }
 
     private async enableAutoRefresh() {
+        if (!await languageServerApiManager.ready()) {
+            return;
+        }
+
         this.disposables.push(workspace.onDidChangeWorkspaceFolders(() => {
             this.refresh();
         }));
