@@ -77,7 +77,8 @@
       },
       {
         "command": "java.project.build.workspace",
-        "title": "%contributes.commands.java.project.build.workspace%"
+        "title": "%contributes.commands.java.project.build.workspace%",
+        "icon": "$(tools)"
       },
       {
         "command": "java.project.clean.workspace",
@@ -398,7 +399,7 @@
           "group": "navigation@20"
         },
         {
-          "command": "java.view.package.refresh",
+          "command": "java.project.build.workspace",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
           "group": "navigation@30"
         },
@@ -423,14 +424,14 @@
           "group": "overflow_10@20"
         },
         {
-          "command": "java.project.build.workspace",
+          "command": "java.project.clean.workspace",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
           "group": "overflow_20@10"
         },
         {
-          "command": "java.project.clean.workspace",
+          "command": "java.view.package.refresh",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
-          "group": "overflow_20@20"
+          "group": "overflow_50@10"
         }
       ],
       "view/item/context": [

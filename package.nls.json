@@ -5,7 +5,7 @@
   "contributes.commands.java.project.addLibraryFolders": "Add Library Folders to Project Classpath...",
   "contributes.commands.java.project.removeLibrary": "Remove from Project Classpath",
   "contributes.commands.java.view.package.refresh": "Refresh",
-  "contributes.commands.java.project.build.workspace": "Build Workspace",
+  "contributes.commands.java.project.build.workspace": "Rebuild Workspace",
   "contributes.commands.java.project.clean.workspace": "Clean Workspace",
   "contributes.commands.java.project.update": "Update Project",
   "contributes.commands.java.view.package.revealInProjectExplorer": "Reveal in Java Project Explorer",
