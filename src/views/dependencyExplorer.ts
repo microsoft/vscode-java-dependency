@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import AwaitLock from "await-lock";
 import * as fse from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
@@ -38,9 +39,12 @@ export class DependencyExplorer implements Disposable {
 
     private _dataProvider: DependencyDataProvider;
 
+    private _revealLock: AwaitLock;
+
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
         this._dependencyViewer = window.createTreeView("javaProjectExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
+        this._revealLock = new AwaitLock();
 
         // register reveal events
         context.subscriptions.push(
@@ -141,27 +145,32 @@ export class DependencyExplorer implements Disposable {
     }
 
     public async reveal(uri: Uri, needCheckSyncSetting: boolean = true): Promise<void> {
-        if (needCheckSyncSetting && !Settings.syncWithFolderExplorer()) {
-            return;
-        }
-
-        if (!await Utility.isRevealable(uri)) {
-            return;
-        }
-
-        let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
-        if (!node) {
-            const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
-            if (!_.isEmpty(paths)) {
-                node = await this._dataProvider.revealPaths(paths);
+        try {
+            await this._revealLock.acquireAsync();
+            if (needCheckSyncSetting && !Settings.syncWithFolderExplorer()) {
+                return;
             }
+    
+            if (!await Utility.isRevealable(uri)) {
+                return;
+            }
+    
+            let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
+            if (!node) {
+                const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
+                if (!_.isEmpty(paths)) {
+                    node = await this._dataProvider.revealPaths(paths);
+                }
+            }
+    
+            if (!node) {
+                return;
+            }
+    
+            await this._dependencyViewer.reveal(node);
+        } finally {
+            this._revealLock.release();
         }
-
-        if (!node) {
-            return;
-        }
-
-        await this._dependencyViewer.reveal(node);
     }
 
     public get dataProvider(): DependencyDataProvider {
