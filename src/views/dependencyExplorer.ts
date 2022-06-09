@@ -150,11 +150,11 @@ export class DependencyExplorer implements Disposable {
             if (needCheckSyncSetting && !Settings.syncWithFolderExplorer()) {
                 return;
             }
-    
+
             if (!await Utility.isRevealable(uri)) {
                 return;
             }
-    
+
             let node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
             if (!node) {
                 const paths: INodeData[] = await Jdtls.resolvePath(uri.toString());
@@ -162,11 +162,11 @@ export class DependencyExplorer implements Disposable {
                     node = await this._dataProvider.revealPaths(paths);
                 }
             }
-    
+
             if (!node) {
                 return;
             }
-    
+
             await this._dependencyViewer.reveal(node);
         } finally {
             this._revealLock.release();
