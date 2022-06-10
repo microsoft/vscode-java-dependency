@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { DataTransfer, DataTransferItem, TreeDragAndDropController, Uri } from "vscode";
+import { DataTransfer, DataTransferItem, TreeDragAndDropController } from "vscode";
 import { Explorer } from "../constants";
 import { BaseSymbolNode } from "./baseSymbolNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
-import { SymbolNode } from "./symbolNode";
 
 export class DragAndDropController implements TreeDragAndDropController<ExplorerNode> {
 
