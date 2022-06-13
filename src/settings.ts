@@ -27,7 +27,7 @@ export class Settings {
                 || updatedConfig.packagePresentation !== oldConfig.packagePresentation
                 || (updatedConfig.syncWithFolderExplorer !== oldConfig.syncWithFolderExplorer
                     && updatedConfig.syncWithFolderExplorer)) {
-                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+                commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH);
             } else if (updatedConfig.autoRefresh !== oldConfig.autoRefresh) {
                 syncHandler.updateFileWatcher(updatedConfig.autoRefresh);
             }
