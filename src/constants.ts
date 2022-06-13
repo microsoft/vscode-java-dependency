@@ -20,6 +20,11 @@ export namespace Explorer {
         Type = "type",
         Folder = "folder",
     }
+
+    export enum Mime {
+        JavaProjectExplorer = "application/vnd.code.tree.javaProjectExplorer",
+        TextUriList = "text/uri-list",
+    }
 }
 
 export namespace ExtensionName {

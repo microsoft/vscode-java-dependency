@@ -36,7 +36,7 @@ export class SymbolNode extends BaseSymbolNode {
         return item;
     }
 
-    protected get range(): Range {
+    public get range(): Range {
         return (<SymbolInformation>this.symbolInfo).location.range;
     }
 }
