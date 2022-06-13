@@ -31,7 +31,7 @@ export class DocumentSymbolNode extends BaseSymbolNode {
         return item;
     }
 
-    protected get range(): Range {
+    public get range(): Range {
         // Using `selectionRange` instead of `range` to make sure the cursor will be pointing to the codes, not the comments
         return (<DocumentSymbol>this.symbolInfo).selectionRange;
     }

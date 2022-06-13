@@ -21,6 +21,7 @@ import { Settings } from "../settings";
 import { EventCounter, Utility } from "../utility";
 import { DataNode } from "./dataNode";
 import { DependencyDataProvider } from "./dependencyDataProvider";
+import { DragAndDropController } from "./DragAndDropController";
 import { ExplorerNode } from "./explorerNode";
 import { explorerNodeCache } from "./nodeCache/explorerNodeCache";
 
@@ -43,7 +44,15 @@ export class DependencyExplorer implements Disposable {
 
     constructor(public readonly context: ExtensionContext) {
         this._dataProvider = new DependencyDataProvider(context);
-        this._dependencyViewer = window.createTreeView("javaProjectExplorer", { treeDataProvider: this._dataProvider, showCollapseAll: true });
+        const dndController = new DragAndDropController();
+        this._dependencyViewer = window.createTreeView(
+            "javaProjectExplorer",
+            {
+                treeDataProvider: this._dataProvider,
+                showCollapseAll: true,
+                dragAndDropController: dndController,
+            }
+        );
         this._revealLock = new AwaitLock();
 
         // register reveal events

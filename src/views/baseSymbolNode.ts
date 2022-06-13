@@ -27,6 +27,8 @@ export abstract class BaseSymbolNode extends ExplorerNode {
         super(parent);
     }
 
+    public abstract get range(): Range;
+
     protected get iconPath(): ThemeIcon {
         if (BaseSymbolNode._iconMap.has(this.symbolInfo.kind)) {
             const symbolKind = BaseSymbolNode._iconMap.get(this.symbolInfo.kind);
@@ -42,6 +44,4 @@ export abstract class BaseSymbolNode extends ExplorerNode {
             arguments: [(this.getParent() as PrimaryTypeNode).uri, this.range],
         };
     }
-
-    protected abstract get range(): Range;
 }
