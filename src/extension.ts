@@ -52,7 +52,7 @@ function addExtensionChangeListener(context: ExtensionContext): void {
         // java language support is not installed or disabled
         const extensionChangeListener = extensions.onDidChange(() => {
             if (extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT)) {
-                commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
+                commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */false);
                 extensionChangeListener.dispose();
             }
         });

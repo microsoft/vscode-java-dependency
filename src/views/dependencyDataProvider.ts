@@ -6,7 +6,7 @@ import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult,
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
-import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { Context } from "../constants";
@@ -31,13 +31,24 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
     private _rootItems: ExplorerNode[] | undefined = undefined;
     private _refreshDelayTrigger: _.DebouncedFunc<((element?: ExplorerNode) => void)>;
+    /**
+     * The element which is pending to be refreshed.
+     * `undefined` denotes to root node.
+     * `null` means no node is pending.
+     */
+    private pendingRefreshElement: ExplorerNode | undefined | null;
 
     constructor(public readonly context: ExtensionContext) {
-        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
-            this.refreshWithLog(debounce, element)));
+        // commands that do not send back telemetry
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
+            this.refresh(debounce, element)));
         context.subscriptions.push(commands.registerCommand(Commands.EXPORT_JAR_REPORT, (terminalId: string, message: string) => {
             appendOutput(terminalId, message);
         }));
+
+        // normal commands
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
+            this.refresh(debounce, element)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_EXPORT_JAR, async (node: INodeData) => {
             executeExportJarTask(node);
         }));
@@ -61,28 +72,33 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
         Settings.registerConfigurationListener((updatedConfig, oldConfig) => {
             if (updatedConfig.refreshDelay !== oldConfig.refreshDelay) {
-                this.setRefreshDelay(updatedConfig.refreshDelay);
+                this.setRefreshDebounceFunc(updatedConfig.refreshDelay);
             }
         });
-        this.setRefreshDelay();
-    }
-
-    public refreshWithLog(debounce?: boolean, element?: ExplorerNode) {
-        if (Settings.autoRefresh()) {
-            this.refresh(debounce, element);
-        } else {
-            instrumentOperation(Commands.VIEW_PACKAGE_REFRESH, () => this.refresh(debounce, element))();
-        }
+        this.setRefreshDebounceFunc();
     }
 
     public refresh(debounce = false, element?: ExplorerNode) {
-        this._refreshDelayTrigger(element);
+        if (element === undefined || this.pendingRefreshElement === undefined) {
+            this._refreshDelayTrigger(undefined);
+            this.pendingRefreshElement = undefined;
+        } else if (this.pendingRefreshElement === null
+                || element.isItselfOrAncestorOf(this.pendingRefreshElement)) {
+            this._refreshDelayTrigger(element);
+            this.pendingRefreshElement = element;
+        } else if (this.pendingRefreshElement.isItselfOrAncestorOf(element)) {
+            this._refreshDelayTrigger(this.pendingRefreshElement);
+        } else {
+            this._refreshDelayTrigger.flush();
+            this._refreshDelayTrigger(element);
+            this.pendingRefreshElement = element;
+        }
         if (!debounce) { // Immediately refresh
             this._refreshDelayTrigger.flush();
         }
     }
 
-    public setRefreshDelay(wait?: number) {
+    public setRefreshDebounceFunc(wait?: number) {
         if (!wait) {
             wait = Settings.refreshDelay();
         }
@@ -142,6 +158,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         }
         explorerNodeCache.removeNodeChildren(element);
         this._onDidChangeTreeData.fire(element);
+        this.pendingRefreshElement = null;
     }
 
     private async getRootNodes(): Promise<ExplorerNode[]> {

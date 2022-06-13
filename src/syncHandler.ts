@@ -118,7 +118,7 @@ class SyncHandler implements Disposable {
     }
 
     private refresh(node?: ExplorerNode): void {
-        commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true, node);
+        commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */true, node);
     }
 }
 

@@ -52,7 +52,7 @@ class LanguageServerApiManager {
             if (extensionApi.onDidClasspathUpdate) {
                 const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
                 contextManager.context.subscriptions.push(onDidClasspathUpdate(() => {
-                    commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
+                    commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */true);
                     syncHandler.updateFileWatcher(Settings.autoRefresh());
                 }));
             }
@@ -60,7 +60,7 @@ class LanguageServerApiManager {
             if (extensionApi.onDidProjectsImport) {
                 const onDidProjectsImport: Event<Uri[]> = extensionApi.onDidProjectsImport;
                 contextManager.context.subscriptions.push(onDidProjectsImport(() => {
-                    commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
+                    commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */true);
                     syncHandler.updateFileWatcher(Settings.autoRefresh());
                 }));
             }
@@ -70,7 +70,7 @@ class LanguageServerApiManager {
                     const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
                     contextManager.context.subscriptions.push(onDidServerModeChange((mode: LanguageServerMode) => {
                         if (mode === LanguageServerMode.Hybrid) {
-                            commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */false);
+                            commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */false);
                         }
                     }));
                 }

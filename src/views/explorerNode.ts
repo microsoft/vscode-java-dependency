@@ -12,6 +12,17 @@ export abstract class ExplorerNode {
         return this._parent;
     }
 
+    public isItselfOrAncestorOf(node: ExplorerNode | undefined | null) {
+        while (node) {
+            if (this === node) {
+                return true;
+            }
+            node = node.getParent();
+        }
+
+        return false;
+    }
+
     protected get command(): Command | undefined {
         return undefined;
     }
