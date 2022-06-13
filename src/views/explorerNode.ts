@@ -12,12 +12,13 @@ export abstract class ExplorerNode {
         return this._parent;
     }
 
-    public isItselfOrAncestorOf(node: ExplorerNode | undefined | null) {
-        while (node) {
+    public isItselfOrAncestorOf(node: ExplorerNode | undefined | null, levelToCheck: number = Number.MAX_VALUE) {
+        while (node && levelToCheck >= 0) {
             if (this === node) {
                 return true;
             }
             node = node.getParent();
+            levelToCheck--;
         }
 
         return false;

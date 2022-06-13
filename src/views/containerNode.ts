@@ -20,6 +20,20 @@ export class ContainerNode extends DataNode {
         return this._project.uri && Uri.parse(this._project.uri).fsPath;
     }
 
+    public getContainerType(): string {
+        const containerPath: string = this._nodeData.path || "";
+        if (containerPath.startsWith(ContainerPath.JRE)) {
+            return ContainerType.JRE;
+        } else if (containerPath.startsWith(ContainerPath.Maven)) {
+            return ContainerType.Maven;
+        } else if (containerPath.startsWith(ContainerPath.Gradle)) {
+            return ContainerType.Gradle;
+        } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary)) {
+            return ContainerType.ReferencedLibrary;
+        }
+        return ContainerType.Unknown;
+    }
+
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this._project.uri, path: this.path });
     }
@@ -36,7 +50,7 @@ export class ContainerNode extends DataNode {
 
     protected get contextValue(): string {
         let contextValue: string = Explorer.ContextValueType.Container;
-        const containerType: string = getContainerType(this._nodeData.path);
+        const containerType: string = this.getContainerType();
         if (containerType) {
             contextValue += `+${containerType}`;
         }
@@ -48,19 +62,12 @@ export class ContainerNode extends DataNode {
     }
 }
 
-function getContainerType(containerPath: string | undefined): string {
-    if (!containerPath) {
-        return "";
-    } else if (containerPath.startsWith(ContainerPath.JRE)) {
-        return "jre";
-    } else if (containerPath.startsWith(ContainerPath.Maven)) {
-        return "maven";
-    } else if (containerPath.startsWith(ContainerPath.Gradle)) {
-        return "gradle";
-    } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary)) {
-        return "referencedLibrary";
-    }
-    return "";
+export enum ContainerType {
+    JRE = "jre",
+    Maven = "maven",
+    Gradle = "gradle",
+    ReferencedLibrary = "referencedLibrary",
+    Unknown = "",
 }
 
 const enum ContainerPath {
