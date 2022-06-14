@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
+import * as fse from "fs-extra";
 import { commands, DataTransfer, DataTransferItem, TreeDragAndDropController, Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { Commands } from "../commands";
 import { Explorer } from "../constants";
@@ -203,11 +204,32 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             "Move",
         );
 
-        if (choice === "Move") {
+        if (choice === "Move" && await this.confirmOverwrite(newPath)) {
             const edit = new WorkspaceEdit();
-            edit.renameFile(sourceUri, Uri.file(newPath));
+            edit.renameFile(sourceUri, Uri.file(newPath), { overwrite: true });
             await workspace.applyEdit(edit);
             commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
         }
+    }
+
+    /**
+     * Confirm the overwrite action when the target file already exists.
+     * @param file the path of the target file.
+     */
+    private async confirmOverwrite(file: string): Promise<boolean> {
+        if (await fse.pathExists(file)) {
+            const name = path.basename(file);
+            const ans = await window.showWarningMessage(
+                `A file or folder with the name '${name}' already exists in the destination folder. Do you want to replace it?`,
+                {
+                    modal: true,
+                    detail: "This action is irreversible!",
+                },
+                "Replace",
+            );
+            return ans === "Replace";
+        }
+
+        return true;
     }
 }
