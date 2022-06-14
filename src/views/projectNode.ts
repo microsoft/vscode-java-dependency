@@ -53,7 +53,7 @@ export class ProjectNode extends DataNode {
     }
 
     public isUnmanagedFolder(): boolean {
-        const natureIds: string[] = this.nodeData.metaData?.["NatureId"] || [];
+        const natureIds: string[] = this.nodeData.metaData?.[NATURE_ID] || [];
         for (const natureId of natureIds) {
             if (natureId === NatureId.UnmanagedFolder) {
                  return true;

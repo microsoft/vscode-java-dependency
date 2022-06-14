@@ -29,7 +29,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
 
     public handleDrag(source: ExplorerNode[], treeDataTransfer: DataTransfer): void {
         // select many is not supported yet
-        let dragItem = source[0];
+        const dragItem = source[0];
         this.addDragToEditorDataTransfer(dragItem, treeDataTransfer);
         this.addInternalDragDataTransfer(dragItem, treeDataTransfer);
     }
@@ -126,7 +126,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             return false;
         }
 
-       return this.isUnderSourceRoot(node);
+        return this.isUnderSourceRoot(node);
     }
 
     /**
