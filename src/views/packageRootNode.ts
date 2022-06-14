@@ -23,6 +23,10 @@ export class PackageRootNode extends DataNode {
         super(nodeData, parent);
     }
 
+    public isSourceRoot(): boolean {
+        return (<IPackageRootNodeData>this.nodeData).entryKind === PackageRootKind.K_SOURCE;
+    }
+
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({
             kind: NodeKind.PackageRoot,

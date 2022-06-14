@@ -52,6 +52,16 @@ export class ProjectNode extends DataNode {
         return (childNode && paths.length > 0) ? childNode.revealPaths(paths) : childNode;
     }
 
+    public isUnmanagedFolder(): boolean {
+        const natureIds: string[] = this.nodeData.metaData?.[NATURE_ID] || [];
+        for (const natureId of natureIds) {
+            if (natureId === NatureId.UnmanagedFolder) {
+                 return true;
+            }
+        }
+        return false;
+    }
+
     protected async loadData(): Promise<INodeData[]> {
         let result: INodeData[] = [];
         return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
