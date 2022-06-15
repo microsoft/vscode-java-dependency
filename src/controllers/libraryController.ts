@@ -33,13 +33,6 @@ export class LibraryController implements Disposable {
         this.disposable.dispose();
     }
 
-    public async addLibraryGlobs(libraryGlobs: string[]) {
-        const setting = Settings.referencedLibraries();
-        setting.exclude = this.dedupAlreadyCoveredPattern(libraryGlobs, ...setting.exclude);
-        setting.include = this.updatePatternArray(setting.include, ...libraryGlobs);
-        Settings.updateReferencedLibraries(setting);
-    }
-
     public async addLibraries(canSelectFolders?: boolean) {
         const workspaceFolder: WorkspaceFolder | undefined = Utility.getDefaultWorkspaceFolder();
         const isMac = platform() === "darwin";
@@ -54,7 +47,7 @@ export class LibraryController implements Disposable {
         if (!results) {
             return;
         }
-        this.addLibraryGlobs(await Promise.all(results.map(async (uri: Uri) => {
+        addLibraryGlobs(await Promise.all(results.map(async (uri: Uri) => {
             // keep the param: `includeWorkspaceFolder` to false here
             // since the multi-root is not supported well for invisible projects
             const uriPath = workspace.asRelativePath(uri, false);
@@ -74,7 +67,7 @@ export class LibraryController implements Disposable {
         });
         if (removedPaths.length === 0) {
             // No duplicated item in include array, add it into the exclude field
-            setting.exclude = this.updatePatternArray(setting.exclude, workspace.asRelativePath(removalFsPath, false));
+            setting.exclude = updatePatternArray(setting.exclude, workspace.asRelativePath(removalFsPath, false));
         }
         Settings.updateReferencedLibraries(setting);
     }
@@ -85,21 +78,28 @@ export class LibraryController implements Disposable {
             await Jdtls.refreshLibraries(workspaceFolder.uri.toString());
         }
     }
+}
 
-    /**
-     * Check if the `update` patterns are already covered by `origin` patterns and return those uncovered
-     */
-    private dedupAlreadyCoveredPattern(origin: string[], ...update: string[]): string[] {
-        return update.filter((newPattern) => {
-            return !origin.some((originPattern) => {
-                return minimatch(newPattern, originPattern);
-            });
+export function addLibraryGlobs(libraryGlobs: string[]) {
+    const setting = Settings.referencedLibraries();
+    setting.exclude = dedupAlreadyCoveredPattern(libraryGlobs, ...setting.exclude);
+    setting.include = updatePatternArray(setting.include, ...libraryGlobs);
+    Settings.updateReferencedLibraries(setting);
+}
+
+/**
+ * Check if the `update` patterns are already covered by `origin` patterns and return those uncovered
+ */
+function dedupAlreadyCoveredPattern(origin: string[], ...update: string[]): string[] {
+    return update.filter((newPattern) => {
+        return !origin.some((originPattern) => {
+            return minimatch(newPattern, originPattern);
         });
-    }
+    });
+}
 
-    private updatePatternArray(origin: string[], ...update: string[]): string[] {
-        update = this.dedupAlreadyCoveredPattern(origin, ...update);
-        origin.push(...update);
-        return _.uniq(origin);
-    }
+function updatePatternArray(origin: string[], ...update: string[]): string[] {
+    update = dedupAlreadyCoveredPattern(origin, ...update);
+    origin.push(...update);
+    return _.uniq(origin);
 }

@@ -18,11 +18,14 @@ import { PackageRootNode } from "./packageRootNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
+import { addLibraryGlobs } from "../controllers/libraryController";
+import { sendError } from "vscode-extension-telemetry-wrapper";
 
 export class DragAndDropController implements TreeDragAndDropController<ExplorerNode> {
 
     dropMimeTypes: string[] = [
         Explorer.Mime.JavaProjectExplorer,
+        Explorer.Mime.TextUriList,
     ];
     dragMimeTypes: string[] = [
         Explorer.Mime.TextUriList,
@@ -40,6 +43,33 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         if (data) {
             await this.dropFromJavaProjectExplorer(target, data.value);
             return;
+        }
+
+        let uriList: string[] = [];
+        // an undefined value will be contained with the key 'text/uri-list', so here
+        // we iterate all the entries to get the uri list.
+        // see: https://github.com/microsoft/vscode/issues/152031
+        dataTransfer.forEach((value: DataTransferItem, key: string) => {
+            if (key === Explorer.Mime.TextUriList && value.value) {
+                uriList.push(...(value.value as string).split("\n"));
+            }
+        });
+
+        uriList = uriList.map(u => {
+            try {
+                const uri = Uri.parse(u, true /* strict */);
+                if (uri.scheme !== "file") {
+                    return undefined;
+                }
+                return u;
+            } catch (e) {
+                sendError(e);
+                return undefined;
+            }
+        }).filter(Boolean) as string[];
+
+        if (uriList.length) {
+            this.dropFromFileExplorer(target, uriList);
         }
     }
 
@@ -82,7 +112,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
      * @param target the drop node.
      * @param uri uri in the data transfer.
      */
-    public async dropFromJavaProjectExplorer(target: ExplorerNode | undefined, uri: string): Promise<void> {
+    private async dropFromJavaProjectExplorer(target: ExplorerNode | undefined, uri: string): Promise<void> {
         const source: DataNode | undefined = explorerNodeCache.getDataNode(Uri.parse(uri));
         if (!this.isDraggableNode(source)) {
             return;
@@ -98,18 +128,38 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         }
 
         if (target instanceof ContainerNode) {
-            if (target.getContainerType() !== ContainerType.ReferencedLibrary) {
+            if (target.getContainerType() !== ContainerType.ReferencedLibrary
+                    || !(target.getParent() as ProjectNode).isUnmanagedFolder()) {
                 return;
             }
 
-            if (!(target.getParent() as ProjectNode).isUnmanagedFolder()) {
-                return;
-            }
-
-            // TODO: referenced library
+            this.addReferencedLibraries([source?.uri!]);
         } else if (target instanceof PackageRootNode || target instanceof PackageNode
                 || target instanceof FolderNode) {
             await this.move(source!, target);
+        }
+    }
+
+    /**
+     * Handle the DnD event which comes from VS Code's file explorer or system file explorer.
+     * @param target the drop node.
+     * @param uris uris of the dragged files.
+     */
+    private async dropFromFileExplorer(target: ExplorerNode | undefined, uris: string[]): Promise<void> {
+        if (!this.isDroppableNode(target)) {
+            return;
+        }
+
+        if (target instanceof ContainerNode) {
+            if (target.getContainerType() !== ContainerType.ReferencedLibrary
+                    || !(target.getParent() as ProjectNode).isUnmanagedFolder()) {
+                return;
+            }
+
+            this.addReferencedLibraries(uris);
+        } else if (target instanceof PackageRootNode || target instanceof PackageNode
+                || target instanceof FolderNode) {
+            // TODO: copy the resources to other nodes
         }
     }
 
@@ -161,7 +211,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             return false;
         }
 
-        if (node instanceof DataNode && !node.uri) {
+        if (node instanceof DataNode && !(node instanceof ContainerNode) && !node.uri) {
             return false;
         }
 
@@ -231,5 +281,35 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         }
 
         return true;
+    }
+
+    /**
+     * Parse the input uri strings to pattern strings and set them to
+     * the setting: 'java.project.referencedLibraries'.
+     * @param uriStrings uri strings
+     */
+    private async addReferencedLibraries(uriStrings: string[]): Promise<void> {
+        const pattern = (await Promise.all(uriStrings.map(async uriString => {
+            try {
+                const uri = Uri.parse(uriString, true /* strict */);
+                if (uri.scheme !== "file") {
+                    return undefined;
+                }
+                const isDirectory = (await fse.stat(uri.fsPath)).isDirectory();
+                // only jars and folders can be dropped into referenced libraries.
+                if (!isDirectory && path.extname(uri.fsPath) !== ".jar") {
+                    return undefined;
+                }
+                const uriPath = workspace.asRelativePath(uri, false);
+                return isDirectory ? uriPath + "/**/*.jar" : uriPath;
+            } catch (e) {
+                sendError(e);
+                return undefined;
+            }
+        }))).filter(Boolean);
+
+        if (pattern) {
+            addLibraryGlobs(pattern as string[]);
+        }
     }
 }
