@@ -263,7 +263,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
     /**
      * Copy the file from source uri to the target uri.
      */
-     private async copy(sourceUri: Uri, targetUri: Uri): Promise<void> {
+    private async copy(sourceUri: Uri, targetUri: Uri): Promise<void> {
         if (sourceUri === targetUri) {
             return;
         }
