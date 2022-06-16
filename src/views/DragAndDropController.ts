@@ -3,8 +3,7 @@
 
 import * as path from "path";
 import * as fse from "fs-extra";
-import { commands, DataTransfer, DataTransferItem, TreeDragAndDropController, Uri, window, workspace, WorkspaceEdit } from "vscode";
-import { Commands } from "../commands";
+import { DataTransfer, DataTransferItem, TreeDragAndDropController, Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { Explorer } from "../constants";
 import { BaseSymbolNode } from "./baseSymbolNode";
 import { ContainerNode, ContainerType } from "./containerNode";
@@ -136,7 +135,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             this.addReferencedLibraries([source?.uri!]);
         } else if (target instanceof PackageRootNode || target instanceof PackageNode
                 || target instanceof FolderNode) {
-            await this.move(source!, target);
+            await this.move(Uri.parse(source!.uri!), Uri.parse(target.uri!));
         }
     }
 
@@ -159,7 +158,9 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             this.addReferencedLibraries(uris);
         } else if (target instanceof PackageRootNode || target instanceof PackageNode
                 || target instanceof FolderNode) {
-            // TODO: copy the resources to other nodes
+            for (const uri of uris) {
+                await this.copy(Uri.parse(uri), Uri.parse(target.uri!));
+            }
         }
     }
 
@@ -240,9 +241,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
     /**
      * Trigger a workspace edit that move the source node into the target node.
      */
-    private async move(source: DataNode, target: DataNode): Promise<void> {
-        const sourceUri = Uri.parse(source.uri!);
-        const targetUri = Uri.parse(target.uri!);
+    private async move(sourceUri: Uri, targetUri: Uri): Promise<void> {
         if (sourceUri === targetUri) {
             return;
         }
@@ -258,7 +257,20 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             const edit = new WorkspaceEdit();
             edit.renameFile(sourceUri, Uri.file(newPath), { overwrite: true });
             await workspace.applyEdit(edit);
-            commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH, /* debounce = */true);
+        }
+    }
+
+    /**
+     * Copy the file from source uri to the target uri.
+     */
+    private async copy(sourceUri: Uri, targetUri: Uri): Promise<void> {
+        if (sourceUri === targetUri) {
+            return;
+        }
+
+        const newPath = path.join(targetUri.fsPath, path.basename(sourceUri.fsPath));
+        if (await this.confirmOverwrite(newPath)) {
+            await workspace.fs.copy(sourceUri, Uri.file(newPath), { overwrite: true });
         }
     }
 
