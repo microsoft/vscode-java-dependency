@@ -9,6 +9,7 @@ import { explorerLock } from "../utils/Lock";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
+import { FolderNode } from "./folderNode";
 import { PackageNode } from "./packageNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
@@ -75,6 +76,8 @@ export class HierarchicalPackageNode extends PackageNode {
                     if (nodeData.metaData && nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
                         result.push(new PrimaryTypeNode(nodeData, this, this._rootNode));
                     }
+                } else if (nodeData.kind === NodeKind.Folder) {
+                    result.push(new FolderNode(nodeData, this, this._project, this._rootNode));
                 }
             });
         }

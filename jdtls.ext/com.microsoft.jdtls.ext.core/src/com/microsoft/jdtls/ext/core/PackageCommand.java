@@ -403,11 +403,16 @@ public class PackageCommand {
                 }
                 // when .java files and other .properties files are mixed up
                 rootTypeNodes.addAll(
-                        Arrays.stream(nonJavaResources).filter(resource -> resource instanceof IFile || resource instanceof JarEntryFile).map(resource -> {
+                        Arrays.stream(nonJavaResources).map(resource -> {
                             if (resource instanceof IFile) {
                                 IFile file = (IFile) resource;
                                 PackageNode item = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
                                 item.setUri(JDTUtils.getFileURI(file));
+                                return item;
+                            } else if (resource instanceof IFolder) {
+                                IFolder folder = (IFolder) resource;
+                                PackageNode item = new PackageNode(folder.getName(), folder.getFullPath().toPortableString(), NodeKind.FOLDER);
+                                item.setUri(JDTUtils.getFileURI(folder));
                                 return item;
                             } else {
                                 JarEntryFile file = (JarEntryFile) resource;
@@ -415,7 +420,6 @@ public class PackageCommand {
                                 entry.setUri(ExtUtils.toUri((JarEntryFile) resource));
                                 return entry;
                             }
-
                         }).collect(Collectors.toList()));
                 return rootTypeNodes;
             }
