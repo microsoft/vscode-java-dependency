@@ -18,7 +18,7 @@ import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
 import { addLibraryGlobs } from "../controllers/libraryController";
-import { sendError } from "vscode-extension-telemetry-wrapper";
+import { sendError, sendInfo } from "vscode-extension-telemetry-wrapper";
 
 export class DragAndDropController implements TreeDragAndDropController<ExplorerNode> {
 
@@ -35,6 +35,10 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         const dragItem = source[0];
         this.addDragToEditorDataTransfer(dragItem, treeDataTransfer);
         this.addInternalDragDataTransfer(dragItem, treeDataTransfer);
+        sendInfo("", {
+            dndType: "drag",
+            dragFrom: dragItem.constructor.name,
+        });
     }
 
     public async handleDrop(target: ExplorerNode | undefined, dataTransfer: DataTransfer): Promise<void> {
@@ -68,7 +72,8 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         }).filter(Boolean) as string[];
 
         if (uriList.length) {
-            this.dropFromFileExplorer(target, uriList);
+            await this.dropFromFileExplorer(target, uriList);
+            return;
         }
     }
 
@@ -114,10 +119,23 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
     private async dropFromJavaProjectExplorer(target: ExplorerNode | undefined, uri: string): Promise<void> {
         const source: DataNode | undefined = explorerNodeCache.getDataNode(Uri.parse(uri));
         if (!this.isDraggableNode(source)) {
+            sendInfo("", {
+                dndType: "drop",
+                dragFrom: source ? source.constructor.name : "undefined",
+                dropTo: target ? target.constructor.name : "undefined",
+                draggable: "false",
+            });
             return;
         }
 
         if (!this.isDroppableNode(target)) {
+            sendInfo("", {
+                dndType: "drop",
+                dragFrom: source ? source.constructor.name : "undefined",
+                dropTo: target ? target.constructor.name : "undefined",
+                draggable: "true",
+                droppable: "false",
+            });
             return;
         }
 
@@ -129,13 +147,34 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         if (target instanceof ContainerNode) {
             if (target.getContainerType() !== ContainerType.ReferencedLibrary
                     || !(target.getParent() as ProjectNode).isUnmanagedFolder()) {
+                sendInfo("", {
+                    dndType: "drop",
+                    dragFrom: source ? source.constructor.name : "undefined",
+                    dropTo: "Referenced Libraries",
+                    draggable: "true",
+                    droppable: "false",
+                });
                 return;
             }
 
             this.addReferencedLibraries([source?.uri!]);
+            sendInfo("", {
+                dndType: "drop",
+                dragFrom: source ? source.constructor.name : "undefined",
+                dropTo: "Referenced Libraries",
+                draggable: "true",
+                droppable: "true",
+            });
         } else if (target instanceof PackageRootNode || target instanceof PackageNode
                 || target instanceof FolderNode) {
             await this.move(Uri.parse(source!.uri!), Uri.parse(target.uri!));
+            sendInfo("", {
+                dndType: "drop",
+                dragFrom: source ? source.constructor.name : "undefined",
+                dropTo: target ? target.constructor.name : "undefined",
+                draggable: "true",
+                droppable: "true",
+            });
         }
     }
 
@@ -146,21 +185,49 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
      */
     private async dropFromFileExplorer(target: ExplorerNode | undefined, uris: string[]): Promise<void> {
         if (!this.isDroppableNode(target)) {
+            sendInfo("", {
+                dndType: "drop",
+                dragFrom: "File Explorer",
+                dropTo: target ? target.constructor.name : "undefined",
+                draggable: "true",
+                droppable: "false",
+            });
             return;
         }
 
         if (target instanceof ContainerNode) {
             if (target.getContainerType() !== ContainerType.ReferencedLibrary
                     || !(target.getParent() as ProjectNode).isUnmanagedFolder()) {
+                sendInfo("", {
+                    dndType: "drop",
+                    dragFrom: "File Explorer",
+                    dropTo: "Referenced Libraries",
+                    draggable: "true",
+                    droppable: "false",
+                });
                 return;
             }
 
             this.addReferencedLibraries(uris);
+            sendInfo("", {
+                dndType: "drop",
+                dragFrom: "File Explorer",
+                dropTo: "Referenced Libraries",
+                draggable: "true",
+                droppable: "true",
+            });
         } else if (target instanceof PackageRootNode || target instanceof PackageNode
                 || target instanceof FolderNode) {
             for (const uri of uris) {
                 await this.copy(Uri.parse(uri), Uri.parse(target.uri!));
             }
+            sendInfo("", {
+                dndType: "drop",
+                dragFrom: "File Explorer",
+                dropTo: target ? target.constructor.name : "undefined",
+                draggable: "true",
+                droppable: "true",
+            });
         }
     }
 
