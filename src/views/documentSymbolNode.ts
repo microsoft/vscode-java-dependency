@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { DocumentSymbol, Range, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { Explorer } from "../constants";
 import { BaseSymbolNode } from "./baseSymbolNode";
 import { ExplorerNode } from "./explorerNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
@@ -34,5 +35,9 @@ export class DocumentSymbolNode extends BaseSymbolNode {
     public get range(): Range {
         // Using `selectionRange` instead of `range` to make sure the cursor will be pointing to the codes, not the comments
         return (<DocumentSymbol>this.symbolInfo).selectionRange;
+    }
+
+    public computeContextValue(): string | undefined {
+        return `java:${Explorer.ContextValueType.Symbol}`;
     }
 }

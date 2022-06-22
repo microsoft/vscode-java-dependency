@@ -19,6 +19,7 @@ export namespace Explorer {
         File = "file",
         Type = "type",
         Folder = "folder",
+        Symbol = "symbol",
     }
 
     export enum Mime {

@@ -37,7 +37,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         this.addInternalDragDataTransfer(dragItem, treeDataTransfer);
         sendInfo("", {
             dndType: "drag",
-            dragFrom: dragItem.constructor.name,
+            dragFrom: dragItem.computeContextValue() || "unknown",
         });
     }
 
@@ -121,8 +121,8 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         if (!this.isDraggableNode(source)) {
             sendInfo("", {
                 dndType: "drop",
-                dragFrom: source ? source.constructor.name : "undefined",
-                dropTo: target ? target.constructor.name : "undefined",
+                dragFrom: source?.computeContextValue() || "unknown",
+                dropTo: target?.computeContextValue() || "unknown",
                 draggable: "false",
             });
             return;
@@ -131,8 +131,8 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         if (!this.isDroppableNode(target)) {
             sendInfo("", {
                 dndType: "drop",
-                dragFrom: source ? source.constructor.name : "undefined",
-                dropTo: target ? target.constructor.name : "undefined",
+                dragFrom: source?.computeContextValue() || "unknown",
+                dropTo: target?.computeContextValue() || "unknown",
                 draggable: "true",
                 droppable: "false",
             });
@@ -149,7 +149,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
                     || !(target.getParent() as ProjectNode).isUnmanagedFolder()) {
                 sendInfo("", {
                     dndType: "drop",
-                    dragFrom: source ? source.constructor.name : "undefined",
+                    dragFrom: source?.computeContextValue() || "unknown",
                     dropTo: "Referenced Libraries",
                     draggable: "true",
                     droppable: "false",
@@ -160,7 +160,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             this.addReferencedLibraries([source?.uri!]);
             sendInfo("", {
                 dndType: "drop",
-                dragFrom: source ? source.constructor.name : "undefined",
+                dragFrom: source?.computeContextValue() || "unknown",
                 dropTo: "Referenced Libraries",
                 draggable: "true",
                 droppable: "true",
@@ -170,8 +170,8 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             await this.move(Uri.parse(source!.uri!), Uri.parse(target.uri!));
             sendInfo("", {
                 dndType: "drop",
-                dragFrom: source ? source.constructor.name : "undefined",
-                dropTo: target ? target.constructor.name : "undefined",
+                dragFrom: source?.computeContextValue() || "unknown",
+                dropTo: target?.computeContextValue() || "unknown",
                 draggable: "true",
                 droppable: "true",
             });
@@ -188,7 +188,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             sendInfo("", {
                 dndType: "drop",
                 dragFrom: "File Explorer",
-                dropTo: target ? target.constructor.name : "undefined",
+                dropTo: target?.computeContextValue() || "unknown",
                 draggable: "true",
                 droppable: "false",
             });
@@ -224,7 +224,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             sendInfo("", {
                 dndType: "drop",
                 dragFrom: "File Explorer",
-                dropTo: target ? target.constructor.name : "undefined",
+                dropTo: target?.computeContextValue() || "unknown",
                 draggable: "true",
                 droppable: "true",
             });
@@ -294,6 +294,8 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
                 return false;
             } else if (parent instanceof PackageRootNode) {
                 return parent.isSourceRoot();
+            } else if (parent instanceof PackageNode) {
+                return parent.isSourcePackage();
             } else if (parent instanceof ContainerNode) {
                 if (parent.getContainerType() === ContainerType.ReferencedLibrary) {
                     return (parent.getParent() as ProjectNode).isUnmanagedFolder();
