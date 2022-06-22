@@ -31,4 +31,6 @@ export abstract class ExplorerNode {
     public abstract getChildren(): ProviderResult<ExplorerNode[]>;
 
     public abstract getTreeItem(): TreeItem | Promise<TreeItem>;
+
+    public abstract computeContextValue(): string | undefined;
 }

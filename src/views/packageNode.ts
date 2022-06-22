@@ -19,6 +19,11 @@ export class PackageNode extends DataNode {
         super(nodeData, parent);
     }
 
+    public isSourcePackage(): boolean {
+        const parentData = <IPackageRootNodeData> this._rootNode.nodeData;
+        return parentData.entryKind === PackageRootKind.K_SOURCE || parentData.kind === NodeKind.Project;
+    }
+
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({
             kind: NodeKind.Package,

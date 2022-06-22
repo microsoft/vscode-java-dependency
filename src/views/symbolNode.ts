@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { Range, SymbolInformation, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { Explorer } from "../constants";
 import { ITypeRootNodeData } from "../java/typeRootNodeData";
 import { BaseSymbolNode } from "./baseSymbolNode";
 import { ExplorerNode } from "./explorerNode";
@@ -38,5 +39,9 @@ export class SymbolNode extends BaseSymbolNode {
 
     public get range(): Range {
         return (<SymbolInformation>this.symbolInfo).location.range;
+    }
+
+    public computeContextValue(): string | undefined {
+        return `java:${Explorer.ContextValueType.Symbol}`;
     }
 }
