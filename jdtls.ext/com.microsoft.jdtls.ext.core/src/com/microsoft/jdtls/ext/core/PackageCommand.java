@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -403,20 +404,25 @@ public class PackageCommand {
                 }
                 // when .java files and other .properties files are mixed up
                 rootTypeNodes.addAll(
-                        Arrays.stream(nonJavaResources).filter(resource -> resource instanceof IFile || resource instanceof JarEntryFile).map(resource -> {
+                        Arrays.stream(nonJavaResources).map(resource -> {
                             if (resource instanceof IFile) {
                                 IFile file = (IFile) resource;
                                 PackageNode item = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
                                 item.setUri(JDTUtils.getFileURI(file));
                                 return item;
-                            } else {
+                            } else if (resource instanceof IFolder) {
+                                IFolder folder = (IFolder) resource;
+                                PackageNode item = new PackageNode(folder.getName(), folder.getFullPath().toPortableString(), NodeKind.FOLDER);
+                                item.setUri(JDTUtils.getFileURI(folder));
+                                return item;
+                            } else if (resource instanceof JarEntryFile) {
                                 JarEntryFile file = (JarEntryFile) resource;
                                 PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
                                 entry.setUri(ExtUtils.toUri((JarEntryFile) resource));
                                 return entry;
                             }
-
-                        }).collect(Collectors.toList()));
+                            return null;
+                        }).filter(Objects::nonNull).collect(Collectors.toList()));
                 return rootTypeNodes;
             }
         } catch (CoreException e) {
