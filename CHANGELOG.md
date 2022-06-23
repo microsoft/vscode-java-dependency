@@ -4,7 +4,18 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.20.0
+### Added
+- Support Support drag and drop for Java Project explorer. [#613](https://github.com/microsoft/vscode-java-dependency/issues/613)
+
+### Changed
+- Move the `Rebuild Workspace` action to navigation bar. [#619](https://github.com/microsoft/vscode-java-dependency/issues/619)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.20.0+is%3Aclosed)
+
 ## 0.19.1
+### Fixed
 - [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.19.1+is%3Aclosed)
 
 ## 0.19.0
