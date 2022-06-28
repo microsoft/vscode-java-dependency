@@ -64,6 +64,12 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
                 if (uri.scheme !== "file") {
                     return undefined;
                 }
+                // Ideally, the file dragged from file explorer should not contain fragment
+                // in its uri. If it does, then the uri should be generated from dragging document
+                // symbol node from the Java Project explorer, and we should ignore it.
+                if (uri.fragment) {
+                    return undefined;
+                }
                 return u;
             } catch (e) {
                 sendError(e);
