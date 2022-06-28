@@ -145,8 +145,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             return;
         }
 
-        // check if the target node is source node itself or its parent.
-        if (target?.isItselfOrAncestorOf(source, 1 /*levelToCheck*/)) {
+        if (this.isTheSameOrParent(target!, source!)) {
             return;
         }
 
@@ -310,6 +309,25 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             }
             parent = parent.getParent();
         }
+        return false;
+    }
+
+    /**
+     * Check whether the target node is the same or parent of the source node.
+     * If the target node's file path is parent of the source node's, `true`
+     * well be returned as well.
+     */
+    private isTheSameOrParent(target: ExplorerNode, source: DataNode): boolean {
+        if (target.isItselfOrAncestorOf(source, 1 /*levelToCheck*/)) {
+            return true;
+        }
+
+        if ((target instanceof DataNode) && target.uri && source.uri) {
+            const targetPath = Uri.parse(target.uri).fsPath;
+            const sourcePath = Uri.parse(source.uri).fsPath;
+            return path.relative(sourcePath, targetPath) === "..";
+        }
+
         return false;
     }
 
