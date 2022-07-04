@@ -5,7 +5,6 @@ import * as path from "path";
 import * as fse from "fs-extra";
 import { DataTransfer, DataTransferItem, TreeDragAndDropController, Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { Explorer } from "../constants";
-import { BaseSymbolNode } from "./baseSymbolNode";
 import { ContainerNode, ContainerType } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
@@ -19,6 +18,7 @@ import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
 import { addLibraryGlobs } from "../controllers/libraryController";
 import { sendError, sendInfo } from "vscode-extension-telemetry-wrapper";
+import { DocumentSymbolNode } from "./documentSymbolNode";
 
 export class DragAndDropController implements TreeDragAndDropController<ExplorerNode> {
 
@@ -91,10 +91,10 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
     private addDragToEditorDataTransfer(node: ExplorerNode, treeDataTransfer: DataTransfer) {
         if ((node instanceof PrimaryTypeNode || node instanceof FileNode) && node.uri) {
             treeDataTransfer.set(Explorer.Mime.TextUriList, new DataTransferItem(node.uri));
-        } else if ((node instanceof BaseSymbolNode)) {
+        } else if ((node instanceof DocumentSymbolNode)) {
             const parent = (node.getParent() as PrimaryTypeNode);
             if (parent.uri) {
-                const range = (node as BaseSymbolNode).range;
+                const range = (node as DocumentSymbolNode).range;
                 const fragment = `#L${range.start.line + 1},${range.start.character + 1}`;
                 const uri = parent.uri + fragment;
                 treeDataTransfer.set(Explorer.Mime.TextUriList, new DataTransferItem(uri));
@@ -246,7 +246,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         }
         if (node instanceof WorkspaceNode || node instanceof ProjectNode
                 || node instanceof PackageRootNode || node instanceof ContainerNode
-                || node instanceof BaseSymbolNode) {
+                || node instanceof DocumentSymbolNode) {
             return false;
         }
 
@@ -289,7 +289,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         }
 
         if (node instanceof WorkspaceNode || node instanceof ProjectNode
-                || node instanceof BaseSymbolNode) {
+                || node instanceof DocumentSymbolNode) {
             return false;
         }
 
