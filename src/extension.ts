@@ -4,6 +4,7 @@
 import { commands, Extension, ExtensionContext, extensions, tasks, Uri, workspace } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
+import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
 import { Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
@@ -38,6 +39,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(contextManager);
     context.subscriptions.push(syncHandler);
     context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
+    context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
 }
 
 // this method is called when your extension is deactivated

@@ -101,10 +101,18 @@ export namespace Commands {
 
     export const WORKBENCH_ACTION_FILES_OPENFILEFOLDER = "workbench.action.files.openFileFolder";
 
+    export const WORKBENCH_VIEW_PROBLEMS = "workbench.actions.view.problems";
+
     /**
      * Commands from JLS
      */
     export const LIST_SOURCEPATHS = "java.project.listSourcePaths";
+
+    export const COMPILE_WORKSPACE = "java.workspace.compile";
+
+    export const GET_ALL_PROJECTS = "java.project.getAll";
+
+    export const BUILD_PROJECT = "java.project.build";
 }
 
 export function executeJavaLanguageServerCommand(...rest: any[]) {

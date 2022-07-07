@@ -22,3 +22,6 @@ export { contextManager } from "./src/contextManager";
 export { DependencyExplorer } from "./src/views/dependencyExplorer";
 export { Commands } from "./src/commands";
 export { LanguageServerMode } from "./src/languageServerApi/LanguageServerMode";
+
+// tasks
+export { BuildTaskProvider, categorizePaths, getFinalPaths } from "./src/tasks/build/buildTaskProvider";

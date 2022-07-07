@@ -628,6 +628,40 @@
             "description": "%taskDefinitions.java.project.exportJar.elements%"
           }
         }
+      },
+      {
+        "type": "java (build)",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "enum": [
+                    "${workspace}",
+                    "!<path>"
+                  ],
+                  "enumDescriptions": [
+                    "%taskDefinitions.java.project.build.path.workspace%",
+                    "%taskDefinitions.java.project.build.path.exclude%"
+                  ]
+                }
+              ]
+            },
+            "default": [
+              "${workspace}"
+            ],
+            "description": "%taskDefinitions.java.project.build.path%"
+          },
+          "isFullBuild": {
+            "type": "boolean",
+            "default": "true",
+            "description": "%taskDefinitions.java.project.build.isFullBuild%"
+          }
+        }
       }
     ]
   },

@@ -60,7 +60,7 @@ async function handleBuildFailure(operationId: string, err: any): Promise<boolea
     return false;
 }
 
-function checkErrorsReportedByJavaExtension(): boolean {
+export function checkErrorsReportedByJavaExtension(): boolean {
     const problems = languages.getDiagnostics() || [];
     for (const problem of problems) {
         const fileName = basename(problem[0].fsPath || "");
