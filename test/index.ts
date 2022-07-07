@@ -9,6 +9,8 @@ import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath, runTest
 
 async function main(): Promise<void> {
     try {
+        // test fails in macOS since the limitation of path length
+        // See: https://github.com/microsoft/vscode/issues/86382#issuecomment-593765388
         const userDir = fs.mkdtempSync(path.join(os.tmpdir(), "vscode-user"));
         const vscodeExecutablePath = await downloadAndUnzipVSCode();
 
