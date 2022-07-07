@@ -2,19 +2,23 @@
 // Licensed under the MIT license.
 
 import * as cp from "child_process";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { downloadAndUnzipVSCode, resolveCliPathFromVSCodeExecutablePath, runTests } from "vscode-test";
+import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath, runTests } from "@vscode/test-electron";
 
 async function main(): Promise<void> {
     try {
+        // test fails in macOS since the limitation of path length
+        // See: https://github.com/microsoft/vscode/issues/86382#issuecomment-593765388
+        const userDir = fs.mkdtempSync(path.join(os.tmpdir(), "vscode-user"));
         const vscodeExecutablePath = await downloadAndUnzipVSCode();
-        const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
 
         // Resolve redhat.java dependency
-        cp.spawnSync(cliPath, ["--install-extension", "redhat.java"], {
-            encoding: "utf-8",
-            stdio: "inherit",
+        const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
+        cp.spawnSync(cli, [...args, '--install-extension', 'redhat.java'], {
+            encoding: 'utf-8',
+            stdio: 'inherit'
         });
 
         // The folder containing the Extension Manifest package.json
@@ -30,7 +34,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "java9"),
-                "--disable-workspace-trust",
+                `--user-data-dir=${userDir}`,
             ],
         });
 
@@ -41,7 +45,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./simple-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "simple"),
-                "--disable-workspace-trust",
+                `--user-data-dir=${userDir}`,
             ],
         });
 
@@ -52,7 +56,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./maven-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "maven"),
-                "--disable-workspace-trust",
+                `--user-data-dir=${userDir}`,
             ],
         });
 
@@ -63,7 +67,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./gradle-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "gradle"),
-                "--disable-workspace-trust",
+                `--user-data-dir=${userDir}`,
             ],
         });
 
@@ -74,7 +78,7 @@ async function main(): Promise<void> {
             extensionTestsPath: path.resolve(__dirname, "./invisible-suite"),
             launchArgs: [
                 path.join(__dirname, "..", "..", "test", "invisible"),
-                "--disable-workspace-trust",
+                `--user-data-dir=${userDir}`,
             ],
         });
 
