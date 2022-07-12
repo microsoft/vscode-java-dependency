@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { lstat } from "fs-extra";
-import * as globby from "globby";
+import { globby } from "globby";
 import * as _ from "lodash";
 import { platform } from "os";
 import { dirname, extname, isAbsolute, join, relative } from "path";
