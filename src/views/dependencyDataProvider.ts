@@ -6,7 +6,7 @@ import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult,
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
-import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperationAsVsCodeCommand, sendError } from "vscode-extension-telemetry-wrapper";
 import { contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { Context } from "../constants";
@@ -68,6 +68,14 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             if (uris.length >= 1) {
                 commands.executeCommand(Commands.JAVA_PROJECT_CONFIGURATION_UPDATE, uris[0]);
             }
+        }));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REBUILD, async (node: INodeData) => {
+            if (!node.uri) {
+                sendError(new Error("Uri not available when building project"));
+                window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Rebuild Projects' from Command Palette.");
+                return;
+            }
+            commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), true);
         }));
 
         Settings.registerConfigurationListener((updatedConfig, oldConfig) => {
