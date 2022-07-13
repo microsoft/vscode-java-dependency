@@ -7,6 +7,7 @@ import { Jdtls } from "../../java/jdtls";
 import * as path from "path";
 import { checkErrorsReportedByJavaExtension } from "../../build";
 import { Commands } from "../../commands";
+import { sendInfo } from "vscode-extension-telemetry-wrapper";
 
 /**
  * A task provider to provide Java build task support.
@@ -87,14 +88,22 @@ class BuildTaskTerminal implements Pseudoterminal {
         // TODO: consider change to terminal name via changeNameEmitter.
         // see: https://github.com/microsoft/vscode/issues/154146
 
-        if (this.definition.paths.length === 1 &&
+        let returnCode = Number.MAX_SAFE_INTEGER;
+        if (this.scope === TaskScope.Global) {
+            this.writeEmitter.fire('Global task is not supported.\r\n\r\n');
+            returnCode = ReturnCode.UnsupportedTask;
+        } else if (this.definition.paths.length === 1 &&
                 this.definition.paths[0] === BuildTaskProvider.workspace) {
-            await this.buildWorkspace();
+            returnCode = await this.buildWorkspace();
         } else {
-            await this.buildProjects();
+            returnCode = await this.buildProjects();
         }
+
         this.writeEmitter.fire('Task complete.\r\n');
-        this.closeEmitter.fire(0);
+        this.closeEmitter.fire(returnCode);
+        sendInfo("", {
+            buildTaskReturnCode: returnCode.toString()
+        });
     }
 
     close(): void {
@@ -102,27 +111,30 @@ class BuildTaskTerminal implements Pseudoterminal {
         this.cancellationTokenSource.dispose();
     }
 
-    async buildWorkspace(): Promise<void> {
+    async buildWorkspace(): Promise<number> {
         this.writeEmitter.fire("Building all the Java projects in workspace...\r\n\r\n");
         try {
             await commands.executeCommand(Commands.COMPILE_WORKSPACE, this.definition.isFullBuild, this.cancellationTokenSource.token);
         } catch (e) {
             if (checkErrorsReportedByJavaExtension()) {
                 commands.executeCommand(Commands.WORKBENCH_VIEW_PROBLEMS);
-                this.writeEmitter.fire("Errors found when building the workspace.\r\n\r\n");
+                this.writeEmitter.fire("Errors found when building the workspace, please open PROBLEMS view for details.\r\n\r\n");
+                return ReturnCode.UserError;
             } else {
                 this.writeEmitter.fire("Errors occur when building the workspace:\r\n");
                 this.writeEmitter.fire(`${e}\r\n\r\n`);
+                return ReturnCode.CommandFail;
             }
         }
+        return ReturnCode.Success;
     }
 
-    async buildProjects(): Promise<void> {
+    async buildProjects(): Promise<number> {
         // tslint:disable-next-line: prefer-const
         let [includedPaths, excludedPaths, invalidPaths] = categorizePaths(this.definition.paths, this.scope);
         if (invalidPaths.length) {
             this.printList("Following paths are invalid, please provide absolute paths instead:", invalidPaths);
-            return;
+            return ReturnCode.InvalidPath;
         }
 
         const projectUris: string[] = await Jdtls.getProjectUris();
@@ -135,8 +147,12 @@ class BuildTaskTerminal implements Pseudoterminal {
             this.printList("Following paths are skipped due to not matching any project root path:", invalidPaths);
         }
 
-        if (includedPaths.length === 0 || this.cancellationTokenSource.token.isCancellationRequested) {
-            return;
+        if (includedPaths.length === 0) {
+            return ReturnCode.EmptyIncludedPath;
+        }
+
+        if (this.cancellationTokenSource.token.isCancellationRequested) {
+            return ReturnCode.Cancelled;
         }
 
         this.printList("Building following projects:", includedPaths);
@@ -144,12 +160,26 @@ class BuildTaskTerminal implements Pseudoterminal {
         try {
             const res = await commands.executeCommand(Commands.BUILD_PROJECT, uris, this.definition.isFullBuild,
                 this.cancellationTokenSource.token);
-            if (res === Jdtls.CompileWorkspaceStatus.Witherror && checkErrorsReportedByJavaExtension()) {
-                commands.executeCommand(Commands.WORKBENCH_VIEW_PROBLEMS);
+            switch (res) {
+                case Jdtls.CompileWorkspaceStatus.Witherror:
+                    if (checkErrorsReportedByJavaExtension()) {
+                        commands.executeCommand(Commands.WORKBENCH_VIEW_PROBLEMS);
+                        this.writeEmitter.fire("Errors found when building the workspace, please open PROBLEMS view for details.\r\n\r\n");
+                    }
+                    return ReturnCode.UserError;
+                case Jdtls.CompileWorkspaceStatus.Cancelled:
+                    return ReturnCode.Cancelled;
+                case Jdtls.CompileWorkspaceStatus.Failed:
+                    return ReturnCode.CommandFail;
+                case Jdtls.CompileWorkspaceStatus.Succeed:
+                    return ReturnCode.Success;
             }
         } catch (e) {
-            this.writeEmitter.fire(`Error occurs when building the workspace: ${e}\r\n`);
+            this.writeEmitter.fire(`Error occurs when building the workspace:\r\n`);
+            this.writeEmitter.fire(`${e}\r\n\r\n`);
+            return ReturnCode.CommandFail;
         }
+        return ReturnCode.Success;
     }
 
     private printList(title: string, list: string[]) {
@@ -167,7 +197,7 @@ class BuildTaskTerminal implements Pseudoterminal {
  * @param scope scope of the task
  * @returns {Array} [included paths, excluded paths, invalid paths].
  */
-export function categorizePaths(paths: string[], scope: WorkspaceFolder | TaskScope.Global | TaskScope.Workspace): string[][] {
+export function categorizePaths(paths: string[], scope: WorkspaceFolder | TaskScope.Workspace): string[][] {
     const includes = [];
     const excludes = [];
     const invalid = [];
@@ -184,12 +214,6 @@ export function categorizePaths(paths: string[], scope: WorkspaceFolder | TaskSc
             } else {
                 includes.push(actualPath);
             }
-            continue;
-        }
-
-        // global tasks are not supported now.
-        if (scope === TaskScope.Global) {
-            invalid.push(p);
             continue;
         }
 
@@ -265,4 +289,14 @@ interface IBuildTaskDefinition extends TaskDefinition {
      * Whether this is a full build or not.
      */
     isFullBuild: boolean;
+}
+
+enum ReturnCode {
+    Success = 0,
+    InvalidPath = 1,
+    UnsupportedTask = 2,
+    EmptyIncludedPath = 3,
+    UserError = 64,
+    CommandFail = -1,
+    Cancelled = -32800,
 }
