@@ -197,7 +197,7 @@ class BuildTaskTerminal implements Pseudoterminal {
  * @param scope scope of the task
  * @returns {Array} [included paths, excluded paths, invalid paths].
  */
-export function categorizePaths(paths: string[], scope: WorkspaceFolder | TaskScope.Workspace): string[][] {
+export function categorizePaths(paths: string[], scope: WorkspaceFolder | TaskScope.Global | TaskScope.Workspace): string[][] {
     const includes = [];
     const excludes = [];
     const invalid = [];
