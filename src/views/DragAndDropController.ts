@@ -48,17 +48,12 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
             return;
         }
 
-        let uriList: string[] = [];
-        // an undefined value will be contained with the key 'text/uri-list', so here
-        // we iterate all the entries to get the uri list.
-        // see: https://github.com/microsoft/vscode/issues/152031
-        dataTransfer.forEach((value: DataTransferItem, key: string) => {
-            if (key === Explorer.Mime.TextUriList && value.value) {
-                uriList.push(...(value.value as string).split("\n"));
-            }
-        });
+        const uris: string | undefined = await dataTransfer.get(Explorer.Mime.TextUriList)?.asString();
+        if (!uris) {
+            return;
+        }
 
-        uriList = uriList.map(u => {
+        const uriList: string[] = uris.split(/\r?\n/g).map(u => {
             try {
                 const uri = Uri.parse(u, true /* strict */);
                 if (uri.scheme !== "file") {
