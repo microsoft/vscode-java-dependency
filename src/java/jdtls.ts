@@ -12,6 +12,10 @@ export namespace Jdtls {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_LIST, params) || [];
     }
 
+    export async function getProjectUris(): Promise<string[]> {
+        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.GET_ALL_PROJECTS) || [];
+    }
+
     export async function refreshLibraries(params: string): Promise<boolean | undefined> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_REFRESH_LIB_SERVER, params);
     }
