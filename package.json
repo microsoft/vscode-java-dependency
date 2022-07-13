@@ -550,12 +550,39 @@
           "group": "inline"
         },
         {
-          "command": "java.project.update",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(maven|gradle)\\b)/",
+          "submenu": "javaProject.maven",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(maven)\\b)/",
           "group": "9_configuration@10"
+        },
+        {
+          "submenu": "javaProject.gradle",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(gradle)\\b)/",
+          "group": "9_configuration@10"
+        }
+      ],
+      "javaProject.maven": [
+        {
+          "command": "java.project.update",
+          "group": "maven@10"
+        }
+      ],
+      "javaProject.gradle": [
+        {
+          "command": "java.project.update",
+          "group": "gradle@10"
         }
       ]
     },
+    "submenus": [
+      {
+        "id": "javaProject.maven",
+        "label": "Maven"
+      },
+      {
+        "id": "javaProject.gradle",
+        "label": "Gradle"
+      }
+    ],
     "views": {
       "explorer": [
         {
