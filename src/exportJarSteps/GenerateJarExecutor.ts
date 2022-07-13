@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { ensureDir, pathExists } from "fs-extra";
-import globby = require("globby");
+import { globby } from "globby";
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window, WorkspaceFolder } from "vscode";
