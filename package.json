@@ -89,6 +89,10 @@
         "title": "%contributes.commands.java.project.update%"
       },
       {
+        "command": "java.project.rebuild",
+        "title": "%contributes.commands.java.project.rebuild%"
+      },
+      {
         "command": "java.view.package.revealInProjectExplorer",
         "title": "%contributes.commands.java.view.package.revealInProjectExplorer%",
         "category": "Java"
@@ -359,6 +363,10 @@
           "when": "false"
         },
         {
+          "command": "java.project.rebuild",
+          "when": "false"
+        },
+        {
           "command": "java.view.package.revealInProjectExplorer",
           "when": "false"
         }
@@ -479,6 +487,16 @@
           "command": "java.view.package.deleteFilePermanently",
           "when": "view == javaProjectExplorer && !explorerResourceMoveableToTrash && viewItem =~ /java:(file|type|folder)(?=.*?\\b\\+uri\\b)/",
           "group": "7_modification@20"
+        },
+        {
+          "command": "java.project.build.workspace",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group":"8_execution@5"
+        },
+        {
+          "command": "java.project.rebuild",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
+          "group": "8_execution@6"
         },
         {
           "command": "java.view.package.newJavaClass",
