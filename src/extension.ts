@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-
 import * as path from "path";
-import { commands, Diagnostic, Extension, ExtensionContext, extensions, languages, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
+import { commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
+    Range, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
@@ -11,11 +11,14 @@ import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
-import { ExportJarTaskProvider } from "./exportJarSteps/ExportJarTaskProvider";
+import { DeprecatedExportJarTaskProvider, ExportJarTaskProvider } from "./exportJarSteps/ExportJarTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
 import { EventCounter } from "./utility";
 import { DependencyExplorer } from "./views/dependencyExplorer";
+import { DiagnosticProvider } from "./tasks/migration/DiagnosticProvider";
+import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/migration/utils";
+import { CodeActionProvider } from "./tasks/migration/CodeActionProvider";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -40,6 +43,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(DependencyExplorer.getInstance(context));
     context.subscriptions.push(contextManager);
     context.subscriptions.push(syncHandler);
+    context.subscriptions.push(tasks.registerTaskProvider(DeprecatedExportJarTaskProvider.type, new DeprecatedExportJarTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
 
@@ -64,6 +68,18 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 
         commands.executeCommand(Commands.JAVA_PROJECT_CONFIGURATION_UPDATE, uri);
     });
+    // handle deprecated tasks
+    context.subscriptions.push(new DiagnosticProvider());
+    await setContextForDeprecatedTasks();
+    context.subscriptions.push(languages.registerCodeActionsProvider([{
+        scheme: "file",
+        pattern: "**/.vscode/tasks.json"
+    }], new CodeActionProvider()));
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(
+        Commands.JAVA_UPDATE_DEPRECATED_TASK, async (document: TextDocument, range: Range) => {
+            await updateExportTaskType(document, range);
+        }
+    ));
 }
 
 // this method is called when your extension is deactivated

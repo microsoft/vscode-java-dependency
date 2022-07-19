@@ -7,9 +7,11 @@ import * as _ from "lodash";
 import { platform } from "os";
 import { dirname, extname, isAbsolute, join, relative } from "path";
 import {
-    CustomExecution, Event, EventEmitter, Pseudoterminal, Task, TaskDefinition,
+    CancellationToken,
+    CustomExecution, Event, EventEmitter, ProviderResult, Pseudoterminal, Task, TaskDefinition,
     TaskProvider, TaskRevealKind, tasks, TerminalDimensions, Uri, workspace, WorkspaceFolder,
 } from "vscode";
+import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { buildWorkspace } from "../build";
 import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
@@ -46,7 +48,7 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
     isExportingJar = true;
     const stepMetadata: IStepMetadata = {
         entry: node,
-        taskLabel: "exportjar:default",
+        taskLabel: "default",
         steps: [],
         projectList: [],
         elements: [],
@@ -69,7 +71,7 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
 }
 export class ExportJarTaskProvider implements TaskProvider {
 
-    public static exportJarType: string = "java";
+    public static exportJarType: string = "java (buildArtifact)";
 
     public static getDefaultTask(stepMetadata: IStepMetadata): Task {
         if (!stepMetadata.workspaceFolder) {
@@ -77,12 +79,12 @@ export class ExportJarTaskProvider implements TaskProvider {
         }
         const defaultDefinition: IExportJarTaskDefinition = {
             type: ExportJarTaskProvider.exportJarType,
-            label: "exportjar:default",
+            label: "default",
             targetPath: Settings.getExportJarTargetPath(),
             elements: [],
             mainClass: undefined,
         };
-        const task: Task = new Task(defaultDefinition, stepMetadata.workspaceFolder, "exportjar:default", ExportJarTaskProvider.exportJarType,
+        const task: Task = new Task(defaultDefinition, stepMetadata.workspaceFolder, "default", ExportJarTaskProvider.exportJarType,
             new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
                 return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
             }));
@@ -93,13 +95,17 @@ export class ExportJarTaskProvider implements TaskProvider {
     private tasks: Task[] | undefined;
 
     public async resolveTask(task: Task): Promise<Task> {
+        return ExportJarTaskProvider.resolveExportTask(task, ExportJarTaskProvider.exportJarType);
+    }
+
+    public static async resolveExportTask(task: Task, type: string): Promise<Task> {
         const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>task.definition;
         const folder: WorkspaceFolder = <WorkspaceFolder>task.scope;
-        const resolvedTask: Task = new Task(definition, folder, task.name, ExportJarTaskProvider.exportJarType,
+        const resolvedTask: Task = new Task(definition, folder, task.name, type,
             new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
                 const stepMetadata: IStepMetadata = {
                     entry: undefined,
-                    taskLabel: resolvedDefinition.label || `exportjar:${folder.name}`,
+                    taskLabel: resolvedDefinition.label || folder.name,
                     workspaceFolder: folder,
                     projectList: await Jdtls.getProjects(folder.uri.toString()),
                     steps: [],
@@ -142,11 +148,11 @@ export class ExportJarTaskProvider implements TaskProvider {
                 targetPath: Settings.getExportJarTargetPath(),
                 elements: elementList,
             };
-            const defaultTask: Task = new Task(defaultDefinition, folder, `exportjar:${folder.name}`, ExportJarTaskProvider.exportJarType,
+            const defaultTask: Task = new Task(defaultDefinition, folder, folder.name, ExportJarTaskProvider.exportJarType,
                 new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
                     const stepMetadata: IStepMetadata = {
                         entry: undefined,
-                        taskLabel: resolvedDefinition.label || `exportjar:${folder.name}`,
+                        taskLabel: resolvedDefinition.label || folder.name,
                         workspaceFolder: folder,
                         projectList: await Jdtls.getProjects(folder.uri.toString()),
                         steps: [],
@@ -160,6 +166,21 @@ export class ExportJarTaskProvider implements TaskProvider {
         }
         return this.tasks;
     }
+}
+
+export class DeprecatedExportJarTaskProvider implements TaskProvider {
+
+    public static type: string = "java";
+
+    provideTasks(_token: CancellationToken): ProviderResult<Task[]> {
+        return [];
+    }
+
+    resolveTask(task: Task, _token: CancellationToken): ProviderResult<Task> {
+        sendInfo("", { name: "resolve-deprecated-export-task" });
+        return ExportJarTaskProvider.resolveExportTask(task, DeprecatedExportJarTaskProvider.type);
+    }
+
 }
 
 class ExportJarTaskTerminal implements Pseudoterminal {

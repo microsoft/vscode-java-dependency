@@ -20,7 +20,7 @@ suite("Export Jar Tests", () => {
 
     test("Can export jar correctly", async function() {
         const vscodeTasks: Task[] = await tasks.fetchTasks();
-        const exportJarTask: Task | undefined = vscodeTasks.find((t: Task) => t.name === "java: exportjar:maven");
+        const exportJarTask: Task | undefined = vscodeTasks.find((t: Task) => t.name === "java (buildArtifact): maven");
         assert.ok(exportJarTask !== undefined);
 
         await new Promise<void>(async (resolve) => {
