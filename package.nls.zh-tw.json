@@ -9,6 +9,7 @@
   "contributes.commands.java.project.clean.workspace": "清理工作區",
   "contributes.commands.java.project.rebuild": "重新建置專案",
   "contributes.commands.java.project.update": "重新載入專案",
+  "contributes.commands.java.project.reloadProjectFromActiveFile": "重新載入 Java 專案",
   "contributes.commands.java.view.package.revealInProjectExplorer": "在 Java 專案視圖中顯示",
   "contributes.commands.java.view.package.changeToFlatPackageView":"平行顯示",
   "contributes.commands.java.view.package.changeToHierarchicalPackageView":"階層顯示",
