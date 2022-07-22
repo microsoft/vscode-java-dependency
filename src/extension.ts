@@ -49,7 +49,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(languages.onDidChangeDiagnostics(() => {
         setContextForReloadProject(window.activeTextEditor?.document);
     }));
-    instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_RELOAD_ALL, (uri?: Uri) => {
+    instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_RELOAD_ACTIVE_FILE, (uri?: Uri) => {
         if (!uri) {
             const activeDocument = window.activeTextEditor?.document;
             if (!activeDocument) {
