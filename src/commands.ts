@@ -64,6 +64,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_UPDATE = "java.project.update";
 
+    export const JAVA_PROJECT_RELOAD_ACTIVE_FILE = "java.project.reloadProjectFromActiveFile";
+
     export const JAVA_PROJECT_REBUILD = "java.project.rebuild";
 
     export const JAVA_PROJECT_EXPLORER_FOCUS = "javaProjectExplorer.focus";

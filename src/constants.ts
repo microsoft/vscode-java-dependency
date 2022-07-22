@@ -6,6 +6,7 @@ export namespace Context {
     export const LANGUAGE_SUPPORT_INSTALLED: string = "java:languageSupportInstalled";
     export const NO_JAVA_PROJECT: string = "java:noJavaProjects";
     export const WORKSPACE_CONTAINS_BUILD_FILES: string = "java:workspaceContainsBuildFiles";
+    export const RELOAD_PROJECT_ACTIVE: string = "java:reloadProjectActive";
 }
 
 export namespace Explorer {
@@ -31,3 +32,8 @@ export namespace Explorer {
 export namespace ExtensionName {
     export const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
 }
+
+/**
+ * The files names for all the build files we support.
+ */
+export const buildFiles = ["pom.xml", "build.gradle", "settings.gradle", "build.gradle.kts", "settings.gradle.kts"];

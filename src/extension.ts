@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, Extension, ExtensionContext, extensions, tasks, Uri, workspace } from "vscode";
-import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
+
+import * as path from "path";
+import { commands, Diagnostic, Extension, ExtensionContext, extensions, languages, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
+import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
-import { Context, ExtensionName } from "./constants";
+import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
@@ -40,6 +42,28 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(syncHandler);
     context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
+
+    context.subscriptions.push(window.onDidChangeActiveTextEditor((e: TextEditor | undefined) => {
+        setContextForReloadProject(e?.document);
+    }));
+    context.subscriptions.push(languages.onDidChangeDiagnostics(() => {
+        setContextForReloadProject(window.activeTextEditor?.document);
+    }));
+    instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_RELOAD_ACTIVE_FILE, (uri?: Uri) => {
+        if (!uri) {
+            const activeDocument = window.activeTextEditor?.document;
+            if (!activeDocument) {
+                return;
+            }
+            uri = activeDocument.uri;
+        }
+
+        if (!buildFiles.includes(path.basename(uri.fsPath))) {
+            return;
+        }
+
+        commands.executeCommand(Commands.JAVA_PROJECT_CONFIGURATION_UPDATE, uri);
+    });
 }
 
 // this method is called when your extension is deactivated
@@ -60,4 +84,24 @@ function addExtensionChangeListener(context: ExtensionContext): void {
         });
         context.subscriptions.push(extensionChangeListener);
     }
+}
+
+/**
+ * Set the context value when reload diagnostic is detected for the active
+ * build file.
+ */
+function setContextForReloadProject(document: TextDocument | undefined): void {
+    if (!document || !buildFiles.includes(path.basename(document.fileName))) {
+        contextManager.setContextValue(Context.RELOAD_PROJECT_ACTIVE, false);
+        return;
+    }
+
+    const diagnostics: Diagnostic[] = languages.getDiagnostics(document.uri);
+    for (const diagnostic of diagnostics) {
+        if (diagnostic.message.startsWith("The build file has been changed")) {
+            contextManager.setContextValue(Context.RELOAD_PROJECT_ACTIVE, true);
+            return;
+        }
+    }
+    contextManager.setContextValue(Context.RELOAD_PROJECT_ACTIVE, false);
 }

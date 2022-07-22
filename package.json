@@ -89,6 +89,12 @@
         "title": "%contributes.commands.java.project.update%"
       },
       {
+        "command": "java.project.reloadProjectFromActiveFile",
+        "title": "%contributes.commands.java.project.reloadProjectFromActiveFile%",
+        "category": "Java",
+        "icon": "$(sync)"
+      },
+      {
         "command": "java.project.rebuild",
         "title": "%contributes.commands.java.project.rebuild%"
       },
@@ -283,6 +289,10 @@
       ],
       "commandPalette": [
         {
+          "command": "java.project.reloadProjectFromActiveFile",
+          "when": "false"
+        },
+        {
           "command": "java.view.package.exportJar",
           "when": "java:serverMode == Standard && !java:noJavaProjects"
         },
@@ -381,6 +391,13 @@
           "command": "java.view.package.revealInProjectExplorer",
           "when": "resourceExtname == .java && java:serverMode == Standard",
           "group": "navigation@100"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "java.project.reloadProjectFromActiveFile",
+          "when": "java:reloadProjectActive && javaLSReady",
+          "group": "navigation"
         }
       ],
       "editor/title/context": [
