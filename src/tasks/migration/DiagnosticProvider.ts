@@ -6,7 +6,6 @@ import * as fs from "fs";
 import * as path from "path";
 import * as readline from "readline";
 import * as vscode from "vscode";
-import { getTasksJsonPaths } from "./utils";
 import { DeprecatedExportJarTaskProvider, ExportJarTaskProvider } from "../../exportJarSteps/ExportJarTaskProvider";
 
 export class DiagnosticProvider implements vscode.Disposable {
@@ -21,25 +20,26 @@ export class DiagnosticProvider implements vscode.Disposable {
         this.refreshDiagnosticsTrigger = _.debounce(this.refreshDiagnostics, 500 /** ms */);
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection("migrateExportTask");
         this.disposables.push(this.diagnosticCollection);
-        this.disposables.push(vscode.workspace.onDidChangeTextDocument(async (e) => {
+        this.disposables.push(vscode.workspace.onDidChangeTextDocument(async (e: vscode.TextDocumentChangeEvent) => {
             if (path.basename(e.document.fileName) === "tasks.json") {
                 this.refreshDiagnosticsTrigger(e.document.uri);
             }
         }));
-        this.initializeDiagnostics();
+        this.disposables.push(vscode.workspace.onDidOpenTextDocument(async (e: vscode.TextDocument) => {
+            if (path.basename(e.fileName) === "tasks.json") {
+                this.refreshDiagnosticsTrigger(e.uri);
+            }
+        }));
+        this.disposables.push(vscode.workspace.onDidCloseTextDocument(async (e: vscode.TextDocument) => {
+            if (path.basename(e.fileName) === "tasks.json") {
+                this.diagnosticCollection.set(e.uri, undefined);
+            }
+        }));
     }
 
     public dispose() {
         for (const d of this.disposables) {
             d.dispose();
-        }
-    }
-
-    private async initializeDiagnostics(): Promise<void> {
-        const tasksJsonPaths = await getTasksJsonPaths();
-        for (const tasksJsonPath of tasksJsonPaths) {
-            const diagnostics: vscode.Diagnostic[] = await DiagnosticProvider.getDiagnosticsFromTasksJsonPath(tasksJsonPath);
-            this.diagnosticCollection.set(vscode.Uri.file(tasksJsonPath), diagnostics);
         }
     }
 
