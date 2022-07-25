@@ -70,7 +70,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     });
     // handle deprecated tasks
     context.subscriptions.push(new DiagnosticProvider());
-    await setContextForDeprecatedTasks();
     context.subscriptions.push(languages.registerCodeActionsProvider([{
         scheme: "file",
         pattern: "**/.vscode/tasks.json"
@@ -80,6 +79,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
             await updateExportTaskType(document, range);
         }
     ));
+    setContextForDeprecatedTasks();
 }
 
 // this method is called when your extension is deactivated
