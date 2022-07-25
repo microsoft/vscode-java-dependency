@@ -7,6 +7,7 @@ export namespace Context {
     export const NO_JAVA_PROJECT: string = "java:noJavaProjects";
     export const WORKSPACE_CONTAINS_BUILD_FILES: string = "java:workspaceContainsBuildFiles";
     export const RELOAD_PROJECT_ACTIVE: string = "java:reloadProjectActive";
+    export const SHOW_DEPRECATED_TASKS: string = "java:showDeprecatedTasks";
 }
 
 export namespace Explorer {

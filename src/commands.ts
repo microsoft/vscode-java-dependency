@@ -94,6 +94,8 @@ export namespace Commands {
 
     export const INSTALL_EXTENSION = "java.project.installExtension";
 
+    export const JAVA_UPDATE_DEPRECATED_TASK = "java.updateDeprecatedTask";
+
     /**
      * Commands from Visual Studio Code
      */
