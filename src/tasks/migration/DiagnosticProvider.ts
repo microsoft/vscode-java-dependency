@@ -10,8 +10,7 @@ import { DeprecatedExportJarTaskProvider, ExportJarTaskProvider } from "../../ex
 
 export class DiagnosticProvider implements vscode.Disposable {
     public static DIAGNOSTIC_SOURCE = "Project Manager for Java";
-    public static DEPRECATED_TASK_TYPE_DECLARATION = `\"type\": \"${DeprecatedExportJarTaskProvider.type}\"`;
-    public static DEPRECATED_TASK_TYPE_MESSAGE = `Tasks with type \"${DeprecatedExportJarTaskProvider.type}\" are deprecated and will not be supported in the future, please use \"${ExportJarTaskProvider.exportJarType}\" instead.`;
+    public static DEPRECATED_TASK_TYPE_MESSAGE = `The type \"${DeprecatedExportJarTaskProvider.type}\" is deprecated, please use \"${ExportJarTaskProvider.exportJarType}\" instead.`;
     private diagnosticCollection: vscode.DiagnosticCollection;
     private disposables: vscode.Disposable[] = [];
     private refreshDiagnosticsTrigger: any;

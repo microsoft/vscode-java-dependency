@@ -8,7 +8,7 @@ import { DiagnosticProvider } from "./DiagnosticProvider";
 
 export class CodeActionProvider implements vscode.CodeActionProvider {
 
-    public static JAVA_UPDATE_DEPRECATED_TASK_TITLE = "Update deprecated task";
+    public static JAVA_UPDATE_DEPRECATED_TASK_TITLE = `Change to \"${ExportJarTaskProvider.exportJarType}\"`;
     public static JAVA_BUILD_ARTIFACT_TYPE = `"type": "${ExportJarTaskProvider.exportJarType}"`;
 
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection,
