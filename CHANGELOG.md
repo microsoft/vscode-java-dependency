@@ -4,6 +4,20 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.21.0
+### Added
+- Add sub-menu for Maven and Gradle projects in Java Project explorer. [PR#664](https://github.com/microsoft/vscode-java-dependency/pull/664)
+- Add Rebuild commands into context menu. [PR#663](https://github.com/microsoft/vscode-java-dependency/pull/663)
+- Support `Run Build Task...` in the `Terminal` menu. [PR#660](https://github.com/microsoft/vscode-java-dependency/pull/660)
+- Show `Reload Java Project` shortcut in editor title area on demand. [PR#671](https://github.com/microsoft/vscode-java-dependency/pull/671)
+- Add `zh-tw` locale. [PR#669](https://github.com/microsoft/vscode-java-dependency/pull/669), contributed by [@MuTsunTsai](https://github.com/MuTsunTsai)
+
+### Changed
+- Rename the task type `java`, which is used for exporting jar files, to `java (buildArtifact)`. [#665](https://github.com/microsoft/vscode-java-dependency/issues/665)
+
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.21.0+is%3Aclosed)
+
 ## 0.20.0
 ### Added
 - Support Support drag and drop for Java Project explorer. [#613](https://github.com/microsoft/vscode-java-dependency/issues/613)
