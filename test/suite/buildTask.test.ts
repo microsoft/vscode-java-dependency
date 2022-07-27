@@ -15,6 +15,7 @@ suite("Build Task Tests", () => {
     suiteSetup(setupTestEnv);
 
     test("test providing default build task", async function() {
+        this.timeout(60 * 1000 * 3);
         const vscodeTasks: Task[] = await tasks.fetchTasks();
         const exportJarTask: Task | undefined = vscodeTasks.find((t: Task) => {
             return t.name === BuildTaskProvider.defaultTaskName
