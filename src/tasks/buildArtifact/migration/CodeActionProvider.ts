@@ -2,14 +2,14 @@
 // Licensed under the MIT license.
 
 import * as vscode from "vscode";
-import { Commands } from "../../commands";
-import { ExportJarTaskProvider } from "../../exportJarSteps/ExportJarTaskProvider";
+import { Commands } from "../../../commands";
+import { BuildArtifactTaskProvider } from "../BuildArtifactTaskProvider";
 import { DiagnosticProvider } from "./DiagnosticProvider";
 
 export class CodeActionProvider implements vscode.CodeActionProvider {
 
-    public static JAVA_UPDATE_DEPRECATED_TASK_TITLE = `Change to \"${ExportJarTaskProvider.exportJarType}\"`;
-    public static JAVA_BUILD_ARTIFACT_TYPE = `"type": "${ExportJarTaskProvider.exportJarType}"`;
+    public static JAVA_UPDATE_DEPRECATED_TASK_TITLE = `Change to \"${BuildArtifactTaskProvider.exportJarType}\"`;
+    public static JAVA_BUILD_ARTIFACT_TYPE = `"type": "${BuildArtifactTaskProvider.exportJarType}"`;
 
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection,
                               _context: vscode.CodeActionContext, _token: vscode.CancellationToken): vscode.CodeAction[] | undefined {

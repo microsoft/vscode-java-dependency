@@ -3,9 +3,9 @@
 
 import * as _ from "lodash";
 import { Disposable, QuickPickItem, Uri, workspace, WorkspaceFolder } from "vscode";
-import { Jdtls } from "../java/jdtls";
-import { INodeData } from "../java/nodeData";
-import { WorkspaceNode } from "../views/workspaceNode";
+import { Jdtls } from "../../java/jdtls";
+import { INodeData } from "../../java/nodeData";
+import { WorkspaceNode } from "../../views/workspaceNode";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
 import { createPickBox, ExportJarMessages, ExportJarStep } from "./utility";

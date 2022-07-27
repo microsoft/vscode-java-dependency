@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { WorkspaceFolder } from "vscode";
-import { INodeData } from "../java/nodeData";
+import { INodeData } from "../../java/nodeData";
 import { ExportJarStep } from "./utility";
 
 export interface IStepMetadata {

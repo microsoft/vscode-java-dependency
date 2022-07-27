@@ -6,11 +6,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as readline from "readline";
 import * as vscode from "vscode";
-import { DeprecatedExportJarTaskProvider, ExportJarTaskProvider } from "../../exportJarSteps/ExportJarTaskProvider";
+import { DeprecatedExportJarTaskProvider, BuildArtifactTaskProvider } from "../BuildArtifactTaskProvider";
 
 export class DiagnosticProvider implements vscode.Disposable {
     public static DIAGNOSTIC_SOURCE = "Project Manager for Java";
-    public static DEPRECATED_TASK_TYPE_MESSAGE = `The type \"${DeprecatedExportJarTaskProvider.type}\" is deprecated, please use \"${ExportJarTaskProvider.exportJarType}\" instead.`;
+    public static DEPRECATED_TASK_TYPE_MESSAGE = `The type \"${DeprecatedExportJarTaskProvider.type}\" is deprecated, please use \"${BuildArtifactTaskProvider.exportJarType}\" instead.`;
     private diagnosticCollection: vscode.DiagnosticCollection;
     private disposables: vscode.Disposable[] = [];
     private refreshDiagnosticsTrigger: any;

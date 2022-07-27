@@ -12,12 +12,12 @@ import {
     TaskProvider, TaskRevealKind, tasks, TerminalDimensions, Uri, workspace, WorkspaceFolder,
 } from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
-import { buildWorkspace } from "../build";
-import { Jdtls } from "../java/jdtls";
-import { INodeData } from "../java/nodeData";
-import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
-import { Settings } from "../settings";
-import { IUriData, Trie, TrieNode } from "../views/nodeCache/Trie";
+import { buildWorkspace } from "../../build";
+import { Jdtls } from "../../java/jdtls";
+import { INodeData } from "../../java/nodeData";
+import { languageServerApiManager } from "../../languageServerApi/languageServerApiManager";
+import { Settings } from "../../settings";
+import { IUriData, Trie, TrieNode } from "../../views/nodeCache/Trie";
 import { IClasspathResult } from "./GenerateJarExecutor";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
@@ -60,7 +60,7 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
             throw new Error(ExportJarMessages.stepErrorMessage(ExportJarMessages.StepAction.FINDEXECUTOR, ExportJarStep.ResolveJavaProject));
         }
         await resolveJavaProjectExecutor.execute(stepMetadata);
-        tasks.executeTask(ExportJarTaskProvider.getDefaultTask(stepMetadata));
+        tasks.executeTask(BuildArtifactTaskProvider.getDefaultTask(stepMetadata));
     } catch (err) {
         if (err) {
             failMessage(`${err}`);
@@ -69,7 +69,7 @@ export async function executeExportJarTask(node?: INodeData): Promise<void> {
         return;
     }
 }
-export class ExportJarTaskProvider implements TaskProvider {
+export class BuildArtifactTaskProvider implements TaskProvider {
 
     public static exportJarType: string = "java (buildArtifact)";
 
@@ -78,13 +78,13 @@ export class ExportJarTaskProvider implements TaskProvider {
             throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, ExportJarStep.ResolveTask));
         }
         const defaultDefinition: IExportJarTaskDefinition = {
-            type: ExportJarTaskProvider.exportJarType,
+            type: BuildArtifactTaskProvider.exportJarType,
             label: "default",
             targetPath: Settings.getExportJarTargetPath(),
             elements: [],
             mainClass: undefined,
         };
-        const task: Task = new Task(defaultDefinition, stepMetadata.workspaceFolder, "default", ExportJarTaskProvider.exportJarType,
+        const task: Task = new Task(defaultDefinition, stepMetadata.workspaceFolder, "default", BuildArtifactTaskProvider.exportJarType,
             new CustomExecution(async (resolvedDefinition: TaskDefinition): Promise<Pseudoterminal> => {
                 return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
             }));
@@ -95,7 +95,7 @@ export class ExportJarTaskProvider implements TaskProvider {
     private tasks: Task[] | undefined;
 
     public async resolveTask(task: Task): Promise<Task> {
-        return ExportJarTaskProvider.resolveExportTask(task, ExportJarTaskProvider.exportJarType);
+        return BuildArtifactTaskProvider.resolveExportTask(task, BuildArtifactTaskProvider.exportJarType);
     }
 
     public static async resolveExportTask(task: Task, type: string): Promise<Task> {
@@ -143,12 +143,12 @@ export class ExportJarTaskProvider implements TaskProvider {
             }
             const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
             const defaultDefinition: IExportJarTaskDefinition = {
-                type: ExportJarTaskProvider.exportJarType,
+                type: BuildArtifactTaskProvider.exportJarType,
                 mainClass: (mainClasses.length === 1) ? mainClasses[0].name : undefined,
                 targetPath: Settings.getExportJarTargetPath(),
                 elements: elementList,
             };
-            const defaultTask: Task = new Task(defaultDefinition, folder, folder.name, ExportJarTaskProvider.exportJarType,
+            const defaultTask: Task = new Task(defaultDefinition, folder, folder.name, BuildArtifactTaskProvider.exportJarType,
                 new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
                     const stepMetadata: IStepMetadata = {
                         entry: undefined,
@@ -178,7 +178,7 @@ export class DeprecatedExportJarTaskProvider implements TaskProvider {
 
     resolveTask(task: Task, _token: CancellationToken): ProviderResult<Task> {
         sendInfo("", { name: "resolve-deprecated-export-task" });
-        return ExportJarTaskProvider.resolveExportTask(task, DeprecatedExportJarTaskProvider.type);
+        return BuildArtifactTaskProvider.resolveExportTask(task, DeprecatedExportJarTaskProvider.type);
     }
 
 }

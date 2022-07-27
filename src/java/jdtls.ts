@@ -3,8 +3,8 @@
 
 import { CancellationToken, commands } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
-import { IClasspath } from "../exportJarSteps/IStepMetadata";
-import { IMainClassInfo } from "../exportJarSteps/ResolveMainClassExecutor";
+import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
+import { IMainClassInfo } from "../tasks/buildArtifact/ResolveMainClassExecutor";
 import { INodeData } from "./nodeData";
 
 export namespace Jdtls {
