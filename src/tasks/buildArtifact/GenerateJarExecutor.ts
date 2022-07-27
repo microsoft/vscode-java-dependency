@@ -91,7 +91,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
                     stepMetadata.outputPath = destPath;
                     return resolve(true);
                 } else {
-                    return reject(new Error("Export jar failed."));
+                    return reject(new Error("Build artifact failed."));
                 }
             });
         });
@@ -163,7 +163,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
         let result: boolean = false;
         try {
             result = await new Promise<boolean>(async (resolve, reject) => {
-                const pickBox = createPickBox<IJarQuickPickItem>("Export Jar : Determine elements", "Select the elements",
+                const pickBox = createPickBox<IJarQuickPickItem>("Build Artifact : Determine elements", "Select the elements",
                     dependencyItems, stepMetadata.steps.length > 0, true);
                 pickBox.selectedItems = pickedDependencyItems;
                 disposables.push(

@@ -244,15 +244,15 @@ class ExportJarTaskTerminal implements Pseudoterminal {
         } catch (err) {
             if (err) {
                 failMessage(`${err}`);
-                this.exit("[ERROR] An error occurs during export Jar process");
+                this.exit("[ERROR] An error occurs during Build Artifact process");
             } else {
-                this.exit("[CANCEL] Export Jar process is cancelled by user");
+                this.exit("[CANCEL] Build Artifact process is cancelled by user");
             }
         } finally {
             isExportingJar = false;
             if (exportResult === true) {
                 successMessage(this.stepMetadata.outputPath);
-                this.exit("[SUCCESS] Export Jar process is finished successfully");
+                this.exit("[SUCCESS] Build Artifact process is finished successfully");
             } else if (exportResult === false) {
                 // We call `executeExportJarTask()` with the same entry here
                 // to help the user reselect the Java project.

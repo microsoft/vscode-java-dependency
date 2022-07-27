@@ -16,10 +16,10 @@ A lightweight extension to provide additional Java project explorer features. It
 
 ![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/create-project.png)
 
-### Export Jar
-> Note: For Spring Boot projects, please use the build tool to build the executable jar, for example: `mvn package`.
+### Build Artifact
+> Note: For Spring Boot projects, please use the build tool to build the executable artifact, for example: `mvn package` or `gradlew bootJar`.
 
-![export jar](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/export-jar.png)
+![build artifact](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/build-artifact.png)
 
 ### Manage Dependencies
 
@@ -69,7 +69,7 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 | `java.dependency.autoRefresh` | Specify whether to automatically sync the change from editor to the Java Projects explorer. | `true` |
 | `java.dependency.refreshDelay` | The delay time (ms) the auto refresh is invoked when changes are detected. | `2000ms` |
 | `java.dependency.packagePresentation` | Specify how to display the package. Supported values are: `flat`, `hierarchical`.| `flat` |
-| `java.project.exportJar.targetPath` | The output path of export jar. When this setting is **empty** , a file explorer will pop up to let the user select the output location.| `${workspaceFolder}/${workspaceFolderBasename}.jar` |
+| `java.project.buildArtifact.targetPath` | The output path of the artifact. When this setting is **empty** , a file explorer will pop up to let the user select the output location.| `${workspaceFolder}/${workspaceFolderBasename}.jar` |
 
 ## Contribution
 

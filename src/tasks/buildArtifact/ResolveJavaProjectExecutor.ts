@@ -61,7 +61,7 @@ export class ResolveJavaProjectExecutor implements IExportJarStepExecutor {
         const disposables: Disposable[] = [];
         try {
             await new Promise<void>((resolve, reject) => {
-                const pickBox = createPickBox<IJavaProjectQuickPickItem>("Export Jar : Determine workspace",
+                const pickBox = createPickBox<IJavaProjectQuickPickItem>("Build Artifact : Determine workspace",
                     "Select the workspace", pickItems, false);
                 disposables.push(
                     pickBox.onDidAccept(() => {

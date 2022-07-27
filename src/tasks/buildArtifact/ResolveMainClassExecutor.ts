@@ -59,7 +59,7 @@ export class ResolveMainClassExecutor implements IExportJarStepExecutor {
         let result: boolean = false;
         try {
             result = await new Promise<boolean>(async (resolve, reject) => {
-                const pickBox = createPickBox<QuickPickItem>("Export Jar : Determine main class", "Select the main class",
+                const pickBox = createPickBox<QuickPickItem>("Build Artifact : Determine main class", "Select the main class",
                     pickItems, stepMetadata.steps.length > 0);
                 disposables.push(
                     pickBox.onDidTriggerButton((item) => {

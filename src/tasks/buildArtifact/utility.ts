@@ -58,14 +58,14 @@ export namespace ExportJarMessages {
     export const JAVAWORKSPACES_EMPTY = "No Java workspace found. Please make sure there is at least one valid Java workspace folder in your workspace folders.";
     export const WORKSPACE_EMPTY = "No Java project found in the workspace. Please make sure your workspace contains valid Java project(s).";
     export const PROJECT_EMPTY = "No classpath found in the Java project. Please make sure your Java project is valid.";
-    export const CLASSPATHS_EMPTY = "No valid classpath found in the export jar configuration. Please make sure your configuration contains valid classpath(s).";
+    export const CLASSPATHS_EMPTY = "No valid classpath found in the build artifact configuration. Please make sure your configuration contains valid classpath(s).";
 
     export function fieldUndefinedMessage(field: Field, currentStep: ExportJarStep): string {
-        return `The value of ${field} is invalid or has not been specified properly, current step: ${currentStep}. The export jar process will exit.`;
+        return `The value of ${field} is invalid or has not been specified properly, current step: ${currentStep}. The build artifact process will exit.`;
     }
 
     export function stepErrorMessage(action: StepAction, currentStep: ExportJarStep): string {
-        return `Cannot ${action} in the wizard, current step: ${currentStep}. The export jar process will exit.`;
+        return `Cannot ${action} in the wizard, current step: ${currentStep}. The build artifact process will exit.`;
     }
 }
 
@@ -149,7 +149,7 @@ export async function getExtensionApi(): Promise<any> {
     }
     const extensionApi: any = await extension.activate();
     if (extensionApi.getClasspaths === undefined) {
-        throw new Error("Export jar is not supported in the current version of language server, please check and update your Language Support for Java(TM) by Red Hat.");
+        throw new Error("Build artifact is not supported in the current version of language server, please check and update your Language Support for Java(TM) by Red Hat.");
     }
     return extensionApi;
 }
