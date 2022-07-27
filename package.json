@@ -220,7 +220,7 @@
           "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
         },
-        "java.project.exportJar.targetPath": {
+        "java.project.buildArtifact.targetPath": {
           "type": "string",
           "anyOf": [
             {
@@ -229,13 +229,13 @@
                 ""
               ],
               "enumDescriptions": [
-                "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
-                "%configuration.java.project.exportJar.targetPath.select%"
+                "%configuration.java.project.buildArtifact.targetPath.workspaceFolder%",
+                "%configuration.java.project.buildArtifact.targetPath.select%"
               ]
             },
             "string"
           ],
-          "markdownDescription": "%configuration.java.project.exportJar.targetPath.customization%",
+          "markdownDescription": "%configuration.java.project.buildArtifact.targetPath.customization%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         }
       }
@@ -657,12 +657,12 @@
                   ""
                 ],
                 "enumDescriptions": [
-                  "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
-                  "%configuration.java.project.exportJar.targetPath.select%"
+                  "%configuration.java.project.buildArtifact.targetPath.workspaceFolder%",
+                  "%configuration.java.project.buildArtifact.targetPath.select%"
                 ]
               }
             ],
-            "description": "%configuration.java.project.exportJar.targetPath.customization%"
+            "description": "%configuration.java.project.buildArtifact.targetPath.customization%"
           },
           "elements": {
             "type": "array",
@@ -749,12 +749,12 @@
                   ""
                 ],
                 "enumDescriptions": [
-                  "%configuration.java.project.exportJar.targetPath.workspaceFolder%",
-                  "%configuration.java.project.exportJar.targetPath.select%"
+                  "%configuration.java.project.buildArtifact.targetPath.workspaceFolder%",
+                  "%configuration.java.project.buildArtifact.targetPath.select%"
                 ]
               }
             ],
-            "description": "%configuration.java.project.exportJar.targetPath.customization%"
+            "description": "%configuration.java.project.buildArtifact.targetPath.customization%"
           },
           "elements": {
             "type": "array",
