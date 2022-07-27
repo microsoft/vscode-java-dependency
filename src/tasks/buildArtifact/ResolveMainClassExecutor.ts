@@ -3,7 +3,7 @@
 
 import * as _ from "lodash";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, window } from "vscode";
-import { Jdtls } from "../java/jdtls";
+import { Jdtls } from "../../java/jdtls";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IStepMetadata } from "./IStepMetadata";
 import { createPickBox, ExportJarMessages, ExportJarStep } from "./utility";

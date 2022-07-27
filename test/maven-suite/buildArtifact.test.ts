@@ -14,22 +14,22 @@ const folderPath: string = workspace.workspaceFolders![0].uri.fsPath;
 const jarFileName: string = "maven.jar";
 const testFolder: string = path.join(folderPath, "test");
 
-suite("Export Jar Tests", () => {
+suite("Build Artifact Tests", () => {
 
     suiteSetup(setupTestEnv);
 
-    test("Can export jar correctly", async function() {
+    test("Can build jar correctly", async function() {
         const vscodeTasks: Task[] = await tasks.fetchTasks();
-        const exportJarTask: Task | undefined = vscodeTasks.find((t: Task) => t.name === "java (buildArtifact): maven");
-        assert.ok(exportJarTask !== undefined);
+        const buildJarTask: Task | undefined = vscodeTasks.find((t: Task) => t.name === "java (buildArtifact): maven");
+        assert.ok(buildJarTask !== undefined);
 
         await new Promise<void>(async (resolve) => {
             tasks.onDidEndTask((e: TaskEndEvent) => {
-                if (e.execution.task.name === exportJarTask?.name) {
+                if (e.execution.task.name === buildJarTask?.name) {
                     return resolve();
                 }
             });
-            await tasks.executeTask(exportJarTask!);
+            await tasks.executeTask(buildJarTask!);
         });
 
         const isFileExist: boolean = await fse.pathExists(path.join(folderPath, jarFileName));

@@ -10,7 +10,7 @@ import { instrumentOperationAsVsCodeCommand, sendError } from "vscode-extension-
 import { contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { Context } from "../constants";
-import { appendOutput, executeExportJarTask } from "../exportJarSteps/ExportJarTaskProvider";
+import { appendOutput, executeExportJarTask } from "../tasks/buildArtifact/BuildArtifactTaskProvider";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";

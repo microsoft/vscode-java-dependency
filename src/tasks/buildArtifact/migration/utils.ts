@@ -2,9 +2,9 @@
 // Licensed under the MIT license.
 
 import { Range, tasks, TextDocument, workspace, WorkspaceEdit } from "vscode";
-import { DeprecatedExportJarTaskProvider } from "../../exportJarSteps/ExportJarTaskProvider";
-import { contextManager } from "../../contextManager";
-import { Context } from "../../constants";
+import { DeprecatedExportJarTaskProvider } from "../BuildArtifactTaskProvider";
+import { contextManager } from "../../../contextManager";
+import { Context } from "../../../constants";
 import { CodeActionProvider } from "./CodeActionProvider";
 
 export async function updateExportTaskType(document: TextDocument, range: Range): Promise<void> {

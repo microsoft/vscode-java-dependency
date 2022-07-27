@@ -11,14 +11,14 @@ import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
 import { init as initExpService } from "./ExperimentationService";
-import { DeprecatedExportJarTaskProvider, ExportJarTaskProvider } from "./exportJarSteps/ExportJarTaskProvider";
+import { DeprecatedExportJarTaskProvider, BuildArtifactTaskProvider } from "./tasks/buildArtifact/BuildArtifactTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
 import { EventCounter } from "./utility";
 import { DependencyExplorer } from "./views/dependencyExplorer";
-import { DiagnosticProvider } from "./tasks/migration/DiagnosticProvider";
-import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/migration/utils";
-import { CodeActionProvider } from "./tasks/migration/CodeActionProvider";
+import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticProvider";
+import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
+import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -44,7 +44,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(contextManager);
     context.subscriptions.push(syncHandler);
     context.subscriptions.push(tasks.registerTaskProvider(DeprecatedExportJarTaskProvider.type, new DeprecatedExportJarTaskProvider()));
-    context.subscriptions.push(tasks.registerTaskProvider(ExportJarTaskProvider.exportJarType, new ExportJarTaskProvider()));
+    context.subscriptions.push(tasks.registerTaskProvider(BuildArtifactTaskProvider.exportJarType, new BuildArtifactTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
 
     context.subscriptions.push(window.onDidChangeActiveTextEditor((e: TextEditor | undefined) => {
