@@ -1,5 +1,12 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.checkstyle.configuration": "${workspaceFolder}/jdtls.ext/check_style.xml",
-    "java.checkstyle.version": "8.29"
+    "java.checkstyle.version": "8.29",
+    "java.import.exclusions": [
+        "**/test/**",
+        "**/node_modules/**",
+        "**/.metadata/**",
+        "**/archetype-resources/**",
+        "**/META-INF/maven/**",
+    ]
 }

@@ -23,7 +23,6 @@
 
     <modules>
         <module>com.microsoft.jdtls.ext.core</module>
-        <module>com.microsoft.jdtls.ext.activator</module>
     </modules>
     <build>
         <pluginManagement>
