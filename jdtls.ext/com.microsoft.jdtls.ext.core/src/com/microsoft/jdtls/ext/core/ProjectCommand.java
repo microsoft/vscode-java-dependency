@@ -28,7 +28,6 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipFile;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -113,7 +112,7 @@ public final class ProjectCommand {
             }
             PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
             if (Objects.equals(project.getName(), invisibleProjectName)) {
-                projectNode.setDisplayName(FilenameUtils.getBaseName(workspaceFolderPath.toOSString()));
+                projectNode.setDisplayName(workspaceFolderPath.lastSegment());
             }
             children.add(projectNode);
         }
