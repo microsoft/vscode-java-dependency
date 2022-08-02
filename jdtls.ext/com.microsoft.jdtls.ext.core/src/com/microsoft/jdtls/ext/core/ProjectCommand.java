@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -59,6 +58,7 @@ import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
+import org.eclipse.jdt.ls.core.internal.managers.ProjectsManager;
 import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibraries;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
@@ -94,24 +94,25 @@ public final class ProjectCommand {
     public static List<PackageNode> listProjects(List<Object> arguments, IProgressMonitor monitor) {
         String workspaceUri = (String) arguments.get(0);
         IPath workspaceFolderPath = ResourceUtils.canonicalFilePathFromURI(workspaceUri);
-        String invisibleProjectName = ProjectUtils.getWorkspaceInvisibleProjectName(workspaceFolderPath);
 
-        IProject[] projects = getWorkspaceRoot().getProjects();
+        IJavaProject[] javaProjects = ProjectUtils.getJavaProjects();
         ArrayList<PackageNode> children = new ArrayList<>();
-        List<IPath> paths = Collections.singletonList(workspaceFolderPath);
-        for (IProject project : projects) {
-            if (!project.isAccessible() || !ProjectUtils.isJavaProject(project)) {
+        for (IJavaProject javaProject : javaProjects) {
+            IProject project = javaProject.getProject();
+            if (!project.isAccessible() || project.getLocation() == null) {
                 continue;
             }
-            // Ignore all the projects that's not contained in the workspace folder, except
-            // for the invisible project.
-            // This check is needed in multi-root scenario.
-            if ((!ResourceUtils.isContainedIn(project.getLocation(), paths)
-                    && !Objects.equals(project.getName(), invisibleProjectName))) {
+
+            // ignore default projects
+            if (Objects.equals(project.getName(), ProjectsManager.DEFAULT_PROJECT_NAME)) {
                 continue;
             }
+
             PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
-            if (Objects.equals(project.getName(), invisibleProjectName)) {
+
+            // set the folder name as the project name when the project location
+            // is out of the workspace folder.
+            if (!workspaceFolderPath.isPrefixOf(project.getLocation())) {
                 projectNode.setDisplayName(workspaceFolderPath.lastSegment());
             }
             children.add(projectNode);
