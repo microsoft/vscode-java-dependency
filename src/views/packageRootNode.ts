@@ -104,4 +104,4 @@ export class PackageRootNode extends DataNode {
     }
 }
 
-const resourceRoots: string[] = ["src/main/resources", "src/test/resources"];
+export const resourceRoots: string[] = ["src/main/resources", "src/test/resources"];
