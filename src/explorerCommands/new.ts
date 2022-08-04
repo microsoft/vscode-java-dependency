@@ -10,6 +10,7 @@ import { Commands } from "../../extension.bundle";
 import { ExtensionName } from "../constants";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
+import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
 
 export async function newJavaClass(node?: DataNode): Promise<void> {
@@ -35,7 +36,7 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
         // User canceled
         return;
     } else if (packageFsPath.length === 0) {
-        return newUntiledJavaFile();
+        return newUntitledJavaFile();
     }
 
     const className: string | undefined = await window.showInputBox({
@@ -67,7 +68,7 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
     workspace.applyEdit(workspaceEdit);
 }
 
-async function newUntiledJavaFile(): Promise<void> {
+async function newUntitledJavaFile(): Promise<void> {
     await commands.executeCommand("workbench.action.files.newUntitledFile");
     const textEditor: TextEditor | undefined = window.activeTextEditor;
     if (!textEditor) {
@@ -147,7 +148,7 @@ async function getPackageFsPath(node: DataNode): Promise<string | undefined> {
     if (node.nodeData.kind === NodeKind.Project) {
         const childrenNodes: DataNode[] = await node.getChildren() as DataNode[];
         const packageRoots: any[] = childrenNodes.filter((child) => {
-            return child.nodeData.kind === NodeKind.PackageRoot;
+            return child.nodeData.kind === NodeKind.PackageRoot && !resourceRoots.includes(child.name);
         });
         if (packageRoots.length < 1) {
             // This might happen for an invisible project with "_" as its root
