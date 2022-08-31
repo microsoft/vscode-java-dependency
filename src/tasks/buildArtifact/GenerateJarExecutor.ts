@@ -6,12 +6,11 @@ import { globby } from "globby";
 import * as _ from "lodash";
 import { basename, dirname, extname, isAbsolute, join, normalize, relative } from "path";
 import { Disposable, ProgressLocation, QuickInputButtons, QuickPickItem, Uri, window, WorkspaceFolder } from "vscode";
-import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Jdtls } from "../../java/jdtls";
 import { INodeData } from "../../java/nodeData";
 import { IExportJarStepExecutor } from "./IExportJarStepExecutor";
 import { IClasspath, IStepMetadata } from "./IStepMetadata";
-import { createPickBox, ExportJarMessages, ExportJarStep, ExportJarTargets, getExtensionApi, toPosixPath } from "./utility";
+import { createPickBox, ExportJarMessages, ExportJarStep, getExtensionApi, toPosixPath } from "./utility";
 
 export class GenerateJarExecutor implements IExportJarStepExecutor {
 
@@ -34,10 +33,7 @@ export class GenerateJarExecutor implements IExportJarStepExecutor {
             throw new Error(ExportJarMessages.fieldUndefinedMessage(ExportJarMessages.Field.WORKSPACEFOLDER, this.currentStep));
         }
         let destPath = "";
-        if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER || stepMetadata.outputPath === "") {
-            if (stepMetadata.outputPath === ExportJarTargets.SETTING_ASKUSER) {
-                sendInfo("", { exportJarPath: stepMetadata.outputPath });
-            }
+        if (stepMetadata.outputPath === "") {
             const outputUri: Uri | undefined = await window.showSaveDialog({
                 defaultUri: Uri.file(join(folder.uri.fsPath, `${folder.name}.jar`)),
                 filters: {
