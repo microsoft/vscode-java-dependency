@@ -27,12 +27,6 @@ export const stepMap: Map<ExportJarStep, IExportJarStepExecutor> = new Map<Expor
     [ExportJarStep.GenerateJar, new GenerateJarExecutor()],
 ]);
 
-export namespace ExportJarTargets {
-    export const SETTING_ASKUSER: string = "askUser";
-    // tslint:disable-next-line: no-invalid-template-strings
-    export const DEFAULT_OUTPUT_PATH: string = "${workspaceFolder}/${workspaceFolderBasename}.jar";
-}
-
 export namespace ExportJarConstants {
     export const DEPENDENCIES: string = "dependencies";
     export const TEST_DEPENDENCIES: string = "testDependencies";
