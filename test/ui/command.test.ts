@@ -262,7 +262,7 @@ describe("Command Tests", function() {
         await referencedItem.click();
         const buttons = await referencedItem.getActionButtons();
         await buttons[0].getDriver().actions()
-            .mouseMove(buttons[0])
+            // .mouseMove(buttons[0])
             .keyDown(seleniumWebdriver.Key.ALT)
             .click(buttons[0])
             .keyUp(seleniumWebdriver.Key.ALT)
