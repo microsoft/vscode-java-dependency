@@ -30,6 +30,8 @@ import java.util.zip.ZipFile;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -110,9 +112,21 @@ public final class ProjectCommand {
 
             PackageNode projectNode = PackageNode.createNodeForProject(JavaCore.create(project));
 
-            // set the folder name as the project name when the project location
-            // is out of the workspace folder.
             if (!workspaceFolderPath.isPrefixOf(project.getLocation())) {
+                LinkedFolderVisitor visitor = new LinkedFolderVisitor(workspaceFolderPath);
+                try {
+                    project.accept(visitor, IResource.DEPTH_ONE, false);
+                } catch (CoreException e) {
+                    JdtlsExtActivator.log(e);
+                    continue;
+                }
+
+                if (!visitor.isBelongsToWorkspace()) {
+                    continue;
+                }
+
+                // set the folder name as the project name when the project location
+                // is out of the workspace folder.
                 projectNode.setDisplayName(workspaceFolderPath.lastSegment());
             }
             children.add(projectNode);
@@ -290,6 +304,42 @@ public final class ProjectCommand {
                 return "OK";
             default:
                 return "UNKNOWN STATUS";
+        }
+    }
+
+    private static final class LinkedFolderVisitor implements IResourceVisitor {
+
+        private boolean belongsToWorkspace;
+
+        private IPath workspaceFolderPath;
+
+        public LinkedFolderVisitor(IPath workspaceFolderPath) {
+            this.belongsToWorkspace = false;
+            this.workspaceFolderPath = workspaceFolderPath;
+        }
+
+        @Override
+        public boolean visit(IResource resource) throws CoreException {
+            if (this.belongsToWorkspace) {
+                return false;
+            }
+
+            if (!resource.exists()) {
+                return false;
+            }
+
+            if (resource.isLinked()) {
+                IPath realPath = resource.getLocation();
+                if (workspaceFolderPath.isPrefixOf(realPath)) {
+                    this.belongsToWorkspace = true;
+                }
+            }
+
+            return true;
+        }
+
+        public boolean isBelongsToWorkspace() {
+            return belongsToWorkspace;
         }
     }
 }
