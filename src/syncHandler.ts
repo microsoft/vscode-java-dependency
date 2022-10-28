@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
+import * as fse from "fs-extra";
 import { commands, Disposable, FileSystemWatcher, RelativePattern, Uri, workspace } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
@@ -55,6 +56,9 @@ class SyncHandler implements Disposable {
 
             for (const sourcePathData of result.data) {
                 const normalizedPath: string = Uri.file(sourcePathData.path).fsPath;
+                if (!(await fse.pathExists(normalizedPath))) {
+                    continue;
+                }
                 const pattern: RelativePattern = new RelativePattern(normalizedPath, "**/*");
                 const watcher: FileSystemWatcher = workspace.createFileSystemWatcher(pattern);
                 this.disposables.push(watcher);
