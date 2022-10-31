@@ -4,6 +4,13 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.21.1
+### Changed
+- Scan two levels of directories for activation indicators. [PR#681](https://github.com/microsoft/vscode-java-dependency/pull/681)
+- Remove the `ASKUSER` option when specify the output path of exporting jar task. To make the extension asks for the output path when exporting jars, simply leave it empty. [#676](https://github.com/microsoft/vscode-java-dependency/issues/676)
+### Fixed
+- [Bugs fixed](https://github.com/microsoft/vscode-java-dependency/issues?q=is%3Aissue+label%3Abug+milestone%3A0.21.1+is%3Aclosed)
+
 ## 0.21.0
 ### Added
 - Add sub-menu for Maven and Gradle projects in Java Project explorer. [PR#664](https://github.com/microsoft/vscode-java-dependency/pull/664)
