@@ -206,7 +206,7 @@ class ExportJarTaskTerminal implements Pseudoterminal {
 
     public exit(message?: string) {
         if (message) {
-            this.writeEmitter.fire(message);
+            this.writeEmitter.fire(message + "\r\n");
         }
         if (activeTerminalMap.has(this.terminalId)) {
             activeTerminalMap.delete(this.terminalId);
