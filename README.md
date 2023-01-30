@@ -2,7 +2,9 @@
 
 > Manage Java projects in Visual Studio Code
 
-[![GitHub Actions](https://img.shields.io/github/workflow/status/microsoft/vscode-java-dependency/CI/main?style=flat-square)](https://github.com/microsoft/vscode-java-dependency/actions?query=workflow%3ACI+branch%3Amain)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/microsoft/vscode-java-dependency/windows.yml?label=Windows%20Build&style=flat-square)](https://github.com/microsoft/vscode-java-dependency/actions/workflows/windows.yml?query=branch%3Amain)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/microsoft/vscode-java-dependency/linux.yml?label=Linux%20Build&style=flat-square)](https://github.com/microsoft/vscode-java-dependency/actions/workflows/linux.yml?query=branch%3Amain)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/microsoft/vscode-java-dependency/macOS.yml?label=Darwin%20Build&style=flat-square)](https://github.com/microsoft/vscode-java-dependency/actions/workflows/macOS.yml?query=branch%3Amain)
 
 ## Overview
 
