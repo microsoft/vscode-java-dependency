@@ -809,7 +809,7 @@
     "@types/node": "^16.18.11",
     "@types/semver": "^7.3.13",
     "@types/vscode": "1.69.0",
-    "@vscode/test-electron": "2.2.0",
+    "@vscode/test-electron": "^2.2.2",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",
     "mocha": "^9.2.2",
