@@ -2,5 +2,5 @@
     "projects": [
         "./jdtls.ext/com.microsoft.jdtls.ext.core"
     ],
-   "targetPlatform": "./jdtls.ext/target.target"
+   "targetPlatform": "./jdtls.ext/com.microsoft.jdtls.ext.target/com.microsoft.jdtls.ext.tp.target"
 }

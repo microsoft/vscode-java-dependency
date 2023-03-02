@@ -11,7 +11,6 @@
       "env": {
         "DEBUG_VSCODE_JAVA":"true"
       },
-      "stopOnEntry": false,
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: watch"
@@ -33,7 +32,6 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/dist/test/suite/index"
       ],
-      "stopOnEntry": false,
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"
@@ -48,7 +46,6 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/dist/test/simple-suite/index"
       ],
-      "stopOnEntry": false,
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"
@@ -63,7 +60,6 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/dist/test/maven-suite/index"
       ],
-      "stopOnEntry": false,
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"
@@ -78,7 +74,6 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/dist/test/gradle-suite/index"
       ],
-      "stopOnEntry": false,
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"
@@ -93,7 +88,6 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/dist/test/invisible-suite/index"
       ],
-      "stopOnEntry": false,
       "sourceMaps": true,
       "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "preLaunchTask": "npm: compile"

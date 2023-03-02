@@ -99,6 +99,9 @@ export class BuildArtifactTaskProvider implements TaskProvider {
     }
 
     public static async resolveExportTask(task: Task, type: string): Promise<Task> {
+        if (!await languageServerApiManager.ready()) {
+            return task;
+        }
         const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>task.definition;
         const folder: WorkspaceFolder = <WorkspaceFolder>task.scope;
         const resolvedTask: Task = new Task(definition, folder, task.name, type,
@@ -119,6 +122,9 @@ export class BuildArtifactTaskProvider implements TaskProvider {
     }
 
     public async provideTasks(): Promise<Task[] | undefined> {
+        if (!await languageServerApiManager.ready()) {
+            return undefined;
+        }
         const folders: readonly WorkspaceFolder[] = workspace.workspaceFolders || [];
         if (_.isEmpty(folders)) {
             return undefined;

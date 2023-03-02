@@ -23,6 +23,7 @@
 
     <modules>
         <module>com.microsoft.jdtls.ext.core</module>
+        <module>com.microsoft.jdtls.ext.target</module>
     </modules>
     <build>
         <pluginManagement>
@@ -53,27 +54,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <?m2e execute onConfiguration?>
-                            <id>get-libs</id>
-                            <goals>
-                                <goal>copy</goal>
-                            </goals>
-                            <phase>validate</phase>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <skip>false</skip>
-                        <outputDirectory>${basedir}/lib/</outputDirectory>
-                        <!-- baseVersion is to avoid SNAPSHOT dependencies 
-                            being copied with ever daily changing timestamp -->
-                        <useBaseVersion>true</useBaseVersion>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.1.0</version>
                     <dependencies>
@@ -97,9 +77,46 @@
                     <groupId>org.eclipse.tycho</groupId>
                     <artifactId>target-platform-configuration</artifactId>
                     <version>${tycho-version}</version>
+                    <configuration>
+                        <resolver>p2</resolver>
+                        <target>
+                            <artifact>
+                                <groupId>com.microsoft.jdtls.ext</groupId>
+                                <artifactId>com.microsoft.jdtls.ext.tp</artifactId>
+                                <version>${project.version}</version>
+                            </artifact>
+                        </target>
+                        <environments>
+                            <environment>
+                                <os>linux</os>
+                                <ws>gtk</ws>
+                                <arch>x86_64</arch>
+                            </environment>
+                            <environment>
+                                <os>win32</os>
+                                <ws>win32</ws>
+                                <arch>x86_64</arch>
+                            </environment>
+                            <environment>
+                                <os>macosx</os>
+                                <ws>cocoa</ws>
+                                <arch>x86_64</arch>
+                            </environment>
+                        </environments>
+                        <dependency-resolution>
+                        </dependency-resolution>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>tycho-maven-plugin</artifactId>
+                <version>${tycho-version}</version>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
     </build>
     <profiles>
         <profile>
@@ -116,31 +133,11 @@
     </profiles>
     <repositories>
         <repository>
-        <id>202203</id>
-        <layout>p2</layout>
-        <url>https://download.eclipse.org/releases/2022-03/202203161000/</url>
-        </repository>
-        <repository>
             <id>oss.sonatype.org</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
-        </repository>
-        <repository>
-            <id>JDT.LS</id>
-            <layout>p2</layout>
-            <url>https://download.eclipse.org/jdtls/snapshots/repository/latest/</url>
-        </repository>
-        <repository>
-            <id>LSP4J</id>
-            <layout>p2</layout>
-            <url>https://download.eclipse.org/lsp4j/updates/releases/0.11.0/</url>
-        </repository>
-        <repository>
-            <id>orbit</id>
-            <layout>p2</layout>
-            <url>https://download.eclipse.org/tools/orbit/R-builds/R20200529191137/repository/</url>
         </repository>
     </repositories>
 </project>
