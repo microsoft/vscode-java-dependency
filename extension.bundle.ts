@@ -23,5 +23,8 @@ export { DependencyExplorer } from "./src/views/dependencyExplorer";
 export { Commands } from "./src/commands";
 export { LanguageServerMode } from "./src/languageServerApi/LanguageServerMode";
 
+// language server api
+export { languageServerApiManager } from "./src/languageServerApi/languageServerApiManager";
+
 // tasks
 export { BuildTaskProvider, categorizePaths, getFinalPaths } from "./src/tasks/build/buildTaskProvider";
