@@ -99,30 +99,35 @@ export class BuildArtifactTaskProvider implements TaskProvider {
     }
 
     public static async resolveExportTask(task: Task, type: string): Promise<Task> {
-        if (!await languageServerApiManager.ready()) {
+        if (!await languageServerApiManager.isReady(1000)) {
             return task;
         }
         const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>task.definition;
         const folder: WorkspaceFolder = <WorkspaceFolder>task.scope;
-        const resolvedTask: Task = new Task(definition, folder, task.name, type,
-            new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
-                const stepMetadata: IStepMetadata = {
-                    entry: undefined,
-                    taskLabel: resolvedDefinition.label || folder.name,
-                    workspaceFolder: folder,
-                    projectList: await Jdtls.getProjects(folder.uri.toString()),
-                    steps: [],
-                    elements: [],
-                    classpaths: [],
-                };
-                return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
-            }));
-        resolvedTask.presentationOptions.reveal = TaskRevealKind.Never;
-        return resolvedTask;
+        try {
+            const projectList = await Jdtls.getProjects(folder.uri.toString());
+            const resolvedTask: Task = new Task(definition, folder, task.name, type,
+                new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
+                    const stepMetadata: IStepMetadata = {
+                        entry: undefined,
+                        taskLabel: resolvedDefinition.label || folder.name,
+                        workspaceFolder: folder,
+                        projectList: projectList,
+                        steps: [],
+                        elements: [],
+                        classpaths: [],
+                    };
+                    return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
+                }));
+            resolvedTask.presentationOptions.reveal = TaskRevealKind.Never;
+            return resolvedTask;
+        } catch (e) {
+            return task;
+        }
     }
 
     public async provideTasks(): Promise<Task[] | undefined> {
-        if (!await languageServerApiManager.ready()) {
+        if (!await languageServerApiManager.isReady(1000)) {
             return undefined;
         }
         const folders: readonly WorkspaceFolder[] = workspace.workspaceFolders || [];
@@ -134,41 +139,45 @@ export class BuildArtifactTaskProvider implements TaskProvider {
         }
         this.tasks = [];
         for (const folder of folders) {
-            const projectList: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
-            const elementList: string[] = [];
-            if (_.isEmpty(projectList)) {
-                continue;
-            } else if (projectList.length === 1) {
-                elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + "}",
-                    "${" + ExportJarConstants.DEPENDENCIES + "}");
-            } else {
-                for (const project of projectList) {
-                    elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + ":" + project.name + "}",
-                        "${" + ExportJarConstants.DEPENDENCIES + ":" + project.name + "}");
+            try {
+                const projectList: INodeData[] = await Jdtls.getProjects(folder.uri.toString());
+                const elementList: string[] = [];
+                if (_.isEmpty(projectList)) {
+                    continue;
+                } else if (projectList.length === 1) {
+                    elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + "}",
+                        "${" + ExportJarConstants.DEPENDENCIES + "}");
+                } else {
+                    for (const project of projectList) {
+                        elementList.push("${" + ExportJarConstants.COMPILE_OUTPUT + ":" + project.name + "}",
+                            "${" + ExportJarConstants.DEPENDENCIES + ":" + project.name + "}");
+                    }
                 }
+                const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
+                const defaultDefinition: IExportJarTaskDefinition = {
+                    type: BuildArtifactTaskProvider.exportJarType,
+                    mainClass: (mainClasses.length === 1) ? mainClasses[0].name : undefined,
+                    targetPath: Settings.getExportJarTargetPath(),
+                    elements: elementList,
+                };
+                const defaultTask: Task = new Task(defaultDefinition, folder, folder.name, BuildArtifactTaskProvider.exportJarType,
+                    new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
+                        const stepMetadata: IStepMetadata = {
+                            entry: undefined,
+                            taskLabel: resolvedDefinition.label || folder.name,
+                            workspaceFolder: folder,
+                            projectList: projectList,
+                            steps: [],
+                            elements: [],
+                            classpaths: [],
+                        };
+                        return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
+                    }), undefined);
+                defaultTask.presentationOptions.reveal = TaskRevealKind.Never;
+                this.tasks.push(defaultTask);
+            } catch (e) {
+                continue;
             }
-            const mainClasses: IMainClassInfo[] = await Jdtls.getMainClasses(folder.uri.toString());
-            const defaultDefinition: IExportJarTaskDefinition = {
-                type: BuildArtifactTaskProvider.exportJarType,
-                mainClass: (mainClasses.length === 1) ? mainClasses[0].name : undefined,
-                targetPath: Settings.getExportJarTargetPath(),
-                elements: elementList,
-            };
-            const defaultTask: Task = new Task(defaultDefinition, folder, folder.name, BuildArtifactTaskProvider.exportJarType,
-                new CustomExecution(async (resolvedDefinition: IExportJarTaskDefinition): Promise<Pseudoterminal> => {
-                    const stepMetadata: IStepMetadata = {
-                        entry: undefined,
-                        taskLabel: resolvedDefinition.label || folder.name,
-                        workspaceFolder: folder,
-                        projectList: await Jdtls.getProjects(folder.uri.toString()),
-                        steps: [],
-                        elements: [],
-                        classpaths: [],
-                    };
-                    return new ExportJarTaskTerminal(resolvedDefinition, stepMetadata);
-                }), undefined);
-            defaultTask.presentationOptions.reveal = TaskRevealKind.Never;
-            this.tasks.push(defaultTask);
         }
         return this.tasks;
     }

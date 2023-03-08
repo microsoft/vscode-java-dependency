@@ -12,10 +12,10 @@ import { LanguageServerMode } from "./LanguageServerMode";
 class LanguageServerApiManager {
     private extensionApi: any;
 
-    private isReady: boolean = false;
+    private isServerReady: boolean = false;
 
     public async ready(): Promise<boolean> {
-        if (this.isReady) {
+        if (this.isServerReady) {
             return true;
         }
 
@@ -29,7 +29,7 @@ class LanguageServerApiManager {
         }
 
         await this.extensionApi.serverReady();
-        this.isReady = true;
+        this.isServerReady = true;
         return true;
     }
 
@@ -80,6 +80,15 @@ class LanguageServerApiManager {
 
     private isApiInitialized(): boolean {
         return this.extensionApi !== undefined;
+    }
+
+    /**
+     * Check if the language server is ready in the given timeout.
+     * @param timeout the timeout in milliseconds to wait
+     * @returns false if the language server is not ready in the given timeout, otherwise true
+     */
+    public isReady(timeout: number): Promise<boolean> {
+        return Promise.race([this.ready(), new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeout))]);
     }
 }
 

@@ -7,6 +7,7 @@ import * as fse from "fs-extra";
 import { suiteTeardown } from "mocha";
 import * as path from "path";
 import { Task, TaskEndEvent, tasks, workspace } from "vscode";
+import { languageServerApiManager } from "../../extension.bundle";
 import { setupTestEnv } from "../shared";
 
 // tslint:disable: only-arrow-functions
@@ -18,7 +19,14 @@ suite("Build Artifact Tests", () => {
 
     suiteSetup(setupTestEnv);
 
+    test("Should bypass buildArtifact tasks before language server is ready", async function() {
+        const vscodeTasks: Task[] = await tasks.fetchTasks();
+        const buildJarTask: Task | undefined = vscodeTasks.find((t: Task) => t.name === "java (buildArtifact): maven");
+        assert.ok(buildJarTask === undefined);
+    });
+
     test("Can build jar correctly", async function() {
+        await languageServerApiManager.ready();
         const vscodeTasks: Task[] = await tasks.fetchTasks();
         const buildJarTask: Task | undefined = vscodeTasks.find((t: Task) => t.name === "java (buildArtifact): maven");
         assert.ok(buildJarTask !== undefined);
