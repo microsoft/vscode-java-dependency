@@ -99,8 +99,7 @@ export class BuildArtifactTaskProvider implements TaskProvider {
     }
 
     public static async resolveExportTask(task: Task, type: string): Promise<Task> {
-        const languageServerStatus = await Promise.race([languageServerApiManager.ready(), BuildArtifactTaskProvider.getLanguageServerStatusTimeout()]);
-        if (!languageServerStatus) {
+        if (!await languageServerApiManager.isReady(1000)) {
             return task;
         }
         const definition: IExportJarTaskDefinition = <IExportJarTaskDefinition>task.definition;
@@ -128,8 +127,7 @@ export class BuildArtifactTaskProvider implements TaskProvider {
     }
 
     public async provideTasks(): Promise<Task[] | undefined> {
-        const languageServerStatus = await Promise.race([languageServerApiManager.ready(), BuildArtifactTaskProvider.getLanguageServerStatusTimeout()]);
-        if (!languageServerStatus) {
+        if (!await languageServerApiManager.isReady(1000)) {
             return undefined;
         }
         const folders: readonly WorkspaceFolder[] = workspace.workspaceFolders || [];
@@ -182,10 +180,6 @@ export class BuildArtifactTaskProvider implements TaskProvider {
             }
         }
         return this.tasks;
-    }
-
-    private static getLanguageServerStatusTimeout(): Promise<boolean> {
-        return new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 1000));
     }
 }
 
