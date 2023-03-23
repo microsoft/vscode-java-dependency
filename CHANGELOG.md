@@ -4,6 +4,11 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.21.2
+### Fixed
+- Improve the output of exporting jar tasks. [#699](https://github.com/microsoft/vscode-java-dependency/issues/699)
+- Open build tasks action is blocked. [#720](https://github.com/microsoft/vscode-java-dependency/issues/720)
+
 ## 0.21.1
 ### Changed
 - Scan two levels of directories for activation indicators. [PR#681](https://github.com/microsoft/vscode-java-dependency/pull/681)
