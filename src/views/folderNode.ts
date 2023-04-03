@@ -20,6 +20,7 @@ export class FolderNode extends DataNode {
             kind: NodeKind.Folder,
             projectUri: this._project.uri,
             path: this.path,
+            rootPath: this._rootNode.path,
             handlerIdentifier: this._rootNode.handlerIdentifier,
         });
     }
