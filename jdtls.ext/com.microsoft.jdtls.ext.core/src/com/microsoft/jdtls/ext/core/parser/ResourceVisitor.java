@@ -21,10 +21,13 @@ import org.eclipse.jdt.core.IJarEntryResource;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeRoot;
 
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 
+/**
+ * A visitor to iterate through resources in a project and parse them to
+ * nodes in the UI.
+ */
 public interface ResourceVisitor {
 
     void visit(IClasspathEntry entry);

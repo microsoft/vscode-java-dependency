@@ -42,12 +42,12 @@ public class ResourceSet {
 
     public void accept(ResourceVisitor visitor) {
         ListIterator<Object> iterator = resources.listIterator();
-        // the resources list may be modified during the iteration
         while (iterator.hasNext()) {
             Object resource = iterator.next();
             if (resource == null) {
                 continue;
             }
+
             if (resource instanceof IClasspathEntry) {
                 visitor.visit((IClasspathEntry) resource);
             } else if (resource instanceof IPackageFragmentRoot) {
@@ -57,9 +57,9 @@ public class ResourceSet {
                     continue;
                 }
 
+                // skip invisible project's linked folder and add its children to the iterator.
                 if (!ProjectUtils.isVisibleProject(pkgRoot.getJavaProject().getProject()) &&
                         Objects.equals(ProjectUtils.WORKSPACE_LINK, pkgRoot.getElementName())) {
-                    // skip display invisible linked folder
                     try {
                         List<Object> nextObjs = PackageCommand.getPackageFragmentRootContent(
                             pkgRoot, false, new NullProgressMonitor());
@@ -76,6 +76,7 @@ public class ResourceSet {
                 }
             } else if (resource instanceof IPackageFragment) {
                 IPackageFragment fragment = (IPackageFragment) resource;
+                // skil default package and add its children to the iterator.
                 if (fragment.isDefaultPackage()) {
                     List<Object> nextObjs = PackageCommand.getChildrenForPackage(fragment);
                     for (Object nextObj : nextObjs) {
