@@ -36,7 +36,9 @@ export class HierarchicalPackageNode extends PackageNode {
                     this.nodeData.children = data;
                 }
             }
-            return this.createChildNodeList();
+            this._childrenNodes = this.createChildNodeList() || [];
+            this.sort();
+            return this._childrenNodes;
         } finally {
             explorerLock.release();
         }

@@ -792,7 +792,7 @@
     ]
   },
   "scripts": {
-    "compile": "tsc -p . && webpack --config webpack.config.js",
+    "compile": "tsc -p . && webpack --config webpack.config.js --mode development",
     "watch": "webpack --mode development --watch",
     "test": "tsc -p . && node ./dist/test/index.js",
     "test-ui": "tsc -p . && node ./dist/test/ui/index.js",
