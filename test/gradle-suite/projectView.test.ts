@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
-import { ContainerNode, contextManager, DependencyExplorer,
+import { ContainerNode, contextManager, DataNode, DependencyExplorer,
     PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, setupTestEnv, Uris } from "../shared";
 
@@ -21,12 +21,13 @@ suite("Gradle Project View Tests", () => {
         assert.equal(projectNode.name, "gradle", "Project name should be \"gradle\"");
 
         // validate package root/dependency nodes
-        const packageRoots = await projectNode.getChildren();
-        assert.equal(packageRoots.length, 3, "Number of root packages should be 3");
-        const mainPackage = packageRoots[0] as PackageRootNode;
+        const projectChildren = await projectNode.getChildren();
+        assert.ok(!!projectChildren.find((c: DataNode) => c.name === "build.gradle"));
+        assert.ok(!!projectChildren.find((c: DataNode) => c.name === ".vscode"));
+        const mainPackage = projectChildren[0] as PackageRootNode;
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
-        const systemLibrary = packageRoots[1] as ContainerNode;
-        const gradleDependency = packageRoots[2] as ContainerNode;
+        const systemLibrary = projectChildren[1] as ContainerNode;
+        const gradleDependency = projectChildren[2] as ContainerNode;
         // only match prefix of system library since JDK version may differ
         assert.ok(systemLibrary.name.startsWith("JRE System Library"), "Container name should start with JRE System Library");
         assert.equal(gradleDependency.name, "Project and External Dependencies", "Container name should be \"Project and External Dependencies\"");

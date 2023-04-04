@@ -3,7 +3,6 @@
 
 import { ThemeIcon, Uri, workspace } from "vscode";
 import { Explorer } from "../constants";
-import { ContainerEntryKind, IContainerNodeData } from "../java/containerNodeData";
 import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData";
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
@@ -60,27 +59,7 @@ export class ProjectNode extends DataNode {
     }
 
     protected async loadData(): Promise<INodeData[]> {
-        let result: INodeData[] = [];
-        return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri }).then((res) => {
-            const sourceContainer: IContainerNodeData[] = [];
-            res.forEach((node) => {
-                const containerNode = <IContainerNodeData>node;
-                if (containerNode.entryKind === ContainerEntryKind.CPE_SOURCE) {
-                    sourceContainer.push(containerNode);
-                } else {
-                    result.push(node);
-                }
-            });
-            if (sourceContainer.length > 0) {
-                return Promise.all(sourceContainer.map((c) => Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this.uri, path: c.path })))
-                    .then((rootPackages) => {
-                        result =  result.concat(...rootPackages);
-                        return result;
-                    });
-            } else {
-                return result;
-            }
-        });
+        return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri });
     }
 
     protected createChildNodeList(): ExplorerNode[] {

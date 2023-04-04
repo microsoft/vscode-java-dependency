@@ -15,9 +15,13 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 
+import org.eclipse.core.internal.utils.FileUtil;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -26,6 +30,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 
 import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
@@ -35,9 +40,15 @@ import com.microsoft.jdtls.ext.core.PackageCommand;
 public class ResourceSet {
 
     private List<Object> resources;
+    private boolean isHierarchicalView;
 
     public ResourceSet(List<Object> resources) {
+        this(resources, false);
+    }
+
+    public ResourceSet(List<Object> resources, boolean isHierarchicalView) {
         this.resources = resources;
+        this.isHierarchicalView = isHierarchicalView;
     }
 
     public void accept(ResourceVisitor visitor) {
@@ -58,11 +69,11 @@ public class ResourceSet {
                 }
 
                 // skip invisible project's linked folder and add its children to the iterator.
-                if (!ProjectUtils.isVisibleProject(javaProject.getProject()) &&
+                if (ProjectUtils.isUnmanagedFolder(javaProject.getProject()) &&
                         Objects.equals(ProjectUtils.WORKSPACE_LINK, pkgRoot.getElementName())) {
                     try {
                         List<Object> nextObjs = PackageCommand.getPackageFragmentRootContent(
-                            pkgRoot, false, new NullProgressMonitor());
+                            pkgRoot, isHierarchicalView, new NullProgressMonitor());
                         for (Object nextObj : nextObjs) {
                             iterator.add(nextObj);
                             iterator.previous();
@@ -76,9 +87,9 @@ public class ResourceSet {
                 }
             } else if (resource instanceof IPackageFragment) {
                 IPackageFragment fragment = (IPackageFragment) resource;
-                // skil default package and add its children to the iterator.
+                // skip default package and add its children to the iterator.
                 if (fragment.isDefaultPackage()) {
-                    List<Object> nextObjs = PackageCommand.getChildrenForPackage(fragment);
+                    List<Object> nextObjs = PackageCommand.getChildrenForPackage(fragment, new NullProgressMonitor());
                     for (Object nextObj : nextObjs) {
                         iterator.add(nextObj);
                         iterator.previous();
@@ -91,12 +102,51 @@ public class ResourceSet {
             } else if (resource instanceof IClassFile) {
                 visitor.visit((IClassFile) resource);
             } else if (resource instanceof IFile) {
-                visitor.visit((IFile) resource);
+                if (shouldVisit((IFile) resource)) {
+                    visitor.visit((IFile) resource);
+                }
             } else if (resource instanceof IFolder) {
-                visitor.visit((IFolder) resource);
+                if (shouldVisit((IFolder) resource)) {
+                    visitor.visit((IFolder) resource);
+                }
             } else if (resource instanceof IJarEntryResource) {
                 visitor.visit((IJarEntryResource) resource);
             }
         }
+    }
+
+    /**
+     * Check if the IFolder or IFile should be visited. The following conditions will skip visit:
+     * <ul>
+     * <li>the resource is null.</li>
+     * <li>the resource does not belong to any project.</li>
+     * <li>the resource is not in the project's real location.</li>
+     * <li>the resource is a java element.</li>
+     * </ul>
+     */
+    private boolean shouldVisit(IResource resource) {
+        if (resource == null) {
+            return false;
+        }
+
+        IProject project = resource.getProject();
+        if (project == null) {
+            return false;
+        }
+
+        IPath projectRealFolder = ProjectUtils.getProjectRealFolder(project.getProject());
+        IPath resourcePath = FileUtil.toPath(resource.getLocationURI());
+        // check if the resource stores in the project's real location.
+        if (!projectRealFolder.isPrefixOf(resourcePath)) {
+            return false;
+        }
+
+        // skip linked folder.
+        if (Objects.equals(projectRealFolder, resourcePath) &&
+                Objects.equals(ProjectUtils.WORKSPACE_LINK, resource.getName())) {
+            return false;
+        }
+
+        return JavaCore.create(resource) == null;
     }
 }

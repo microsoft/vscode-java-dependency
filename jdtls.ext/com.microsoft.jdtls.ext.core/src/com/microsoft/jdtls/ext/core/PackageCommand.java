@@ -78,10 +78,10 @@ public class PackageCommand {
 
     static {
         commands = new HashMap<>();
-        commands.put(NodeKind.PROJECT, PackageCommand::getContainers);
-        commands.put(NodeKind.CONTAINER, PackageCommand::getPackageFragmentRoots);
-        commands.put(NodeKind.PACKAGEROOT, PackageCommand::getPackages);
-        commands.put(NodeKind.PACKAGE, PackageCommand::getRootTypes);
+        commands.put(NodeKind.PROJECT, PackageCommand::getProjectChildren);
+        commands.put(NodeKind.CONTAINER, PackageCommand::getContainerChildren);
+        commands.put(NodeKind.PACKAGEROOT, PackageCommand::getPackageRootChildren);
+        commands.put(NodeKind.PACKAGE, PackageCommand::getPackageChildren);
         commands.put(NodeKind.FOLDER, PackageCommand::getFolderChildren);
     }
 
@@ -225,10 +225,17 @@ public class PackageCommand {
      * @throws JavaModelException when fails to get path or resource
      */
     private static List<PackageNode> getParentAncestorNodes(IResource element) throws JavaModelException {
-        List<PackageNode> nodeList = new ArrayList<>();
-        while (element != null) {
+        List<PackageNode> nodeList = new LinkedList<>();
+        while (element != null && !(element instanceof IWorkspaceRoot)) {
             IJavaElement javaElement = JavaCore.create(element);
-            if (javaElement instanceof IPackageFragmentRoot) {
+            if (javaElement == null) {
+                PackageNode entry = PackageNode.createNodeForResource(element);
+                if (entry != null) {
+                    nodeList.add(0, entry);
+                }
+            } else if (javaElement instanceof IJavaProject) {
+                nodeList.add(0, PackageNode.createNodeForProject(javaElement));
+            } else if (javaElement instanceof IPackageFragmentRoot) {
                 IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) javaElement;
                 nodeList.add(0, new PackageRootNode(pkgRoot,
                         element.getProjectRelativePath().toPortableString(), NodeKind.PACKAGEROOT));
@@ -238,12 +245,6 @@ public class PackageCommand {
                 IPackageFragment packageFragment = (IPackageFragment) javaElement;
                 if (packageFragment.containsJavaResources() || packageFragment.getNonJavaResources().length > 0) {
                     nodeList.add(0, PackageNode.createNodeForPackageFragment(packageFragment));
-                }
-
-            } else if (javaElement == null) {
-                PackageNode entry = PackageNode.createNodeForResource(element);
-                if (entry != null) {
-                    nodeList.add(0, entry);
                 }
             }
             element = element.getParent();
@@ -255,20 +256,28 @@ public class PackageCommand {
     /**
      * Get the class path container list.
      */
-    private static List<PackageNode> getContainers(PackageParams query, IProgressMonitor pm) {
+    private static List<PackageNode> getProjectChildren(PackageParams query, IProgressMonitor pm) {
         IJavaProject javaProject = getJavaProject(query.getProjectUri());
         if (javaProject != null) {
+            refreshLocal(javaProject.getProject(), pm);
             List<Object> children = new LinkedList<>();
             boolean hasReferencedLibraries = false;
             try {
                 IClasspathEntry[] references = javaProject.getRawClasspath();
                 for (IClasspathEntry entry : references) {
-                    if (entry.getEntryKind() != IClasspathEntry.CPE_LIBRARY && entry.getEntryKind() != IClasspathEntry.CPE_VARIABLE) {
+                    int entryKind = entry.getEntryKind();
+                    if (entryKind == IClasspathEntry.CPE_SOURCE) {
+                        IPackageFragmentRoot[] packageFragmentRoots = javaProject.findPackageFragmentRoots(entry);
+                        children.addAll(Arrays.asList(packageFragmentRoots));
+                    } else if (entryKind == IClasspathEntry.CPE_CONTAINER) {
                         children.add(entry);
-                    } else {
+                    } else if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
                         hasReferencedLibraries = true;
+                    } else {
+                        // TODO: handle IClasspathEntry.CPE_PROJECT
                     }
                 }
+                Collections.addAll(children, javaProject.getNonJavaResources());
             } catch (CoreException e) {
                 JdtlsExtActivator.logException("Problem load project library ", e);
             }
@@ -278,7 +287,7 @@ public class PackageCommand {
             resourceSet.accept(visitor);
             List<PackageNode> result = visitor.getNodes();
 
-            // Invisble project will always have the referenced libraries entry
+            // Invisible project will always have the referenced libraries entry
             if (!ProjectUtils.isVisibleProject(javaProject.getProject())) {
                 result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
             } else if (hasReferencedLibraries) {
@@ -289,7 +298,7 @@ public class PackageCommand {
         return Collections.emptyList();
     }
 
-    private static List<PackageNode> getPackageFragmentRoots(PackageParams query, IProgressMonitor pm) {
+    private static List<PackageNode> getContainerChildren(PackageParams query, IProgressMonitor pm) {
         IJavaProject javaProject = getJavaProject(query.getProjectUri());
         if (javaProject == null) {
             return Collections.emptyList();
@@ -311,6 +320,7 @@ public class PackageCommand {
 
                 for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
                     children.add(fragmentRoot);
+                    children.addAll(Arrays.asList(fragmentRoot.getNonJavaResources()));
                 }
             }
         } catch (CoreException e) {
@@ -343,7 +353,7 @@ public class PackageCommand {
         return null;
     }
 
-    private static List<PackageNode> getPackages(PackageParams query, IProgressMonitor pm) {
+    private static List<PackageNode> getPackageRootChildren(PackageParams query, IProgressMonitor pm) {
         try {
             IPackageFragmentRoot packageRoot = getPackageFragmentRootFromQuery(query);
             if (packageRoot == null) {
@@ -351,7 +361,7 @@ public class PackageCommand {
                         new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
             }
             List<Object> result = getPackageFragmentRootContent(packageRoot, query.isHierarchicalView(), pm);
-            ResourceSet resourceSet = new ResourceSet(result);
+            ResourceSet resourceSet = new ResourceSet(result, query.isHierarchicalView());
             ResourceVisitor visitor = new JavaResourceVisitor(packageRoot.getJavaProject());
             resourceSet.accept(visitor);
             return visitor.getNodes();
@@ -375,7 +385,6 @@ public class PackageCommand {
                     return javaProject.findPackageFragmentRoot(Path.fromPortableString(query.getRootPath()));
                 } catch (JavaModelException e) {
                     JdtlsExtActivator.log(e);
-                    return null;
                 }
             }
         }
@@ -383,20 +392,21 @@ public class PackageCommand {
         return null;
     }
 
-    private static List<PackageNode> getRootTypes(PackageParams query, IProgressMonitor pm) {
+    private static List<PackageNode> getPackageChildren(PackageParams query, IProgressMonitor pm) {
         IPackageFragment packageFragment = (IPackageFragment) JavaCore.create(query.getHandlerIdentifier());
-        List<Object> children = getChildrenForPackage(packageFragment);
+        List<Object> children = getChildrenForPackage(packageFragment, pm);
         ResourceSet resourceSet = new ResourceSet(children);
         ResourceVisitor visitor = new JavaResourceVisitor(packageFragment.getJavaProject());
         resourceSet.accept(visitor);
         return visitor.getNodes();
     }
 
-    public static List<Object> getChildrenForPackage(IPackageFragment packageFragment) {
+    public static List<Object> getChildrenForPackage(IPackageFragment packageFragment, IProgressMonitor pm) {
         if (packageFragment == null) {
             return Collections.emptyList();
         }
 
+        refreshLocal(packageFragment.getResource(), pm);
         List<Object> children = new LinkedList<>();
         try {
             for (IJavaElement element : packageFragment.getChildren()) {
@@ -412,10 +422,7 @@ public class PackageCommand {
                 }
             }
 
-            Object[] nonJavaResources = packageFragment.getNonJavaResources();
-            for (Object resource : nonJavaResources) {
-                children.add(resource);
-            }
+            Collections.addAll(children, packageFragment.getNonJavaResources());
         } catch (JavaModelException e) {
             JdtlsExtActivator.log(e);
         }
@@ -458,6 +465,7 @@ public class PackageCommand {
                 // general resource folder.
                 IFolder folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(Path.fromPortableString(query.getPath()));
                 if (folder.exists()) {
+                    refreshLocal(folder, pm);
                     children.addAll(Arrays.asList(folder.members()));
                     javaProject = JavaCore.create(folder.getProject());
                 }
@@ -488,6 +496,7 @@ public class PackageCommand {
      */
     public static List<Object> getPackageFragmentRootContent(IPackageFragmentRoot root, boolean isHierarchicalView, IProgressMonitor pm) throws CoreException {
         ArrayList<Object> result = new ArrayList<>();
+        refreshLocal(root.getResource(), pm);
         if (isHierarchicalView) {
             Map<String, IJavaElement> map = new HashMap<>();
             for (IJavaElement child : root.getChildren()) {
@@ -582,5 +591,16 @@ public class PackageCommand {
             return JavaCore.create(project);
         }
         return null;
+    }
+
+    private static void refreshLocal(IResource resource, IProgressMonitor monitor) {
+        if (resource == null || !resource.exists()) {
+            return;
+        }
+        try {
+            resource.refreshLocal(IResource.DEPTH_ONE, monitor);
+        } catch (CoreException e) {
+            JdtlsExtActivator.log(e);
+        }
     }
 }

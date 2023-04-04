@@ -71,6 +71,9 @@ function getValueSelection(uri: string): [number, number] | undefined {
 }
 
 function CheckQualifiedInputName(value: string, nodeKind: NodeKind): string {
+    if (nodeKind === NodeKind.Folder || nodeKind === NodeKind.File) {
+        return "";
+    }
     const javaValidateMessage = checkJavaQualifiedName(value);
 
     if (javaValidateMessage) {
