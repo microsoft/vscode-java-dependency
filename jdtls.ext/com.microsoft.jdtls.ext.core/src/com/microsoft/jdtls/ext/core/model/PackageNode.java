@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
@@ -250,7 +251,10 @@ public class PackageNode {
 
         node.setHandlerIdentifier(pkgRoot.getHandleIdentifier());
         if (pkgRoot instanceof JrtPackageFragmentRoot) {
-            node.setModuleName(pkgRoot.getModuleDescription().getElementName());
+            IModuleDescription moduleDescription = pkgRoot.getModuleDescription();
+            if (moduleDescription != null) {
+                node.setModuleName(moduleDescription.getElementName());
+            }
         }
 
         IClasspathEntry resolvedClasspathEntry = pkgRoot.getResolvedClasspathEntry();

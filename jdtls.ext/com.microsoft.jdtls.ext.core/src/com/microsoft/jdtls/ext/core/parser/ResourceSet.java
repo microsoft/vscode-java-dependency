@@ -58,7 +58,7 @@ public class ResourceSet {
                 }
 
                 // skip invisible project's linked folder and add its children to the iterator.
-                if (!ProjectUtils.isVisibleProject(pkgRoot.getJavaProject().getProject()) &&
+                if (!ProjectUtils.isVisibleProject(javaProject.getProject()) &&
                         Objects.equals(ProjectUtils.WORKSPACE_LINK, pkgRoot.getElementName())) {
                     try {
                         List<Object> nextObjs = PackageCommand.getPackageFragmentRootContent(
