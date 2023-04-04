@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Microsoft Corporation and others.
+ * Copyright (c) 2018-2023 Microsoft Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,15 +25,18 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.core.JrtPackageFragmentRoot;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 
@@ -176,17 +179,23 @@ public class PackageNode {
         return projectNode;
     }
 
+    public static PackageNode createNodeForFile(IFile file) {
+        PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
+        entry.setUri(JDTUtils.getFileURI(file));
+        return entry;
+    }
+
+    public static PackageNode createNodeForFolder(IFolder folder) {
+        PackageNode entry = new PackageNode(folder.getName(), folder.getFullPath().toPortableString(), NodeKind.FOLDER);
+        entry.setUri(JDTUtils.getFileURI(folder));
+        return entry;
+    }
+
     public static PackageNode createNodeForResource(IResource resource) {
         if (resource instanceof IFile) {
-            IFile file = (IFile) resource;
-            PackageNode entry = new PackageNode(file.getName(), file.getFullPath().toPortableString(), NodeKind.FILE);
-            entry.setUri(JDTUtils.getFileURI(file));
-            return entry;
+            return createNodeForFile((IFile) resource);
         } else if (resource instanceof IFolder) {
-            IFolder folder = (IFolder) resource;
-            PackageNode entry = new PackageNode(folder.getName(), folder.getFullPath().toPortableString(), NodeKind.FOLDER);
-            entry.setUri(JDTUtils.getFileURI(folder));
-            return entry;
+            return createNodeForFolder((IFolder) resource);
         }
         return null;
     }
@@ -194,6 +203,11 @@ public class PackageNode {
     public static PackageNode createNodeForPackageFragment(IPackageFragment packageFragment) {
         PackageNode fragmentNode = new PackageNode(packageFragment.getElementName(), packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
         fragmentNode.setHandlerIdentifier(packageFragment.getHandleIdentifier());
+        if (packageFragment.getResource() != null) {
+            fragmentNode.setUri(packageFragment.getResource().getLocationURI().toString());
+        } else {
+            fragmentNode.setUri(packageFragment.getPath().toFile().toURI().toString());
+        }
         return fragmentNode;
     }
 
@@ -211,15 +225,16 @@ public class PackageNode {
     }
 
     public static PackageRootNode createNodeForPackageFragmentRoot(IPackageFragmentRoot pkgRoot) throws JavaModelException {
+        PackageRootNode node;
         String displayName = pkgRoot.getElementName();
         boolean isSourcePath = pkgRoot.getKind() == IPackageFragmentRoot.K_SOURCE;
         if (!isSourcePath) {
             IClasspathEntry entry = pkgRoot.getRawClasspathEntry();
             // Process Referenced Variable
             if (entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
-                return createNodeForClasspathVariable(entry);
+                node = createNodeForClasspathVariable(entry);
             } else {
-                return new PackageRootNode(pkgRoot, displayName, NodeKind.PACKAGEROOT);
+                node = new PackageRootNode(pkgRoot, displayName, NodeKind.PACKAGEROOT);
             }
         } else {
             IJavaProject javaProject = pkgRoot.getJavaProject();
@@ -231,8 +246,25 @@ public class PackageNode {
                 relativePath = relativePath.removeFirstSegments(1); // Remove the '_' prefix
             }
             displayName = relativePath.toPortableString();
-            return new PackageRootNode(pkgRoot, displayName, NodeKind.PACKAGEROOT);
+            node = new PackageRootNode(pkgRoot, displayName, NodeKind.PACKAGEROOT);
         }
+
+        node.setHandlerIdentifier(pkgRoot.getHandleIdentifier());
+        if (pkgRoot instanceof JrtPackageFragmentRoot) {
+            IModuleDescription moduleDescription = pkgRoot.getModuleDescription();
+            if (moduleDescription != null) {
+                node.setModuleName(moduleDescription.getElementName());
+            }
+        }
+
+        IClasspathEntry resolvedClasspathEntry = pkgRoot.getResolvedClasspathEntry();
+        if (resolvedClasspathEntry != null) {
+            for (IClasspathAttribute attribute : resolvedClasspathEntry.getExtraAttributes()) {
+                node.setMetaDataValue(attribute.getName(), attribute.getValue());
+            }
+        }
+
+        return node;
     }
 
     /**
