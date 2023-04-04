@@ -11,11 +11,8 @@ import { isTest } from "../utility";
 import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { FileNode } from "./fileNode";
-import { FolderNode } from "./folderNode";
-import { PackageNode } from "./packageNode";
-import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
+import { NodeFactory } from "./nodeFactory";
 
 export class PackageRootNode extends DataNode {
 
@@ -38,24 +35,13 @@ export class PackageRootNode extends DataNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result: ExplorerNode[] = [];
+        const result: (ExplorerNode | undefined)[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            this.sort();
-            this.nodeData.children.forEach((data: INodeData) => {
-                if (data.kind === NodeKind.Package) {
-                    result.push(new PackageNode(data, this, this._project, this));
-                } else if (data.kind === NodeKind.File) {
-                    result.push(new FileNode(data, this));
-                } else if (data.kind === NodeKind.Folder) {
-                    result.push(new FolderNode(data, this, this._project, this));
-                } else if (data.kind === NodeKind.PrimaryType) {
-                    if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(data, this, this));
-                    }
-                }
+            this.nodeData.children.forEach((nodeData) => {
+                result.push(NodeFactory.createNode(nodeData, this, this._project, this));
             });
         }
-        return result;
+        return result.filter(<T>(n?: T): n is T => Boolean(n));
     }
 
     protected get description(): string | boolean | undefined {

@@ -9,10 +9,8 @@ import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeDa
 import { isTest } from "../utility";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { FileNode } from "./fileNode";
-import { FolderNode } from "./folderNode";
-import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
+import { NodeFactory } from "./nodeFactory";
 
 export class PackageNode extends DataNode {
     constructor(nodeData: INodeData, parent: DataNode, protected _project: ProjectNode, protected _rootNode: DataNode) {
@@ -34,22 +32,13 @@ export class PackageNode extends DataNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result: ExplorerNode[] = [];
+        const result: (ExplorerNode | undefined)[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            this.sort();
             this.nodeData.children.forEach((nodeData) => {
-                if (nodeData.kind === NodeKind.File) {
-                    result.push(new FileNode(nodeData, this));
-                } else if (nodeData.kind === NodeKind.PrimaryType) {
-                    if (nodeData.metaData && nodeData.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(nodeData, this, this._rootNode));
-                    }
-                } else if (nodeData.kind === NodeKind.Folder) {
-                    result.push(new FolderNode(nodeData, this, this._project, this._rootNode));
-                }
+                result.push(NodeFactory.createNode(nodeData, this, this._project, this._rootNode));
             });
         }
-        return result;
+        return result.filter(<T>(n?: T): n is T => Boolean(n));
     }
 
     protected get iconPath(): ThemeIcon {

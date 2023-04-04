@@ -4,10 +4,10 @@
 export enum NodeKind {
     Workspace = 1,
     Project = 2,
-    Container = 3,
-    PackageRoot = 4,
-    Package = 5,
-    PrimaryType = 6,
+    PackageRoot = 3,
+    Package = 4,
+    PrimaryType = 5,
+    Container = 6,
     Folder = 7,
     File = 8,
 }
