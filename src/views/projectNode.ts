@@ -8,13 +8,10 @@ import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData
 import { Jdtls } from "../java/jdtls";
 import { INodeData, NodeKind } from "../java/nodeData";
 import { Settings } from "../settings";
-import { ContainerNode } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { HierarchicalPackageNode } from "./hierarchicalPackageNode";
 import { NodeFactory } from "./nodeFactory";
-import { PackageNode } from "./packageNode";
-import { PrimaryTypeNode } from "./PrimaryTypeNode";
 
 export class ProjectNode extends DataNode {
 
@@ -87,25 +84,14 @@ export class ProjectNode extends DataNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-
-        const result: ExplorerNode[] = [];
+        const result: (ExplorerNode | undefined)[] = [];
         const packageData: any[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            this.nodeData.children.forEach((data) => {
-                if (data.kind === NodeKind.Container) {
-                    result.push(new ContainerNode(data, this, this));
-                } else if (data.kind === NodeKind.PackageRoot) {
-                    result.push(NodeFactory.createPackageRootNode(data, this, this));
-                } else if (data.kind === NodeKind.Package) {
-                    // Invisible project may have an empty named package root, in that case,
-                    // we will skip it.
-                    packageData.push(data);
-                } else if (data.kind === NodeKind.PrimaryType) {
-                    // For invisible project with empty named package root with a default package,
-                    // types will be the project node's children
-                    if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(data, this, undefined));
-                    }
+            this.nodeData.children.forEach((nodeData) => {
+                if (nodeData.kind === NodeKind.Package) {
+                    packageData.push(nodeData);
+                } else {
+                    result.push(NodeFactory.createNode(nodeData, this, this));
                 }
             });
         }
@@ -113,19 +99,15 @@ export class ProjectNode extends DataNode {
         if (packageData.length > 0) {
             if (Settings.isHierarchicalView()) {
                 const data: HierarchicalPackageNodeData = HierarchicalPackageNodeData.createHierarchicalNodeDataByPackageList(packageData);
-                const hierarchicalPackageNodes: HierarchicalPackageNode[] = data === undefined ? [] : data.children.map((hierarchicalChildrenNode) =>
-                        new HierarchicalPackageNode(hierarchicalChildrenNode, this, this, this));
-                result.push(...hierarchicalPackageNodes);
+                if (data) {
+                    result.push(...data.children.map(d => NodeFactory.createNode(d, this, this, this)));
+                }
             } else {
-                result.push(...packageData.map((data) => new PackageNode(data, this, this, this)));
+                result.push(...packageData.map((d) => NodeFactory.createNode(d, this, this, this)));
             }
         }
 
-        result.sort((a: DataNode, b: DataNode) => {
-            return b.nodeData.kind - a.nodeData.kind;
-        });
-
-        return result;
+        return result.filter(<T>(n?: T): n is T => Boolean(n));
     }
 
     protected get iconPath(): ThemeIcon {

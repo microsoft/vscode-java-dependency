@@ -7,7 +7,7 @@ import { Jdtls } from "../java/jdtls";
 import { INodeData } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { ProjectNode } from "./projectNode";
+import { NodeFactory } from "./nodeFactory";
 
 export class WorkspaceNode extends DataNode {
     constructor(nodeData: INodeData, parent?: DataNode) {
@@ -22,13 +22,13 @@ export class WorkspaceNode extends DataNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result: ExplorerNode[] = [];
+        const result: (ExplorerNode | undefined)[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
             this.nodeData.children.forEach((nodeData) => {
-                result.push(new ProjectNode(nodeData, this));
+                result.push(NodeFactory.createNode(nodeData, this));
             });
         }
-        return result;
+        return result.filter(<T>(n?: T): n is T => Boolean(n));
     }
 
     protected get iconPath(): ThemeIcon {

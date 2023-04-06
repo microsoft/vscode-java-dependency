@@ -5,11 +5,9 @@ import { HierarchicalPackageNodeData } from "../java/hierarchicalPackageNodeData
 import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
-import { FileNode } from "./fileNode";
-import { FolderNode } from "./folderNode";
 import { HierarchicalPackageNode } from "./hierarchicalPackageNode";
+import { NodeFactory } from "./nodeFactory";
 import { PackageRootNode } from "./packageRootNode";
-import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
 
 export class HierarchicalPackageRootNode extends PackageRootNode {
@@ -31,36 +29,27 @@ export class HierarchicalPackageRootNode extends PackageRootNode {
     }
 
     protected createChildNodeList(): ExplorerNode[] {
-        const result: ExplorerNode[] = [];
+        const result: (ExplorerNode | undefined)[] = [];
+        const packageData: any[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            this.sort();
-            this.nodeData.children.forEach((data) => {
-                if (data.kind === NodeKind.File) {
-                    result.push(new FileNode(data, this));
-                } else if (data.kind === NodeKind.Folder) {
-                    result.push(new FolderNode(data, this, this._project, this));
-                } else if (data.kind === NodeKind.PrimaryType) {
-                    if (data.metaData && data.metaData[PrimaryTypeNode.K_TYPE_KIND]) {
-                        result.push(new PrimaryTypeNode(data, this, this));
-                    }
+            this.nodeData.children.forEach((nodeData) => {
+                if (nodeData.kind === NodeKind.Package) {
+                    // Invisible project may have an empty named package root (the linked folder),
+                    // in that case, we will skip it.
+                    packageData.push(nodeData);
+                } else {
+                    result.push(NodeFactory.createNode(nodeData, this, this._project, this));
                 }
             });
         }
-        return result.concat(this.getHierarchicalPackageNodes());
-    }
 
-    protected getHierarchicalPackageNodes(): ExplorerNode[] {
-        const hierarchicalPackageNodeData = this.getHierarchicalPackageNodeData();
-        return hierarchicalPackageNodeData?.children.map((hierarchicalChildrenNode) =>
-            new HierarchicalPackageNode(hierarchicalChildrenNode, this, this._project, this)) || [];
-    }
-
-    private getHierarchicalPackageNodeData(): HierarchicalPackageNodeData  | undefined {
-        if (this.nodeData.children && this.nodeData.children.length) {
-            const nodeDataList = this.nodeData.children
-                .filter((child) => child.kind === NodeKind.Package);
-            return HierarchicalPackageNodeData.createHierarchicalNodeDataByPackageList(nodeDataList);
+        if (packageData.length > 0) {
+            const data: HierarchicalPackageNodeData = HierarchicalPackageNodeData.createHierarchicalNodeDataByPackageList(packageData);
+            if (data) {
+                result.push(...data.children.map(d => NodeFactory.createNode(d, this, this._project, this)));
+            }
         }
-        return undefined;
+
+        return result.filter(<T>(n?: T): n is T => Boolean(n));
     }
 }

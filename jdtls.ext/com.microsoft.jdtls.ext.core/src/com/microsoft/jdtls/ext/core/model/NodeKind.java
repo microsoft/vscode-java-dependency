@@ -16,13 +16,13 @@ public enum NodeKind {
 
     PROJECT(2),
 
-    CONTAINER(3),
+    PACKAGEROOT(3),
 
-    PACKAGEROOT(4),
+    PACKAGE(4),
 
-    PACKAGE(5),
+    PRIMARYTYPE(5),
 
-    PRIMARYTYPE(6),
+    CONTAINER(6),
 
     FOLDER(7),
 

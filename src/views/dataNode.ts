@@ -77,6 +77,7 @@ export abstract class DataNode extends ExplorerNode {
                 const data = await this.loadData();
                 this._nodeData.children = data;
                 this._childrenNodes = this.createChildNodeList() || [];
+                this.sort();
                 return this._childrenNodes;
             }
             return this._childrenNodes;
@@ -97,12 +98,15 @@ export abstract class DataNode extends ExplorerNode {
     }
 
     protected sort() {
-        this.nodeData.children?.sort((a: INodeData, b: INodeData) => {
-            if (a.kind === b.kind) {
-                return a.name < b.name ? -1 : 1;
-            } else {
-                return a.kind - b.kind;
+        this._childrenNodes.sort((a: ExplorerNode, b: ExplorerNode) => {
+            if (a instanceof DataNode && b instanceof DataNode) {
+                if (a.nodeData.kind === b.nodeData.kind) {
+                    return a.nodeData.name < b.nodeData.name ? -1 : 1;
+                } else {
+                    return a.nodeData.kind - b.nodeData.kind;
+                }
             }
+            return 0;
         });
     }
 

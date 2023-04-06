@@ -8,7 +8,6 @@ import { INodeData, NodeKind } from "../java/nodeData";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { NodeFactory } from "./nodeFactory";
-import { PackageRootNode } from "./packageRootNode";
 import { ProjectNode } from "./projectNode";
 
 export class ContainerNode extends DataNode {
@@ -37,15 +36,15 @@ export class ContainerNode extends DataNode {
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this._project.uri, path: this.path });
     }
+
     protected createChildNodeList(): ExplorerNode[] {
-        const result: PackageRootNode[] = [];
+        const result: (ExplorerNode | undefined)[] = [];
         if (this.nodeData.children && this.nodeData.children.length) {
-            this.sort();
-            this.nodeData.children.forEach((classpathNode) => {
-                result.push(NodeFactory.createPackageRootNode(classpathNode, this, this._project));
+            this.nodeData.children.forEach((nodeData) => {
+                result.push(NodeFactory.createNode(nodeData, this, this._project));
             });
         }
-        return result;
+        return result.filter(<T>(n?: T): n is T => Boolean(n));
     }
 
     protected get contextValue(): string {
