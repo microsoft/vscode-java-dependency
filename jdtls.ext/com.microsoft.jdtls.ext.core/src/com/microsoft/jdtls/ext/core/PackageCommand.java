@@ -320,7 +320,6 @@ public class PackageCommand {
 
                 for (IPackageFragmentRoot fragmentRoot : packageFragmentRoots) {
                     children.add(fragmentRoot);
-                    children.addAll(Arrays.asList(fragmentRoot.getNonJavaResources()));
                 }
             }
         } catch (CoreException e) {
