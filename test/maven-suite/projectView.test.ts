@@ -65,6 +65,8 @@ suite("Maven Project View Tests", () => {
         assert.equal(roots?.length, 1, "Number of root node should be 1");
         const projectNode = roots![0] as ProjectNode;
         assert.equal(projectNode.name, "my-app", "Project name should be \"my-app\"");
+        const projectTreeItem: vscode.TreeItem = await projectNode.getTreeItem();
+        assert.ok(projectTreeItem.resourceUri !== undefined, "Project tree item should have resourceUri");
 
         // validate package root/dependency nodes
         const packageRoots = await projectNode.getChildren();
