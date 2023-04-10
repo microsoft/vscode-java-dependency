@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
+import * as fse from "fs-extra";
 import { commands, Disposable, FileSystemWatcher, RelativePattern, Uri, workspace } from "vscode";
 import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
@@ -11,6 +12,7 @@ import { Settings } from "./settings";
 import { DataNode } from "./views/dataNode";
 import { ExplorerNode } from "./views/explorerNode";
 import { explorerNodeCache } from "./views/nodeCache/explorerNodeCache";
+import { Jdtls } from "./java/jdtls";
 
 const ENABLE_AUTO_REFRESH: string = "java.view.package.enableAutoRefresh";
 const DISABLE_AUTO_REFRESH: string = "java.view.package.disableAutoRefresh";
@@ -47,14 +49,9 @@ class SyncHandler implements Disposable {
         }));
 
         try {
-            const result: IListCommandResult | undefined = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND,
-                Commands.JAVA_PROJECT_LIST_SOURCE_PATHS);
-            if (!result || !result.status || !result.data || result.data.length === 0) {
-                throw new Error("Failed to list the source paths");
-            }
-
-            for (const sourcePathData of result.data) {
-                const normalizedPath: string = Uri.file(sourcePathData.path).fsPath;
+            const uris = await this.getWatchingUris();
+            for (const uri of uris) {
+                const normalizedPath: string = uri.fsPath;
                 const pattern: RelativePattern = new RelativePattern(normalizedPath, "**/*");
                 const watcher: FileSystemWatcher = workspace.createFileSystemWatcher(pattern);
                 this.disposables.push(watcher);
@@ -67,9 +64,23 @@ class SyncHandler implements Disposable {
         }
     }
 
+    private async getWatchingUris(): Promise<Uri[]> {
+        return (await Jdtls.getProjectUris()).map((uri) => Uri.parse(uri));
+        // TODO: get source path uris if non-java resources are hidden
+        // const result: IListCommandResult | undefined = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND,
+        //     Commands.JAVA_PROJECT_LIST_SOURCE_PATHS);
+        // if (!result || !result.status || !result.data || result.data.length === 0) {
+        //     throw new Error("Failed to list the source paths");
+        // }
+
+        // for (const sourcePathData of result.data) {
+        //     const normalizedPath: string = Uri.file(sourcePathData.path).fsPath;
+        // }
+    }
+
     private setupWatchers(watcher: FileSystemWatcher): void {
-        this.disposables.push(watcher.onDidChange((uri: Uri) => {
-            if (path.extname(uri.fsPath) !== ".java" || !Settings.showMembers()) {
+        this.disposables.push(watcher.onDidChange(async (uri: Uri) => {
+            if (!await this.needRefresh(uri.fsPath)) {
                 return;
             }
             const node: DataNode | undefined = explorerNodeCache.getDataNode(uri);
@@ -84,6 +95,14 @@ class SyncHandler implements Disposable {
             this.refresh(this.getParentNodeInExplorer(uri));
         }));
 
+    }
+
+    private async needRefresh(fsPath: string): Promise<boolean> {
+        if (Settings.showMembers() && path.extname(fsPath) === ".java") {
+            return true;
+        }
+
+        return (await fse.lstat(fsPath)).isDirectory();
     }
 
     private getParentNodeInExplorer(uri: Uri): ExplorerNode | undefined {
@@ -122,17 +141,17 @@ class SyncHandler implements Disposable {
     }
 }
 
-interface ISourcePath {
-    path: string;
-    displayPath: string;
-    projectName: string;
-    projectType: string;
-}
+// interface ISourcePath {
+//     path: string;
+//     displayPath: string;
+//     projectName: string;
+//     projectType: string;
+// }
 
-interface IListCommandResult {
-    status: boolean;
-    message: string;
-    data?: ISourcePath[];
-}
+// interface IListCommandResult {
+//     status: boolean;
+//     message: string;
+//     data?: ISourcePath[];
+// }
 
 export const syncHandler: SyncHandler = new SyncHandler();

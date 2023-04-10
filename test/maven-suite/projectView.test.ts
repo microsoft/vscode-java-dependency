@@ -5,7 +5,7 @@ import * as assert from "assert";
 import * as clipboardy from "clipboardy";
 import * as path from "path";
 import * as vscode from "vscode";
-import { Commands, ContainerNode, contextManager, DependencyExplorer, IMainClassInfo,
+import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode, IMainClassInfo,
     INodeData, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, setupTestEnv, Uris } from "../shared";
 import { sleep } from "../util";
@@ -26,9 +26,11 @@ suite("Maven Project View Tests", () => {
         const projectNode = roots![0] as ProjectNode;
         assert.equal(projectNode.name, "my-app", "Project name should be \"my-app\"");
 
-        const packageRoots = await projectNode.getChildren();
-        assert.equal(packageRoots.length, 4, "Number of root packages should be 4");
-        const mainPackage = packageRoots[0] as PackageRootNode;
+        const projectChildren = await projectNode.getChildren();
+        assert.ok(!!projectChildren.find((c: DataNode) => c.name === "pom.xml"));
+        assert.ok(!!projectChildren.find((c: DataNode) => c.name === ".vscode"));
+        assert.equal(projectChildren.length, 8, "Number of children should be 8");
+        const mainPackage = projectChildren[0] as PackageRootNode;
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
 
         const primarySubPackages = await mainPackage.getChildren();
@@ -69,14 +71,15 @@ suite("Maven Project View Tests", () => {
         assert.ok(projectTreeItem.resourceUri !== undefined, "Project tree item should have resourceUri");
 
         // validate package root/dependency nodes
-        const packageRoots = await projectNode.getChildren();
-        assert.equal(packageRoots.length, 4, "Number of root packages should be 4");
-        const mainPackage = packageRoots[0] as PackageRootNode;
-        const testPackage = packageRoots[1] as PackageRootNode;
+        const projectChildren = await projectNode.getChildren();
+        assert.ok(!!projectChildren.find((c: DataNode) => c.name === "pom.xml"));
+        assert.ok(!!projectChildren.find((c: DataNode) => c.name === ".vscode"));
+        const mainPackage = projectChildren[0] as PackageRootNode;
+        const testPackage = projectChildren[1] as PackageRootNode;
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
         assert.equal(testPackage.name, "src/test/java", "Package name should be \"src/test/java\"");
-        const systemLibrary = packageRoots[2] as ContainerNode;
-        const mavenDependency = packageRoots[3] as ContainerNode;
+        const systemLibrary = projectChildren[2] as ContainerNode;
+        const mavenDependency = projectChildren[3] as ContainerNode;
         // only match prefix of system library since JDK version may differ
         assert.ok(systemLibrary.name.startsWith("JRE System Library"), "Container name should start with JRE System Library");
         assert.equal(mavenDependency.name, "Maven Dependencies", "Container name should be \"Maven Dependencies\"");
@@ -202,14 +205,13 @@ suite("Maven Project View Tests", () => {
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
         const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
-        const packageRoots = await projectNode.getChildren();
-        const mainPackage = packageRoots[0] as PackageRootNode;
+        const projectChildren = await projectNode.getChildren();
+        const fileNode = projectChildren.find((node: DataNode) => node.nodeData.name === "pom.xml") as FileNode;
         const paths = await vscode.commands.executeCommand<INodeData[]>(Commands.EXECUTE_WORKSPACE_COMMAND,
-            Commands.JAVA_RESOLVEPATH, mainPackage.nodeData.uri);
-        assert.equal(paths?.length, 3, "paths' length should be 3");
-        assert.equal(paths![0].name, "src", "path[0]'s name should be src");
-        assert.equal(paths![1].name, "main", "path[1]'s name should be main");
-        assert.equal(paths![2].name, "java", "path[2]'s name should be java");
+            Commands.JAVA_RESOLVEPATH, fileNode.nodeData.uri);
+        assert.equal(paths?.length, 2, "paths' length should be 2");
+        assert.equal(paths![0].name, projectNode.name);
+        assert.equal(paths![1].name, fileNode.name);
     });
 
     test("Can execute command java.project.getMainClasses correctly", async function() {

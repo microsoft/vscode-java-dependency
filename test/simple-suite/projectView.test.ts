@@ -21,11 +21,11 @@ suite("Simple Project View Tests", () => {
         assert.equal(projectNode.name, "1.helloworld", "Project name should be \"1.helloworld\"");
 
         // validate package root/dependency nodes
-        const packageRoots = await projectNode.getChildren();
-        assert.equal(packageRoots.length, 2, "Number of root packages should be 2");
-        const mainPackage = packageRoots[0] as PackageRootNode;
+        const projectChildren = await projectNode.getChildren();
+        assert.equal(projectChildren.length, 6, "Number of children nodes should be 6");
+        const mainPackage = projectChildren[0] as PackageRootNode;
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
-        const systemLibrary = packageRoots[1] as ContainerNode;
+        const systemLibrary = projectChildren[1] as ContainerNode;
         // only match prefix of system library since JDK version may differ
         assert.ok(systemLibrary.name.startsWith("JRE System Library"), "Container name should start with JRE System Library");
 
