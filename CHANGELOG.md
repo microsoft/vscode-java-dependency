@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Display non-Java files in Java Projects explorer. [#145](https://github.com/microsoft/vscode-java-dependency/issues/145)
 - Apply file decorators to project level. [#481](https://github.com/microsoft/vscode-java-dependency/issues/481)
 
+### Fixed
+- Apply `files.exclude` to Java Projects explorer. [#214](https://github.com/microsoft/vscode-java-dependency/issues/214)
+
 ## 0.21.2
 ### Fixed
 - Improve the output of exporting jar tasks. [#699](https://github.com/microsoft/vscode-java-dependency/issues/699)
