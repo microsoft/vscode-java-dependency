@@ -223,4 +223,11 @@ suite("Maven Project View Tests", () => {
         assert.equal(mainClasses![0].name, "com.mycompany.app.App", "mainClasses[0]'s name should be com.mycompany.app.App");
     });
 
+    test("Can apply 'files.exclude'", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+
+        const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
+        const projectChildren = await projectNode.getChildren();
+        assert.ok(!projectChildren.find((node: DataNode) => node.nodeData.name === ".hidden"));
+    });
 });

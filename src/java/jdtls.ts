@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { CancellationToken, commands } from "vscode";
+
+import * as minimatch from "minimatch";
+import { CancellationToken, Uri, commands, workspace } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
 import { IMainClassInfo } from "../tasks/buildArtifact/ResolveMainClassExecutor";
@@ -20,8 +22,32 @@ export namespace Jdtls {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_REFRESH_LIB_SERVER, params);
     }
 
-    export async function getPackageData(params: { [key: string]: any }): Promise<INodeData[]> {
-        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_GETPACKAGEDATA, params) || [];
+    export async function getPackageData(params: IPackageDataParam): Promise<INodeData[]> {
+        const uri: Uri | null = !params.projectUri ? null : Uri.parse(params.projectUri);
+        const excludePatterns: {[key: string]: boolean} | undefined = workspace.getConfiguration("files", uri).get("exclude");
+
+        let nodeData: INodeData[] = await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
+            Commands.JAVA_GETPACKAGEDATA, params) || [];
+        if (excludePatterns && nodeData.length) {
+            const uriOfChildren: string[] = nodeData.map((node: INodeData) => node.uri).filter(Boolean) as string[];
+            const urisToExclude: Set<string> = new Set<string>();
+            for (const pattern in excludePatterns) {
+                if (excludePatterns[pattern]) {
+                    const toExclude: string[] = minimatch.match(uriOfChildren, pattern);
+                    toExclude.forEach((uri: string) => urisToExclude.add(uri));
+                }
+            }
+
+            if (urisToExclude.size) {
+                nodeData = nodeData.filter((node: INodeData) => {
+                    if (!node.uri) {
+                        return true;
+                    }
+                    return !urisToExclude.has(node.uri);
+                })
+            }
+        }
+        return nodeData;
     }
 
     export async function resolvePath(params: string): Promise<INodeData[]> {
@@ -48,4 +74,9 @@ export namespace Jdtls {
     export function resolveBuildFiles(): Promise<string[]> {
         return <Promise<string[]>>executeJavaLanguageServerCommand(Commands.JAVA_RESOLVE_BUILD_FILES);
     }
+}
+
+interface IPackageDataParam {
+    projectUri: string | undefined,
+    [key: string]: any,
 }

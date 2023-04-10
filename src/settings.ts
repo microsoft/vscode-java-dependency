@@ -16,7 +16,8 @@ export class Settings {
         context.subscriptions.push(workspace.onDidChangeConfiguration((e: ConfigurationChangeEvent) => {
             if ((e.affectsConfiguration("java.dependency.syncWithFolderExplorer") && Settings.syncWithFolderExplorer()) ||
                     e.affectsConfiguration("java.dependency.showMembers") ||
-                    e.affectsConfiguration("java.dependency.packagePresentation")) {
+                    e.affectsConfiguration("java.dependency.packagePresentation") ||
+                    e.affectsConfiguration("files.exclude")) {
                 commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH);
             } else if (e.affectsConfiguration("java.dependency.autoRefresh")) {
                 syncHandler.updateFileWatcher(Settings.autoRefresh());
