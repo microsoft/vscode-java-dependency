@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.22.0
+### Added
+- Apply file decorators to project level. [#481](https://github.com/microsoft/vscode-java-dependency/issues/481)
+
 ## 0.21.2
 ### Fixed
 - Improve the output of exporting jar tasks. [#699](https://github.com/microsoft/vscode-java-dependency/issues/699)

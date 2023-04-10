@@ -26,6 +26,7 @@ export abstract class DataNode extends ExplorerNode {
         item.contextValue = this.computeContextValue();
         if (this.uri) {
             switch (this._nodeData.kind) {
+                case NodeKind.Project:
                 case NodeKind.PackageRoot:
                 case NodeKind.Package:
                 case NodeKind.PrimaryType:
