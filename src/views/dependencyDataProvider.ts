@@ -79,11 +79,6 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), true);
         }));
 
-        Settings.registerConfigurationListener((updatedConfig, oldConfig) => {
-            if (updatedConfig.refreshDelay !== oldConfig.refreshDelay) {
-                this.setRefreshDebounceFunc(updatedConfig.refreshDelay);
-            }
-        });
         this.setRefreshDebounceFunc();
     }
 

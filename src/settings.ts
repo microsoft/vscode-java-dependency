@@ -3,39 +3,31 @@
 
 import {
     commands, ConfigurationChangeEvent, ExtensionContext,
-    workspace, WorkspaceConfiguration,
+    workspace,
 } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "./commands";
 import { syncHandler } from "./syncHandler";
+import { contextManager, DependencyExplorer } from "../extension.bundle";
 
 export class Settings {
 
     public static initialize(context: ExtensionContext): void {
         context.subscriptions.push(workspace.onDidChangeConfiguration((e: ConfigurationChangeEvent) => {
-            if (!e.affectsConfiguration("java.dependency")) {
-                return;
-            }
-            const oldConfig = this._dependencyConfig;
-            this._dependencyConfig = workspace.getConfiguration("java.dependency");
-            for (const listener of this._configurationListeners) {
-                listener(this._dependencyConfig, oldConfig);
+            if ((e.affectsConfiguration("java.dependency.syncWithFolderExplorer") && Settings.syncWithFolderExplorer()) ||
+                    e.affectsConfiguration("java.dependency.showMembers") ||
+                    e.affectsConfiguration("java.dependency.packagePresentation")) {
+                commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH);
+            } else if (e.affectsConfiguration("java.dependency.autoRefresh")) {
+                syncHandler.updateFileWatcher(Settings.autoRefresh());
+            } else if (e.affectsConfiguration("java.dependency.refreshDelay")) {
+                // TODO: getInstance() should not have parameter if it means to be a singleton.
+                DependencyExplorer.getInstance(contextManager.context)
+                    .dataProvider.setRefreshDebounceFunc(Settings.refreshDelay());
             }
         }));
-        this.registerConfigurationListener((updatedConfig, oldConfig) => {
-            if (updatedConfig.showMembers !== oldConfig.showMembers
-                || updatedConfig.packagePresentation !== oldConfig.packagePresentation
-                || (updatedConfig.syncWithFolderExplorer !== oldConfig.syncWithFolderExplorer
-                    && updatedConfig.syncWithFolderExplorer)) {
-                commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH);
-            } else if (updatedConfig.autoRefresh !== oldConfig.autoRefresh) {
-                syncHandler.updateFileWatcher(updatedConfig.autoRefresh);
-            }
-        });
 
         syncHandler.updateFileWatcher(Settings.autoRefresh());
-
-        context.subscriptions.push({ dispose: () => { this._configurationListeners = []; } });
 
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_LINKWITHFOLDER, Settings.linkWithFolderCommand));
 
@@ -48,24 +40,20 @@ export class Settings {
             Settings.changeToHierarchicalPackageView));
     }
 
-    public static registerConfigurationListener(listener: Listener) {
-        this._configurationListeners.push(listener);
-    }
-
     public static linkWithFolderCommand(): void {
-        workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", true, false);
+        workspace.getConfiguration("java.dependency").update("syncWithFolderExplorer", true, false);
     }
 
     public static unlinkWithFolderCommand(): void {
-        workspace.getConfiguration().update("java.dependency.syncWithFolderExplorer", false, false);
+        workspace.getConfiguration("java.dependency").update("syncWithFolderExplorer", false, false);
     }
 
     public static changeToFlatPackageView(): void {
-        workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Flat, false);
+        workspace.getConfiguration("java.dependency").update("packagePresentation", PackagePresentation.Flat, false);
     }
 
     public static changeToHierarchicalPackageView(): void {
-        workspace.getConfiguration().update("java.dependency.packagePresentation", PackagePresentation.Hierarchical, false);
+        workspace.getConfiguration("java.dependency").update("packagePresentation", PackagePresentation.Hierarchical, false);
     }
 
     public static updateReferencedLibraries(libraries: IReferencedLibraries): void {
@@ -77,7 +65,7 @@ export class Settings {
         if (!updateSetting.exclude && !updateSetting.sources) {
             updateSetting = libraries.include;
         }
-        workspace.getConfiguration().update("java.project.referencedLibraries", updateSetting);
+        workspace.getConfiguration("java.project").update("referencedLibraries", updateSetting);
     }
 
     public static referencedLibraries(): IReferencedLibraries {
@@ -91,41 +79,35 @@ export class Settings {
     }
 
     public static showMembers(): boolean {
-        return this._dependencyConfig.get("showMembers", false);
+        return workspace.getConfiguration("java.dependency").get("showMembers", false);
     }
 
     public static autoRefresh(): boolean {
-        return this._dependencyConfig.get("autoRefresh", true);
+        return workspace.getConfiguration("java.dependency").get("autoRefresh", true);
     }
 
     public static syncWithFolderExplorer(): boolean {
-        return this._dependencyConfig.get("syncWithFolderExplorer", true);
+        return workspace.getConfiguration("java.dependency").get("syncWithFolderExplorer", true);
     }
 
     public static isHierarchicalView(): boolean {
-        return this._dependencyConfig.get("packagePresentation") === PackagePresentation.Hierarchical;
+        return workspace.getConfiguration("java.dependency").get("packagePresentation") === PackagePresentation.Hierarchical;
     }
 
     public static refreshDelay(): number {
-        return this._dependencyConfig.get("refreshDelay", 2000);
+        return workspace.getConfiguration("java.dependency").get("refreshDelay", 2000);
     }
 
     public static getExportJarTargetPath(): string {
         // tslint:disable-next-line: no-invalid-template-strings
         return workspace.getConfiguration("java.project.exportJar").get<string>("targetPath", "${workspaceFolder}/${workspaceFolderBasename}.jar");
     }
-
-    private static _dependencyConfig: WorkspaceConfiguration = workspace.getConfiguration("java.dependency");
-
-    private static _configurationListeners: Listener[] = [];
 }
 
 enum PackagePresentation {
     Flat = "flat",
     Hierarchical = "hierarchical",
 }
-
-type Listener = (updatedConfig: WorkspaceConfiguration, oldConfig: WorkspaceConfiguration) => void;
 
 export interface IReferencedLibraries {
     include: string[];
