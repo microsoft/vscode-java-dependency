@@ -44,7 +44,8 @@
   "taskDefinitions.java.project.build.path.exclude": "The path after '!' will be excluded from the paths to be built.",
   "taskDefinitions.java.project.build.isFullBuild": "Whether to execute a clean build or not.",
   "viewsWelcome.workbench.createNewJavaProject": "You can also [open a Java project folder](command:_java.project.open), or create a new Java project by clicking the button below.\n[Create Java Project](command:java.project.create)",
-  "viewsWelcome.workbench.noJavaProject": "No Java projects found in the current workspace. You can [open a Java project folder](command:_java.project.open), or create a new Java project by clicking the button below.\n[Create Java Project](command:java.project.create)",
+  "viewsWelcome.workbench.noJavaProject": "No Java projects found in the current workspace. You can [pen a Java project folder](command:_java.project.open), or create a new Java project by clicking the button below.\n[Create Java Project](command:java.project.create)",
+  "viewsWelcome.workbench.importFailed": "Oops, something went wrong when opening Java projects. Please use the following action for troubleshooting:\n[Open Problems View](command:workbench.panel.markers.view.focus)",
   "viewsWelcome.workbench.inLightWeightMode": "To view the projects, you can import the projects into workspace.\n[Import Projects](command:java.server.mode.switch?%5B%22Standard%22,true%5D)",
   "viewsWelcome.workbench.installLanguageSupport": "The Java Projects explorer requires [Extension Pack for Java](command:extension.open?%5B%22vscjava.vscode-java-pack%22%5D) to provide full features.\n[Install](command:java.project.installExtension?%5B%22vscjava.vscode-java-pack%22%5D)"
 }

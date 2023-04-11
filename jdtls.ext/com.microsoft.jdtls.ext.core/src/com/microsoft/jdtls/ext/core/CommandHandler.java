@@ -35,6 +35,8 @@ public class CommandHandler implements IDelegateCommandHandler {
                     return ProjectCommand.getMainClasses(arguments, monitor);
                 case "java.project.generateJar":
                     return ProjectCommand.exportJar(arguments, monitor);
+                case "java.project.checkImportStatus":
+                    return ProjectCommand.checkImportStatus();
                 default:
                     break;
             }

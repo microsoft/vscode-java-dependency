@@ -426,12 +426,12 @@
         },
         {
           "command": "java.view.package.exportJar",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects && !java:importFailed",
           "group": "navigation@20"
         },
         {
           "command": "java.project.build.workspace",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects && !java:importFailed",
           "group": "navigation@30"
         },
         {
@@ -637,6 +637,11 @@
         "view": "javaProjectExplorer",
         "contents": "%viewsWelcome.workbench.installLanguageSupport%",
         "when": "java:projectManagerActivated && !java:languageSupportInstalled"
+      },
+      {
+        "view": "javaProjectExplorer",
+        "contents": "%viewsWelcome.workbench.importFailed%",
+        "when": "java:importFailed"
       }
     ],
     "taskDefinitions": [

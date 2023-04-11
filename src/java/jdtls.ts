@@ -64,6 +64,10 @@ export namespace Jdtls {
             mainClass, classpaths, destination, terminalId, token);
     }
 
+    export async function checkImportStatus(): Promise<boolean> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_CHECK_IMPORT_STATUS) || false;
+    }
+
     export enum CompileWorkspaceStatus {
         Failed = 0,
         Succeed = 1,

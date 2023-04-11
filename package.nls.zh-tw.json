@@ -45,6 +45,7 @@
   "taskDefinitions.java.project.build.isFullBuild": "是否要重新建置專案。",
   "viewsWelcome.workbench.createNewJavaProject": "您也可以[開啟一個 Java 專案目錄](command:_java.project.open)，或點擊下方按鈕建立一個新的 Java 專案。\n[建立 Java 專案](command:java.project.create)",
   "viewsWelcome.workbench.noJavaProject": "當前工作區未發現 Java 專案，您可以[開啟一個 Java 專案目錄](command:_java.project.open)，或點擊下方按鈕建立一個新的 Java 專案。\n[建立 Java 專案](command:java.project.create)",
+  "viewsWelcome.workbench.importFailed": "加載 Java 專案時出現錯誤，請通過以下方式查看錯誤相關信息：\n[打開問題視圖](command:workbench.panel.markers.view.focus)",
   "viewsWelcome.workbench.inLightWeightMode": "若要檢視各專案，你可以將專案匯入到工作區中。\n[匯入專案](command:java.server.mode.switch?%5B%22Standard%22,true%5D)",
   "viewsWelcome.workbench.installLanguageSupport": "Java 專案視圖需要安裝並啟用 [Extension Pack for Java](command:extension.open?%5B%22vscjava.vscode-java-pack%22%5D) 以提供完整的功能。\n[安裝](command:java.project.installExtension?%5B%22vscjava.vscode-java-pack%22%5D)"
 }

@@ -191,7 +191,14 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                     this._rootItems = rootItems;
                 }
             }
-            contextManager.setContextValue(Context.NO_JAVA_PROJECT, _.isEmpty(rootItems));
+            if (_.isEmpty(rootItems)) {
+                const hasJavaError: boolean = await Jdtls.checkImportStatus();
+                if (hasJavaError) {
+                    contextManager.setContextValue(Context.IMPORT_FAILED, true);
+                } else {
+                    contextManager.setContextValue(Context.NO_JAVA_PROJECT, true);
+                }
+            }
             return rootItems;
         } finally {
             explorerLock.release();
