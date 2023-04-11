@@ -29,6 +29,7 @@ import java.util.zip.ZipFile;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
@@ -280,6 +281,29 @@ public final class ProjectCommand {
         } catch (CoreException e) {
             return null;
         }
+    }
+
+    public static boolean checkImportStatus() {
+        IProject[] projects = ProjectUtils.getAllProjects();
+        for (IProject project : projects) {
+            if (ProjectsManager.DEFAULT_PROJECT_NAME.equals(project.getName())) {
+                continue;
+            }
+            try {
+                List<IMarker> markers = ResourceUtils.getErrorMarkers(project);
+                if (markers != null) {
+                    boolean hasError = markers.stream().anyMatch(m -> {
+                        return m.getAttribute(IMarker.SEVERITY, 0) == IMarker.SEVERITY_ERROR;
+                    });
+                    if (hasError) {
+                        return true;
+                    }
+                }
+            } catch (CoreException e) {
+                JdtlsExtActivator.log(e);
+            }
+        }
+        return false;
     }
 
     private static void reportExportJarMessage(String terminalId, int severity, String message) {

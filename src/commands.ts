@@ -96,6 +96,8 @@ export namespace Commands {
 
     export const JAVA_UPDATE_DEPRECATED_TASK = "java.updateDeprecatedTask";
 
+    export const JAVA_PROJECT_CHECK_IMPORT_STATUS = "java.project.checkImportStatus";
+
     /**
      * Commands from Visual Studio Code
      */
