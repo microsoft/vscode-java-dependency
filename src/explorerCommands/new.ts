@@ -214,7 +214,7 @@ export async function newPackage(node?: DataNode): Promise<void> {
             window.showErrorMessage("Failed to get the package path.");
             return;
         }
-        defaultValue = path.relative(packageRootPath, packagePath).replace(/[\\,/]/g, ".") + ".";
+        defaultValue = path.relative(packageRootPath, packagePath).replace(/[\\/]/g, ".") + ".";
     } else {
         return;
     }
