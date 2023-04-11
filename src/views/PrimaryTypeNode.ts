@@ -28,8 +28,8 @@ export class PrimaryTypeNode extends DataNode {
         }
 
         const unmanagedFolder = this.getUnmanagedFolderAncestor();
-        if (unmanagedFolder) {
-            return unmanagedFolder.uri ? Uri.parse(unmanagedFolder.uri).fsPath : "";
+        if (unmanagedFolder?.uri) {
+            return Uri.parse(unmanagedFolder.uri).fsPath;
         }
 
         return "";
@@ -142,7 +142,6 @@ export class PrimaryTypeNode extends DataNode {
         }
     
         const data = <IPackageRootNodeData>rootNodeData;
-    
         if (data.entryKind === PackageRootKind.K_SOURCE) {
             return true;
         }
