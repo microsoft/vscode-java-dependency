@@ -11,6 +11,8 @@ import { isTest } from "../utility";
 import { DataNode } from "./dataNode";
 import { DocumentSymbolNode } from "./documentSymbolNode";
 import { ExplorerNode } from "./explorerNode";
+import { ProjectNode } from "./projectNode";
+import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
 
 export class PrimaryTypeNode extends DataNode {
 
@@ -18,6 +20,19 @@ export class PrimaryTypeNode extends DataNode {
 
     constructor(nodeData: INodeData, parent: DataNode, protected _rootNode?: DataNode) {
         super(nodeData, parent);
+    }
+
+    public getPackageRootPath(): string {
+        if (this._rootNode?.uri) {
+            return Uri.parse(this._rootNode.uri).fsPath;
+        }
+
+        const unmanagedFolder = this.getUnmanagedFolderAncestor();
+        if (unmanagedFolder) {
+            return unmanagedFolder.uri ? Uri.parse(unmanagedFolder.uri).fsPath : "";
+        }
+
+        return "";
     }
 
     protected async loadData(): Promise<SymbolInformation[] | DocumentSymbol[] | undefined> {
@@ -107,6 +122,47 @@ export class PrimaryTypeNode extends DataNode {
             contextValue += "+test";
         }
 
+        if (this.belongsToSourceRoot() || this.getUnmanagedFolderAncestor()) {
+            contextValue += "+source";
+        }
+
         return contextValue;
+    }
+
+    /**
+     * Check if the type belongs to a source root. Following conditions can cause the
+     * result to be false:
+     * - The type belongs to a jar package
+     * - The type belongs to an unmanaged folder with '.' as its source root.
+     */
+    private belongsToSourceRoot(): boolean {
+        const rootNodeData = this._rootNode?.nodeData;
+        if (!rootNodeData) {
+            return false;
+        }
+    
+        const data = <IPackageRootNodeData>rootNodeData;
+    
+        if (data.entryKind === PackageRootKind.K_SOURCE) {
+            return true;
+        }
+    
+        return false;
+    }
+
+    /**
+     * @returns ProjectNode if the current node is under an unmanaged folder,
+     * otherwise undefined.
+     */
+    private getUnmanagedFolderAncestor(): ProjectNode | undefined {
+        let ancestor = this.getParent();
+        while (ancestor && !(ancestor instanceof ProjectNode)) {
+            ancestor = ancestor.getParent();
+        }
+        if (ancestor?.isUnmanagedFolder()) {
+            return ancestor;
+        }
+
+        return undefined;
     }
 }

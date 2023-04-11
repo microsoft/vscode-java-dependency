@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.69.0"
+    "vscode": "^1.75.0"
   },
   "repository": {
     "type": "git",
@@ -39,10 +39,7 @@
     "workspaceContains:settings.gradle.kts",
     "workspaceContains:*/settings.gradle.kts",
     "workspaceContains:.classpath",
-    "workspaceContains:*/.classpath",
-    "onCommand:_java.project.open",
-    "onCommand:java.project.create",
-    "onCommand:java.view.package.newJavaClass"
+    "workspaceContains:*/.classpath"
   ],
   "license": "MIT",
   "main": "./main.js",
@@ -165,6 +162,12 @@
         "command": "java.view.package.copyRelativeFilePath",
         "title": "%contributes.commands.java.view.package.copyRelativeFilePath%",
         "category": "Java"
+      },
+      {
+        "command": "java.view.menus.file.newJavaClass",
+        "title": "%contributes.commands.java.view.menus.file.newJavaClass%",
+        "category": "Java",
+        "icon": "$(add)"
       },
       {
         "command": "java.view.package.newJavaClass",
@@ -290,7 +293,7 @@
     "menus": {
       "file/newFile": [
         {
-          "command": "java.view.package.newJavaClass"
+          "command": "java.view.menus.file.newJavaClass"
         }
       ],
       "commandPalette": [
@@ -348,6 +351,10 @@
         },
         {
           "command": "java.project.refreshLibraries",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.newJavaClass",
           "when": "false"
         },
         {
@@ -522,8 +529,8 @@
           "group": "8_execution@6"
         },
         {
-          "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "submenu": "javaProject.new",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/ || viewItem =~ /java:type(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/)",
           "group": "1_new@10"
         },
         {
@@ -533,23 +540,8 @@
         },
         {
           "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "1_new@10"
-        },
-        {
-          "command": "java.view.package.newJavaClass",
           "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "inline@add_0"
-        },
-        {
-          "command": "java.view.package.newPackage",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "1_new@20"
-        },
-        {
-          "command": "java.view.package.newPackage",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "1_new@20"
         },
         {
           "command": "java.project.addLibraries",
@@ -594,6 +586,16 @@
           "command": "java.project.update",
           "group": "gradle@10"
         }
+      ],
+      "javaProject.new": [
+        {
+          "command": "java.view.package.newJavaClass",
+          "group": "new@10"
+        },
+        {
+          "command": "java.view.package.newPackage",
+          "group": "new@40"
+        }
       ]
     },
     "submenus": [
@@ -604,6 +606,10 @@
       {
         "id": "javaProject.gradle",
         "label": "Gradle"
+      },
+      {
+        "id": "javaProject.new",
+        "label": "%contributes.submenus.javaProject.new%"
       }
     ],
     "views": {
@@ -813,7 +819,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^16.18.11",
     "@types/semver": "^7.3.13",
-    "@types/vscode": "1.69.0",
+    "@types/vscode": "1.75.0",
     "@vscode/test-electron": "^2.2.2",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",

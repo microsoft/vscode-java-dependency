@@ -5,26 +5,19 @@ import * as fse from "fs-extra";
 import * as path from "path";
 import { commands, Extension, extensions, languages, QuickPickItem, SnippetString, TextEditor, Uri,
     window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
-import { sendInfo } from "vscode-extension-telemetry-wrapper";
-import { Commands } from "../../extension.bundle";
+import { Commands, PrimaryTypeNode } from "../../extension.bundle";
 import { ExtensionName } from "../constants";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
 
+// TODO: separate to two function to handle creation from menu bar and explorer.
 export async function newJavaClass(node?: DataNode): Promise<void> {
     let packageFsPath: string | undefined;
     if (!node) {
-        // from the new file menu entry
-        sendInfo("", {
-            triggerNewFileFrom: "menuBar",
-        });
         packageFsPath = await inferPackageFsPath();
     } else {
-        sendInfo("", {
-            triggerNewFileFrom: "projectExplorer",
-        });
         if (!node?.uri || !canCreateClass(node)) {
             return;
         }
@@ -209,6 +202,19 @@ export async function newPackage(node?: DataNode): Promise<void> {
     } else if (nodeKind === NodeKind.Package) {
         defaultValue = node.nodeData.name + ".";
         packageRootPath = getPackageRootPath(Uri.parse(node.uri).fsPath, node.nodeData.name);
+    } else if (nodeKind === NodeKind.PrimaryType) {
+        const primaryTypeNode = <PrimaryTypeNode> node;
+        packageRootPath = primaryTypeNode.getPackageRootPath();
+        if (packageRootPath === "") {
+            window.showErrorMessage("Failed to get the package root path.");
+            return;
+        }
+        const packagePath = await getPackageFsPath(node);
+        if (!packagePath) {
+            window.showErrorMessage("Failed to get the package path.");
+            return;
+        }
+        defaultValue = path.relative(packageRootPath, packagePath).replace(/[\\,/]/g, ".") + ".";
     } else {
         return;
     }
@@ -239,14 +245,12 @@ export async function newPackage(node?: DataNode): Promise<void> {
     await fse.ensureDir(getNewPackagePath(packageRootPath, packageName));
 }
 
+/**
+ * Check if the create package command is available for the given node.
+ * Currently the check logic is the same as the create class command.
+ */
 function canCreatePackage(node: DataNode): boolean {
-    if (node.nodeData.kind === NodeKind.Project ||
-        node.nodeData.kind === NodeKind.PackageRoot ||
-        node.nodeData.kind === NodeKind.Package) {
-        return true;
-    }
-
-    return false;
+    return canCreateClass(node);
 }
 
 function getPackageRootPath(packageFsPath: string, packageName: string): string {
