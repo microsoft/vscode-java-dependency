@@ -5,8 +5,8 @@ import * as assert from "assert";
 import * as clipboardy from "clipboardy";
 import * as path from "path";
 import * as vscode from "vscode";
-import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode, IMainClassInfo,
-    INodeData, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
+import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode,
+    INodeData, Jdtls, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, setupTestEnv, Uris } from "../shared";
 import { sleep } from "../util";
 
@@ -175,8 +175,7 @@ suite("Maven Project View Tests", () => {
     test("Can execute command java.project.list correctly", async function() {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         assert.ok(workspaceFolders, `There should be valid workspace folders`);
-        const projects = await vscode.commands.executeCommand<INodeData[]>(Commands.EXECUTE_WORKSPACE_COMMAND,
-            Commands.JAVA_PROJECT_LIST, workspaceFolders![0].uri.toString());
+        const projects = await Jdtls.getProjects(workspaceFolders![0].uri.toString());
         assert.equal(projects?.length, 1, "project's length should be 1");
         assert.equal(projects![0].name, "my-app", "project should be my-app");
     });
@@ -217,8 +216,7 @@ suite("Maven Project View Tests", () => {
     test("Can execute command java.project.getMainClasses correctly", async function() {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         assert.ok(workspaceFolders, `There should be valid workspace folders`);
-        const mainClasses = await vscode.commands.executeCommand<IMainClassInfo[]>(Commands.EXECUTE_WORKSPACE_COMMAND,
-            Commands.JAVA_PROJECT_GETMAINCLASSES, workspaceFolders![0].uri.toString());
+        const mainClasses = await Jdtls.getMainClasses(workspaceFolders![0].uri.toString());
         assert.equal(mainClasses?.length, 1, "mainClasses' length should be 1");
         assert.equal(mainClasses![0].name, "com.mycompany.app.App", "mainClasses[0]'s name should be com.mycompany.app.App");
     });

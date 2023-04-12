@@ -28,3 +28,6 @@ export { languageServerApiManager } from "./src/languageServerApi/languageServer
 
 // tasks
 export { BuildTaskProvider, categorizePaths, getFinalPaths } from "./src/tasks/build/buildTaskProvider";
+
+// delegate commands
+export { Jdtls } from "./src/java/jdtls";
