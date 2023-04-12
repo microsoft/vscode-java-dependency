@@ -12,7 +12,7 @@ import {
 import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { deleteFiles } from "../explorerCommands/delete";
-import { newJavaClass, newPackage } from "../explorerCommands/new";
+import { newFile, newFolder, newJavaClass, newPackage } from "../explorerCommands/new";
 import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
 import { Jdtls } from "../java/jdtls";
@@ -109,6 +109,12 @@ export class DependencyExplorer implements Disposable {
         context.subscriptions.push(
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode) => {
                 newJavaClass(node);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_FILE, async (node: DataNode) => {
+                newFile(node);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_FOLDER, async (node: DataNode) => {
+                newFolder(node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_PACKAGE, async (node?: DataNode) => {
                 let cmdNode = getCmdNode(this._dependencyViewer.selection, node);

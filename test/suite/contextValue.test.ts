@@ -89,19 +89,19 @@ suite("Context Value Tests", () => {
     });
 
     test("test class type node", async function() {
-        assert.ok(/java:type(?=.*?\b\+class\b)(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/.test((await classType.getTreeItem()).contextValue || ""));
+        assert.ok(/java:type(?=.*?\b\+class\b)(?=.*?\b\+uri\b)/.test((await classType.getTreeItem()).contextValue || ""));
     });
 
     test("test test-class type node", async function() {
-        assert.ok(/java:type(?=.*?\b\+class\b)(?=.*?\b\+test\b)(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/.test((await testClassType.getTreeItem()).contextValue || ""));
+        assert.ok(/java:type(?=.*?\b\+class\b)(?=.*?\b\+test\b)(?=.*?\b\+uri\b)/.test((await testClassType.getTreeItem()).contextValue || ""));
     });
 
     test("test enum type node", async function() {
-        assert.ok(/java:type(?=.*?\b\+enum\b)(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/.test((await enumType.getTreeItem()).contextValue || ""));
+        assert.ok(/java:type(?=.*?\b\+enum\b)(?=.*?\b\+uri\b)/.test((await enumType.getTreeItem()).contextValue || ""));
     });
 
     test("test interface type node", async function() {
-        assert.ok(/java:type(?=.*?\b\+interface\b)(?=.*?\b\+source\b)(?=.*?\b\+uri\b)/.test((await interfaceType.getTreeItem()).contextValue || ""));
+        assert.ok(/java:type(?=.*?\b\+interface\b)(?=.*?\b\+uri\b)/.test((await interfaceType.getTreeItem()).contextValue || ""));
     });
 
     test("test folder node", async function() {

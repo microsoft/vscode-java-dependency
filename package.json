@@ -181,6 +181,18 @@
         "category": "Java"
       },
       {
+        "command": "java.view.package.newFile",
+        "title": "%contributes.commands.java.view.package.newFile%",
+        "category": "Java",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "java.view.package.newFolder",
+        "title": "%contributes.commands.java.view.package.newFolder%",
+        "category": "Java",
+        "icon": "$(new-folder)"
+      },
+      {
         "command": "java.view.package.moveFileToTrash",
         "title": "%contributes.commands.java.view.package.moveFileToTrash%",
         "category": "Java"
@@ -362,6 +374,14 @@
           "when": "false"
         },
         {
+          "command": "java.view.package.newFile",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.newFolder",
+          "when": "false"
+        },
+        {
           "command": "java.view.package.renameFile",
           "when": "false"
         },
@@ -530,7 +550,7 @@
         },
         {
           "submenu": "javaProject.new",
-          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/ || viewItem =~ /java:type(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/)",
+          "when": "view == javaProjectExplorer && viewItem =~ /java(?!:container)(?!:jar)(?!.*?\\b\\+binary\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "1_new@10"
         },
         {
@@ -590,11 +610,22 @@
       "javaProject.new": [
         {
           "command": "java.view.package.newJavaClass",
-          "group": "new@10"
+          "group": "new@10",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
         },
         {
           "command": "java.view.package.newPackage",
-          "group": "new@40"
+          "group": "new@20",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
+        },
+        {
+          "command": "java.view.package.newFile",
+          "group": "new@30"
+        },
+        {
+          "command": "java.view.package.newFolder",
+          "group": "new@40",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(file|folder|project)/ || viewItem =~ /java:(packageRoot)(?=.*?\\b\\+resource\\b)/)"
         }
       ]
     },
