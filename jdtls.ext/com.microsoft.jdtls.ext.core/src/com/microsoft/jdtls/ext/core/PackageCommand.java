@@ -540,9 +540,10 @@ public class PackageCommand {
 
         IModuleDescription moduleDescription = root.getModuleDescription();
         if (moduleDescription != null) {
-            IClassFile moduleInfo = moduleDescription.getClassFile();
-            if (moduleInfo != null) {
+            if (moduleDescription.getClassFile() != null) {
                 result.add(moduleDescription.getClassFile());
+            } else if (moduleDescription.getCompilationUnit() != null) {
+                result.add(moduleDescription.getCompilationUnit());
             }
         }
         return result;

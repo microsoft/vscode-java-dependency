@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJarEntryResource;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -101,6 +102,8 @@ public class ResourceSet {
                 visitor.visit((IType) resource);
             } else if (resource instanceof IClassFile) {
                 visitor.visit((IClassFile) resource);
+            } else if (resource instanceof ICompilationUnit) {
+                visitor.visit((ICompilationUnit) resource);
             } else if (resource instanceof IFile) {
                 if (shouldVisit((IFile) resource)) {
                     visitor.visit((IFile) resource);

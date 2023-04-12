@@ -33,10 +33,13 @@ suite("Maven Project View Tests", () => {
         const mainPackage = projectChildren[0] as PackageRootNode;
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
 
-        const primarySubPackages = await mainPackage.getChildren();
-        assert.equal(primarySubPackages.length, 1, "Number of primary subpackages should be 1");
-        const primarySubPackage = primarySubPackages[0] as PackageNode;
+        const mainSourceSetChildren = await mainPackage.getChildren();
+        assert.equal(mainSourceSetChildren.length, 2, "Number of primary subpackages should be 2");
+        const primarySubPackage = mainSourceSetChildren[0] as DataNode;
         assert.equal(primarySubPackage.name, "com.mycompany", "Name of primary subpackage should be \"com.mycompany\"");
+
+        const moduleInfo = mainSourceSetChildren[1] as DataNode;
+        assert.equal(moduleInfo.name, "module-info.java");
 
         const secondarySubPackages = await primarySubPackage.getChildren();
         assert.equal(secondarySubPackages.length, 2, "Number of secondary subpackages should be 1");
@@ -85,15 +88,23 @@ suite("Maven Project View Tests", () => {
         assert.equal(mavenDependency.name, "Maven Dependencies", "Container name should be \"Maven Dependencies\"");
 
         // validate package nodes
-        const mainSubPackages = await mainPackage.getChildren();
-        const testSubPackages = await testPackage.getChildren();
-        assert.equal(mainSubPackages.length, 2, "Number of main sub packages should be 2");
-        assert.equal(testSubPackages.length, 1, "Number of test sub packages should be 1");
-        const firstMainSubPackage = mainSubPackages[0] as PackageNode;
-        const secondMainSubPackage = mainSubPackages[1] as PackageNode;
-        const testSubPackage = testSubPackages[0] as PackageNode;
+        const mainSourceSetChildren = await mainPackage.getChildren();
+        assert.equal(mainSourceSetChildren.length, 3, "Number of main source set children should be 3");
+
+        const firstMainSubPackage = mainSourceSetChildren[0] as DataNode;
         assert.equal(firstMainSubPackage.name, "com.mycompany.app", "Name of first main subpackage should be \"com.mycompany.app\"");
+
+        const secondMainSubPackage = mainSourceSetChildren[1] as DataNode;
         assert.equal(secondMainSubPackage.name, "com.mycompany.app1", "Name of second main subpackage should be \"com.mycompany.app1\"");
+
+        const moduleInfo = mainSourceSetChildren[2] as DataNode;
+        assert.equal(moduleInfo.name, "module-info.java");
+
+        const testSourceSetChildren = await testPackage.getChildren();
+        assert.equal(testSourceSetChildren.length, 1, "Number of test sub packages should be 1");
+        const testSubPackage = testSourceSetChildren[0] as PackageNode;
+        
+        
         assert.equal(testSubPackage.name, "com.mycompany.app", "Name of test subpackage should be \"com.mycompany.app\"");
 
         // validate innermost layer nodes
@@ -195,9 +206,10 @@ suite("Maven Project View Tests", () => {
             path: mainPackage.nodeData.name,
             handlerIdentifier: mainPackage.nodeData.handlerIdentifier,
         });
-        assert.equal(packages?.length, 2, "packages' length should be 2");
-        assert.equal(packages![0].name, "com.mycompany.app", "package[0]'s name should be com.mycompany.app");
-        assert.equal(packages![1].name, "com.mycompany.app1", "package[1]'s name should be com.mycompany.app1");
+        assert.equal(packages?.length, 3, "packages' length should be 3");
+        assert.equal(packages![0].name, "com.mycompany.app");
+        assert.equal(packages![1].name, "com.mycompany.app1");
+        assert.equal(packages![2].name, "module-info.java");
     });
 
     test("Can execute command java.resolvePath correctly", async function() {
