@@ -11,7 +11,12 @@ import { INodeData } from "./nodeData";
 
 export namespace Jdtls {
     export async function getProjects(params: string): Promise<INodeData[]> {
-        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_LIST, params) || [];
+        return await commands.executeCommand(
+            Commands.EXECUTE_WORKSPACE_COMMAND,
+            Commands.JAVA_PROJECT_LIST,
+            params,
+            true /*includeNonJavaProjects*/
+        ) || [];
     }
 
     export async function getProjectUris(): Promise<string[]> {

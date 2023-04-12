@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -98,10 +99,20 @@ public final class ProjectCommand {
         String workspaceUri = (String) arguments.get(0);
         IPath workspaceFolderPath = ResourceUtils.canonicalFilePathFromURI(workspaceUri);
 
-        IJavaProject[] javaProjects = ProjectUtils.getJavaProjects();
+        IProject[] projects;
+        boolean includeNonJava = false;
+        if (arguments.size() > 1) {
+            includeNonJava = (boolean) arguments.get(1);
+        }
+        if (includeNonJava) {
+            projects = ProjectUtils.getAllProjects();
+        } else {
+            projects = Arrays.stream(ProjectUtils.getJavaProjects())
+                .map(IJavaProject::getProject).toArray(IProject[]::new);
+        }
+
         ArrayList<PackageNode> children = new ArrayList<>();
-        for (IJavaProject javaProject : javaProjects) {
-            IProject project = javaProject.getProject();
+        for (IProject project : projects) {
             if (!project.isAccessible() || project.getLocation() == null) {
                 continue;
             }
