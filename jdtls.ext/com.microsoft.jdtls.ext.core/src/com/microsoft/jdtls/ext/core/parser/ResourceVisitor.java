@@ -17,6 +17,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJarEntryResource;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -39,6 +40,8 @@ public interface ResourceVisitor {
     void visit(IType type);
 
     void visit(IClassFile classFile);
+
+    void visit(ICompilationUnit compilationUnit);
 
     void visit(IFile file);
 
