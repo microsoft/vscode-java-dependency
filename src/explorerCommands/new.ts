@@ -11,6 +11,7 @@ import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
+import { sendError, setUserError } from "vscode-extension-telemetry-wrapper";
 
 // TODO: separate to two function to handle creation from menu bar and explorer.
 export async function newJavaClass(node?: DataNode): Promise<void> {
@@ -277,4 +278,106 @@ interface ISourcePath {
     displayPath: string;
     projectName: string;
     projectType: string;
+}
+
+export async function newFile(node: DataNode): Promise<void> {
+    const basePath = getBasePath(node);
+    if (!basePath) {
+        window.showErrorMessage("The selected node is invalid.");
+        return;
+    }
+
+    const fileName: string | undefined = await window.showInputBox({
+        placeHolder: "Input the file name",
+        ignoreFocusOut: true,
+        validateInput: async (value: string): Promise<string> => {
+            return validateNewFileFolder(basePath, value);
+        },
+    });
+
+    if (!fileName) {
+        return;
+    }
+
+    // any continues separator will be deduplicated.
+    const relativePath = fileName.replace(/[/\\]+/g, path.sep);
+    const newFilePath = path.join(basePath, relativePath);
+    await createFile(newFilePath);
+}
+
+async function createFile(newFilePath: string) {
+    fse.createFile(newFilePath, async (err: Error) => {
+        if (err) {
+            setUserError(err);
+            sendError(err);
+            const choice = await window.showErrorMessage(
+                err.message || "Failed to create file: " + path.basename(newFilePath),
+                "Retry"
+            );
+            if (choice === "Retry") {
+                await createFile(newFilePath);
+            }
+        } else {
+            window.showTextDocument(Uri.file(newFilePath));
+        }
+    });
+}
+
+export async function newFolder(node: DataNode): Promise<void> {
+    const basePath = getBasePath(node);
+    if (!basePath) {
+        window.showErrorMessage("The selected node is invalid.");
+        return;
+    }
+
+    const folderName: string | undefined = await window.showInputBox({
+        placeHolder: "Input the folder name",
+        ignoreFocusOut: true,
+        validateInput: async (value: string): Promise<string> => {
+            return validateNewFileFolder(basePath, value);
+        },
+    });
+
+    if (!folderName) {
+        return;
+    }
+
+    // any continues separator will be deduplicated.
+    const relativePath = folderName.replace(/[/\\]+/g, path.sep);
+    const newFolderPath = path.join(basePath, relativePath);
+    fse.mkdirs(newFolderPath);
+}
+
+async function validateNewFileFolder(basePath: string, relativePath: string): Promise<string> {
+    relativePath = relativePath.replace(/[/\\]+/g, path.sep);
+    if (await fse.pathExists(path.join(basePath, relativePath))) {
+        return "A file or folder already exists in the target location.";
+    }
+
+    return "";
+}
+
+function getBasePath(node: DataNode): string | undefined {
+    if (!node.uri) {
+        return undefined;
+    }
+
+    const uri: Uri = Uri.parse(node.uri);
+    if (uri.scheme !== "file") {
+        return undefined;
+    }
+
+    const nodeKind = node.nodeData.kind;
+    switch (nodeKind) {
+        case NodeKind.Project:
+        case NodeKind.PackageRoot:
+        case NodeKind.Package:
+        case NodeKind.Folder:
+            return Uri.parse(node.uri!).fsPath;
+        case NodeKind.PrimaryType:
+        case NodeKind.File:
+            return path.dirname(Uri.parse(node.uri).fsPath);
+        default:
+            return undefined;
+    }
 }

@@ -46,6 +46,10 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER = "java.view.package.revealInProjectExplorer";
 
+    export const VIEW_PACKAGE_NEW_FILE = "java.view.package.newFile";
+
+    export const VIEW_PACKAGE_NEW_FOLDER = "java.view.package.newFolder";
+
     export const VIEW_MENUS_FILE_NEW_JAVA_CLASS = "java.view.menus.file.newJavaClass";
 
     export const JAVA_PROJECT_OPEN = "_java.project.open";

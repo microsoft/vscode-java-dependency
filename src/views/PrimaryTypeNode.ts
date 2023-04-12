@@ -12,7 +12,6 @@ import { DataNode } from "./dataNode";
 import { DocumentSymbolNode } from "./documentSymbolNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
-import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
 
 export class PrimaryTypeNode extends DataNode {
 
@@ -122,31 +121,7 @@ export class PrimaryTypeNode extends DataNode {
             contextValue += "+test";
         }
 
-        if (this.belongsToSourceRoot() || this.getUnmanagedFolderAncestor()) {
-            contextValue += "+source";
-        }
-
         return contextValue;
-    }
-
-    /**
-     * Check if the type belongs to a source root. Following conditions can cause the
-     * result to be false:
-     * - The type belongs to a jar package
-     * - The type belongs to an unmanaged folder with '.' as its source root.
-     */
-    private belongsToSourceRoot(): boolean {
-        const rootNodeData = this._rootNode?.nodeData;
-        if (!rootNodeData) {
-            return false;
-        }
-    
-        const data = <IPackageRootNodeData>rootNodeData;
-        if (data.entryKind === PackageRootKind.K_SOURCE) {
-            return true;
-        }
-    
-        return false;
     }
 
     /**
