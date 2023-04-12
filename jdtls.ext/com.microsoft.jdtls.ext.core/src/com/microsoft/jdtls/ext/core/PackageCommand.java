@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -257,18 +259,22 @@ public class PackageCommand {
      * Get the class path container list.
      */
     private static List<PackageNode> getProjectChildren(PackageParams query, IProgressMonitor pm) {
-        IJavaProject javaProject = getJavaProject(query.getProjectUri());
-        if (javaProject != null) {
-            refreshLocal(javaProject.getProject(), pm);
-            List<Object> children = new LinkedList<>();
-            boolean hasReferencedLibraries = false;
-            try {
+        IProject project = getProject(query.getProjectUri());
+        if (project == null) {
+            JdtlsExtActivator.logError("Failed to find project at: " + query.getProjectUri());
+        }
+
+        List<Object> children = new LinkedList<>();
+        boolean hasReferencedLibraries = false;
+        IJavaProject javaProject = JavaCore.create(project);
+        try {
+            if (ProjectUtils.isJavaProject(project) && javaProject != null) {
+                refreshLocal(javaProject.getProject(), pm);
                 IClasspathEntry[] references = javaProject.getRawClasspath();
                 for (IClasspathEntry entry : references) {
                     int entryKind = entry.getEntryKind();
                     if (entryKind == IClasspathEntry.CPE_SOURCE) {
-                        IPackageFragmentRoot[] packageFragmentRoots = javaProject.findPackageFragmentRoots(entry);
-                        children.addAll(Arrays.asList(packageFragmentRoots));
+                        Collections.addAll(children, javaProject.findPackageFragmentRoots(entry));
                     } else if (entryKind == IClasspathEntry.CPE_CONTAINER) {
                         children.add(entry);
                     } else if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
@@ -278,24 +284,32 @@ public class PackageCommand {
                     }
                 }
                 Collections.addAll(children, javaProject.getNonJavaResources());
-            } catch (CoreException e) {
-                JdtlsExtActivator.logException("Problem load project library ", e);
+            } else {
+                Set<IPath> projectPaths = Arrays.stream(ProjectUtils.getAllProjects())
+                        .map(IProject::getLocation).collect(Collectors.toSet());
+                IResource[] members = project.members();
+                for (IResource member : members) {
+                    if (!projectPaths.contains(member.getLocation())) {
+                        children.add(member);
+                    }
+                }
             }
-
-            ResourceSet resourceSet = new ResourceSet(children);
-            ResourceVisitor visitor = new JavaResourceVisitor(javaProject);
-            resourceSet.accept(visitor);
-            List<PackageNode> result = visitor.getNodes();
-
-            // Invisible project will always have the referenced libraries entry
-            if (!ProjectUtils.isVisibleProject(javaProject.getProject())) {
-                result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
-            } else if (hasReferencedLibraries) {
-                result.add(PackageNode.IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER);
-            }
-            return result;
+        } catch (CoreException e) {
+            JdtlsExtActivator.logException("Problem load project library ", e);
         }
-        return Collections.emptyList();
+
+        ResourceSet resourceSet = new ResourceSet(children);
+        ResourceVisitor visitor = new JavaResourceVisitor(javaProject);
+        resourceSet.accept(visitor);
+        List<PackageNode> result = visitor.getNodes();
+
+        // Invisible project will always have the referenced libraries entry
+        if (!ProjectUtils.isVisibleProject(project)) {
+            result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
+        } else if (hasReferencedLibraries) {
+            result.add(PackageNode.IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER);
+        }
+        return result;
     }
 
     private static List<PackageNode> getContainerChildren(PackageParams query, IProgressMonitor pm) {
@@ -567,7 +581,7 @@ public class PackageCommand {
         return null;
     }
 
-    public static IJavaProject getJavaProject(String projectUri) {
+    public static IProject getProject(String projectUri) {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         IContainer[] containers = root.findContainersForLocationURI(JDTUtils.toURI(projectUri));
 
@@ -576,8 +590,7 @@ public class PackageCommand {
         }
 
         // For multi-module scenario, findContainersForLocationURI API may return a container array,
-        // need filter out non-Java project and put the result from the nearest project in front.
-        containers = Arrays.stream(containers).filter(c -> ProjectUtils.isJavaProject(c.getProject())).toArray(IContainer[]::new);
+        // put the result from the nearest project in front.
         Arrays.sort(containers, (Comparator<IContainer>) (IContainer a, IContainer b) -> {
             return a.getFullPath().toPortableString().length() - b.getFullPath().toPortableString().length();
         });
@@ -587,9 +600,14 @@ public class PackageCommand {
             if (!project.exists()) {
                 return null;
             }
-            return JavaCore.create(project);
+            return project;
         }
         return null;
+    }
+
+    public static IJavaProject getJavaProject(String projectUri) {
+        IProject project = getProject(projectUri);
+        return JavaCore.create(project);
     }
 
     private static void refreshLocal(IResource resource, IProgressMonitor monitor) {
