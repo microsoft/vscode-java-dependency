@@ -100,7 +100,10 @@ public final class ProjectCommand {
         IPath workspaceFolderPath = ResourceUtils.canonicalFilePathFromURI(workspaceUri);
 
         IProject[] projects;
-        boolean includeNonJava = (boolean) arguments.get(1);
+        boolean includeNonJava = false;
+        if (arguments.size() > 1) {
+            includeNonJava = (boolean) arguments.get(1);
+        }
         if (includeNonJava) {
             projects = ProjectUtils.getAllProjects();
         } else {
