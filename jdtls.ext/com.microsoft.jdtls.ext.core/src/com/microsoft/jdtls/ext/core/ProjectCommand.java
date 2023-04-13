@@ -296,25 +296,29 @@ public final class ProjectCommand {
 
     public static boolean checkImportStatus() {
         IProject[] projects = ProjectUtils.getAllProjects();
+        boolean hasError = false;
         for (IProject project : projects) {
             if (ProjectsManager.DEFAULT_PROJECT_NAME.equals(project.getName())) {
                 continue;
             }
+
+            // if a Java project found, we think it as success import now.
+            if (ProjectUtils.isJavaProject(project)) {
+                return false;
+            }
+
             try {
-                List<IMarker> markers = ResourceUtils.getErrorMarkers(project);
-                if (markers != null) {
-                    boolean hasError = markers.stream().anyMatch(m -> {
-                        return m.getAttribute(IMarker.SEVERITY, 0) == IMarker.SEVERITY_ERROR;
-                    });
-                    if (hasError) {
-                        return true;
-                    }
+                int maxProblemSeverity = project.findMaxProblemSeverity(null, true, IResource.DEPTH_ONE);
+                if (maxProblemSeverity == IMarker.SEVERITY_ERROR) {
+                    hasError = true;
+                    break;
                 }
             } catch (CoreException e) {
                 JdtlsExtActivator.log(e);
             }
         }
-        return false;
+
+        return hasError;
     }
 
     private static void reportExportJarMessage(String terminalId, int severity, String message) {
