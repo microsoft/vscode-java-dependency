@@ -296,25 +296,30 @@ public final class ProjectCommand {
 
     public static boolean checkImportStatus() {
         IProject[] projects = ProjectUtils.getAllProjects();
+        boolean hasJavaProjectImported = false;
+        boolean hasError = false;
         for (IProject project : projects) {
             if (ProjectsManager.DEFAULT_PROJECT_NAME.equals(project.getName())) {
                 continue;
             }
+
+            if (ProjectUtils.isJavaProject(project)) {
+                hasJavaProjectImported = true;
+            }
+
             try {
-                List<IMarker> markers = ResourceUtils.getErrorMarkers(project);
-                if (markers != null) {
-                    boolean hasError = markers.stream().anyMatch(m -> {
-                        return m.getAttribute(IMarker.SEVERITY, 0) == IMarker.SEVERITY_ERROR;
-                    });
-                    if (hasError) {
-                        return true;
-                    }
+                int maxProblemSeverity = project.findMaxProblemSeverity(null, true, IResource.DEPTH_ONE);
+                if (maxProblemSeverity == IMarker.SEVERITY_ERROR) {
+                    hasError = true;
+                    break;
                 }
             } catch (CoreException e) {
                 JdtlsExtActivator.log(e);
             }
         }
-        return false;
+
+        // We think error happens if there is no java project imported and errors exist in workspace.
+        return hasError && (!hasJavaProjectImported);
     }
 
     private static void reportExportJarMessage(String terminalId, int severity, String message) {

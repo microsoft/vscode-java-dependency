@@ -173,6 +173,12 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 return this._rootItems;
             }
 
+            const hasJavaError: boolean = await Jdtls.checkImportStatus();
+            if (hasJavaError) {
+                contextManager.setContextValue(Context.IMPORT_FAILED, true);
+                return [];
+            }
+
             const rootItems: ExplorerNode[] = [];
             const folders = workspace.workspaceFolders;
             if (folders && folders.length) {
@@ -192,12 +198,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 }
             }
             if (_.isEmpty(rootItems)) {
-                const hasJavaError: boolean = await Jdtls.checkImportStatus();
-                if (hasJavaError) {
-                    contextManager.setContextValue(Context.IMPORT_FAILED, true);
-                } else {
-                    contextManager.setContextValue(Context.NO_JAVA_PROJECT, true);
-                }
+                contextManager.setContextValue(Context.NO_JAVA_PROJECT, true);
             }
             return rootItems;
         } finally {
