@@ -296,15 +296,15 @@ public final class ProjectCommand {
 
     public static boolean checkImportStatus() {
         IProject[] projects = ProjectUtils.getAllProjects();
-        boolean hasJavaProjectImported = false;
         boolean hasError = false;
         for (IProject project : projects) {
             if (ProjectsManager.DEFAULT_PROJECT_NAME.equals(project.getName())) {
                 continue;
             }
 
+            // if a Java project found, we think it as success import now.
             if (ProjectUtils.isJavaProject(project)) {
-                hasJavaProjectImported = true;
+                return false;
             }
 
             try {
@@ -318,8 +318,7 @@ public final class ProjectCommand {
             }
         }
 
-        // We think error happens if there is no java project imported and errors exist in workspace.
-        return hasError && (!hasJavaProjectImported);
+        return hasError;
     }
 
     private static void reportExportJarMessage(String terminalId, int severity, String message) {
