@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.77.0"
   },
   "repository": {
     "type": "git",
@@ -872,7 +872,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^16.18.11",
     "@types/semver": "^7.3.13",
-    "@types/vscode": "1.75.0",
+    "@types/vscode": "1.77.0",
     "@vscode/test-electron": "^2.2.2",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",
