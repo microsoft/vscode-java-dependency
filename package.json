@@ -143,6 +143,11 @@
         }
       },
       {
+        "command": "java.project.explorer.configureFilters",
+        "title": "%contributes.commands.java.project.explorer.configureFilters%",
+        "category": "Java"
+      },
+      {
         "command": "java.view.package.revealFileInOS",
         "title": "%contributes.commands.java.view.package.revealFileInOS%",
         "category": "Java"
@@ -258,6 +263,18 @@
           ],
           "markdownDescription": "%configuration.java.project.exportJar.targetPath.customization%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
+        },
+        "java.project.explorer.filters": {
+          "type": "object",
+          "description": "%configuration.java.project.explorer.filters%",
+          "default": {},
+          "properties": {
+            "nonJavaResources": {
+              "type": "boolean",
+              "description": "%configuration.java.project.explorer.filters.nonJavaResources%",
+              "default": false
+            }
+          }
         }
       }
     },
@@ -480,6 +497,11 @@
           "command": "java.view.package.unlinkWithFolderExplorer",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && config.java.dependency.syncWithFolderExplorer == true",
           "group": "overflow_10@20"
+        },
+        {
+          "command": "java.project.explorer.configureFilters",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard",
+          "group": "overflow_10@30"
         },
         {
           "command": "java.project.clean.workspace",

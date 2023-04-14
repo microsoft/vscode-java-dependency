@@ -7,7 +7,8 @@ import { CancellationToken, Uri, commands, workspace } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
 import { IMainClassInfo } from "../tasks/buildArtifact/ResolveMainClassExecutor";
-import { INodeData } from "./nodeData";
+import { INodeData, NodeKind } from "./nodeData";
+import { Settings } from "../settings";
 
 export namespace Jdtls {
     export async function getProjects(params: string): Promise<INodeData[]> {
@@ -15,7 +16,7 @@ export namespace Jdtls {
             Commands.EXECUTE_WORKSPACE_COMMAND,
             Commands.JAVA_PROJECT_LIST,
             params,
-            true /*includeNonJavaProjects*/
+            Settings.nonJavaResourcesFiltered()
         ) || [];
     }
 
@@ -33,6 +34,14 @@ export namespace Jdtls {
 
         let nodeData: INodeData[] = await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
             Commands.JAVA_GETPACKAGEDATA, params) || [];
+
+        // check filter settings.
+        if (Settings.nonJavaResourcesFiltered()) {
+            nodeData = nodeData.filter((data: INodeData) => {
+                return data.kind !== NodeKind.Folder && data.kind !== NodeKind.File;
+            });
+        }
+
         if (excludePatterns && nodeData.length) {
             const uriOfChildren: string[] = nodeData.map((node: INodeData) => node.uri).filter(Boolean) as string[];
             const urisToExclude: Set<string> = new Set<string>();

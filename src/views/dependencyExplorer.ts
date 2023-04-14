@@ -90,6 +90,24 @@ export class DependencyExplorer implements Disposable {
 
                 this.reveal(uri, false /*force to reveal even the sync setting is turned off*/);
             }),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_EXPLORER_CONFIGURE_FILTERS, async () => {
+                const filters = await window.showQuickPick(
+                    [{
+                        label: "Non-Java resources",
+                        picked: Settings.nonJavaResourcesFiltered(),
+                    }],
+                    {
+                        placeHolder: "Select filters to apply to the Java Projects Explorer",
+                        canPickMany: true,
+                        ignoreFocusOut: true,
+                    }
+                );
+                if (!filters) {
+                    return;
+                }
+
+                Settings.switchNonJavaResourceFilter(filters.some((filter) => filter.label === "Non-Java resources"));
+            }),
         );
 
         // register telemetry events
