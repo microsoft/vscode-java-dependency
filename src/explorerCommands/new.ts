@@ -13,6 +13,54 @@ import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
 import { sendError, setUserError } from "vscode-extension-telemetry-wrapper";
 
+export async function newResource(node: DataNode): Promise<void> {
+    const availableTypes: string[] = [];
+    // add options for Java nodes
+    if (node.nodeData.kind === NodeKind.Project ||
+            (node.nodeData.kind === NodeKind.PackageRoot && !resourceRoots.includes(node.nodeData.name)) ||
+            node.nodeData.kind === NodeKind.Package ||
+            node.nodeData.kind === NodeKind.PrimaryType ||
+            node.nodeData.kind === NodeKind.CompilationUnit) {
+        availableTypes.push("$(symbol-class) Java Class", "$(symbol-namespace) Package");
+    }
+
+    // add new file option
+    availableTypes.push("$(file) File");
+
+    // add new folder option
+    if (node.nodeData.kind === NodeKind.Project ||
+            (node.nodeData.kind === NodeKind.PackageRoot && resourceRoots.includes(node.nodeData.name)) ||
+            node.nodeData.kind === NodeKind.Folder ||
+            node.nodeData.kind === NodeKind.File) {
+        availableTypes.push("$(folder) Folder");
+    }
+
+    const type = await window.showQuickPick(
+        availableTypes,
+        {
+            placeHolder: "Select resource type to create.",
+            ignoreFocusOut: true,
+        }
+    );
+
+    switch (type) {
+        case "$(symbol-class) Java Class":
+            await newJavaClass(node);
+            break;
+        case "$(symbol-namespace) Package":
+            await newPackage(node);
+            break;
+        case "$(file) File":
+            await newFile(node);
+            break;
+        case "$(folder) Folder":
+            await newFolder(node);
+            break;
+        default:
+            break;
+    }
+}
+
 // TODO: separate to two function to handle creation from menu bar and explorer.
 export async function newJavaClass(node?: DataNode): Promise<void> {
     let packageFsPath: string | undefined;

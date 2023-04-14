@@ -20,6 +20,7 @@
   "contributes.commands.java.view.package.exportJar": "导出到 Jar 文件...",
   "contributes.commands.java.view.package.copyFilePath": "复制路径",
   "contributes.commands.java.view.package.copyRelativeFilePath": "复制相对路径",
+  "contributes.commands.java.view.package.new": "创建...",
   "contributes.commands.java.view.package.newJavaClass": "Java 类",
   "contributes.commands.java.view.package.newPackage": "包",
   "contributes.commands.java.view.package.newFile": "文件",

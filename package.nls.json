@@ -20,6 +20,7 @@
   "contributes.commands.java.view.package.exportJar": "Export Jar...",
   "contributes.commands.java.view.package.copyFilePath": "Copy Path",
   "contributes.commands.java.view.package.copyRelativeFilePath": "Copy Relative Path",
+  "contributes.commands.java.view.package.new": "New...",
   "contributes.commands.java.view.package.newJavaClass": "Java Class",
   "contributes.commands.java.view.package.newPackage": "Package",
   "contributes.commands.java.view.package.newFile": "File",
