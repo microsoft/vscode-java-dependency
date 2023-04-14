@@ -363,6 +363,10 @@ public class PackageNode {
         return path;
     }
 
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     public NodeKind getKind() {
         return kind;
     }

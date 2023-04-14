@@ -43,7 +43,6 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJarEntryResource;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
@@ -230,12 +229,7 @@ public class PackageCommand {
         List<PackageNode> nodeList = new LinkedList<>();
         while (element != null && !(element instanceof IWorkspaceRoot)) {
             IJavaElement javaElement = JavaCore.create(element);
-            if (javaElement == null) {
-                PackageNode entry = PackageNode.createNodeForResource(element);
-                if (entry != null) {
-                    nodeList.add(0, entry);
-                }
-            } else if (javaElement instanceof IJavaProject) {
+            if (javaElement instanceof IJavaProject) {
                 nodeList.add(0, PackageNode.createNodeForProject(javaElement));
             } else if (javaElement instanceof IPackageFragmentRoot) {
                 IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) javaElement;
@@ -247,6 +241,11 @@ public class PackageCommand {
                 IPackageFragment packageFragment = (IPackageFragment) javaElement;
                 if (packageFragment.containsJavaResources() || packageFragment.getNonJavaResources().length > 0) {
                     nodeList.add(0, PackageNode.createNodeForPackageFragment(packageFragment));
+                }
+            } else if (javaElement == null) {
+                PackageNode entry = PackageNode.createNodeForResource(element);
+                if (entry != null) {
+                    nodeList.add(0, entry);
                 }
             }
             element = element.getParent();
@@ -431,6 +430,8 @@ public class PackageCommand {
                     IType primaryType = ((ITypeRoot) element).findPrimaryType();
                     if (primaryType != null) {
                         children.add(primaryType);
+                    } else {
+                        children.add(element);
                     }
                 }
             }
@@ -538,14 +539,6 @@ public class PackageCommand {
         Object[] nonJavaResources = root.getNonJavaResources();
         Collections.addAll(result, nonJavaResources);
 
-        IModuleDescription moduleDescription = root.getModuleDescription();
-        if (moduleDescription != null) {
-            if (moduleDescription.getClassFile() != null) {
-                result.add(moduleDescription.getClassFile());
-            } else if (moduleDescription.getCompilationUnit() != null) {
-                result.add(moduleDescription.getCompilationUnit());
-            }
-        }
         return result;
     }
 

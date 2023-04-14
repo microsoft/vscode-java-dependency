@@ -30,6 +30,8 @@ export abstract class DataNode extends ExplorerNode {
                 case NodeKind.PackageRoot:
                 case NodeKind.Package:
                 case NodeKind.PrimaryType:
+                case NodeKind.CompilationUnit:
+                case NodeKind.ClassFile:
                 case NodeKind.Folder:
                 case NodeKind.File:
                     item.resourceUri = Uri.parse(this.uri);

@@ -22,11 +22,15 @@ public enum NodeKind {
 
     PRIMARYTYPE(5),
 
-    CONTAINER(6),
+    COMPILATIONUNIT(6),
 
-    FOLDER(7),
+    CLASSFILE(7),
 
-    FILE(8);
+    CONTAINER(8),
+
+    FOLDER(9),
+
+    FILE(10);
 
     private final int value;
 

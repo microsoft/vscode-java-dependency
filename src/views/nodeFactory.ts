@@ -73,6 +73,8 @@ export class NodeFactory {
                     }
 
                     return new FolderNode(nodeData, parent, project, rootNode);
+                case NodeKind.CompilationUnit:
+                case NodeKind.ClassFile:
                 case NodeKind.File:
                     if (!parent) {
                         throw new Error("Folder node must have parent.");

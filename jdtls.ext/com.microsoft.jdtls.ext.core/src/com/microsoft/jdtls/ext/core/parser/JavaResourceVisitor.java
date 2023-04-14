@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -54,15 +55,23 @@ public class JavaResourceVisitor implements ResourceVisitor {
 
     @Override
     public void visit(IClassFile classFile) {
-        PackageNode node = new PackageNode(classFile.getElementName(), null, NodeKind.FILE);
+        PackageNode node = new PackageNode(classFile.getElementName(), null, NodeKind.CLASSFILE);
         node.setUri(JDTUtils.toUri(classFile));
+        IResource resource = classFile.getResource();
+        if (resource != null) {
+            node.setPath(resource.getFullPath().toPortableString());
+        }
         this.nodes.add(node);
     }
 
     @Override
     public void visit(ICompilationUnit compilationUnit) {
-        PackageNode node = new PackageNode(compilationUnit.getElementName(), null, NodeKind.FILE);
+        PackageNode node = new PackageNode(compilationUnit.getElementName(), null, NodeKind.COMPILATIONUNIT);
         node.setUri(JDTUtils.toUri(compilationUnit));
+        IResource resource = compilationUnit.getResource();
+        if (resource != null) {
+            node.setPath(resource.getFullPath().toPortableString());
+        }
         this.nodes.add(node);
     }
 
