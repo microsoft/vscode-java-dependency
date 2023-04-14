@@ -99,6 +99,7 @@ export class DependencyExplorer implements Disposable {
                     {
                         placeHolder: "Select filters to apply to the Java Projects Explorer",
                         canPickMany: true,
+                        ignoreFocusOut: true,
                     }
                 );
                 if (!filters) {
