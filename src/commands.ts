@@ -18,6 +18,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_UNLINKWITHFOLDER = "java.view.package.unlinkWithFolderExplorer";
 
+    export const JAVA_PROJECT_EXPLORER_CONFIGURE_FILTERS = "java.project.explorer.configureFilters";
+
     export const VIEW_PACKAGE_REFRESH = "java.view.package.refresh";
 
     export const VIEW_PACKAGE_INTERNAL_REFRESH = "_java.view.package.internal.refresh";

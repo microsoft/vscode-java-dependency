@@ -240,4 +240,16 @@ suite("Maven Project View Tests", () => {
         const projectChildren = await projectNode.getChildren();
         assert.ok(!projectChildren.find((node: DataNode) => node.nodeData.name === ".hidden"));
     });
+
+    test("Can apply 'java.project.explorer.filters.nonJavaResources'", async function() {
+        await vscode.workspace.getConfiguration("java.project.explorer").update(
+            "filters",
+            { nonJavaResources:true }
+        );
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+
+        const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
+        const projectChildren = await projectNode.getChildren();
+        assert.equal(projectChildren.length, 4);
+    });
 });

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import {
-    commands, ConfigurationChangeEvent, ExtensionContext,
+    commands, ConfigurationChangeEvent, ConfigurationTarget, ExtensionContext,
     workspace,
 } from "vscode";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
@@ -17,6 +17,7 @@ export class Settings {
             if ((e.affectsConfiguration("java.dependency.syncWithFolderExplorer") && Settings.syncWithFolderExplorer()) ||
                     e.affectsConfiguration("java.dependency.showMembers") ||
                     e.affectsConfiguration("java.dependency.packagePresentation") ||
+                    e.affectsConfiguration("java.project.explorer.filters") ||
                     e.affectsConfiguration("files.exclude")) {
                 commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH);
             } else if (e.affectsConfiguration("java.dependency.autoRefresh")) {
@@ -55,6 +56,13 @@ export class Settings {
 
     public static changeToHierarchicalPackageView(): void {
         workspace.getConfiguration("java.dependency").update("packagePresentation", PackagePresentation.Hierarchical, false);
+    }
+
+    public static switchNonJavaResourceFilter(enabled: boolean): void {
+        workspace.getConfiguration("java.project.explorer").update(
+            "filters",
+            { nonJavaResources: enabled },
+            ConfigurationTarget.Workspace);
     }
 
     public static updateReferencedLibraries(libraries: IReferencedLibraries): void {
@@ -103,6 +111,14 @@ export class Settings {
         // tslint:disable-next-line: no-invalid-template-strings
         return workspace.getConfiguration("java.project.exportJar").get<string>("targetPath", "${workspaceFolder}/${workspaceFolderBasename}.jar");
     }
+
+    /**
+     * Get whether non-Java resources should be filtered in the explorer.
+     */
+    public static nonJavaResourcesFiltered(): boolean {
+        const filter: IExplorerFilter = workspace.getConfiguration("java.project.explorer").get<IExplorerFilter>("filters", {});
+        return !!filter.nonJavaResources;
+    }
 }
 
 enum PackagePresentation {
@@ -114,4 +130,8 @@ export interface IReferencedLibraries {
     include: string[];
     exclude: string[];
     sources: { [binary: string]: string };
+}
+
+interface IExplorerFilter {
+    nonJavaResources?: boolean
 }
