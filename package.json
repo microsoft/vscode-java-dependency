@@ -169,6 +169,12 @@
         "category": "Java"
       },
       {
+        "command": "java.view.package.new",
+        "title": "%contributes.commands.java.view.package.new%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
         "command": "java.view.menus.file.newJavaClass",
         "title": "%contributes.commands.java.view.menus.file.newJavaClass%",
         "category": "Java",
@@ -383,6 +389,10 @@
           "when": "false"
         },
         {
+          "command": "java.view.package.new",
+          "when": "false"
+        },
+        {
           "command": "java.view.package.newJavaClass",
           "when": "false"
         },
@@ -576,13 +586,8 @@
           "group": "1_new@10"
         },
         {
-          "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
-          "group": "inline@add_0"
-        },
-        {
-          "command": "java.view.package.newJavaClass",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)(?=.*?\\b\\+uri\\b)/",
+          "command": "java.view.package.new",
+          "when": "view == javaProjectExplorer && viewItem =~ /java(?!:container)(?!:jar)(?!.*?\\b\\+binary\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "inline@add_0"
         },
         {

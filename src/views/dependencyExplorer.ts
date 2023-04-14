@@ -12,7 +12,7 @@ import {
 import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { deleteFiles } from "../explorerCommands/delete";
-import { newFile, newFolder, newJavaClass, newPackage } from "../explorerCommands/new";
+import { newFile, newFolder, newJavaClass, newPackage, newResource } from "../explorerCommands/new";
 import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
 import { Jdtls } from "../java/jdtls";
@@ -125,6 +125,9 @@ export class DependencyExplorer implements Disposable {
 
         // register keybinding commands
         context.subscriptions.push(
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW, async (node: DataNode) => {
+                newResource(node);
+            }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode) => {
                 newJavaClass(node);
             }),
