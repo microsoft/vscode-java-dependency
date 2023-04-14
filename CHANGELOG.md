@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Apply `files.exclude` to Java Projects explorer. [#214](https://github.com/microsoft/vscode-java-dependency/issues/214)
 - Empty packages will not appear sometimes. [#600](https://github.com/microsoft/vscode-java-dependency/issues/600)
-- Show `module-info.java` at source roots. [698](https://github.com/microsoft/vscode-java-dependency/issues/698)
+- Show `module-info.java` at source roots. [#698](https://github.com/microsoft/vscode-java-dependency/issues/698)
+- Show Java files which does not have a primary type in the Java Projects explorer. [#748](https://github.com/microsoft/vscode-java-dependency/issues/748)
 
 ## 0.21.2
 ### Fixed

@@ -50,13 +50,14 @@ suite("Maven Project View Tests", () => {
 
         // validate innermost layer nodes
         const classes = await firstSecondarySubPackage.getChildren();
-        assert.equal(classes.length, 3, "Number of main classes of first package should be 3");
+        assert.equal(classes.length, 4, "Number of main classes of first package should be 4");
         const firstClass = classes[0] as PrimaryTypeNode;
         const secondClass = classes[1] as PrimaryTypeNode;
         const thirdClass = classes[2] as PrimaryTypeNode;
         assert.equal(firstClass.name, "App", "Name of first class should be \"App\"");
         assert.equal(secondClass.name, "AppToDelete", "Name of second class should be \"AppToDelete\"");
         assert.equal(thirdClass.name, "AppToRename", "Name of third class should be \"AppToRename\"");
+        assert.equal((classes[3] as DataNode).name, "package-info.java");
     });
 
     test("Can node render correctly in flat view", async function() {
@@ -110,7 +111,7 @@ suite("Maven Project View Tests", () => {
         // validate innermost layer nodes
         const mainClasses = await firstMainSubPackage.getChildren();
         const testClasses = await testSubPackage.getChildren();
-        assert.equal(mainClasses.length, 3, "Number of main classes of first package should be 3");
+        assert.equal(mainClasses.length, 4, "Number of main classes of first package should be 4");
         assert.equal(testClasses.length, 1, "Number of test classes should be 1");
         const firstMainClass = mainClasses[0] as PrimaryTypeNode;
         const secondMainClass = mainClasses[1] as PrimaryTypeNode;
@@ -119,6 +120,7 @@ suite("Maven Project View Tests", () => {
         assert.equal(firstMainClass.name, "App", "Name of first class should be \"App\"");
         assert.equal(secondMainClass.name, "AppToDelete", "Name of second class should be \"AppToDelete\"");
         assert.equal(thirdMainClass.name, "AppToRename", "Name of third class should be \"AppToRename\"");
+        assert.equal((mainClasses[3] as DataNode).name, "package-info.java");
         assert.equal(testClass.name, "AppTest", "Name of test class should be \"AppTest\"");
     });
 
@@ -205,11 +207,11 @@ suite("Maven Project View Tests", () => {
             projectUri: workspaceFolders![0].uri.toString(),
             path: mainPackage.nodeData.name,
             handlerIdentifier: mainPackage.nodeData.handlerIdentifier,
-        });
-        assert.equal(packages?.length, 3, "packages' length should be 3");
-        assert.equal(packages![0].name, "com.mycompany.app");
-        assert.equal(packages![1].name, "com.mycompany.app1");
-        assert.equal(packages![2].name, "module-info.java");
+        }) || [];
+        assert.equal(packages.length, 3, "packages' length should be 3");
+        assert.ok(packages.filter((p) => {
+            return !["com.mycompany.app", "com.mycompany.app1", "module-info.java"].includes(p.name);
+        }).length === 0);
     });
 
     test("Can execute command java.resolvePath correctly", async function() {

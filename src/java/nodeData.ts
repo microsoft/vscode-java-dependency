@@ -7,9 +7,11 @@ export enum NodeKind {
     PackageRoot = 3,
     Package = 4,
     PrimaryType = 5,
-    Container = 6,
-    Folder = 7,
-    File = 8,
+    CompilationUnit = 6,
+    ClassFile = 7,
+    Container = 8,
+    Folder = 9,
+    File = 10,
 }
 
 export enum TypeKind {
