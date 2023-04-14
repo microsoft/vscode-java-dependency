@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## 0.22.0
 ### Added
 - Display non-Java files in Java Projects explorer. [#145](https://github.com/microsoft/vscode-java-dependency/issues/145)
-- Show non Java projects in the Java Projects explorer. [#736](https://github.com/microsoft/vscode-java-dependency/issues/736)
+- Show non-Java projects in the Java Projects explorer. [#736](https://github.com/microsoft/vscode-java-dependency/issues/736)
+- Introduce a setting: `java.project.explorer.filters` to control whether non-Java resources show in Java Projects explorer. [#751](https://github.com/microsoft/vscode-java-dependency/issues/751)
 - Support creating files and folders in Java Projects explorer. [#598](https://github.com/microsoft/vscode-java-dependency/issues/598)
 - Apply file decorators to project level. [#481](https://github.com/microsoft/vscode-java-dependency/issues/481)
 - Give more hints about the project import status. [#580](https://github.com/microsoft/vscode-java-dependency/issues/580)
