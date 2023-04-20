@@ -243,10 +243,10 @@ suite("Maven Project View Tests", () => {
         assert.ok(!projectChildren.find((node: DataNode) => node.nodeData.name === ".hidden"));
     });
 
-    test("Can apply 'java.project.explorer.filters.nonJavaResources'", async function() {
+    test("Can apply 'java.project.explorer.showNonJavaResources'", async function() {
         await vscode.workspace.getConfiguration("java.project.explorer").update(
-            "filters",
-            { nonJavaResources:true }
+            "showNonJavaResources",
+            false
         );
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 

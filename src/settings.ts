@@ -17,7 +17,7 @@ export class Settings {
             if ((e.affectsConfiguration("java.dependency.syncWithFolderExplorer") && Settings.syncWithFolderExplorer()) ||
                     e.affectsConfiguration("java.dependency.showMembers") ||
                     e.affectsConfiguration("java.dependency.packagePresentation") ||
-                    e.affectsConfiguration("java.project.explorer.filters") ||
+                    e.affectsConfiguration("java.project.explorer.showNonJavaResources") ||
                     e.affectsConfiguration("files.exclude")) {
                 commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH);
             } else if (e.affectsConfiguration("java.dependency.autoRefresh")) {
@@ -60,9 +60,10 @@ export class Settings {
 
     public static switchNonJavaResourceFilter(enabled: boolean): void {
         workspace.getConfiguration("java.project.explorer").update(
-            "filters",
-            { nonJavaResources: enabled },
-            ConfigurationTarget.Workspace);
+            "showNonJavaResources",
+            enabled,
+            ConfigurationTarget.Workspace
+        );
     }
 
     public static updateReferencedLibraries(libraries: IReferencedLibraries): void {
@@ -116,8 +117,7 @@ export class Settings {
      * Get whether non-Java resources should be filtered in the explorer.
      */
     public static nonJavaResourcesFiltered(): boolean {
-        const filter: IExplorerFilter = workspace.getConfiguration("java.project.explorer").get<IExplorerFilter>("filters", {});
-        return !!filter.nonJavaResources;
+        return !workspace.getConfiguration("java.project.explorer").get<boolean>("showNonJavaResources", true);
     }
 }
 
@@ -130,8 +130,4 @@ export interface IReferencedLibraries {
     include: string[];
     exclude: string[];
     sources: { [binary: string]: string };
-}
-
-interface IExplorerFilter {
-    nonJavaResources?: boolean
 }
