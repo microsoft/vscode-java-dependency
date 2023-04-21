@@ -92,6 +92,7 @@ enum ProjectType {
     Maven = "Maven",
     Gradle = "Gradle",
     SpringBoot = "SpringBoot",
+    Micronaut = "Micronaut",
     Quarkus = "Quarkus",
     MicroProfile = "MicroProfile",
     JavaFX = "JavaFX",
@@ -214,6 +215,15 @@ const projectTypes: IProjectType[] = [
             extensionId: "vscjava.vscode-spring-initializr",
             extensionName: "Spring Initializr Java Support",
             createCommandId: "spring.initializr.createProject",
+        },
+    },
+    {
+        displayName: "Micronaut",
+        metadata: {
+            type: ProjectType.Micronaut,
+            extensionId: "oracle-labs-graalvm.micronaut",
+            extensionName: "GraalVM Tools for Micronaut",
+            createCommandId: "extension.micronaut.createProject",
         },
     },
     {
