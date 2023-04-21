@@ -57,9 +57,8 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 
 ## Requirements
 
-- JDK (version 11 or later)
-- VS Code (version 1.44.0 or later)
-- [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java) (version 0.32.0 or later)
+- VS Code (version 1.77.0+)
+- [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java)
 
 
 ## Settings
@@ -72,6 +71,7 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 | `java.dependency.refreshDelay` | The delay time (ms) the auto refresh is invoked when changes are detected. | `2000ms` |
 | `java.dependency.packagePresentation` | Specify how to display the package. Supported values are: `flat`, `hierarchical`.| `flat` |
 | `java.project.exportJar.targetPath` | The output path of export jar. When this setting is **empty** , a file explorer will pop up to let the user select the output location.| `${workspaceFolder}/${workspaceFolderBasename}.jar` |
+| `java.project.explorer.showNonJavaResources` | When enabled, the explorer shows non-Java resources. | `true` |
 
 ## Contribution
 

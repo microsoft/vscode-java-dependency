@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support creating files and folders in Java Projects explorer. [#598](https://github.com/microsoft/vscode-java-dependency/issues/598)
 - Apply file decorators to project level. [#481](https://github.com/microsoft/vscode-java-dependency/issues/481)
 - Give more hints about the project import status. [#580](https://github.com/microsoft/vscode-java-dependency/issues/580)
+
+### Changed
+- Improve workflow of creating resources from Java Projects explorer. [PR#741](https://github.com/microsoft/vscode-java-dependency/pull/741), [PR#754](https://github.com/microsoft/vscode-java-dependency/pull/754)
+
 ### Fixed
 - Apply `files.exclude` to Java Projects explorer. [#214](https://github.com/microsoft/vscode-java-dependency/issues/214)
 - Empty packages will not appear sometimes. [#600](https://github.com/microsoft/vscode-java-dependency/issues/600)
