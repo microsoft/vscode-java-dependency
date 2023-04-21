@@ -26,7 +26,7 @@ async function main(): Promise<void> {
         await exTester.installFromMarketplace("redhat.java");
         await exTester.downloadChromeDriver(version);
         await exTester.setupRequirements({vscodeVersion: version});
-        process.exit(await exTester.runTests(testPath, {vscodeVersion: version}));
+        process.exit(await exTester.runTests(testPath, {vscodeVersion: version, resources: []}));
     } catch (err) {
         console.log(err);
         process.exit(1);
