@@ -143,8 +143,13 @@
         }
       },
       {
-        "command": "java.project.explorer.configureFilters",
-        "title": "%contributes.commands.java.project.explorer.configureFilters%",
+        "command": "java.project.explorer.showNonJavaResources",
+        "title": "%contributes.commands.java.project.explorer.showNonJavaResources%",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.explorer.hideNonJavaResources",
+        "title": "%contributes.commands.java.project.explorer.hideNonJavaResources%",
         "category": "Java"
       },
       {
@@ -270,17 +275,10 @@
           "markdownDescription": "%configuration.java.project.exportJar.targetPath.customization%",
           "default": "${workspaceFolder}/${workspaceFolderBasename}.jar"
         },
-        "java.project.explorer.filters": {
-          "type": "object",
-          "description": "%configuration.java.project.explorer.filters%",
-          "default": {},
-          "properties": {
-            "nonJavaResources": {
-              "type": "boolean",
-              "description": "%configuration.java.project.explorer.filters.nonJavaResources%",
-              "default": false
-            }
-          }
+        "java.project.explorer.showNonJavaResources": {
+          "type": "boolean",
+          "description": "%configuration.java.project.explorer.showNonJavaResources%",
+          "default": true
         }
       }
     },
@@ -509,8 +507,13 @@
           "group": "overflow_10@20"
         },
         {
-          "command": "java.project.explorer.configureFilters",
-          "when": "view == javaProjectExplorer && java:serverMode == Standard",
+          "command": "java.project.explorer.showNonJavaResources",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !config.java.project.explorer.showNonJavaResources",
+          "group": "overflow_10@30"
+        },
+        {
+          "command": "java.project.explorer.hideNonJavaResources",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && config.java.project.explorer.showNonJavaResources",
           "group": "overflow_10@30"
         },
         {

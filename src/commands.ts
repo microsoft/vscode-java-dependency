@@ -18,7 +18,9 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_UNLINKWITHFOLDER = "java.view.package.unlinkWithFolderExplorer";
 
-    export const JAVA_PROJECT_EXPLORER_CONFIGURE_FILTERS = "java.project.explorer.configureFilters";
+    export const JAVA_PROJECT_EXPLORER_SHOW_NONJAVA_RESOURCES = "java.project.explorer.showNonJavaResources";
+
+    export const JAVA_PROJECT_EXPLORER_HIDE_NONJAVA_RESOURCES = "java.project.explorer.hideNonJavaResources";
 
     export const VIEW_PACKAGE_REFRESH = "java.view.package.refresh";
 
