@@ -95,6 +95,7 @@ enum ProjectType {
     Quarkus = "Quarkus",
     MicroProfile = "MicroProfile",
     JavaFX = "JavaFX",
+    Micronaut = "Micronaut",
 }
 
 async function ensureExtension(typeName: string, metaData: IProjectTypeMetadata): Promise<boolean> {
@@ -248,6 +249,15 @@ const projectTypes: IProjectType[] = [
                 archetypeArtifactId: "javafx-archetype-fxml",
                 archetypeVersion: "RELEASE",
             }],
+        },
+    },
+    {
+        displayName: "Micronaut",
+        metadata: {
+            type: ProjectType.Micronaut,
+            extensionId: "oracle-labs-graalvm.micronaut",
+            extensionName: "GraalVM Tools for Micronaut",
+            createCommandId: "extension.micronaut.createProject",
         },
     },
 ];
