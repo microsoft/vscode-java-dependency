@@ -96,6 +96,7 @@ enum ProjectType {
     MicroProfile = "MicroProfile",
     JavaFX = "JavaFX",
     Micronaut = "Micronaut",
+    GCN = "GCN",
 }
 
 async function ensureExtension(typeName: string, metaData: IProjectTypeMetadata): Promise<boolean> {
@@ -258,6 +259,15 @@ const projectTypes: IProjectType[] = [
             extensionId: "oracle-labs-graalvm.micronaut",
             extensionName: "GraalVM Tools for Micronaut",
             createCommandId: "extension.micronaut.createProject",
+        },
+    },
+    {
+        displayName: "Graal Cloud Native",
+        metadata: {
+            type: ProjectType.GCN,
+            extensionId: "oracle-labs-graalvm.gcn",
+            extensionName: "Graal Cloud Native Tools",
+            createCommandId: "gcn.createGcnProject",
         },
     },
 ];
