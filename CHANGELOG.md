@@ -4,6 +4,14 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.23.0
+### Added
+- Support creating Micronaut projects. [#713](https://github.com/microsoft/vscode-java-dependency/issues/713), contributed by [@dbalek](https://github.com/dbalek)
+- Support creating Craal Cloud Native projects. [PR#765](https://github.com/microsoft/vscode-java-dependency/pull/765), contributed by [@dbalek](https://github.com/dbalek)
+
+### Fixed
+- Fix spelling mistake in welcome view. [PR#760](https://github.com/microsoft/vscode-java-dependency/pull/760), contributed by [@jeremyfiel](https://github.com/jeremyfiel)
+
 ## 0.22.0
 ### Added
 - Display non-Java files in Java Projects explorer. [#145](https://github.com/microsoft/vscode-java-dependency/issues/145)
