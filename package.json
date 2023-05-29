@@ -39,7 +39,8 @@
     "workspaceContains:settings.gradle.kts",
     "workspaceContains:*/settings.gradle.kts",
     "workspaceContains:.classpath",
-    "workspaceContains:*/.classpath"
+    "workspaceContains:*/.classpath",
+    "onCommand:_java.project.open"
   ],
   "license": "MIT",
   "main": "./main.js",

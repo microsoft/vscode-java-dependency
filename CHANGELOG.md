@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Fix spelling mistake in welcome view. [PR#760](https://github.com/microsoft/vscode-java-dependency/pull/760), contributed by [@jeremyfiel](https://github.com/jeremyfiel)
+- Cannot open file explorer from welcome view. [#770](https://github.com/microsoft/vscode-java-dependency/issues/770)
 
 ## 0.22.0
 ### Added
