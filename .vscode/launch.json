@@ -20,7 +20,8 @@
       "name": "Attach to Plugin",
       "request": "attach",
       "hostName": "localhost",
-      "port": 1044
+      "port": 1044,
+      "projectName": "com.microsoft.buildserver.adapter"
     },
     {
       "name": "Extension Tests - General",

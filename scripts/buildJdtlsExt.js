@@ -11,6 +11,9 @@ cp.execSync(mvnw()+ ' clean package', {cwd:server_dir, stdio:[0,1,2]} );
 copy(path.join(server_dir, 'com.microsoft.jdtls.ext.core/target'), path.resolve('server'), (file) => {
     return /^com.microsoft.jdtls.ext.core.*.jar$/.test(file);
 });
+copy(path.join(server_dir, 'com.microsoft.buildserver.adapter/target'), path.resolve('server'), (file) => {
+    return /^com.microsoft.buildserver.adapter.*.jar$/.test(file);
+});
 
 function copy(sourceFolder, targetFolder, fileFilter) {
     const jars = fse.readdirSync(sourceFolder).filter(file => fileFilter(file));

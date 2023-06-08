@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+    <extension id="importers" point="org.eclipse.jdt.ls.core.importers">
+        <importer
+            id = "bspGradleProjectImporter"
+            order ="290"
+            class = "com.microsoft.buildserver.adapter.BspGradleProjectImporter"/>
+    </extension>
+    <extension id="buildSupport" point="org.eclipse.jdt.ls.core.buildSupport">
+        <buildSupport
+            id="bspGradleBuildSupport"
+            order="290"
+            class="com.microsoft.buildserver.adapter.BspGradleBuildSupport" />
+    </extension>
+    <extension
+        id="com.microsoft.buildserver.adapter.bspGradleProjectNature"
+        name="BSP Gradle Project"
+        point="org.eclipse.core.resources.natures">
+        <runtime>
+            <run
+                class="com.microsoft.buildserver.adapter.BspGradleProjectNature">
+            </run>
+        </runtime>
+    </extension>
+    <extension 
+        point="org.eclipse.core.resources.builders" 
+        id="com.microsoft.buildserver.adapter.builder.bspBuilder"
+        name="bspBuilder">
+        <builder>
+            <run class="com.microsoft.buildserver.adapter.builder.BspBuilder">
+            </run>
+        </builder>
+    </extension>
+</plugin>

@@ -24,6 +24,7 @@
     <modules>
         <module>com.microsoft.jdtls.ext.core</module>
         <module>com.microsoft.jdtls.ext.target</module>
+        <module>com.microsoft.buildserver.adapter</module>
     </modules>
     <build>
         <pluginManagement>
@@ -105,6 +106,27 @@
                         </environments>
                         <dependency-resolution>
                         </dependency-resolution>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <?m2e execute onConfiguration?>
+                            <id>get-libs</id>
+                            <goals>
+                                <goal>copy</goal>
+                            </goals>
+                            <phase>validate</phase>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <skip>false</skip>
+                        <outputDirectory>${basedir}/lib/</outputDirectory>
+                        <!-- baseVersion is to avoid SNAPSHOT dependencies being copied with
+                            ever daily changing timestamp -->
+                        <useBaseVersion>true</useBaseVersion>
                     </configuration>
                 </plugin>
             </plugins>

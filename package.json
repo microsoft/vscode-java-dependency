@@ -46,7 +46,8 @@
   "main": "./main.js",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.23.0.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.23.0.jar",
+      "./server/com.microsoft.buildserver.adapter-0.23.0.jar"
     ],
     "commands": [
       {
@@ -280,6 +281,11 @@
           "type": "boolean",
           "description": "%configuration.java.project.explorer.showNonJavaResources%",
           "default": true
+        },
+        "java.buildServer.gradle.enabled": {
+          "type": "boolean",
+          "description": "[Experimental] Use build server to synchronize Gradle project when enabled.",
+          "default": false
         }
       }
     },
@@ -862,6 +868,18 @@
           }
         }
       }
+    ],
+    "languages": [
+      {
+        "id": "gradle-output"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "gradle-output",
+        "scopeName": "source.gradle-output",
+        "path": "./language-support/gradle-output/GradleOutput.tmLanguage.json"
+      }
     ]
   },
   "scripts": {
@@ -870,6 +888,7 @@
     "test": "tsc -p . && node ./dist/test/index.js",
     "test-ui": "tsc -p . && node ./dist/test/ui/index.js",
     "build-server": "node scripts/buildJdtlsExt.js",
+    "build-bsp": "node scripts/buildBuildServer.js",
     "vscode:prepublish": "tsc -p ./ && webpack --mode production",
     "tslint": "tslint -t verbose --project tsconfig.json"
   },

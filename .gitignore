@@ -16,3 +16,4 @@ dist
 **/.checkstyle
 test-resources/
 **/.gradle
+jdtls.ext/com.microsoft.buildserver.adapter/bsp

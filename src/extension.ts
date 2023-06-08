@@ -20,6 +20,7 @@ import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticPr
 import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaClass } from "./explorerCommands/new";
+import { BspController } from "./bsp/bspController";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -41,6 +42,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(new ProjectController(context));
     Settings.initialize(context);
     context.subscriptions.push(new LibraryController(context));
+    context.subscriptions.push(new BspController(context));
     context.subscriptions.push(DependencyExplorer.getInstance(context));
     context.subscriptions.push(contextManager);
     context.subscriptions.push(syncHandler);

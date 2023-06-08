@@ -1,0 +1,35 @@
+{
+    "name": "Gradle Output",
+    "scopeName": "source.gradle-output",
+    "fileTypes": ["gradle-output"],
+    "patterns": [
+        {
+            "name": "FAILURE",
+            "match": "(^FAILURE: .+$)",
+            "captures": {
+                "1": {"name": "invalid.illegal.failure"}
+            }
+        },
+        {
+            "name": "error",
+            "match": "(^\\d+\\serror$)",
+            "captures": {
+                "1": {"name": "invalid.illegal.error"}
+            }
+        },
+        {
+            "name": "error.description",
+            "match": "(error:\\s.+$)",
+            "captures": {
+                "1": {"name": "invalid.illegal.error.description"}
+            }
+        },
+        {
+            "name": "BUILD FAILED",
+            "match": "(^BUILD FAILED)",
+            "captures": {
+                "1": {"name": "invalid.illegal.bold.buildFailed"}
+            }
+        }
+    ]
+}

@@ -1,6 +1,7 @@
 {
     "projects": [
-        "./jdtls.ext/com.microsoft.jdtls.ext.core"
+        "./jdtls.ext/com.microsoft.jdtls.ext.core",
+        "./com.microsoft.buildserver.adapter"
     ],
    "targetPlatform": "./jdtls.ext/com.microsoft.jdtls.ext.target/com.microsoft.jdtls.ext.tp.target"
 }
