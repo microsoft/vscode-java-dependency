@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Plugin;
@@ -49,19 +50,25 @@ public class BuildServerAdapter extends Plugin {
     public static BuildServer getBuildServer() {
         if (adapterInstance.buildServer == null) {
             String javaExecutablePath = getJavaExecutablePath();
-            if (javaExecutablePath == null) {
+            if (javaExecutablePath == null || javaExecutablePath.isEmpty()) {
+                JavaLanguageServerPlugin.logError("Failed to get Java executable path.");
                 return null;
             }
 
             String[] classpaths = getBuildServerRuntimeClasspath();
             if (classpaths.length == 0) {
+                JavaLanguageServerPlugin.logError("Failed to get required runtime classpaths for build server.");
                 return null;
             }
+            String storagePath = ResourcesPlugin.getWorkspace().getRoot().getLocation()
+                    .removeLastSegments(2).append("build-server").toFile().getAbsolutePath();
+            
             ProcessBuilder build = new ProcessBuilder(
                 javaExecutablePath,
                 "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989",
+                "-DbuildServerStorage=" + storagePath,
                 "-cp",
-                String.join(";", classpaths),
+                String.join(getClasspathSplitor(), classpaths),
                 "com.microsoft.java.bs.core.JavaBspLauncher"
             );
 
@@ -81,6 +88,7 @@ public class BuildServerAdapter extends Plugin {
                 adapterInstance.buildServer = launcher.getRemoteProxy();
                 adapterInstance.buildClient.onConnectWithServer(adapterInstance.buildServer);
             } catch (IOException e) {
+                JavaLanguageServerPlugin.logException("Failed to start build server", e);
                 return null;
             }
         }
@@ -108,5 +116,15 @@ public class BuildServerAdapter extends Plugin {
             JavaLanguageServerPlugin.logException("Unable to get build server runtime classpath", e);
             return new String[0];
         }
+    }
+
+    private static String getClasspathSplitor() {
+        String os = System.getProperty("os.name").toLowerCase();
+
+        if (os.contains("win")) {
+            return ";";
+        }
+
+        return ":"; // Linux or Mac
     }
 }

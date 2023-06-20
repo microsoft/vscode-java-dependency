@@ -10,9 +10,9 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
@@ -21,12 +21,14 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.ls.core.internal.AbstractProjectImporter;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.managers.BasicFileDetector;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences;
+
+import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.MessageType;
 
 import com.microsoft.buildserver.adapter.builder.BspBuilder;
 
@@ -111,9 +113,18 @@ public class BspGradleProjectImporter extends AbstractProjectImporter {
             );
             BuildServerPreferences data = getBuildServerPreferences();
             params.setData(data);
-            InitializeBuildResult initializeResult = buildServer.buildInitialize(params).join();
-            buildServer.onBuildInitialized();
-            BuildServerTargetsManager.getInstance().setInitializeBuildResult(rootFolder, initializeResult);
+            try {
+                InitializeBuildResult initializeResult = buildServer.buildInitialize(params).join();
+                buildServer.onBuildInitialized();
+                BuildServerTargetsManager.getInstance().setInitializeBuildResult(rootFolder, initializeResult);
+            } catch (Exception e) {
+                JavaLanguageServerPlugin.getInstance().getClientConnection().sendActionableNotification(
+                    MessageType.Error,
+                    "Failed to initialize the build server: " + e.getMessage(),
+                    null,
+                    Arrays.asList(new Command("Open Log", "java.buildServer.openLogs"))
+                );
+            }
         }
 
         WorkspaceBuildTargetsResult workspaceBuildTargetsResult = buildServer.workspaceBuildTargets().join();
@@ -154,8 +165,9 @@ public class BspGradleProjectImporter extends AbstractProjectImporter {
 
     private List<IProject> createProjectsIfNotExist(List<BuildTarget> buildTargets, IProgressMonitor monitor) throws CoreException {
         List<IProject> projects = new LinkedList<>();
-        Map<String, List<BuildTarget>> buildTargetMap = BspUtils.mapBuildTargetsByBaseDir(buildTargets);
-        for (String baseDir : buildTargetMap.keySet()) {
+        Map<String, List<BuildTarget>> buildTargetMap = BspUtils.mapBuildTargetsByUri(buildTargets);
+        for (Entry<String, List<BuildTarget>> entrySet : buildTargetMap.entrySet()) {
+            String baseDir = entrySet.getKey();
             if (baseDir == null) {
                 JavaLanguageServerPlugin.logError("The base directory of the build target is null.");
                 continue;
@@ -200,10 +212,8 @@ public class BspGradleProjectImporter extends AbstractProjectImporter {
 
             project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
             projects.add(project);
-            List<BuildTarget> targets = buildTargetMap.get(baseDir);
-            BuildServerTargetsManager.getInstance().setBuildTargets(project, targets);
+            BuildServerTargetsManager.getInstance().setBuildTargets(project, entrySet.getValue());
         }
-        
         return projects;
     }
 

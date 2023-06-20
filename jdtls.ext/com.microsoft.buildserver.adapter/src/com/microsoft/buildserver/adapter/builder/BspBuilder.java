@@ -53,7 +53,7 @@ public class BspBuilder extends IncrementalProjectBuilder {
     }
 
     private boolean requiresClean(int kind) {
-        return kind == FULL_BUILD || kind == CLEAN_BUILD;
+        return kind == FULL_BUILD;
     }
 
     private boolean requiresBuild(int kind) {

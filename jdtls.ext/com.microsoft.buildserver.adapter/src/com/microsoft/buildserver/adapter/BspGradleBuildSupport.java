@@ -107,7 +107,7 @@ public class BspGradleBuildSupport implements IBuildSupport {
             buildServer.workspaceReload().join();
             WorkspaceBuildTargetsResult workspaceBuildTargetsResult = buildServer.workspaceBuildTargets().join();
             List<BuildTarget> buildTargets = workspaceBuildTargetsResult.getTargets();
-            Map<String, List<BuildTarget>> buildTargetMap = BspUtils.mapBuildTargetsByBaseDir(buildTargets);
+            Map<String, List<BuildTarget>> buildTargetMap = BspUtils.mapBuildTargetsByUri(buildTargets);
             for (Entry<String, List<BuildTarget>> entrySet : buildTargetMap.entrySet()) {
                 String baseDir = entrySet.getKey();
                 if (baseDir == null) {
@@ -146,6 +146,10 @@ public class BspGradleBuildSupport implements IBuildSupport {
         Set<MavenDependencyModule> testDependencies = new HashSet<>();
 
         List<BuildTarget> buildTargets = BuildServerTargetsManager.getInstance().getBuildTargets(project);
+        if (buildTargets == null) {
+            JavaLanguageServerPlugin.logError("Cannot find build targets for project " + project.getName());
+            return;
+        }
         Set<BuildTargetIdentifier> projectDependencies = new HashSet<>();
         for (BuildTarget buildTarget : buildTargets) {
             boolean isTest = buildTarget.getTags().contains(BuildTargetTag.TEST);
@@ -381,7 +385,7 @@ public class BspGradleBuildSupport implements IBuildSupport {
         description.setNatureIds(newIds.toArray(new String[newIds.size()]));
 
         // save the updated description
-        project.setDescription(description, progress.newChild(1));
+        project.setDescription(description, IResource.AVOID_NATURE_CONFIG, progress.newChild(1));
     }
 }
 
