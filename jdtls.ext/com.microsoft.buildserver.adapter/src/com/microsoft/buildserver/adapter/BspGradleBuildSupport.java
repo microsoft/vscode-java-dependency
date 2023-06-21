@@ -20,9 +20,11 @@ import org.eclipse.buildship.core.internal.GradlePluginsRuntimeException;
 import org.eclipse.buildship.core.internal.configuration.GradleProjectNature;
 import org.eclipse.buildship.core.internal.workspace.EclipseVmUtil;
 import org.eclipse.buildship.core.internal.workspace.GradleNatureAddedEvent;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -175,8 +177,26 @@ public class BspGradleBuildSupport implements IBuildSupport {
                     if (!sourcePath.toFile().exists() && !source.getGenerated()) {
                         continue;
                     }
-                    IPath relativeSourcePath = sourcePath.makeRelativeTo(project.getLocation());
-                    IPath sourceFullPath = project.getFolder(relativeSourcePath).getFullPath();
+                    IPath projectLocation = project.getLocation();
+                    IPath sourceFullPath;
+                    if (projectLocation.isPrefixOf(sourcePath)) {
+                        IPath relativeSourcePath = sourcePath.makeRelativeTo(project.getLocation());
+                        sourceFullPath = project.getFolder(relativeSourcePath).getFullPath();
+                        
+                    } else {
+                        // if the source path is not relative to the project location, we need to create a linked folder for it.
+                        IPath baseDirectory = ResourceUtils.filePathFromURI(buildTarget.getBaseDirectory());
+                        IPath relativeSourcePath = sourcePath.makeRelativeTo(baseDirectory);
+                        if (relativeSourcePath.isAbsolute()) {
+                            JavaLanguageServerPlugin.logError("The source path is not relative to the workspace root: " + relativeSourcePath);
+                            continue;
+                        }
+                        IFolder linkFolder = project.getFolder(relativeSourcePath.toString().replace(IPath.SEPARATOR, '_'));
+                        if (!linkFolder.exists()) {
+                            linkFolder.createLink(sourcePath, IResource.REPLACE, monitor);
+                        }
+                        sourceFullPath = linkFolder.getFullPath();
+                    }
                     List<IClasspathAttribute> classpathAttributes = new LinkedList<>();
                     if (isTest) {
                         classpathAttributes.add(testAttribute);
@@ -188,7 +208,7 @@ public class BspGradleBuildSupport implements IBuildSupport {
                 }
             }
 
-            if (classpath.size() > 0) {
+            if (!classpath.isEmpty()) {
                 addJavaNature(project, monitor);
             }
 
