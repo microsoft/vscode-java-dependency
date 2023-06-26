@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.buildship.core.internal.CorePlugin;
 import org.eclipse.buildship.core.internal.GradlePluginsRuntimeException;
 import org.eclipse.buildship.core.internal.configuration.GradleProjectNature;
@@ -28,6 +29,8 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -265,7 +268,7 @@ public class BspGradleBuildSupport implements IBuildSupport {
             projectDependencies.addAll(buildTarget.getDependencies());
         }
 
-        JvmBuildTargetExt jvmBuildTarget = JSONUtility.toModel(buildTargets.get(0).getData(), JvmBuildTargetExt.class);
+        JvmBuildTargetExt jvmBuildTarget = getHighestJavaVersion(buildTargets);
         String javaVersion = getEclipseCompatibleVersion(jvmBuildTarget.getTargetBytecodeVersion());
         IVMInstall vm = EclipseVmUtil.findOrRegisterStandardVM(javaVersion, new File(jvmBuildTarget.getJavaHome()));
         classpath.add(JavaCore.newContainerEntry(JavaRuntime.newJREContainerPath(vm)));
@@ -281,6 +284,40 @@ public class BspGradleBuildSupport implements IBuildSupport {
         javaProject.setRawClasspath(classpath.toArray(IClasspathEntry[]::new), javaProject.getOutputLocation(), monitor);
         // refresh to let JDT be aware of the output folders.
         project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+    }
+
+    private JvmBuildTargetExt getHighestJavaVersion(List<BuildTarget> buildTargets) throws CoreException {
+        List<JvmBuildTargetExt> jvmTargets = new ArrayList<>();
+        for (BuildTarget buildTarget : buildTargets) {
+            JvmBuildTargetExt model = JSONUtility.toModel(buildTarget.getData(), JvmBuildTargetExt.class);
+            if (StringUtils.isBlank(model.getTargetBytecodeVersion()) || StringUtils.isBlank(model.getJavaHome())) {
+                continue;
+            }
+            jvmTargets.add(JSONUtility.toModel(buildTarget.getData(), JvmBuildTargetExt.class));
+        }
+
+        if (jvmTargets.isEmpty()) {
+            throw new CoreException(new Status(IStatus.ERROR, BuildServerAdapter.PLUGIN_ID, "Failed to get Java version."));
+        }
+
+        jvmTargets.sort((j1, j2) -> {
+            String[] components1 = j1.getTargetBytecodeVersion().split("\\.");
+            String[] components2 = j2.getTargetBytecodeVersion().split("\\.");
+
+            int length = Math.max(components1.length, components2.length);
+            for (int i = 0; i < length; i++) {
+                int version1 = i < components1.length ? Integer.parseInt(components1[i]) : 0;
+                int version2 = i < components2.length ? Integer.parseInt(components2[i]) : 0;
+
+                if (version1 != version2) {
+                    return Integer.compare(version1, version2);
+                }
+            }
+
+            return 0; // versions are equal
+        });
+
+        return jvmTargets.get(jvmTargets.size() - 1);
     }
 
     @Override

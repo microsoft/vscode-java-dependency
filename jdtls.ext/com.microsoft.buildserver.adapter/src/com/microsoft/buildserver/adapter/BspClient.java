@@ -33,8 +33,8 @@ public class BspClient implements BuildClient {
 	@Override
 	public void onBuildTaskStart(TaskStartParams params) {
 		if (Objects.equals(params.getDataKind(), TaskDataKind.COMPILE_TASK)) {
-			ExecuteCommandParams clientCommand = new ExecuteCommandParams("_java.buildServer.gradle.buildStart", null);
-			JavaLanguageServerPlugin.getProjectsManager().getConnection().executeClientCommand(clientCommand);
+			ExecuteCommandParams clientCommand = new ExecuteCommandParams("_java.buildServer.gradle.buildStart", Arrays.asList(params.getMessage()));
+			JavaLanguageServerPlugin.getProjectsManager().getConnection().sendNotification(clientCommand);
 		} else {
 			ProgressReport progressReport = new ProgressReport(params.getTaskId().getId());
 			progressReport.setTask("Build Server Task");

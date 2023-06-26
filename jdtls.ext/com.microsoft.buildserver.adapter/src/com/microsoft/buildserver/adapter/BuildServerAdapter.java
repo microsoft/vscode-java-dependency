@@ -21,6 +21,8 @@ import ch.epfl.scala.bsp4j.BuildServer;
 
 public class BuildServerAdapter extends Plugin {
 
+    public static final String PLUGIN_ID = "com.microsoft.buildserver.adapter";
+
     private static BuildServerAdapter adapterInstance;
 
     private DigestStore digestStore;
@@ -65,7 +67,10 @@ public class BuildServerAdapter extends Plugin {
             
             ProcessBuilder build = new ProcessBuilder(
                 javaExecutablePath,
-                "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989",
+                // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989",
+                "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                "--add-opens=java.base/java.io=ALL-UNNAMED",
+                "--add-opens=java.base/java.util=ALL-UNNAMED",
                 "-DbuildServerStorage=" + storagePath,
                 "-cp",
                 String.join(getClasspathSplitor(), classpaths),

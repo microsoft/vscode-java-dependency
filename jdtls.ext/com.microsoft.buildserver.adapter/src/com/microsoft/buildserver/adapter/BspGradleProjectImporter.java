@@ -28,6 +28,7 @@ import org.eclipse.jdt.ls.core.internal.managers.BasicFileDetector;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences;
 
 import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.MessageType;
 
 import com.microsoft.buildserver.adapter.builder.BspBuilder;
@@ -160,6 +161,21 @@ public class BspGradleProjectImporter extends AbstractProjectImporter {
         BspGradleBuildSupport bs = new BspGradleBuildSupport();
         for (IProject project : projects) {
             bs.updateClassPath(project, monitor);
+        }
+        if (!projects.isEmpty()) {
+            Preferences preferences = getPreferences();
+            if (preferences.isAutobuildEnabled()) {
+                JavaLanguageServerPlugin.getInstance().getClientConnection().sendNotification("_java.buildServer.configAutoBuild", null);
+                    // MessageType.Info,
+                    // "Would you like to turn off auto build to get the best experience?",
+                    // null,
+                    // Arrays.asList(
+                    //     new Command("Yes", "_java.buildServer.configAutoBuild", Arrays.asList("yes")),
+                    //     new Command("Always", "_java.buildServer.configAutoBuild", Arrays.asList("yes")),
+                    //     new Command("Never", "_java.buildServer.configAutoBuild", Arrays.asList("yes")),
+                    // )
+                // );
+            }
         }
     }
 

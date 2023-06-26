@@ -1,4 +1,4 @@
-import { Disposable, ExtensionContext, OutputChannel, Uri, commands, languages, window } from "vscode";
+import { ConfigurationTarget, Disposable, ExtensionContext, OutputChannel, Uri, commands, languages, window, workspace } from "vscode";
 import { GradleOutputLinkProvider } from "./GradleOutputLinkProvider";
 import * as path from "path";
 import * as fse from "fs-extra";
@@ -21,13 +21,21 @@ export class BspController implements Disposable {
                 }
             }),
             commands.registerCommand("_java.buildServer.gradle.buildStart", () => {
-                this.bsOutputChannel.appendLine(`> Build started at ${  new Date().toLocaleString()} <\n`);
+                this.bsOutputChannel.appendLine(`> Build started at ${ new Date().toLocaleString()} <\n`);
             }),
             commands.registerCommand("_java.buildServer.gradle.buildComplete", (msg: string) => {
                 if (msg) {
                     this.bsOutputChannel.appendLine(msg);
                     this.bsOutputChannel.appendLine('------\n');
-                    this.bsOutputChannel.show(true);
+                    if (msg.includes("BUILD FAILED in")) {
+                        this.bsOutputChannel.show(true);
+                    }
+                }
+            }),
+            commands.registerCommand("_java.buildServer.configAutoBuild", async () => {
+                const choice = await window.showInformationMessage("Would you like to turn off auto build to get the best experience?", "Yes");
+                if (choice === "Yes") {
+                    await workspace.getConfiguration("java").update("autobuild.enabled", false, ConfigurationTarget.Workspace);
                 }
             }),
             this.bsOutputChannel,

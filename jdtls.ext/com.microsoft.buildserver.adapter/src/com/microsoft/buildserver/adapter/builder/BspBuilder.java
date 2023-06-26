@@ -49,7 +49,7 @@ public class BspBuilder extends IncrementalProjectBuilder {
                 }
             }
         }
-        return new IProject[0];
+        return null;
     }
 
     private boolean requiresClean(int kind) {
