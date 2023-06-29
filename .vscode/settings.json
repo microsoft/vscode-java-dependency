@@ -8,5 +8,6 @@
         "**/.metadata/**",
         "**/archetype-resources/**",
         "**/META-INF/maven/**",
-    ]
+    ],
+    "java.compile.nullAnalysis.mode": "disabled"
 }

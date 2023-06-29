@@ -47,12 +47,17 @@ public class BspClient implements BuildClient {
 
 	@Override
 	public void onBuildTaskProgress(TaskProgressParams params) {
-		ProgressReport progressReport = taskMap.get(params.getTaskId().getId());
-		if (progressReport == null) {
-			return;
+		if (Objects.equals(params.getDataKind(), TaskDataKind.COMPILE_TASK)) {
+			ExecuteCommandParams clientCommand = new ExecuteCommandParams("_java.buildServer.gradle.buildProgress", Arrays.asList(params.getMessage()));
+			JavaLanguageServerPlugin.getProjectsManager().getConnection().sendNotification(clientCommand);
+		} else {
+			ProgressReport progressReport = taskMap.get(params.getTaskId().getId());
+			if (progressReport == null) {
+				return;
+			}
+			progressReport.setStatus(params.getMessage());
+			JavaLanguageServerPlugin.getProjectsManager().getConnection().sendProgressReport(progressReport);
 		}
-		progressReport.setStatus(params.getMessage());
-		JavaLanguageServerPlugin.getProjectsManager().getConnection().sendProgressReport(progressReport);
 	}
 
 	@Override

@@ -67,7 +67,7 @@ public class BuildServerAdapter extends Plugin {
             
             ProcessBuilder build = new ProcessBuilder(
                 javaExecutablePath,
-                // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989",
+                "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989",
                 "--add-opens=java.base/java.lang=ALL-UNNAMED",
                 "--add-opens=java.base/java.io=ALL-UNNAMED",
                 "--add-opens=java.base/java.util=ALL-UNNAMED",

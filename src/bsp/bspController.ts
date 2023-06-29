@@ -14,18 +14,24 @@ export class BspController implements Disposable {
             commands.registerCommand("java.buildServer.openLogs", async () => {
                 const storagePath: string | undefined = context.storageUri?.fsPath;
                 if (storagePath) {
-                    const logFile = path.join(storagePath, "..", "build-server", "application.log");
+                    const logFile = path.join(storagePath, "..", "build-server", "bs.log");
                     if (await fse.pathExists(logFile)) {
                         await window.showTextDocument(Uri.file(logFile));
+                    } else {
+                        window.showErrorMessage("Failed to find build server log file.");
                     }
                 }
             }),
-            commands.registerCommand("_java.buildServer.gradle.buildStart", () => {
+            commands.registerCommand("_java.buildServer.gradle.buildStart", (msg: string) => {
                 this.bsOutputChannel.appendLine(`> Build started at ${ new Date().toLocaleString()} <\n`);
+                this.bsOutputChannel.appendLine(msg);
+            }),
+            commands.registerCommand("_java.buildServer.gradle.buildProgress", (msg: string) => {
+                this.bsOutputChannel.appendLine(msg);
             }),
             commands.registerCommand("_java.buildServer.gradle.buildComplete", (msg: string) => {
                 if (msg) {
-                    this.bsOutputChannel.appendLine(msg);
+                    this.bsOutputChannel.appendLine(`\n${msg}`);
                     this.bsOutputChannel.appendLine('------\n');
                     if (msg.includes("BUILD FAILED in")) {
                         this.bsOutputChannel.show(true);

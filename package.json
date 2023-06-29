@@ -224,6 +224,11 @@
         "command": "java.view.package.renameFile",
         "title": "%contributes.commands.java.view.package.renameFile%",
         "category": "Java"
+      },
+      {
+        "command": "java.buildServer.openLogs",
+        "title": "Open Build Server Log",
+        "category": "Java"
       }
     ],
     "configuration": {
