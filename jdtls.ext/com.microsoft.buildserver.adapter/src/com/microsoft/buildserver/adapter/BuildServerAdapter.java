@@ -79,7 +79,7 @@ public class BuildServerAdapter extends Plugin {
 
             try {
                 Process process = build.start();
-                ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
+                ExecutorService fixedThreadPool = Executors.newCachedThreadPool();
                 adapterInstance.buildClient = new BspClient();
                 Launcher<BuildServer> launcher = new Launcher.Builder<BuildServer>()
                 .setOutput(process.getOutputStream())

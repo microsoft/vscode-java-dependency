@@ -1,4 +1,4 @@
-import { ConfigurationTarget, Disposable, ExtensionContext, OutputChannel, Uri, commands, languages, window, workspace } from "vscode";
+import { ConfigurationTarget, Disposable, ExtensionContext, FileSystemWatcher, OutputChannel, RelativePattern, Uri, commands, languages, window, workspace } from "vscode";
 import { GradleOutputLinkProvider } from "./GradleOutputLinkProvider";
 import * as path from "path";
 import * as fse from "fs-extra";
@@ -7,10 +7,33 @@ export class BspController implements Disposable {
 
     private disposable: Disposable;
     private bsOutputChannel: OutputChannel;
+    private watcher: FileSystemWatcher | undefined;
 
     public constructor(public readonly context: ExtensionContext) {
         this.bsOutputChannel = window.createOutputChannel("Build Output", "gradle-output");
         this.disposable = Disposable.from(
+            commands.registerCommand("_java.buildServer.registerFileWatcher", async () => {
+                if (this.watcher) {
+                    this.watcher.dispose();
+                }
+                const sourcePaths: ListCommandResult = await commands.executeCommand<ListCommandResult>("java.execute.workspaceCommand", "java.project.listSourcePaths");
+                if (sourcePaths?.status) {
+                    const sources: string[] = [];
+                    for (const sourcePath of sourcePaths.data!) {
+                        sources.push(Uri.file(sourcePath.path).fsPath);
+                    }
+                    this.watcher = workspace.createFileSystemWatcher(new RelativePattern(workspace.workspaceFolders![0], "**/*.java"), false, true, true);
+                    this.watcher.onDidCreate(async (uri) => {
+                        if (sources.some((source) => uri.fsPath.startsWith(source))) {
+                            return;
+                        }
+                        window.showInformationMessage("Detected new Java files generated, would you like to refresh the project?", "Yes").then((_choice) => {
+                            // TODO: 1. find gradle file and reload the project
+                            // 2. how to make sure the notification only appear once?
+                        });
+                    });
+                }
+            }),
             commands.registerCommand("java.buildServer.openLogs", async () => {
                 const storagePath: string | undefined = context.storageUri?.fsPath;
                 if (storagePath) {
@@ -52,4 +75,17 @@ export class BspController implements Disposable {
     public dispose() {
         this.disposable.dispose();
     }
+}
+
+interface SourcePath {
+    path: string;
+    displayPath: string;
+    projectName: string;
+    projectType: string;
+}
+
+interface ListCommandResult {
+    data?: SourcePath[];
+    status: boolean;
+    message: string;
 }

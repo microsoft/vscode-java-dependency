@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -133,12 +134,12 @@ public class BspGradleBuildSupport implements IBuildSupport {
                 IProject prj = ProjectUtils.getProjectFromUri(Uri.toString());
                 BuildServerTargetsManager.getInstance().setBuildTargets(prj, targets);
             }
-            updateClassPath(project, monitor);
+            updateClassPath(project, true, monitor);
         }
     }
 
     // todo: refactor the method
-    public void updateClassPath(IProject project, IProgressMonitor monitor) throws CoreException {
+    public void updateClassPath(IProject project, boolean updateProjectDependency, IProgressMonitor monitor) throws CoreException {
         BuildServer buildServer = BuildServerAdapter.getBuildServer();
         if (buildServer == null) {
             return;
@@ -155,7 +156,16 @@ public class BspGradleBuildSupport implements IBuildSupport {
             JavaLanguageServerPlugin.logError("Cannot find build targets for project " + project.getName());
             return;
         }
-        Set<BuildTargetIdentifier> projectDependencies = new HashSet<>();
+        // Sort build targets so that test targets are last, this is to avoid duplicated source roots.
+        buildTargets.sort((bt1, bt2) -> {
+            if (bt1.getTags().contains(BuildTargetTag.TEST) && !bt2.getTags().contains(BuildTargetTag.TEST)) {
+                return 1;
+            }
+            if (!bt1.getTags().contains(BuildTargetTag.TEST) && bt2.getTags().contains(BuildTargetTag.TEST)) {
+                return -1;
+            }
+            return 0;
+        });
         for (BuildTarget buildTarget : buildTargets) {
             boolean isTest = buildTarget.getTags().contains(BuildTargetTag.TEST);
 
@@ -199,6 +209,11 @@ public class BspGradleBuildSupport implements IBuildSupport {
                             linkFolder.createLink(sourcePath, IResource.REPLACE, monitor);
                         }
                         sourceFullPath = linkFolder.getFullPath();
+                    }
+                    // skip the duplicated source root. Since main source set comes first than test
+                    // source set, skipping here is safe.
+                    if (classpath.stream().anyMatch(entry -> entry.getPath().equals(sourceFullPath))) {
+                        continue;
                     }
                     List<IClasspathAttribute> classpathAttributes = new LinkedList<>();
                     if (isTest) {
@@ -264,8 +279,6 @@ public class BspGradleBuildSupport implements IBuildSupport {
                     }
                 }
             }
-
-            projectDependencies.addAll(buildTarget.getDependencies());
         }
 
         JvmBuildTargetExt jvmBuildTarget = getHighestJavaVersion(buildTargets);
@@ -277,13 +290,40 @@ public class BspGradleBuildSupport implements IBuildSupport {
             return !mainDependencies.contains(t);
         }).collect(Collectors.toSet());
 
-        addProjectDependenciesToClasspath(classpath, projectDependencies);
         addModuleDependenciesToClasspath(classpath, mainDependencies, false);
         addModuleDependenciesToClasspath(classpath, testDependencies, true);
 
         javaProject.setRawClasspath(classpath.toArray(IClasspathEntry[]::new), javaProject.getOutputLocation(), monitor);
         // refresh to let JDT be aware of the output folders.
         project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+
+        if (updateProjectDependency) {
+            addProjectDependencies(project, monitor);
+        }
+
+        JavaLanguageServerPlugin.getInstance().getClientConnection().sendNotification("_java.buildServer.registerFileWatcher", Collections.emptyList());
+    }
+
+    public void addProjectDependencies(IProject project, IProgressMonitor monitor) throws JavaModelException {
+        BuildServer buildServer = BuildServerAdapter.getBuildServer();
+        if (buildServer == null) {
+            return;
+        }
+
+        IJavaProject javaProject = JavaCore.create(project);
+        List<IClasspathEntry> classpath = new LinkedList<>(Arrays.asList(javaProject.getRawClasspath()));
+        List<BuildTarget> buildTargets = BuildServerTargetsManager.getInstance().getBuildTargets(project);
+        if (buildTargets == null) {
+            JavaLanguageServerPlugin.logError("Cannot find build targets for project " + project.getName());
+            return;
+        }
+        Set<BuildTargetIdentifier> projectDependencies = new HashSet<>();
+        for (BuildTarget buildTarget : buildTargets) {
+            projectDependencies.addAll(buildTarget.getDependencies());
+        }
+
+        addProjectDependenciesToClasspath(classpath, projectDependencies);
+        javaProject.setRawClasspath(classpath.toArray(IClasspathEntry[]::new), javaProject.getOutputLocation(), monitor);
     }
 
     private JvmBuildTargetExt getHighestJavaVersion(List<BuildTarget> buildTargets) throws CoreException {

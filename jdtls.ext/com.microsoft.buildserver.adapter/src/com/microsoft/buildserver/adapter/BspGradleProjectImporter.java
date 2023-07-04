@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,8 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.ls.core.internal.AbstractProjectImporter;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
@@ -159,23 +162,24 @@ public class BspGradleProjectImporter extends AbstractProjectImporter {
         });
 
         BspGradleBuildSupport bs = new BspGradleBuildSupport();
-        for (IProject project : projects) {
-            bs.updateClassPath(project, monitor);
-        }
+
+
         if (!projects.isEmpty()) {
             Preferences preferences = getPreferences();
             if (preferences.isAutobuildEnabled()) {
-                JavaLanguageServerPlugin.getInstance().getClientConnection().sendNotification("_java.buildServer.configAutoBuild", null);
-                    // MessageType.Info,
-                    // "Would you like to turn off auto build to get the best experience?",
-                    // null,
-                    // Arrays.asList(
-                    //     new Command("Yes", "_java.buildServer.configAutoBuild", Arrays.asList("yes")),
-                    //     new Command("Always", "_java.buildServer.configAutoBuild", Arrays.asList("yes")),
-                    //     new Command("Never", "_java.buildServer.configAutoBuild", Arrays.asList("yes")),
-                    // )
-                // );
+                JavaLanguageServerPlugin.getInstance().getClientConnection().sendNotification("_java.buildServer.configAutoBuild", Collections.emptyList());
             }
+        }
+
+        for (IProject project : projects) {
+            // separate the classpath update and project dependency update to avoid
+            // having Java project 'xxx' does not exists.
+            // TODO: consider to use a better way to handle this: i.e.
+            // add java nature for all java projects first.
+            bs.updateClassPath(project, false, monitor);
+        }
+        for (IProject project : projects) {
+            bs.addProjectDependencies(project, monitor);
         }
     }
 
@@ -205,7 +209,7 @@ public class BspGradleProjectImporter extends AbstractProjectImporter {
             if (projectOrNull.isPresent()) {
                 project = projectOrNull.get();
             } else {
-                String projectName = projectDirectory.getName();
+                String projectName = findFreeProjectName(projectDirectory.getName());
                 IWorkspace workspace = ResourcesPlugin.getWorkspace();
                 IProjectDescription projectDescription = workspace.newProjectDescription(projectName);
                 projectDescription.setLocation(org.eclipse.core.runtime.Path.fromOSString(projectDirectory.getPath()));
@@ -249,6 +253,33 @@ public class BspGradleProjectImporter extends AbstractProjectImporter {
         data.setGradleVersion(jdtlsPreferences.getGradleVersion());
         data.setGradleWrapperEnabled(jdtlsPreferences.isGradleWrapperEnabled());
         return data;
+    }
+
+    private String findFreeProjectName(String baseName) {
+        IProject project = Arrays.stream(ProjectUtils.getAllProjects())
+                .filter(p -> p.getName().equals(baseName)).findFirst().orElse(null);
+        return project != null ? findFreeProjectName(baseName + "_") : baseName;
+    }
+
+    private void addJavaNature(IProject project, IProgressMonitor monitor) throws CoreException {
+        SubMonitor progress = SubMonitor.convert(monitor, 1);
+        // get the description
+        IProjectDescription description = project.getDescription();
+
+        // abort if the project already has the nature applied or the nature is not defined
+        List<String> currentNatureIds = Arrays.asList(description.getNatureIds());
+        if (currentNatureIds.contains(JavaCore.NATURE_ID)) {
+            return;
+        }
+
+        // add the nature to the project
+        List<String> newIds = new LinkedList<>();
+        newIds.addAll(currentNatureIds);
+        newIds.add(0, JavaCore.NATURE_ID);
+        description.setNatureIds(newIds.toArray(new String[newIds.size()]));
+
+        // save the updated description
+        project.setDescription(description, IResource.AVOID_NATURE_CONFIG, progress.newChild(1));
     }
 }
 
