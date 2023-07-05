@@ -5,28 +5,23 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.buildship.core.internal.CorePlugin;
-import org.eclipse.buildship.core.internal.GradlePluginsRuntimeException;
-import org.eclipse.buildship.core.internal.configuration.GradleProjectNature;
 import org.eclipse.buildship.core.internal.workspace.EclipseVmUtil;
-import org.eclipse.buildship.core.internal.workspace.GradleNatureAddedEvent;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -45,7 +40,6 @@ import org.eclipse.jdt.ls.core.internal.JSONUtility;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
-import org.eclipse.jdt.ls.core.internal.managers.GradleProjectImporter;
 import org.eclipse.jdt.ls.core.internal.managers.IBuildSupport;
 import org.eclipse.jdt.ls.core.internal.managers.ProjectsManager.CHANGE_TYPE;
 
@@ -187,9 +181,6 @@ public class BspGradleBuildSupport implements IBuildSupport {
                 }
                 for (SourceItem source : item.getSources()) {
                     IPath sourcePath = ResourceUtils.filePathFromURI(source.getUri());
-                    if (!sourcePath.toFile().exists() && !source.getGenerated()) {
-                        continue;
-                    }
                     IPath projectLocation = project.getLocation();
                     IPath sourceFullPath;
                     if (projectLocation.isPrefixOf(sourcePath)) {
@@ -219,7 +210,11 @@ public class BspGradleBuildSupport implements IBuildSupport {
                     if (isTest) {
                         classpathAttributes.add(testAttribute);
                     }
-                    if (source.getGenerated()) {
+
+                    if (!sourcePath.toFile().exists() || source.getGenerated() ||
+                            // if the source path is in the build directory, adding optional attribute to it
+                            // because it might be cleaned.
+                            Arrays.stream(sourceFullPath.segments()).anyMatch(segment -> segment.equals("build"))) {
                         classpathAttributes.add(optionalAttribute);
                     }
                     classpath.add(JavaCore.newSourceEntry(sourceFullPath, null, null, sourceOutputFullPath, classpathAttributes.toArray(new IClasspathAttribute[0])));
@@ -293,15 +288,20 @@ public class BspGradleBuildSupport implements IBuildSupport {
         addModuleDependenciesToClasspath(classpath, mainDependencies, false);
         addModuleDependenciesToClasspath(classpath, testDependencies, true);
 
-        javaProject.setRawClasspath(classpath.toArray(IClasspathEntry[]::new), javaProject.getOutputLocation(), monitor);
+        // dedup the classpath which which has the same path, this happens when two dependency points to the same jar but with different name.
+        List<IClasspathEntry> dedupedClasspaths = classpath.stream()
+                .collect(Collectors.toMap(IClasspathEntry::getPath, Function.identity(), (a, b) -> a))
+                .values()
+                .stream()
+                .collect(Collectors.toList());
+
+        javaProject.setRawClasspath(dedupedClasspaths.toArray(IClasspathEntry[]::new), javaProject.getOutputLocation(), monitor);
         // refresh to let JDT be aware of the output folders.
         project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
 
         if (updateProjectDependency) {
             addProjectDependencies(project, monitor);
         }
-
-        JavaLanguageServerPlugin.getInstance().getClientConnection().sendNotification("_java.buildServer.registerFileWatcher", Collections.emptyList());
     }
 
     public void addProjectDependencies(IProject project, IProgressMonitor monitor) throws JavaModelException {

@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProgressReport;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
 import ch.epfl.scala.bsp4j.BuildClient;
@@ -24,6 +25,15 @@ public class BspClient implements BuildClient {
 
 	@Override
 	public void onBuildShowMessage(ShowMessageParams params) {
+		if (params.getMessage().endsWith("[-1]")) {
+			String projectUri = params.getMessage().substring(0, params.getMessage().length() - 5);
+			JavaLanguageServerPlugin.getInstance().getClientConnection().sendActionableNotification(
+				org.eclipse.lsp4j.MessageType.Error,
+				"Gradle version is not compatible with JDK version. Please update the Gradle wrapper.",
+				null,
+				Arrays.asList(new Command("Upgrade Gradle Wrapper", "java.project.upgradeGradle.command", Arrays.asList(projectUri)))
+			);
+		}
 	}
 
 	@Override

@@ -9,6 +9,8 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 
 import com.microsoft.buildserver.adapter.BuildServerAdapter;
 import com.microsoft.buildserver.adapter.BuildServerTargetsManager;
@@ -44,7 +46,7 @@ public class BspBuilder extends IncrementalProjectBuilder {
                 if (requiresBuild(kind)) {
                     CompileResult result = buildServer.buildTargetCompile(new CompileParams(ids)).join();
                     if (Objects.equals(result.getStatusCode(), StatusCode.ERROR)) {
-                        // TODO: how to report the error
+                        throw new CoreException(new Status(IStatus.ERROR, "testtest", "Build Failed."));
                     }
                 }
             }
