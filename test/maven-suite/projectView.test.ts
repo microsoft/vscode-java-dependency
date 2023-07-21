@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
-import * as clipboardy from "clipboardy";
+import clipboard from 'clipboardy';
 import * as path from "path";
 import * as vscode from "vscode";
 import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode,
@@ -156,7 +156,7 @@ suite("Maven Project View Tests", () => {
 
         await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH, mainClass);
         await sleep(1000);
-        const content = await clipboardy.read();
+        const content = await clipboard.read();
         const contentUri = vscode.Uri.file(content);
         const dataUri = mainClass.nodeData.uri;
         assert.ok(dataUri, `Class node should have correct uri`);
@@ -175,7 +175,7 @@ suite("Maven Project View Tests", () => {
 
         await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_COPY_RELATIVE_FILE_PATH, mainClass);
         await sleep(1000);
-        const content = await clipboardy.read();
+        const content = await clipboard.read();
         const dataUri = mainClass.nodeData.uri;
         assert.ok(dataUri, `Class node should have correct uri`);
         const expectedUri = vscode.Uri.parse(dataUri!);
