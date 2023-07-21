@@ -4,9 +4,11 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.eclipse.buildship.core.internal.util.gradle.GradleVersion;
+import org.eclipse.jdt.ls.core.internal.EventNotification;
+import org.eclipse.jdt.ls.core.internal.EventType;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProgressReport;
-import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
 import ch.epfl.scala.bsp4j.BuildClient;
@@ -25,14 +27,21 @@ public class BspClient implements BuildClient {
 
 	@Override
 	public void onBuildShowMessage(ShowMessageParams params) {
+		// TODO: BSP does not support additional data in ShowMessageParams,
+		// as a workaround, we put [Error Code] as a suffix in the message.
 		if (params.getMessage().endsWith("[-1]")) {
-			String projectUri = params.getMessage().substring(0, params.getMessage().length() - 5);
-			JavaLanguageServerPlugin.getInstance().getClientConnection().sendActionableNotification(
-				org.eclipse.lsp4j.MessageType.Error,
-				"Gradle version is not compatible with JDK version. Please update the Gradle wrapper.",
-				null,
-				Arrays.asList(new Command("Upgrade Gradle Wrapper", "java.project.upgradeGradle.command", Arrays.asList(projectUri)))
+			String argString = params.getMessage().substring(0, params.getMessage().length() - 5);
+			String[] args = argString.split(",");
+			String projectUri = args[0];
+			String highestJdk = args[1];
+			GradleCompatibilityInfo info = new GradleCompatibilityInfo(
+					projectUri,
+					"Gradle version is not compatible with JDK version. Please update the Gradle wrapper.",
+					highestJdk,
+					GradleVersion.current().getVersion()
 			);
+			EventNotification notification = new EventNotification().withType(EventType.IncompatibleGradleJdkIssue).withData(info);
+			JavaLanguageServerPlugin.getProjectsManager().getConnection().sendEventNotification(notification);
 		}
 	}
 
@@ -94,5 +103,20 @@ public class BspClient implements BuildClient {
 
 	@Override
 	public void onBuildTargetDidChange(DidChangeBuildTarget params) {
+	}
+
+	private class GradleCompatibilityInfo {
+
+		private String projectUri;
+		private String message;
+		private String highestJavaVersion;
+		private String recommendedGradleVersion;
+
+		public GradleCompatibilityInfo(String projectPath, String message, String highestJavaVersion, String recommendedGradleVersion) {
+			this.projectUri = projectPath;
+			this.message = message;
+			this.highestJavaVersion = highestJavaVersion;
+			this.recommendedGradleVersion = recommendedGradleVersion;
+		}
 	}
 }

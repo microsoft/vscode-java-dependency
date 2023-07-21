@@ -55,9 +55,8 @@ public class BspBuilder extends IncrementalProjectBuilder {
     }
 
     private boolean requiresClean(int kind) {
+        // TODO: Currently clean is not supported.
         return false;
-        // currently we don't support clean, user needs to manually clean the project.
-        // return kind == FULL_BUILD || kind == CLEAN_BUILD;
     }
 
     private boolean requiresBuild(int kind) {
