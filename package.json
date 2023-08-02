@@ -4,7 +4,7 @@
   "description": "%description%",
   "version": "0.23.0",
   "publisher": "vscjava",
-  "preview": true,
+  "preview": false,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
   "keywords": [
     "java",
