@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.23.1
+### Removed
+- Removed marketplace preview flag. [PR#780](https://github.com/microsoft/vscode-java-dependency/pull/780)
+
 ## 0.23.0
 ### Added
 - Support creating Micronaut projects. [#713](https://github.com/microsoft/vscode-java-dependency/issues/713), contributed by [@dbalek](https://github.com/dbalek)
