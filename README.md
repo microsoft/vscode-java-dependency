@@ -66,7 +66,7 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 | Setting Name | Description | Default Value |
 |---|---|---|
 | `java.dependency.showMembers` | Specify whether to show the members in the Java Projects explorer. | `false` |
-| `java.dependency.syncWithFolderExplorer` | Specify whether to sync the folder with Java Projects explorer when browsing files.  | `true` |
+| `java.dependency.syncWithFolderExplorer` | Specify whether to link Java Projects Explorer with the active editor. | `true` |
 | `java.dependency.autoRefresh` | Specify whether to automatically sync the change from editor to the Java Projects explorer. | `true` |
 | `java.dependency.refreshDelay` | The delay time (ms) the auto refresh is invoked when changes are detected. | `2000ms` |
 | `java.dependency.packagePresentation` | Specify how to display the package. Supported values are: `flat`, `hierarchical`.| `flat` |
