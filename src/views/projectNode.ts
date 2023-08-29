@@ -14,10 +14,6 @@ import { NodeFactory } from "./nodeFactory";
 
 export class ProjectNode extends DataNode {
 
-    constructor(nodeData: INodeData, parent?: DataNode) {
-        super(nodeData, parent);
-    }
-
     public async revealPaths(paths: INodeData[]): Promise<DataNode | undefined> {
         if (!this.uri) {
             return undefined;
@@ -65,7 +61,7 @@ export class ProjectNode extends DataNode {
     protected createChildNodeList(): ExplorerNode[] {
         const result: (ExplorerNode | undefined)[] = [];
         const packageData: any[] = [];
-        if (this.nodeData.children && this.nodeData.children.length) {
+        if (this.nodeData.children?.length) {
             this.nodeData.children.forEach((nodeData) => {
                 if (nodeData.kind === NodeKind.Package) {
                     packageData.push(nodeData);
@@ -123,6 +119,8 @@ function getProjectType(natureId: string): string {
             return ReadableNature.Maven;
         case NatureId.Gradle:
             return ReadableNature.Gradle;
+        case NatureId.BspGradle:
+            return ReadableNature.BspGradle;
         case NatureId.UnmanagedFolder:
             return ReadableNature.UnmanagedFolder;
         default:
@@ -133,6 +131,7 @@ function getProjectType(natureId: string): string {
 enum NatureId {
     Maven = "org.eclipse.m2e.core.maven2Nature",
     Gradle = "org.eclipse.buildship.core.gradleprojectnature",
+    BspGradle = "com.microsoft.gradle.bs.importer.GradleBuildServerProjectNature",
     UnmanagedFolder = "org.eclipse.jdt.ls.core.unmanagedFolder",
     Java = "org.eclipse.jdt.core.javanature",
 }
@@ -140,6 +139,7 @@ enum NatureId {
 enum ReadableNature {
     Maven = "maven",
     Gradle = "gradle",
+    BspGradle = "bsp-gradle",
     UnmanagedFolder = "unmanagedFolder",
     Java = "java",
 }
