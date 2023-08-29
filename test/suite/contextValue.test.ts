@@ -28,6 +28,10 @@ suite("Context Value Tests", () => {
         assert.ok(/java:project(?=.*?\b\+java\b)(?=.*?\b\+gradle\b)(?=.*?\b\+uri\b)/.test((await gradleProject.getTreeItem()).contextValue || ""));
     });
 
+    test("test BSP Gradle project node", async function() {
+        assert.ok(/java:project(?=.*?\b\+java\b)(?=.*?\b\+bsp-gradle\b)(?=.*?\b\+uri\b)/.test((await bspGradleProject.getTreeItem()).contextValue || ""));
+    });
+
     test("test unmanaged folder node", async function() {
         assert.ok(/java:project(?=.*?\b\+java\b)(?=.*?\b\+unmanagedFolder\b)(?=.*?\b\+uri\b)/
                 .test((await unmanagedFolder.getTreeItem()).contextValue || ""));
@@ -131,6 +135,15 @@ const gradleProject: ProjectNode = new ProjectNode({
     kind: NodeKind.Project,
     metaData: {
         NatureId: ["org.eclipse.jdt.core.javanature", "org.eclipse.buildship.core.gradleprojectnature"],
+    },
+}, workspace);
+
+const bspGradleProject: ProjectNode = new ProjectNode({
+    name: "bspGradleProject",
+    uri: Uri.file(__dirname).toString(),
+    kind: NodeKind.Project,
+    metaData: {
+        NatureId: ["org.eclipse.jdt.core.javanature", "com.microsoft.gradle.bs.importer.GradleBuildServerProjectNature"],
     },
 }, workspace);
 

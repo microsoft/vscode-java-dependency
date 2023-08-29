@@ -617,12 +617,12 @@
         },
         {
           "submenu": "javaProject.maven",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(maven)\\b)/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+maven\\b)/",
           "group": "9_configuration@10"
         },
         {
           "submenu": "javaProject.gradle",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(gradle)\\b)/",
+          "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+uri\\b)(?=.*?\\b\\+(?:bsp-)?gradle\\b)/",
           "group": "9_configuration@10"
         }
       ],
