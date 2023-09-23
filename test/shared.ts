@@ -3,7 +3,8 @@
 
 import * as path from "path";
 import { extensions, Uri } from "vscode";
-import { DataNode } from "../extension.bundle";
+import { DataNode, PackageNode } from "../extension.bundle";
+import { ExplorerNode } from "../src/views/explorerNode";
 
 export namespace Uris {
     // Simple Project
@@ -41,4 +42,16 @@ export function truePath(...paths: string[]) {
 export async function setupTestEnv() {
     await extensions.getExtension("redhat.java")!.activate();
     await extensions.getExtension("vscjava.vscode-java-dependency")!.activate();
+}
+
+export function printNodes(nodes: ExplorerNode[]) {
+    return nodes.map(node => {
+        if (node instanceof DataNode) {
+            return `DataNode: ${node.name}`;
+        }
+        if (node instanceof PackageNode) {
+            return `PackageNode: ${node.name}`;
+        }
+        return `UnknownNode: ${node.constructor.name}`;
+    }).join('\n');
 }

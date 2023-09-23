@@ -48,7 +48,7 @@ export namespace Jdtls {
             for (const pattern in excludePatterns) {
                 if (excludePatterns[pattern]) {
                     const toExclude: string[] = minimatch.match(uriOfChildren, pattern);
-                    toExclude.forEach((uri: string) => urisToExclude.add(uri));
+                    toExclude.forEach((uriToExclude: string) => urisToExclude.add(uriToExclude));
                 }
             }
 
@@ -58,7 +58,7 @@ export namespace Jdtls {
                         return true;
                     }
                     return !urisToExclude.has(node.uri);
-                })
+                });
             }
         }
         return nodeData;
@@ -95,6 +95,6 @@ export namespace Jdtls {
 }
 
 interface IPackageDataParam {
-    projectUri: string | undefined,
-    [key: string]: any,
+    projectUri: string | undefined;
+    [key: string]: any;
 }

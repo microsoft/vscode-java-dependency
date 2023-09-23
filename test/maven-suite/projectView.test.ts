@@ -5,7 +5,7 @@ import * as assert from "assert";
 import * as vscode from "vscode";
 import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode,
     INodeData, Jdtls, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
-import { fsPath, setupTestEnv, Uris } from "../shared";
+import { fsPath, printNodes, setupTestEnv, Uris } from "../shared";
 
 // tslint:disable: only-arrow-functions
 suite("Maven Project View Tests", () => {
@@ -26,7 +26,7 @@ suite("Maven Project View Tests", () => {
         const projectChildren = await projectNode.getChildren();
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === "pom.xml"));
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === ".vscode"));
-        assert.equal(projectChildren.length, 8, "Number of children should be 8");
+        assert.equal(projectChildren.length, 8, `Number of children should be 8, but was ${projectChildren.length}.\n${printNodes(projectChildren)}`);
         const mainPackage = projectChildren[0] as PackageRootNode;
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
 
@@ -101,8 +101,8 @@ suite("Maven Project View Tests", () => {
         const testSourceSetChildren = await testPackage.getChildren();
         assert.equal(testSourceSetChildren.length, 1, "Number of test sub packages should be 1");
         const testSubPackage = testSourceSetChildren[0] as PackageNode;
-        
-        
+
+
         assert.equal(testSubPackage.name, "com.mycompany.app", "Name of test subpackage should be \"com.mycompany.app\"");
 
         // validate innermost layer nodes
@@ -251,5 +251,15 @@ suite("Maven Project View Tests", () => {
         const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
         const projectChildren = await projectNode.getChildren();
         assert.equal(projectChildren.length, 4);
+    });
+
+    teardown(async () => {
+        // Restore default settings. Some tests might alter them and others depend on a specific setting.
+        // Not resetting to the default settings will also show the file as changed in the source control view.
+        await vscode.workspace.getConfiguration("java.project.explorer").update(
+            "showNonJavaResources",
+            true
+        );
+        await vscode.workspace.getConfiguration("java.dependency").update("packagePresentation", "flat");
     });
 });

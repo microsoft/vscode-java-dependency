@@ -19,11 +19,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.core.internal.utils.FileUtil;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -577,26 +579,20 @@ public class PackageCommand {
 
     public static IProject getProject(String projectUri) {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-        IContainer[] containers = root.findContainersForLocationURI(JDTUtils.toURI(projectUri));
-
-        if (containers.length == 0) {
-            return null;
-        }
-
-        // For multi-module scenario, findContainersForLocationURI API may return a container array,
-        // put the result from the nearest project in front.
-        Arrays.sort(containers, (Comparator<IContainer>) (IContainer a, IContainer b) -> {
-            return a.getFullPath().toPortableString().length() - b.getFullPath().toPortableString().length();
-        });
-
-        for (IContainer container : containers) {
-            IProject project = container.getProject();
-            if (!project.exists()) {
-                return null;
+        URI uri = JDTUtils.toURI(projectUri);
+        IContainer[] containers = root.findContainersForLocationURI(uri);
+        
+        Optional<IContainer> maybeProject = Arrays.stream(containers).filter(container -> container instanceof IProject).findFirst();
+        if (maybeProject.isPresent()) {
+        	return (IProject) maybeProject.get();
+        } else {
+            String invisibleProjectName = ProjectUtils.getWorkspaceInvisibleProjectName(FileUtil.toPath(uri).removeTrailingSeparator());
+            IProject invisibleProject = root.getProject(invisibleProjectName);
+            if (!invisibleProject.exists()) {
+                throw new IllegalArgumentException(projectUri + " is neither a Java nor an invisible project.");
             }
-            return project;
+            return invisibleProject;
         }
-        return null;
     }
 
     public static IJavaProject getJavaProject(String projectUri) {

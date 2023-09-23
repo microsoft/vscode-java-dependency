@@ -82,6 +82,18 @@ async function main(): Promise<void> {
             ],
         });
 
+
+        // Run multi module test
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./multi-module-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "multi-module"),
+                `--user-data-dir=${userDir}`,
+            ],
+        });
+
         process.exit(0);
 
     } catch (err) {
