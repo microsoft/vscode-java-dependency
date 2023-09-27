@@ -257,7 +257,7 @@ const projectTypes: IProjectType[] = [
         metadata: {
             type: ProjectType.Micronaut,
             extensionId: "oracle-labs-graalvm.micronaut",
-            extensionName: "GraalVM Tools for Micronaut",
+            extensionName: "Micronaut® Launch",
             createCommandId: "extension.micronaut.createProject",
         },
     },
@@ -266,7 +266,7 @@ const projectTypes: IProjectType[] = [
         metadata: {
             type: ProjectType.GCN,
             extensionId: "oracle-labs-graalvm.gcn",
-            extensionName: "Graal Cloud Native Tools",
+            extensionName: "Graal Cloud Native Launcher",
             createCommandId: "gcn.createGcnProject",
         },
     },
