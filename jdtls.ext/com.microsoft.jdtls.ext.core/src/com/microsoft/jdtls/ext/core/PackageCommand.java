@@ -14,7 +14,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -584,7 +583,7 @@ public class PackageCommand {
         
         Optional<IContainer> maybeProject = Arrays.stream(containers).filter(container -> container instanceof IProject).findFirst();
         if (maybeProject.isPresent()) {
-        	return (IProject) maybeProject.get();
+            return (IProject) maybeProject.get();
         } else {
             String invisibleProjectName = ProjectUtils.getWorkspaceInvisibleProjectName(FileUtil.toPath(uri).removeTrailingSeparator());
             IProject invisibleProject = root.getProject(invisibleProjectName);
