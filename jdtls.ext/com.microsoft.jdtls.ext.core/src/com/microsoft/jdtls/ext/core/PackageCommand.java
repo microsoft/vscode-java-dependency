@@ -580,7 +580,7 @@ public class PackageCommand {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         URI uri = JDTUtils.toURI(projectUri);
         IContainer[] containers = root.findContainersForLocationURI(uri);
-        
+
         Optional<IContainer> maybeProject = Arrays.stream(containers).filter(container -> container instanceof IProject).findFirst();
         if (maybeProject.isPresent()) {
             return (IProject) maybeProject.get();
