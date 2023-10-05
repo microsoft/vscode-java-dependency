@@ -24,7 +24,6 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.core.internal.utils.FileUtil;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -585,12 +584,9 @@ public class PackageCommand {
         if (maybeProject.isPresent()) {
             return (IProject) maybeProject.get();
         } else {
-            String invisibleProjectName = ProjectUtils.getWorkspaceInvisibleProjectName(FileUtil.toPath(uri).removeTrailingSeparator());
-            IProject invisibleProject = root.getProject(invisibleProjectName);
-            if (!invisibleProject.exists()) {
-                throw new IllegalArgumentException(projectUri + " is neither a Java nor an invisible project.");
-            }
-            return invisibleProject;
+            // This must be a folder that has been linked to project outside the workspace
+            // for example an invisible project or a project created by a third party extension. 
+            return containers[0].getProject();
         }
     }
 
