@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -584,9 +585,17 @@ public class PackageCommand {
         if (maybeProject.isPresent()) {
             return (IProject) maybeProject.get();
         } else {
-            // This must be a folder that has been linked to project outside the workspace
-            // for example an invisible project or a project created by a third party extension. 
-            return containers[0].getProject();
+            if (containers.length == 0) {
+                throw new IllegalArgumentException(String.format("Did not find container for URI  %s", projectUri));
+            }
+
+            // This must be an invisible project. Third party extension could theoretically create invisible projects anywhere
+            // in the project hierarchy. We therefore pick the most specific path.
+            Arrays.sort(containers, (Comparator<IContainer>) (IContainer a, IContainer b) -> {
+                return b.getFullPath().toPortableString().length() - a.getFullPath().toPortableString().length();
+            });
+
+            return containers[containers.length - 1].getProject();
         }
     }
 
