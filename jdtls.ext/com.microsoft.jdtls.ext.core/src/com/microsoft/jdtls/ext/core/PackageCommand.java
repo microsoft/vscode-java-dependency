@@ -591,6 +591,7 @@ public class PackageCommand {
 
             // This must be an invisible project. Third party extension could theoretically create invisible projects anywhere
             // in the project hierarchy. We therefore pick the most specific path.
+            // See: https://github.com/microsoft/vscode-java-dependency/pull/791#discussion_r1349435426
             Arrays.sort(containers, (Comparator<IContainer>) (IContainer a, IContainer b) -> {
                 return b.getFullPath().toPortableString().length() - a.getFullPath().toPortableString().length();
             });
