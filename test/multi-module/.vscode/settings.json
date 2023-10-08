@@ -1,0 +1,4 @@
+{
+    "java.dependency.packagePresentation": "flat",
+    "java.import.generatesMetadataFilesAtProjectRoot": false
+}

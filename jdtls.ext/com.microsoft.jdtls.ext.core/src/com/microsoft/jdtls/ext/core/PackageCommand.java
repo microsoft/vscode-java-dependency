@@ -14,11 +14,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -577,26 +577,21 @@ public class PackageCommand {
 
     public static IProject getProject(String projectUri) {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-        IContainer[] containers = root.findContainersForLocationURI(JDTUtils.toURI(projectUri));
+        URI uri = JDTUtils.toURI(projectUri);
+        IContainer[] containers = root.findContainersForLocationURI(uri);
 
-        if (containers.length == 0) {
-            return null;
-        }
-
-        // For multi-module scenario, findContainersForLocationURI API may return a container array,
-        // put the result from the nearest project in front.
-        Arrays.sort(containers, (Comparator<IContainer>) (IContainer a, IContainer b) -> {
-            return a.getFullPath().toPortableString().length() - b.getFullPath().toPortableString().length();
-        });
-
-        for (IContainer container : containers) {
-            IProject project = container.getProject();
-            if (!project.exists()) {
-                return null;
+        Optional<IContainer> maybeProject = Arrays.stream(containers).filter(container -> container instanceof IProject).findFirst();
+        if (maybeProject.isPresent()) {
+            return (IProject) maybeProject.get();
+        } else {
+            if (containers.length == 0) {
+                throw new IllegalArgumentException(String.format("Did not find container for URI  %s", projectUri));
             }
-            return project;
+
+            // This must be an invisible project.
+            // There might be more than one way to access it, but all containers should link to the same project. 
+            return containers[0].getProject();
         }
-        return null;
     }
 
     public static IJavaProject getJavaProject(String projectUri) {

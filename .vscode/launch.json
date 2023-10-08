@@ -93,17 +93,35 @@
       "preLaunchTask": "npm: compile"
     },
     {
+      "name": "Extension Tests - Multi Module Project",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/test/multi-module/",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/dist/test/multi-module-suite/index"
+      ],
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
+      "preLaunchTask": "npm: compile"
+    },
+    {
       "name": "Debug UI Command Tests",
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/node_modules/vscode-extension-tester/out/cli.js",
       "args": [
         "setup-and-run",
+        // If not set, will use the current version of vscode. Find a way not to hardcode this value.
+        "--code_version=1.77.0",
         "${workspaceFolder}/dist/test/ui/command.test.js",
       ],
+      // To debug the test code, you must set --mode=development inside the vscode:prepublish task. Find a better way to do this.
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
       "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "preLaunchTask": "npm: compile"
+      // No need to compile the code, vscode:prepublish task that compiles the code is run by vscode-extension-tester
     },
   ]
 }

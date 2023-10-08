@@ -88,6 +88,6 @@ export class NodeFactory {
             sendError(new Error(`Unsupported node kind: ${nodeData.kind}`));
             return undefined;
         }
-        
+
     }
 }
