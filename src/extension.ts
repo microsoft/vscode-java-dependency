@@ -29,7 +29,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
     addExtensionChangeListener(context);
     // the when clause does not support 'workspaceContains' we used for activation event,
     // so we manually find the target files and set it to a context value.
-    workspace.findFiles("{*.gradle,*.gradle.kts,pom.xml,.classpath}", undefined, 1).then((uris: Uri[]) => {
+    //
+    // Excluding "**/node_modules/**" as a common cause of excessive CPU usage.
+    // https://github.com/microsoft/vscode/issues/75314#issuecomment-503195666
+    workspace.findFiles("{*.gradle,*.gradle.kts,pom.xml,.classpath}", "**/node_modules/**", 1).then((uris: Uri[]) => {
         if (uris && uris.length) {
             contextManager.setContextValue(Context.WORKSPACE_CONTAINS_BUILD_FILES, true);
         }
