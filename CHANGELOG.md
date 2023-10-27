@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Improve wording in Java Projects view. [PR#785](https://github.com/microsoft/vscode-java-dependency/pull/785)
 - Support showing Gradle sub-menu for projects imported by Gradle build server. [PR#786](https://github.com/microsoft/vscode-java-dependency/pull/786)
-- Update extension names in creating Java projects menu. [PR#790](https://github.com/microsoft/vscode-java-dependency/pull/790)
-- Maven multi-module project doesn't correctly open modules. [#766](https://github.com/microsoft/vscode-java-dependency/issues/766)
+- Update extension names in creating Java projects menu. [PR#790](https://github.com/microsoft/vscode-java-dependency/pull/790), contributed by [@dbalek](https://github.com/dbalek)
+- Maven multi-module project doesn't correctly open modules. [#766](https://github.com/microsoft/vscode-java-dependency/issues/766), contributed by [@fvclaus](https://github.com/fvclaus)
 
 ## 0.23.1
 ### Removed
