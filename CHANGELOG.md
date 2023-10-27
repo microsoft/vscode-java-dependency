@@ -4,6 +4,13 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.23.2
+### Fixed
+- Improve wording in Java Projects view. [PR#785](https://github.com/microsoft/vscode-java-dependency/pull/785)
+- Support showing Gradle sub-menu for projects imported by Gradle build server. [PR#786](https://github.com/microsoft/vscode-java-dependency/pull/786)
+- Update extension names in creating Java projects menu. [PR#790](https://github.com/microsoft/vscode-java-dependency/pull/790)
+- Maven multi-module project doesn't correctly open modules. [#766](https://github.com/microsoft/vscode-java-dependency/issues/766)
+
 ## 0.23.1
 ### Removed
 - Removed marketplace preview flag. [PR#780](https://github.com/microsoft/vscode-java-dependency/pull/780)
