@@ -901,6 +901,6 @@
     "minimatch": "^5.1.6",
     "semver": "^7.3.8",
     "vscode-extension-telemetry-wrapper": "^0.13.2",
-    "vscode-tas-client": "^0.1.63"
+    "vscode-tas-client": "^0.1.75"
   }
 }
