@@ -82,7 +82,7 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
     }
 
     const className: string | undefined = await window.showInputBox({
-        placeHolder: "Input the class name",
+        placeHolder: "Enter the Java file name for class/interface/enum/record/@interface",
         ignoreFocusOut: true,
         validateInput: async (value: string): Promise<string> => {
             const checkMessage: string = checkJavaQualifiedName(value);
