@@ -121,7 +121,7 @@ describe("Command Tests", function() {
         assert.ok(quickPick, `Quickpick item "src/main/java" should be found`);
         await quickPick!.click();
         inputBox = await InputBox.create();
-        assert.ok(await inputBox.getPlaceHolder() === "Input the class name", `InputBox "Input the class name" should appear`);
+        assert.ok(await inputBox.getPlaceHolder() === "Enter the Java file name for class/interface/enum/record/@interface", `InputBox "Enter the Java file name" should appear`);
         await inputBox.setText("App2");
         await inputBox.confirm();
         await sleep(1000);
