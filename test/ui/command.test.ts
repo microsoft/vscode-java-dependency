@@ -114,7 +114,7 @@ describe("Command Tests", function() {
 
     it("Test java.view.package.newJavaClass", async function() {
         let inputBox = await createJavaResource();
-        const javaClassQuickPick  = await inputBox.findQuickPick("$(symbol-class) Class");
+        const javaClassQuickPick  = await inputBox.findQuickPick("Class");
         await javaClassQuickPick!.click();
         assert.ok(await inputBox.getPlaceHolder() === "Choose a source folder", `InputBox "Choose a source folder" should appear`);
         const quickPick = await inputBox.findQuickPick("src/main/java");
