@@ -76,6 +76,9 @@ export class PackageRootNode extends DataNode {
             } else {
                 contextValue += "+source";
             }
+            if (this._project.nodeData.metaData?.MaxSourceVersion >= 14) {
+                contextValue += "+allowRecord";
+            }
             return contextValue;
         }
     }

@@ -2,8 +2,9 @@
 // Licensed under the MIT license.
 
 import * as fse from "fs-extra";
+import { userInfo } from "os";
 import * as path from "path";
-import { commands, Extension, extensions, languages, QuickPickItem, SnippetString, TextEditor, Uri,
+import { commands, Extension, extensions, languages, Position, QuickPickItem, SnippetString, TextEditor, Uri,
     window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
 import { Commands, PrimaryTypeNode } from "../../extension.bundle";
 import { ExtensionName } from "../constants";
@@ -12,6 +13,49 @@ import { DataNode } from "../views/dataNode";
 import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
 import { sendError, setUserError } from "vscode-extension-telemetry-wrapper";
+const stringInterpolate = require("fmtr");
+
+export class JavaType {
+    public static readonly Class: JavaType = new JavaType("Class", "class", "$(symbol-class)");
+    public static readonly Interface: JavaType = new JavaType("Interface", "interface", "$(symbol-interface)");
+    public static readonly Enum: JavaType = new JavaType("Enum", "enum", "$(symbol-enum)");
+    public static readonly Record: JavaType = new JavaType("Record", "record", "$(symbol-class)");
+    public static readonly Annotation: JavaType = new JavaType("Annotation", "@interface", "$(symbol-interface)");
+    public static readonly AbstractClass: JavaType = new JavaType("Abstract Class", "abstract class", "$(symbol-class)");
+
+    public static readonly All: JavaType[] = [
+        JavaType.Class,
+        JavaType.Interface,
+        JavaType.Enum,
+        JavaType.Record,
+        JavaType.Annotation,
+        JavaType.AbstractClass,
+    ];
+
+    public static fromDisplayName(label: string): JavaType | undefined {
+        if (label?.startsWith("$")) {
+            return JavaType.All.find((javaType) => `${javaType.icon} ${javaType.label}` === label);
+        }
+
+        return JavaType.All.find((javaType) => javaType.label === label);
+    }
+
+    public static getDisplayNames(includeIcon: boolean, includeRecord?: boolean): string[] {
+        return JavaType.All
+            .filter((javaType) => includeRecord || javaType !== JavaType.Record)
+            .map((javaType) => {
+                if (includeIcon) {
+                    return `${javaType.icon} ${javaType.label}`;
+                } else {
+                    return javaType.label;
+                }
+            });
+    }
+
+    private constructor(public readonly label: string, public readonly keyword: string,
+        public readonly icon: string) {
+    }
+}
 
 export async function newResource(node: DataNode): Promise<void> {
     const availableTypes: string[] = [];
@@ -21,7 +65,9 @@ export async function newResource(node: DataNode): Promise<void> {
             node.nodeData.kind === NodeKind.Package ||
             node.nodeData.kind === NodeKind.PrimaryType ||
             node.nodeData.kind === NodeKind.CompilationUnit) {
-        availableTypes.push("$(symbol-class) Java Class", "$(symbol-namespace) Package");
+        const allowRecord = node.computeContextValue()?.includes("+allowRecord");
+        availableTypes.push(...JavaType.getDisplayNames(true, allowRecord));
+        availableTypes.push("$(symbol-namespace) Package");
     }
 
     // add new file option
@@ -44,9 +90,6 @@ export async function newResource(node: DataNode): Promise<void> {
     );
 
     switch (type) {
-        case "$(symbol-class) Java Class":
-            await newJavaClass(node);
-            break;
         case "$(symbol-namespace) Package":
             await newPackage(node);
             break;
@@ -57,23 +100,17 @@ export async function newResource(node: DataNode): Promise<void> {
             await newFolder(node);
             break;
         default:
+            const javaType = JavaType.fromDisplayName(type || "");
+            if (javaType) {
+                await newJavaFileWithSpecificType(javaType, node);
+            }
             break;
     }
 }
 
-// TODO: separate to two function to handle creation from menu bar and explorer.
-export async function newJavaClass(node?: DataNode): Promise<void> {
-    let packageFsPath: string | undefined;
-    if (!node) {
-        packageFsPath = await inferPackageFsPath();
-    } else {
-        if (!node?.uri || !canCreateClass(node)) {
-            return;
-        }
-
-        packageFsPath = await getPackageFsPath(node);
-    }
-
+// Create a new Java file from the menu bar.
+export async function newJavaFile(): Promise<void> {
+    let packageFsPath: string | undefined = await inferPackageFsPath();
     if (packageFsPath === undefined) {
         // User canceled
         return;
@@ -81,8 +118,48 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
         return newUntitledJavaFile();
     }
 
+    const includeRecord = !(await isVersionLessThan(Uri.file(packageFsPath).toString(), 14));
+    const supportedTypes: string[] = JavaType.getDisplayNames(true, includeRecord);
+    const typeName: string | undefined = await window.showQuickPick(supportedTypes,
+            {
+                placeHolder: "Select the Java type you want to create",
+                ignoreFocusOut: true,
+            });
+    if (!typeName) {
+        return;
+    }
+
+    newJavaFile0(packageFsPath, JavaType.fromDisplayName(typeName));
+}
+
+// Create a new Java file from the context menu of Java Projects view.
+export async function newJavaFileWithSpecificType(javaType: JavaType, node?: DataNode): Promise<void> {
+    let packageFsPath: string | undefined;
+    if (!node) {
+        packageFsPath = await inferPackageFsPath();
+    } else {
+        if (!node?.uri || !canCreateClass(node)) {
+            return;
+        }
+        packageFsPath = await getPackageFsPath(node);
+    }
+    if (packageFsPath === undefined) {
+        // User canceled
+        return;
+    } else if (packageFsPath.length === 0) {
+        return newUntitledJavaFile();
+    }
+
+    newJavaFile0(packageFsPath, javaType);
+}
+
+async function newJavaFile0(packageFsPath: string, javaType: JavaType | undefined) {
+    if (!javaType) {
+        return;
+    }
+
     const className: string | undefined = await window.showInputBox({
-        placeHolder: "Enter the Java file name for class/interface/enum/record/@interface",
+        placeHolder: `Input the ${javaType.label.toLowerCase()} name`,
         ignoreFocusOut: true,
         validateInput: async (value: string): Promise<string> => {
             const checkMessage: string = checkJavaQualifiedName(value);
@@ -102,12 +179,86 @@ export async function newJavaClass(node?: DataNode): Promise<void> {
         return;
     }
 
-    // `workspace.applyEdit()` will trigger a workspace file event, and let the
-    // vscode-java extension to handle the type: class, interface or enum.
-    const workspaceEdit: WorkspaceEdit = new WorkspaceEdit();
     const fsPath: string = getNewFilePath(packageFsPath, className);
-    workspaceEdit.createFile(Uri.file(fsPath));
-    workspace.applyEdit(workspaceEdit);
+    const packageName = await resolvePackageName(fsPath);
+    await newJavaFileWithContents(fsPath, javaType, packageName);
+}
+
+// New File implementation is copied from
+// https://github.com/redhat-developer/vscode-java/blob/86bf3ae02f4f457184e6cc217f20240f9882dde9/src/fileEventHandler.ts#L66
+async function newJavaFileWithContents(fsPath: string, javaType: JavaType, packageName: string) {
+    const snippets: string[] = [];
+    const formatNumber = (num: number) => num > 9 ? String(num) : `0${num}`;
+    const typeName: string = resolveTypeName(fsPath);
+    const isPackageInfo = typeName === 'package-info';
+    const isModuleInfo = typeName === 'module-info';
+    const date = new Date();
+    const context: any = {
+        fileName: path.basename(fsPath),
+        packageName: "",
+        typeName: typeName,
+        user: userInfo().username,
+        date: date.toLocaleDateString(undefined, {month: "short", day: "2-digit", year: "numeric"}),
+        time: date.toLocaleTimeString(),
+        year: date.getFullYear(),
+        month: formatNumber(date.getMonth() + 1),
+        shortmonth: date.toLocaleDateString(undefined, {month: "short"}),
+        day: formatNumber(date.getDate()),
+        hour: formatNumber(date.getHours()),
+        minute: formatNumber(date.getMinutes()),
+    };
+
+    if (!isModuleInfo) {
+        context.packageName = packageName;
+    }
+
+    const fileHeader = workspace.getConfiguration('java').get<string[]>("templates.fileHeader");
+    if (fileHeader && fileHeader.length) {
+        for (const template of fileHeader) {
+            snippets.push(stringInterpolate(template, context));
+        }
+    }
+
+    if (!isModuleInfo) {
+        if (context.packageName) {
+            snippets.push(`package ${context.packageName};`);
+            snippets.push("");
+        }
+    }
+
+    if (!isPackageInfo) {
+        const typeComment = workspace.getConfiguration('java').get<string[]>("templates.typeComment");
+        if (typeComment && typeComment.length) {
+            for (const template of typeComment) {
+                snippets.push(stringInterpolate(template, context));
+            }
+        }
+
+        if (isModuleInfo) {
+            snippets.push(`module {`);
+        } else {
+            snippets.push(`public ${javaType.keyword} ${typeName}${javaType === JavaType.Record ? "()" : ""} {`);
+        }
+        snippets.push("");
+        snippets.push("}");
+        snippets.push("");
+    }
+
+    const workspaceEdit: WorkspaceEdit = new WorkspaceEdit();
+    const fsUri: Uri = Uri.file(fsPath);
+    workspaceEdit.createFile(fsUri);
+    workspaceEdit.insert(fsUri, new Position(0, 0), snippets.join("\n"));
+    await workspace.applyEdit(workspaceEdit);
+    const editor = await window.showTextDocument(fsUri);
+    if (editor) {
+        editor.document.save();
+    }
+}
+
+function resolveTypeName(filePath: string): string {
+    const fileName: string = path.basename(filePath);
+    const extName: string = path.extname(fileName);
+    return fileName.substring(0, fileName.length - extName.length);
 }
 
 async function newUntitledJavaFile(): Promise<void> {
@@ -184,6 +335,61 @@ function canCreateClass(node: DataNode): boolean {
     }
 
     return false;
+}
+
+const COMPLIANCE = "org.eclipse.jdt.core.compiler.compliance";
+async function isVersionLessThan(fileUri: string, targetVersion: number): Promise<boolean> {
+    let projectSettings: any = {};
+    try {
+        projectSettings = await commands.executeCommand<Object>(
+            Commands.EXECUTE_WORKSPACE_COMMAND, Commands.GET_PROJECT_SETTINGS, fileUri, [ COMPLIANCE ]);
+    } catch (err) {
+        // do nothing.
+    }
+
+    let javaVersion = 0;
+    let complianceVersion = projectSettings[COMPLIANCE];
+    if (complianceVersion) {
+        // Ignore '1.' prefix for legacy Java versions
+        if (complianceVersion.startsWith('1.')) {
+            complianceVersion = complianceVersion.substring(2);
+        }
+
+        // look into the interesting bits now
+        const regexp = /\d+/g;
+        const match = regexp.exec(complianceVersion);
+        if (match) {
+            javaVersion = parseInt(match[0]);
+        }
+    }
+
+    return javaVersion < targetVersion;
+}
+
+async function resolvePackageName(filePath: string): Promise<string> {
+    let sourcePaths: string[] = [];
+    const result: IListCommandResult = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
+    if (result && result.data && result.data.length) {
+        sourcePaths = result.data.map((sourcePath) => sourcePath.path).sort((a, b) => b.length - a.length);
+    }
+
+    if (!sourcePaths || !sourcePaths.length) {
+        return "";
+    }
+
+    for (const sourcePath of sourcePaths) {
+        if (isPrefix(sourcePath, filePath)) {
+            const relative = path.relative(sourcePath, path.dirname(filePath));
+            return relative.replace(/[\/\\]/g, ".");
+        }
+    }
+
+    return "";
+}
+
+function isPrefix(parentPath: string, filePath: string): boolean {
+    const relative = path.relative(parentPath, filePath);
+    return !relative || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 async function getPackageFsPath(node: DataNode): Promise<string | undefined> {

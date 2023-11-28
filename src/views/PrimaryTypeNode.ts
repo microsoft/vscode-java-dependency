@@ -121,6 +121,11 @@ export class PrimaryTypeNode extends DataNode {
             contextValue += "+test";
         }
 
+        if (this._rootNode?.getParent() instanceof ProjectNode
+            && (this._rootNode.getParent() as ProjectNode).nodeData?.metaData?.MaxSourceVersion >= 14) {
+            contextValue += "+allowRecord";
+        }
+
         return contextValue;
     }
 

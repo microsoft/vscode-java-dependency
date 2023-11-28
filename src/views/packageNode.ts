@@ -50,6 +50,9 @@ export class PackageNode extends DataNode {
         let contextValue: string = Explorer.ContextValueType.Package;
         if (parentData.entryKind === PackageRootKind.K_SOURCE || parentData.kind === NodeKind.Project) {
             contextValue += "+source";
+            if (this._project.nodeData.metaData?.MaxSourceVersion >= 14) {
+                contextValue += "+allowRecord";
+            }
         } else if (parentData.entryKind === PackageRootKind.K_BINARY) {
             contextValue += "+binary";
         }

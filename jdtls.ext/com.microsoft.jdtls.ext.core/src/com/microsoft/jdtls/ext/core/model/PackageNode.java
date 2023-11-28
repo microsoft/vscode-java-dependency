@@ -36,6 +36,8 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.core.JrtPackageFragmentRoot;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
@@ -68,9 +70,11 @@ public class PackageNode {
     public static final String REFERENCED_LIBRARIES_PATH = "REFERENCED_LIBRARIES_PATH";
     private static final String REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries";
     private static final String IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME = "Referenced Libraries (Read-only)";
-    public static final ContainerNode REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH,
+    public static final ContainerNode REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(
+            REFERENCED_LIBRARIES_CONTAINER_NAME, REFERENCED_LIBRARIES_PATH,
             NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
-    public static final ContainerNode IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME,
+    public static final ContainerNode IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER = new ContainerNode(
+            IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER_NAME,
             REFERENCED_LIBRARIES_PATH, NodeKind.CONTAINER, IClasspathEntry.CPE_CONTAINER);
 
     /**
@@ -84,6 +88,8 @@ public class PackageNode {
      * Nature Id for the unmanaged folder.
      */
     private static final String UNMANAGED_FOLDER_NATURE_ID = "org.eclipse.jdt.ls.core.unmanagedFolder";
+
+    private static final String MAX_SOURCE_VERSION = "MaxSourceVersion";
 
     /**
      * The name of the PackageNode.
@@ -164,7 +170,8 @@ public class PackageNode {
             return null;
         }
         IProject proj = javaElement.getJavaProject().getProject();
-        PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(), NodeKind.PROJECT);
+        PackageNode projectNode = new PackageNode(proj.getName(), proj.getFullPath().toPortableString(),
+                NodeKind.PROJECT);
         projectNode.setUri(ProjectUtils.getProjectRealFolder(proj).toFile().toURI().toString());
         try {
             List<String> natureIds = new ArrayList<>(Arrays.asList(proj.getDescription().getNatureIds()));
@@ -173,6 +180,10 @@ public class PackageNode {
                 projectNode.setMetaDataValue(UNMANAGED_FOLDER_INNER_PATH, proj.getLocationURI().toString());
             }
             projectNode.setMetaDataValue(NATURE_ID, natureIds);
+            String sourceVersion = javaElement.getJavaProject().getOption(JavaCore.COMPILER_SOURCE, true);
+            int jdkLevel = (int) (CompilerOptions.versionToJdkLevel(sourceVersion, true) >>> 16);
+            int majorVersion = Math.max(0, jdkLevel - ClassFileConstants.MAJOR_VERSION_0);
+            projectNode.setMetaDataValue(MAX_SOURCE_VERSION, majorVersion);
         } catch (CoreException e) {
             // do nothing
         }
@@ -201,7 +212,8 @@ public class PackageNode {
     }
 
     public static PackageNode createNodeForPackageFragment(IPackageFragment packageFragment) {
-        PackageNode fragmentNode = new PackageNode(packageFragment.getElementName(), packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
+        PackageNode fragmentNode = new PackageNode(packageFragment.getElementName(),
+                packageFragment.getPath().toPortableString(), NodeKind.PACKAGE);
         fragmentNode.setHandlerIdentifier(packageFragment.getHandleIdentifier());
         if (packageFragment.getResource() != null) {
             fragmentNode.setUri(packageFragment.getResource().getLocationURI().toString());
@@ -215,16 +227,19 @@ public class PackageNode {
         IClasspathEntry entry = pkgRoot.getRawClasspathEntry();
         IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), pkgRoot.getJavaProject());
         PackageNode containerNode = null;
-        if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
+        if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY
+                || entry.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
             containerNode = REFERENCED_LIBRARIES_CONTAINER;
         } else {
-            containerNode = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), NodeKind.CONTAINER, entry.getEntryKind());
+            containerNode = new ContainerNode(container.getDescription(), container.getPath().toPortableString(),
+                    NodeKind.CONTAINER, entry.getEntryKind());
         }
         return containerNode;
 
     }
 
-    public static PackageRootNode createNodeForPackageFragmentRoot(IPackageFragmentRoot pkgRoot) throws JavaModelException {
+    public static PackageRootNode createNodeForPackageFragmentRoot(IPackageFragmentRoot pkgRoot)
+            throws JavaModelException {
         PackageRootNode node;
         String displayName = pkgRoot.getElementName();
         boolean isSourcePath = pkgRoot.getKind() == IPackageFragmentRoot.K_SOURCE;
@@ -271,14 +286,16 @@ public class PackageNode {
      * Get the correspond node of classpath, it may be container or a package root.
      *
      * @param classpathEntry
-     *            classpath entry
+     *                       classpath entry
      * @param javaProject
-     *            correspond java project
+     *                       correspond java project
      * @param nodeKind
-     *            could be CONTAINER or PACKAGEROOT(for referenced libraries)
+     *                       could be CONTAINER or PACKAGEROOT(for referenced
+     *                       libraries)
      * @return correspond PackageNode of classpath entry
      */
-    public static PackageNode createNodeForClasspathEntry(IClasspathEntry classpathEntry, IJavaProject javaProject, NodeKind nodeKind) {
+    public static PackageNode createNodeForClasspathEntry(IClasspathEntry classpathEntry, IJavaProject javaProject,
+            NodeKind nodeKind) {
         try {
             IClasspathEntry entry = JavaCore.getResolvedClasspathEntry(classpathEntry);
             IClasspathContainer container = JavaCore.getClasspathContainer(entry.getPath(), javaProject);
@@ -289,17 +306,18 @@ public class PackageNode {
             if (container != null) {
                 PackageNode node = null;
                 if (nodeKind == NodeKind.CONTAINER) {
-                    node = new ContainerNode(container.getDescription(), container.getPath().toPortableString(), nodeKind, entry.getEntryKind());
+                    node = new ContainerNode(container.getDescription(), container.getPath().toPortableString(),
+                            nodeKind, entry.getEntryKind());
                     final URI containerURI = ExtUtils.getContainerURI(javaProject, container);
                     node.setUri(containerURI != null ? containerURI.toString() : null);
                 } else if (nodeKind == NodeKind.PACKAGEROOT) { // ClasspathEntry for referenced jar files
                     // Use package name as package root name
                     String[] pathSegments = container.getPath().segments();
                     node = new PackageRootNode(
-                        pathSegments[pathSegments.length - 1],
-                        container.getPath().toPortableString(),
-                        container.getPath().toFile().toURI().toString(),
-                        nodeKind, IPackageFragmentRoot.K_BINARY);
+                            pathSegments[pathSegments.length - 1],
+                            container.getPath().toPortableString(),
+                            container.getPath().toFile().toURI().toString(),
+                            nodeKind, IPackageFragmentRoot.K_BINARY);
                 }
                 return node;
             }
@@ -310,7 +328,8 @@ public class PackageNode {
     }
 
     public static PackageNode createNodeForPrimaryType(IType type) {
-        PackageNode primaryTypeNode = new PackageNode(type.getElementName(), type.getPath().toPortableString(), NodeKind.PRIMARYTYPE);
+        PackageNode primaryTypeNode = new PackageNode(type.getElementName(), type.getPath().toPortableString(),
+                NodeKind.PRIMARYTYPE);
 
         try {
             if (type.isEnum()) {
@@ -332,7 +351,7 @@ public class PackageNode {
      * Get correspond node of referenced variable.
      *
      * @param classpathEntry
-     *            referenced variable's classpath entry
+     *                       referenced variable's classpath entry
      * @return correspond package node
      */
     public static PackageRootNode createNodeForClasspathVariable(IClasspathEntry classpathEntry) {
