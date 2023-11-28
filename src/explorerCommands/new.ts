@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as stringInterpolate from "fmtr";
 import * as fse from "fs-extra";
 import { userInfo } from "os";
 import * as path from "path";
@@ -14,6 +13,9 @@ import { DataNode } from "../views/dataNode";
 import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
 import { sendError, setUserError } from "vscode-extension-telemetry-wrapper";
+
+// tslint:disable no-var-requires
+const stringInterpolate = require("fmtr");
 
 export class JavaType {
     public static readonly CLASS: JavaType = new JavaType("Class", "class", "$(symbol-class)");
