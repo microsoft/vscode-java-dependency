@@ -117,22 +117,22 @@ export class DependencyExplorer implements Disposable {
                 newResource(node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode) => {
-                newJavaFileWithSpecificType(JavaType.Class, node);
+                newJavaFileWithSpecificType(JavaType.CLASS, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_INTERFACE, async (node?: DataNode) => {
-                newJavaFileWithSpecificType(JavaType.Interface, node);
+                newJavaFileWithSpecificType(JavaType.INTERFACE, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ENUM, async (node?: DataNode) => {
-                newJavaFileWithSpecificType(JavaType.Enum, node);
+                newJavaFileWithSpecificType(JavaType.ENUM, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_RECORD, async (node?: DataNode) => {
-                newJavaFileWithSpecificType(JavaType.Record, node);
+                newJavaFileWithSpecificType(JavaType.RECORD, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ANNOTATION, async (node?: DataNode) => {
-                newJavaFileWithSpecificType(JavaType.Annotation, node);
+                newJavaFileWithSpecificType(JavaType.ANNOTATION, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ABSTRACT_CLASS, async (node?: DataNode) => {
-                newJavaFileWithSpecificType(JavaType.AbstractClass, node);
+                newJavaFileWithSpecificType(JavaType.ABSTRACT_CLASS, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_FILE, async (node: DataNode) => {
                 newFile(node);

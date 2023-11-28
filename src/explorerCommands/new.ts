@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+import * as stringInterpolate from "fmtr";
 import * as fse from "fs-extra";
 import { userInfo } from "os";
 import * as path from "path";
@@ -13,36 +14,35 @@ import { DataNode } from "../views/dataNode";
 import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
 import { sendError, setUserError } from "vscode-extension-telemetry-wrapper";
-const stringInterpolate = require("fmtr");
 
 export class JavaType {
-    public static readonly Class: JavaType = new JavaType("Class", "class", "$(symbol-class)");
-    public static readonly Interface: JavaType = new JavaType("Interface", "interface", "$(symbol-interface)");
-    public static readonly Enum: JavaType = new JavaType("Enum", "enum", "$(symbol-enum)");
-    public static readonly Record: JavaType = new JavaType("Record", "record", "$(symbol-class)");
-    public static readonly Annotation: JavaType = new JavaType("Annotation", "@interface", "$(symbol-interface)");
-    public static readonly AbstractClass: JavaType = new JavaType("Abstract Class", "abstract class", "$(symbol-class)");
+    public static readonly CLASS: JavaType = new JavaType("Class", "class", "$(symbol-class)");
+    public static readonly INTERFACE: JavaType = new JavaType("Interface", "interface", "$(symbol-interface)");
+    public static readonly ENUM: JavaType = new JavaType("Enum", "enum", "$(symbol-enum)");
+    public static readonly RECORD: JavaType = new JavaType("Record", "record", "$(symbol-class)");
+    public static readonly ANNOTATION: JavaType = new JavaType("Annotation", "@interface", "$(symbol-interface)");
+    public static readonly ABSTRACT_CLASS: JavaType = new JavaType("Abstract Class", "abstract class", "$(symbol-class)");
 
-    public static readonly All: JavaType[] = [
-        JavaType.Class,
-        JavaType.Interface,
-        JavaType.Enum,
-        JavaType.Record,
-        JavaType.Annotation,
-        JavaType.AbstractClass,
+    public static readonly ALL: JavaType[] = [
+        JavaType.CLASS,
+        JavaType.INTERFACE,
+        JavaType.ENUM,
+        JavaType.RECORD,
+        JavaType.ANNOTATION,
+        JavaType.ABSTRACT_CLASS,
     ];
 
     public static fromDisplayName(label: string): JavaType | undefined {
         if (label?.startsWith("$")) {
-            return JavaType.All.find((javaType) => `${javaType.icon} ${javaType.label}` === label);
+            return JavaType.ALL.find((javaType) => `${javaType.icon} ${javaType.label}` === label);
         }
 
-        return JavaType.All.find((javaType) => javaType.label === label);
+        return JavaType.ALL.find((javaType) => javaType.label === label);
     }
 
     public static getDisplayNames(includeIcon: boolean, includeRecord?: boolean): string[] {
-        return JavaType.All
-            .filter((javaType) => includeRecord || javaType !== JavaType.Record)
+        return JavaType.ALL
+            .filter((javaType) => includeRecord || javaType !== JavaType.RECORD)
             .map((javaType) => {
                 if (includeIcon) {
                     return `${javaType.icon} ${javaType.label}`;
@@ -53,7 +53,7 @@ export class JavaType {
     }
 
     private constructor(public readonly label: string, public readonly keyword: string,
-        public readonly icon: string) {
+                        public readonly icon: string) {
     }
 }
 
@@ -110,7 +110,7 @@ export async function newResource(node: DataNode): Promise<void> {
 
 // Create a new Java file from the menu bar.
 export async function newJavaFile(): Promise<void> {
-    let packageFsPath: string | undefined = await inferPackageFsPath();
+    const packageFsPath: string | undefined = await inferPackageFsPath();
     if (packageFsPath === undefined) {
         // User canceled
         return;
@@ -196,7 +196,7 @@ async function newJavaFileWithContents(fsPath: string, javaType: JavaType, packa
     const context: any = {
         fileName: path.basename(fsPath),
         packageName: "",
-        typeName: typeName,
+        typeName,
         user: userInfo().username,
         date: date.toLocaleDateString(undefined, {month: "short", day: "2-digit", year: "numeric"}),
         time: date.toLocaleTimeString(),
@@ -237,7 +237,7 @@ async function newJavaFileWithContents(fsPath: string, javaType: JavaType, packa
         if (isModuleInfo) {
             snippets.push(`module {`);
         } else {
-            snippets.push(`public ${javaType.keyword} ${typeName}${javaType === JavaType.Record ? "()" : ""} {`);
+            snippets.push(`public ${javaType.keyword} ${typeName}${javaType === JavaType.RECORD ? "()" : ""} {`);
         }
         snippets.push("");
         snippets.push("}");
@@ -341,7 +341,7 @@ const COMPLIANCE = "org.eclipse.jdt.core.compiler.compliance";
 async function isVersionLessThan(fileUri: string, targetVersion: number): Promise<boolean> {
     let projectSettings: any = {};
     try {
-        projectSettings = await commands.executeCommand<Object>(
+        projectSettings = await commands.executeCommand<any>(
             Commands.EXECUTE_WORKSPACE_COMMAND, Commands.GET_PROJECT_SETTINGS, fileUri, [ COMPLIANCE ]);
     } catch (err) {
         // do nothing.
@@ -359,7 +359,7 @@ async function isVersionLessThan(fileUri: string, targetVersion: number): Promis
         const regexp = /\d+/g;
         const match = regexp.exec(complianceVersion);
         if (match) {
-            javaVersion = parseInt(match[0]);
+            javaVersion = parseInt(match[0], 10);
         }
     }
 
@@ -368,7 +368,8 @@ async function isVersionLessThan(fileUri: string, targetVersion: number): Promis
 
 async function resolvePackageName(filePath: string): Promise<string> {
     let sourcePaths: string[] = [];
-    const result: IListCommandResult = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
+    const result: IListCommandResult =
+            await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
     if (result && result.data && result.data.length) {
         sourcePaths = result.data.map((sourcePath) => sourcePath.path).sort((a, b) => b.length - a.length);
     }
