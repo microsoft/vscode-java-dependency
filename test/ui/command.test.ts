@@ -114,14 +114,14 @@ describe("Command Tests", function() {
 
     it("Test java.view.package.newJavaClass", async function() {
         let inputBox = await createJavaResource();
-        const javaClassQuickPick  = await inputBox.findQuickPick("Java Class");
+        const javaClassQuickPick  = await inputBox.findQuickPick("$(symbol-class) Class");
         await javaClassQuickPick!.click();
         assert.ok(await inputBox.getPlaceHolder() === "Choose a source folder", `InputBox "Choose a source folder" should appear`);
         const quickPick = await inputBox.findQuickPick("src/main/java");
         assert.ok(quickPick, `Quickpick item "src/main/java" should be found`);
         await quickPick!.click();
         inputBox = await InputBox.create();
-        assert.ok(await inputBox.getPlaceHolder() === "Enter the Java file name for class/interface/enum/record/@interface", `InputBox "Enter the Java file name" should appear`);
+        assert.ok(await inputBox.getPlaceHolder() === "Input the class name", `InputBox "Input the class name" should appear`);
         await inputBox.setText("App2");
         await inputBox.confirm();
         await sleep(1000);
