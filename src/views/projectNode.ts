@@ -96,6 +96,9 @@ export class ProjectNode extends DataNode {
             const attributeString: string = getProjectTypeAttributes(natureIds);
             contextValue += attributeString;
         }
+        if (this.nodeData.metaData?.MaxSourceVersion >= 16) {
+            contextValue += "+allowRecord";
+        }
         return contextValue;
     }
 }

@@ -193,6 +193,36 @@
         "icon": "$(add)"
       },
       {
+        "command": "java.view.package.newJavaInterface",
+        "title": "%contributes.commands.java.view.package.newJavaInterface%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "java.view.package.newJavaEnum",
+        "title": "%contributes.commands.java.view.package.newJavaEnum%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "java.view.package.newJavaRecord",
+        "title": "%contributes.commands.java.view.package.newJavaRecord%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "java.view.package.newJavaAnnotation",
+        "title": "%contributes.commands.java.view.package.newJavaAnnotation%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "java.view.package.newJavaAbstractClass",
+        "title": "%contributes.commands.java.view.package.newJavaAbstractClass%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
         "command": "java.view.package.newPackage",
         "title": "%contributes.commands.java.view.package.newPackage%",
         "category": "Java"
@@ -393,6 +423,26 @@
         },
         {
           "command": "java.view.package.newJavaClass",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.newJavaInterface",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.newJavaEnum",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.newJavaRecord",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.newJavaAnnotation",
+          "when": "false"
+        },
+        {
+          "command": "java.view.package.newJavaAbstractClass",
           "when": "false"
         },
         {
@@ -641,21 +691,46 @@
       "javaProject.new": [
         {
           "command": "java.view.package.newJavaClass",
-          "group": "new@10",
+          "group": "new1@10",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
+        },
+        {
+          "command": "java.view.package.newJavaInterface",
+          "group": "new1@11",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
+        },
+        {
+          "command": "java.view.package.newJavaEnum",
+          "group": "new1@12",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
+        },
+        {
+          "command": "java.view.package.newJavaRecord",
+          "group": "new1@13",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/) && viewItem =~ /java:.*\\+allowRecord\\b/"
+        },
+        {
+          "command": "java.view.package.newJavaAnnotation",
+          "group": "new1@14",
+          "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
+        },
+        {
+          "command": "java.view.package.newJavaAbstractClass",
+          "group": "new1@15",
           "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
         },
         {
           "command": "java.view.package.newPackage",
-          "group": "new@20",
+          "group": "new1@20",
           "when": "view == javaProjectExplorer && (viewItem =~ /java:(package|packageRoot)(?=.*?\\b\\+source\\b)/ || viewItem =~ /java:project(?=.*?\\b\\+java\\b)/ || viewItem =~ /java:type/)"
         },
         {
           "command": "java.view.package.newFile",
-          "group": "new@30"
+          "group": "new2@30"
         },
         {
           "command": "java.view.package.newFolder",
-          "group": "new@40",
+          "group": "new2@40",
           "when": "view == javaProjectExplorer && (viewItem =~ /java:(file|folder|project)/ || viewItem =~ /java:(packageRoot)(?=.*?\\b\\+resource\\b)/)"
         }
       ]
@@ -895,6 +970,7 @@
   },
   "dependencies": {
     "await-lock": "^2.2.2",
+    "fmtr": "^1.1.4",
     "fs-extra": "^10.1.0",
     "globby": "^13.1.3",
     "lodash": "^4.17.21",
