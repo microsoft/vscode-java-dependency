@@ -12,7 +12,7 @@ import {
 import { instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import { deleteFiles } from "../explorerCommands/delete";
-import { newFile, newFolder, newJavaClass, newPackage, newResource } from "../explorerCommands/new";
+import { JavaType, newFile, newFolder, newJavaFileWithSpecificType, newPackage, newResource } from "../explorerCommands/new";
 import { renameFile } from "../explorerCommands/rename";
 import { getCmdNode } from "../explorerCommands/utility";
 import { Jdtls } from "../java/jdtls";
@@ -117,7 +117,22 @@ export class DependencyExplorer implements Disposable {
                 newResource(node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode) => {
-                newJavaClass(node);
+                newJavaFileWithSpecificType(JavaType.CLASS, node);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_INTERFACE, async (node?: DataNode) => {
+                newJavaFileWithSpecificType(JavaType.INTERFACE, node);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ENUM, async (node?: DataNode) => {
+                newJavaFileWithSpecificType(JavaType.ENUM, node);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_RECORD, async (node?: DataNode) => {
+                newJavaFileWithSpecificType(JavaType.RECORD, node);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ANNOTATION, async (node?: DataNode) => {
+                newJavaFileWithSpecificType(JavaType.ANNOTATION, node);
+            }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ABSTRACT_CLASS, async (node?: DataNode) => {
+                newJavaFileWithSpecificType(JavaType.ABSTRACT_CLASS, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_FILE, async (node: DataNode) => {
                 newFile(node);

@@ -19,7 +19,7 @@ import { DependencyExplorer } from "./views/dependencyExplorer";
 import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticProvider";
 import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
-import { newJavaClass } from "./explorerCommands/new";
+import { newJavaFile } from "./explorerCommands/new";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -47,7 +47,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(tasks.registerTaskProvider(DeprecatedExportJarTaskProvider.type, new DeprecatedExportJarTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildArtifactTaskProvider.exportJarType, new BuildArtifactTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
-    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MENUS_FILE_NEW_JAVA_CLASS, newJavaClass));
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MENUS_FILE_NEW_JAVA_CLASS, newJavaFile));
     context.subscriptions.push(window.onDidChangeActiveTextEditor((e: TextEditor | undefined) => {
         setContextForReloadProject(e?.document);
     }));

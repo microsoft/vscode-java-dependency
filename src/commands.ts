@@ -42,6 +42,16 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_NEW_JAVA_CLASS = "java.view.package.newJavaClass";
 
+    export const VIEW_PACKAGE_NEW_JAVA_INTERFACE = "java.view.package.newJavaInterface";
+
+    export const VIEW_PACKAGE_NEW_JAVA_ENUM = "java.view.package.newJavaEnum";
+
+    export const VIEW_PACKAGE_NEW_JAVA_RECORD = "java.view.package.newJavaRecord";
+
+    export const VIEW_PACKAGE_NEW_JAVA_ANNOTATION = "java.view.package.newJavaAnnotation";
+
+    export const VIEW_PACKAGE_NEW_JAVA_ABSTRACT_CLASS = "java.view.package.newJavaAbstractClass";
+
     export const VIEW_PACKAGE_NEW_JAVA_PACKAGE = "java.view.package.newPackage";
 
     export const VIEW_PACKAGE_RENAME_FILE = "java.view.package.renameFile";
@@ -133,6 +143,11 @@ export namespace Commands {
     export const GET_ALL_PROJECTS = "java.project.getAll";
 
     export const BUILD_PROJECT = "java.project.build";
+
+    /**
+     * Get the project settings
+     */
+    export const GET_PROJECT_SETTINGS = 'java.project.getSettings';
 }
 
 export function executeJavaLanguageServerCommand(...rest: any[]) {
