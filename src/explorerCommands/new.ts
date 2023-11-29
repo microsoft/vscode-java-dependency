@@ -4,7 +4,7 @@
 import * as fse from "fs-extra";
 import { userInfo } from "os";
 import * as path from "path";
-import { commands, Extension, extensions, languages, Position, QuickPickItem, SnippetString, TextEditor, Uri,
+import { commands, Extension, extensions, languages, Position, QuickPickItem, QuickPickItemKind, SnippetString, TextEditor, Uri,
     window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
 import { Commands, PrimaryTypeNode } from "../../extension.bundle";
 import { ExtensionName } from "../constants";
@@ -60,7 +60,7 @@ export class JavaType {
 }
 
 export async function newResource(node: DataNode): Promise<void> {
-    const availableTypes: string[] = [];
+    const availableTypes: QuickPickItem[] = [];
     // add options for Java nodes
     if (node.nodeData.kind === NodeKind.Project ||
             (node.nodeData.kind === NodeKind.PackageRoot && !resourceRoots.includes(node.nodeData.name)) ||
@@ -68,19 +68,33 @@ export async function newResource(node: DataNode): Promise<void> {
             node.nodeData.kind === NodeKind.PrimaryType ||
             node.nodeData.kind === NodeKind.CompilationUnit) {
         const allowRecord = node.computeContextValue()?.includes("+allowRecord");
-        availableTypes.push(...JavaType.getDisplayNames(true, allowRecord));
-        availableTypes.push("$(symbol-namespace) Package");
+        availableTypes.push(...JavaType.getDisplayNames(true, allowRecord).map((label) => {
+            return {
+                label,
+            };
+        }));
+        availableTypes.push({
+            label: "$(symbol-namespace) Package",
+        });
     }
 
+    availableTypes.push({
+        label: "",
+        kind: QuickPickItemKind.Separator,
+    });
     // add new file option
-    availableTypes.push("$(file) File");
+    availableTypes.push({
+        label: "$(file) File",
+    });
 
     // add new folder option
     if (node.nodeData.kind === NodeKind.Project ||
             (node.nodeData.kind === NodeKind.PackageRoot && resourceRoots.includes(node.nodeData.name)) ||
             node.nodeData.kind === NodeKind.Folder ||
             node.nodeData.kind === NodeKind.File) {
-        availableTypes.push("$(folder) Folder");
+        availableTypes.push({
+            label: "$(folder) Folder",
+        });
     }
 
     const type = await window.showQuickPick(
@@ -91,7 +105,7 @@ export async function newResource(node: DataNode): Promise<void> {
         }
     );
 
-    switch (type) {
+    switch (type?.label) {
         case "$(symbol-namespace) Package":
             await newPackage(node);
             break;
@@ -102,7 +116,7 @@ export async function newResource(node: DataNode): Promise<void> {
             await newFolder(node);
             break;
         default:
-            const javaType = JavaType.fromDisplayName(type || "");
+            const javaType = JavaType.fromDisplayName(type?.label || "");
             if (javaType) {
                 await newJavaFileWithSpecificType(javaType, node);
             }
@@ -120,7 +134,7 @@ export async function newJavaFile(): Promise<void> {
         return newUntitledJavaFile();
     }
 
-    const includeRecord = !(await isVersionLessThan(Uri.file(packageFsPath).toString(), 14));
+    const includeRecord = !(await isVersionLessThan(Uri.file(packageFsPath).toString(), 16));
     const supportedTypes: string[] = JavaType.getDisplayNames(true, includeRecord);
     const typeName: string | undefined = await window.showQuickPick(supportedTypes,
             {
@@ -383,7 +397,7 @@ async function resolvePackageName(filePath: string): Promise<string> {
     for (const sourcePath of sourcePaths) {
         if (isPrefix(sourcePath, filePath)) {
             const relative = path.relative(sourcePath, path.dirname(filePath));
-            return relative.replace(/[\/\\]/g, ".");
+            return relative.replace(/[/\\]/g, ".");
         }
     }
 
