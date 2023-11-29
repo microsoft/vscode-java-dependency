@@ -65,6 +65,15 @@ class LanguageServerApiManager {
                 }));
             }
 
+            if (extensionApi.onDidProjectsDelete) {
+                const onDidProjectsDelete: Event<Uri[]> = extensionApi.onDidProjectsDelete;
+                contextManager.context.subscriptions.push(onDidProjectsDelete(() => {
+                    commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */true);
+                    syncHandler.updateFileWatcher(Settings.autoRefresh());
+                }));
+
+            }
+
             if (this.extensionApi?.serverMode === LanguageServerMode.LightWeight) {
                 if (extensionApi.onDidServerModeChange) {
                     const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
