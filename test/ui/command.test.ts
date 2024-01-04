@@ -59,9 +59,6 @@ describe("Command Tests", function() {
             try {
                 const serverStatus = await statusBar.findElement(By.xpath('//*[@id="redhat.java.java.serverStatus"]'));
                 await serverStatus.findElement(By.xpath('//a[contains(@class, "statusbar-item-label")]//span[contains(@class, "codicon-thumbsup")]'));
-                // const languageStatus = await statusBar.findElement(By.xpath('//*[@id="status.languageStatus"]'));
-                // await languageStatus.click();
-                // await languageStatus.findElement(By.xpath(`//div[contains(@id, 'context-view')]//div[contains(@class, 'hover-language-status')]//span[contains(@class, 'codicon-thumbsup')]`));
                 break;
             } catch (e) {
                 await sleep(100);
