@@ -16,7 +16,11 @@ export class ProjectController implements Disposable {
 
     public constructor(public readonly context: ExtensionContext) {
         this.disposable = Disposable.from(
-            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject()),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject("command")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_MENUS_FILE, () => this.createJavaProject("menus.file")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_FILEEXPLORER_WELCOME, () => this.createJavaProject("fileexplorer.welcome")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER_WELCOME, () => this.createJavaProject("javaprojectexplorer.welcome")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER, () => this.createJavaProject("javaprojectexplorer")),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_OPEN, () => this.openJavaProject()),
             instrumentOperationAsVsCodeCommand(Commands.INSTALL_EXTENSION, (extensionId: string) => {
                 commands.executeCommand("workbench.extensions.installExtension", extensionId);
@@ -40,7 +44,7 @@ export class ProjectController implements Disposable {
         return commands.executeCommand(Commands.WORKBENCH_ACTION_FILES_OPENFILEFOLDER);
     }
 
-    public async createJavaProject() {
+    public async createJavaProject(triggerFrom : string) {
         const items: IProjectTypeQuickPick[] = projectTypes.map((type: IProjectType) => {
             return {
                 label: type.displayName,
@@ -56,7 +60,10 @@ export class ProjectController implements Disposable {
         if (!choice || !await ensureExtension(choice.label, choice.metadata)) {
             return;
         }
-        sendInfo("", {projectCreationType: choice.metadata.type});
+        sendInfo("", {
+            projectCreationType: choice.metadata.type,
+            triggerfrom: triggerFrom,
+        });
         if (choice.metadata.type === ProjectType.NoBuildTool) {
             await scaffoldSimpleProject(this.context);
         } else if (choice.metadata.createCommandId && choice.metadata.createCommandArgs) {

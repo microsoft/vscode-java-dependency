@@ -56,6 +56,30 @@
         "icon": "$(add)"
       },
       {
+        "command": "_java.project.create.from.menus.file",
+        "title": "%contributes.commands.java.project.new%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "_java.project.create.from.fileexplorer.welcome",
+        "title": "%contributes.commands.java.project.create%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "_java.project.create.from.javaprojectexplorer.welcome",
+        "title": "%contributes.commands.java.project.create%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "_java.project.create.from.javaprojectexplorer",
+        "title": "%contributes.commands.java.project.create%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
         "command": "java.project.addLibraries",
         "title": "%contributes.commands.java.project.addLibraries%",
         "category": "Java",
@@ -358,6 +382,9 @@
       "file/newFile": [
         {
           "command": "java.view.menus.file.newJavaClass"
+        },
+        {
+          "command": "_java.project.create.from.menus.file"
         }
       ],
       "commandPalette": [
@@ -488,6 +515,22 @@
         {
           "command": "java.view.package.revealInProjectExplorer",
           "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.menus.file",
+          "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.fileexplorer.welcome",
+          "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.javaprojectexplorer.welcome",
+          "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.javaprojectexplorer",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -523,7 +566,7 @@
       ],
       "view/title": [
         {
-          "command": "java.project.create",
+          "command": "_java.project.create.from.javaprojectexplorer",
           "when": "view == javaProjectExplorer",
           "group": "navigation@10"
         },

@@ -1,6 +1,7 @@
 {
   "description": "在 Visual Studio Code 中管理 Java 项目",
   "contributes.commands.java.project.create": "创建 Java 项目...",
+  "contributes.commands.java.project.new": "创建 Java 项目...",
   "contributes.commands.java.project.addLibraries": "添加 Jar 文件至项目 Classpath...",
   "contributes.commands.java.project.addLibraryFolders": "添加文件夹至项目 Classpath...",
   "contributes.commands.java.project.removeLibrary": "从项目 Classpath 中移除",
@@ -56,8 +57,8 @@
   "taskDefinitions.java.project.build.path.workspace": "工作空间中的所有项目。",
   "taskDefinitions.java.project.build.path.exclude": "'!' 后的路径将会从待构建项目路径中移除。",
   "taskDefinitions.java.project.build.isFullBuild": "是否要重新构建项目。",
-  "viewsWelcome.workbench.createNewJavaProject": "您也可以[打开一个 Java 项目目录](command:_java.project.open)，或点击下方按钮创建一个新的 Java 项目。\n[创建 Java 项目](command:java.project.create)",
-  "viewsWelcome.workbench.noJavaProject": "当前工作空间未发现 Java 项目，您可以[打开一个 Java 项目目录](command:_java.project.open)，或点击下方按钮创建一个新的 Java 项目。\n[创建 Java 项目](command:java.project.create)",
+  "viewsWelcome.workbench.createNewJavaProject": "您也可以[打开一个 Java 项目目录](command:_java.project.open)，或点击下方按钮创建一个新的 Java 项目。\n[创建 Java 项目](command:_java.project.create.from.fileexplorer.welcome)",
+  "viewsWelcome.workbench.noJavaProject": "当前工作空间未发现 Java 项目，您可以[打开一个 Java 项目目录](command:_java.project.open)，或点击下方按钮创建一个新的 Java 项目。\n[创建 Java 项目](command:_java.project.create.from.javaprojectexplorer.welcome)",
   "viewsWelcome.workbench.importFailed": "加载 Java 项目时出现错误，请通过以下方式查看错误相关信息：\n[打开问题视图](command:workbench.panel.markers.view.focus)",
   "viewsWelcome.workbench.inLightWeightMode": "要浏览项目信息，你可以将项目导入到工作空间中。\n[导入项目](command:java.server.mode.switch?%5B%22Standard%22,true%5D)",
   "viewsWelcome.workbench.installLanguageSupport": "Java 项目视图需要安装并激活 [Extension Pack for Java](command:extension.open?%5B%22vscjava.vscode-java-pack%22%5D) 以提供完整的功能。\n[安装](command:java.project.installExtension?%5B%22vscjava.vscode-java-pack%22%5D)"
