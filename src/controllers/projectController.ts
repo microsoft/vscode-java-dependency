@@ -17,11 +17,16 @@ export class ProjectController implements Disposable {
     public constructor(public readonly context: ExtensionContext) {
         this.disposable = Disposable.from(
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE, () => this.createJavaProject("command")),
-            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_MENUS_FILE, () => this.createJavaProject("menus.file")),
-            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_FILEEXPLORER_MENU, () => this.createJavaProject("fileexplorer.menu")),
-            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_FILEEXPLORER_WELCOME, () => this.createJavaProject("fileexplorer.welcome")),
-            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER_WELCOME, () => this.createJavaProject("javaprojectexplorer.welcome")),
-            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER, () => this.createJavaProject("javaprojectexplorer")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_MENUS_FILE,
+                () => this.createJavaProject("menus.file")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_FILEEXPLORER_MENU,
+                () => this.createJavaProject("fileexplorer.menu")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_FILEEXPLORER_WELCOME,
+                () => this.createJavaProject("fileexplorer.welcome")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER_WELCOME,
+                () => this.createJavaProject("javaprojectexplorer.welcome")),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER,
+                () => this.createJavaProject("javaprojectexplorer")),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_OPEN, () => this.openJavaProject()),
             instrumentOperationAsVsCodeCommand(Commands.INSTALL_EXTENSION, (extensionId: string) => {
                 commands.executeCommand("workbench.extensions.installExtension", extensionId);
