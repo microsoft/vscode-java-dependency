@@ -6,7 +6,7 @@ import * as fse from "fs-extra";
 import { platform, tmpdir } from "os";
 import * as path from "path";
 import * as seleniumWebdriver from "selenium-webdriver";
-import { ActivityBar, By,   InputBox, ModalDialog, SideBarView, StatusBar, TextEditor, TreeItem, VSBrowser, ViewSection, Workbench } from "vscode-extension-tester";
+import { ActivityBar, By, InputBox, ModalDialog, SideBarView, StatusBar, TextEditor, TreeItem, VSBrowser, ViewSection, Workbench } from "vscode-extension-tester";
 import { sleep } from "../util";
 
 // tslint:disable: only-arrow-functions
@@ -57,9 +57,8 @@ describe("Command Tests", function() {
         }
         while (true) {
             try {
-                const languageStatus = await statusBar.findElement(By.xpath('//*[@id="status.languageStatus"]'));
-                await languageStatus.click();
-                await languageStatus.findElement(By.xpath(`//div[contains(@class, 'context-view')]//div[contains(@class, 'hover-language-status')]//span[contains(@class, 'codicon-thumbsup')]`));
+                const serverStatus = await statusBar.findElement(By.xpath('//*[@id="redhat.java.java.serverStatus"]'));
+                await serverStatus.findElement(By.xpath('//a[contains(@class, "statusbar-item-label")]//span[contains(@class, "codicon-thumbsup")]'));
                 break;
             } catch (e) {
                 await sleep(100);

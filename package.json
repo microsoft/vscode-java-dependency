@@ -56,6 +56,36 @@
         "icon": "$(add)"
       },
       {
+        "command": "_java.project.create.from.menus.file",
+        "title": "%contributes.commands.java.project.new%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "_java.project.create.from.fileexplorer.menu",
+        "title": "%contributes.commands.java.project.new%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "_java.project.create.from.fileexplorer.welcome",
+        "title": "%contributes.commands.java.project.create%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "_java.project.create.from.javaprojectexplorer.welcome",
+        "title": "%contributes.commands.java.project.create%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
+        "command": "_java.project.create.from.javaprojectexplorer",
+        "title": "%contributes.commands.java.project.create%",
+        "category": "Java",
+        "icon": "$(add)"
+      },
+      {
         "command": "java.project.addLibraries",
         "title": "%contributes.commands.java.project.addLibraries%",
         "category": "Java",
@@ -358,6 +388,9 @@
       "file/newFile": [
         {
           "command": "java.view.menus.file.newJavaClass"
+        },
+        {
+          "command": "_java.project.create.from.menus.file"
         }
       ],
       "commandPalette": [
@@ -488,6 +521,26 @@
         {
           "command": "java.view.package.revealInProjectExplorer",
           "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.menus.file",
+          "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.fileexplorer.menu",
+          "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.fileexplorer.welcome",
+          "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.javaprojectexplorer.welcome",
+          "when": "false"
+        },
+        {
+          "command": "_java.project.create.from.javaprojectexplorer",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -500,6 +553,11 @@
           "command": "java.view.package.revealInProjectExplorer",
           "when": "resourceExtname == .java && java:serverMode == Standard",
           "group": "navigation@100"
+        },
+        {
+          "command": "_java.project.create.from.fileexplorer.menu",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@10"
         }
       ],
       "editor/title": [
@@ -523,7 +581,7 @@
       ],
       "view/title": [
         {
-          "command": "java.project.create",
+          "command": "_java.project.create.from.javaprojectexplorer",
           "when": "view == javaProjectExplorer",
           "group": "navigation@10"
         },
@@ -957,7 +1015,7 @@
     "@types/node": "^16.18.11",
     "@types/semver": "^7.3.13",
     "@types/vscode": "1.77.0",
-    "@vscode/test-electron": "^2.2.2",
+    "@vscode/test-electron": "^2.3.8",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",
     "mocha": "^9.2.2",

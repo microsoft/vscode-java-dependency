@@ -72,6 +72,16 @@ export namespace Commands {
 
     export const JAVA_PROJECT_CREATE = "java.project.create";
 
+    export const JAVA_PROJECT_CREATE_FROM_MENUS_FILE = "_java.project.create.from.menus.file";
+
+    export const JAVA_PROJECT_CREATE_FROM_FILEEXPLORER_MENU = "_java.project.create.from.fileexplorer.menu";
+
+    export const JAVA_PROJECT_CREATE_FROM_FILEEXPLORER_WELCOME = "_java.project.create.from.fileexplorer.welcome";
+
+    export const JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER_WELCOME = "_java.project.create.from.javaprojectexplorer.welcome";
+
+    export const JAVA_PROJECT_CREATE_FROM_JAVAPROJECTEXPLORER = "_java.project.create.from.javaprojectexplorer";
+
     export const JAVA_PROJECT_ADD_LIBRARIES = "java.project.addLibraries";
 
     export const JAVA_PROJECT_ADD_LIBRARY_FOLDERS = "java.project.addLibraryFolders";
