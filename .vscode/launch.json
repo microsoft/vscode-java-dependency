@@ -114,7 +114,7 @@
       "args": [
         "setup-and-run",
         // If not set, will use the current version of vscode. Find a way not to hardcode this value.
-        "--code_version=1.77.0",
+        "--code_version=1.83.1",
         "${workspaceFolder}/dist/test/ui/command.test.js",
       ],
       // To debug the test code, you must set --mode=development inside the vscode:prepublish task. Find a better way to do this.
