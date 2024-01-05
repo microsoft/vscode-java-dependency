@@ -57,7 +57,7 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 
 ## Requirements
 
-- VS Code (version 1.77.0+)
+- VS Code (version 1.83.1+)
 - [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java)
 
 

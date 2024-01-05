@@ -13,7 +13,9 @@ import { sleep } from "../util";
 const newProjectName = "helloworld";
 const testFolder = path.join(__dirname, "..", "..", "..", "test");
 const mavenProjectPath = path.join(testFolder, "maven");
+const mavenJavaFilePath = path.join("src", "main", "java", "com", "mycompany", "app", "App.java");
 const invisibleProjectPath = path.join(testFolder, "invisible");
+const invisibleJavaFilePath = path.join("src", "App.java");
 
 // async function pauseInPipeline(timeInMs: number): Promise<void> {
 //     if (process.env.GITHUB_ACTIONS) {
@@ -28,6 +30,7 @@ describe("Command Tests", function() {
     this.timeout(2 * 60 * 1000 /*ms*/);
     const mavenProjectTmpFolders: string[] = [];
     let currentProjectPath: string | undefined;
+    let statusBar: StatusBar;
 
     function createTmpProjectFolder(projectName: string) {
         const tmpFolder = fse.mkdtempSync(path.join(tmpdir(), 'vscode-java-dependency-ui-test'));
@@ -47,8 +50,16 @@ describe("Command Tests", function() {
         await ensureExplorerIsOpen();
     }
 
+    async function openFile(filePath: string) {
+       statusBar = new StatusBar();
+       if (path.isAbsolute(filePath)) {
+           await VSBrowser.instance.openResources(filePath);
+       } else {
+            await VSBrowser.instance.openResources(path.join(currentProjectPath!, filePath));
+       }
+   }
+
     async function waitForLanguageServerReady() {
-        const statusBar = new StatusBar();
         while (true) {
             const language = await statusBar.getCurrentLanguage();
             if (language === 'Java') {
@@ -57,8 +68,9 @@ describe("Command Tests", function() {
         }
         while (true) {
             try {
-                const serverStatus = await statusBar.findElement(By.xpath('//*[@id="redhat.java.java.serverStatus"]'));
-                await serverStatus.findElement(By.xpath('//a[contains(@class, "statusbar-item-label")]//span[contains(@class, "codicon-thumbsup")]'));
+                const languageStatus = await statusBar.findElement(By.xpath('//*[@id="status.languageStatus"]'));
+                await languageStatus.click();
+                await languageStatus.findElement(By.xpath(`//div[contains(@class, 'context-view')]//div[contains(@class, 'hover-language-status')]//span[contains(@class, 'codicon-thumbsup')]`));
                 break;
             } catch (e) {
                 await sleep(100);
@@ -68,7 +80,7 @@ describe("Command Tests", function() {
 
     before(async function() {
         await openProject(mavenProjectPath);
-        await openFile('App.java');
+        await openFile(mavenJavaFilePath);
         await waitForLanguageServerReady();
     });
 
@@ -86,7 +98,7 @@ describe("Command Tests", function() {
     });
 
     (platform() === "darwin" ? it.skip : it)("Test java.view.package.linkWithFolderExplorer", async function() {
-        await openFile('App.java');
+        await openFile(mavenJavaFilePath);
         await sleep(1000);
         const [, section] = await expandInJavaProjects('my-app');
         const packageNode = await section.findItem("com.mycompany.app") as TreeItem;
@@ -102,7 +114,7 @@ describe("Command Tests", function() {
         let moreActions = await section.moreActions();
         const desynchronize = await moreActions!.getItem("Unlink with Editor");
         await desynchronize!.click();
-        await openFile('App.java');
+        await openFile(mavenJavaFilePath);
         await sleep(1000);
         const packageNode = await section.findItem("com.mycompany.app") as TreeItem;
         assert.ok(!await packageNode.isExpanded(), `Package "com.mycompany.app" should not be expanded`);
@@ -225,8 +237,7 @@ describe("Command Tests", function() {
 
     it("Test change to invisible project", async function() {
         await openProject(invisibleProjectPath);
-        await sleep(1000);
-        await openFile('App.java');
+        await openFile(invisibleJavaFilePath);
         await waitForLanguageServerReady();
         const fileSections = await new SideBarView().getContent().getSections();
         await fileSections[0].collapse();
@@ -330,13 +341,6 @@ async function expandInJavaProjects(label: string, ...otherLabels: string[]): Pr
     return [lastNode, section];
 }
 
-async function openFile(filename: string) {
-    await new Workbench().executeCommand('workbench.action.quickOpen');
-    const fileInputBox = await InputBox.create();
-    await fileInputBox.setText(filename);
-    await fileInputBox.confirm();
-}
-
 async function openAppJavaSourceCode(): Promise<[ViewSection, TreeItem]> {
     const fileSections = await new SideBarView().getContent().getSections();
     await fileSections[0].expand();
@@ -376,7 +380,7 @@ async function getActionButton(item: TreeItem, label: string) {
     // tslint:disable-next-line:max-line-length
     // "no such element: Unable to locate element: {\"method\":\"xpath\",\"selector\":\".//a[contains(@class, 'action-label') and @role='button' and @title='New...']\"}
     // This should be filled as an issue (I haven't find one).
-    // The problem is the @title='New...' which should be @aria-label='New...' for vscode 1.77.0 (and probably above).
+    // The problem is the @title='New...' which should be @aria-label='New...' for vscode 1.83.1 (and probably above).
     return item.findElement(By.xpath(`.//a[contains(@class, 'action-label') and @role='button' and contains(@aria-label, '${label}')]`));
 }
 
