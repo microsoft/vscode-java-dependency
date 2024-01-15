@@ -17,6 +17,7 @@ scripts
 extension.bundle.ts
 javaConfig.json
 .github/**
+.azure-pipelines/**
 images
 test-resources
 
