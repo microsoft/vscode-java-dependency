@@ -1,0 +1,106 @@
+name: $(Date:yyyyMMdd).$(Rev:r)
+variables:
+  - name: Codeql.Enabled
+    value: true
+resources:
+  repositories:
+    - repository: self
+      type: git
+      ref: refs/heads/main
+    - repository: 1esPipelines
+      type: git
+      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      ref: refs/tags/release
+trigger: none
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1esPipelines
+  parameters:
+    pool:
+      os: linux
+      name: 1ES_JavaTooling_Pool
+      image: 1ES_JavaTooling_Ubuntu-2004
+    sdl:
+      sourceAnalysisPool:
+        name: 1ES_JavaTooling_Pool
+        image: 1ES_JavaTooling_Windows_2022
+        os: windows
+    customBuildTags:
+      - MigrationTooling-mseng-VSJava-9019-Tool
+    stages:
+      - stage: Build
+        jobs:
+          - job: Job_1
+            displayName: RC
+            templateContext:
+              outputs:
+                - output: pipelineArtifact
+                  artifactName: extension
+                  targetPath: $(Build.ArtifactStagingDirectory)
+                  displayName: "Publish Artifact: extension"
+            steps:
+              - checkout: self
+                clean: true
+                fetchTags: true
+              - task: NodeTool@0
+                displayName: Use Node 16.x
+                inputs:
+                  versionSpec: 16.x
+              - task: JavaToolInstaller@0
+                displayName: Use Java 17
+                inputs:
+                  versionSpec: "17"
+                  jdkArchitectureOption: x64
+                  jdkSourceOption: PreInstalled
+              - task: Npm@1
+                displayName: npm install
+                inputs:
+                  verbose: false
+              - task: Bash@3
+                displayName: npx gulp build_server
+                inputs:
+                  targetType: inline
+                  script: |-
+                    # Build the jars to the server folder.
+                    npm run build-server
+              - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@2
+                displayName: ESRP CodeSigning
+                inputs:
+                  ConnectedServiceName: vscjavaci_codesign
+                  FolderPath: server
+                  Pattern: com.microsoft.jdtls.ext.*.jar
+                  signConfigType: inlineSignParams
+                  inlineOperation: |-
+                    [
+                            {
+                                "KeyCode" : "CP-447347-Java",
+                                "OperationCode" : "JavaSign",
+                                "Parameters" : {
+                                    "SigAlg" : "SHA256withRSA",
+                                    "Timestamp" : "-tsa http://sha256timestamp.ws.digicert.com/sha256/timestamp"
+                                },
+                                "ToolName" : "sign",
+                                "ToolVersion" : "1.0"
+                            },
+                            {
+                                "KeyCode" : "CP-447347-Java",
+                                "OperationCode" : "JavaVerify",
+                                "Parameters" : {},
+                                "ToolName" : "sign",
+                                "ToolVersion" : "1.0"
+                            }
+                    ]
+              - task: Bash@3
+                displayName: Replace AI key
+                inputs:
+                  targetType: inline
+                  script: npx json@9.0.6 -I -f package.json -e "this.aiKey=\"$AI_KEY\""
+              - task: Bash@3
+                displayName: vsce package
+                inputs:
+                  targetType: inline
+                  script: npx @vscode/vsce@latest package
+              - task: CopyFiles@2
+                displayName: "Copy Files to: $(Build.ArtifactStagingDirectory)"
+                inputs:
+                  Contents: "*.vsix"
+                  TargetFolder: $(Build.ArtifactStagingDirectory)
