@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.23.4
+### Added
+- Contribute 'New Java Project...' command to `File` > `New File...` and File Explorer menus. [PR#809](https://github.com/microsoft/vscode-java-dependency/pull/809)
+
 ## 0.23.3
 ### Added
 - Register the project delete event. [PR#802](https://github.com/microsoft/vscode-java-dependency/pull/802)
