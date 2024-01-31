@@ -19,6 +19,7 @@ A lightweight extension to provide additional Java project explorer features. It
 ![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/create-project.png)
 
 ### Export Jar
+
 > Note: For Spring Boot projects, please use the build tool to build the executable jar, for example: `mvn package`.
 
 ![export jar](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/export-jar.png)
@@ -60,7 +61,6 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 - VS Code (version 1.83.1+)
 - [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java)
 
-
 ## Settings
 
 | Setting Name | Description | Default Value |
@@ -76,9 +76,10 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 ## Contribution
 
 ### Build
+
 * Prerequirement
-    - Node.js
-    - Java SDK 11 or above
+    * Node.js
+    * Java SDK 11 or above
 
 * Go to root folder:
 ```
