@@ -547,17 +547,22 @@
         {
           "command": "java.view.package.revealInProjectExplorer",
           "when": "resourceFilename =~ /(.*\\.gradle)|(.*\\.gradle\\.kts)|(pom\\.xml)$/ && java:serverMode == Standard",
-          "group": "navigation@100"
+          "group": "1_javaactions"
         },
         {
           "command": "java.view.package.revealInProjectExplorer",
           "when": "resourceExtname == .java && java:serverMode == Standard",
-          "group": "navigation@100"
+          "group": "1_javaactions"
         },
         {
           "command": "_java.project.create.from.fileexplorer.menu",
           "when": "explorerResourceIsFolder",
-          "group": "navigation@10"
+          "group": "1_javaactions"
+        },
+        {
+          "submenu": "javaProject.newJavaFile",
+          "when": "explorerResourceIsFolder",
+          "group": "1_javaactions"
         }
       ],
       "editor/title": [
@@ -791,6 +796,38 @@
           "group": "new2@40",
           "when": "view == javaProjectExplorer && (viewItem =~ /java:(file|folder|project)/ || viewItem =~ /java:(packageRoot)(?=.*?\\b\\+resource\\b)/)"
         }
+      ],
+      "javaProject.newJavaFile": [
+        {
+          "command": "java.view.package.newJavaClass",
+          "group": "new@10",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "java.view.package.newJavaInterface",
+          "group": "new@20",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "java.view.package.newJavaEnum",
+          "group": "new@30",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "java.view.package.newJavaRecord",
+          "group": "new@40",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "java.view.package.newJavaAnnotation",
+          "group": "new@50",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "java.view.package.newJavaAbstractClass",
+          "group": "new@60",
+          "when": "explorerResourceIsFolder"
+        }
       ]
     },
     "submenus": [
@@ -805,6 +842,10 @@
       {
         "id": "javaProject.new",
         "label": "%contributes.submenus.javaProject.new%"
+      },
+      {
+        "id": "javaProject.newJavaFile",
+        "label": "%contributes.commands.java.view.menus.file.newJavaClass%"
       }
     ],
     "views": {

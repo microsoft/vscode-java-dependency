@@ -12,7 +12,7 @@ import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { resourceRoots } from "../views/packageRootNode";
 import { checkJavaQualifiedName } from "./utility";
-import { sendError, setUserError } from "vscode-extension-telemetry-wrapper";
+import { sendError, sendInfo, setUserError } from "vscode-extension-telemetry-wrapper";
 
 // tslint:disable no-var-requires
 const stringInterpolate = require("fmtr");
@@ -134,7 +134,7 @@ export async function newJavaFile(): Promise<void> {
         return newUntitledJavaFile();
     }
 
-    const includeRecord = !(await isVersionLessThan(Uri.file(packageFsPath).toString(), 16));
+    const includeRecord = isLanguageServerReady() && !(await isVersionLessThan(Uri.file(packageFsPath).toString(), 16));
     const supportedTypes: string[] = JavaType.getDisplayNames(true, includeRecord);
     const typeName: string | undefined = await window.showQuickPick(supportedTypes,
             {
@@ -148,12 +148,18 @@ export async function newJavaFile(): Promise<void> {
     newJavaFile0(packageFsPath, JavaType.fromDisplayName(typeName));
 }
 
-// Create a new Java file from the context menu of Java Projects view.
-export async function newJavaFileWithSpecificType(javaType: JavaType, node?: DataNode): Promise<void> {
+// Create a new Java file from the context menu of Java Projects view or File Explorer.
+export async function newJavaFileWithSpecificType(javaType: JavaType, node?: DataNode | Uri): Promise<void> {
+    sendInfo("", {
+        "triggernewfilefrom": (node instanceof Uri && node?.fsPath) ? "fileExplorer" : "javaProjectExplorer",
+        "javatype": javaType.label,
+    });
     let packageFsPath: string | undefined;
     if (!node) {
         packageFsPath = await inferPackageFsPath();
-    } else {
+    } else if (node instanceof Uri && node?.fsPath) { // File Explorer
+        packageFsPath = node?.fsPath;
+    } else if (node instanceof DataNode) { // Java Projects view
         if (!node?.uri || !canCreateClass(node)) {
             return;
         }
@@ -292,19 +298,27 @@ async function newUntitledJavaFile(): Promise<void> {
     textEditor.insertSnippet(new SnippetString(snippets.join("\n")));
 }
 
-async function inferPackageFsPath(): Promise<string> {
+function isLanguageServerReady(): boolean {
     const javaLanguageSupport: Extension<any> | undefined = extensions.getExtension(ExtensionName.JAVA_LANGUAGE_SUPPORT);
     if (!javaLanguageSupport || !javaLanguageSupport.isActive) {
-        return "";
+        return false;
     }
 
     const extensionApi: any = javaLanguageSupport.exports;
     if (!extensionApi) {
-        return "";
+        return false;
     }
 
     if (extensionApi.serverMode !== "Standard" || extensionApi.status !== "Started") {
-        return "";
+        return false;
+    }
+
+    return true;
+}
+
+async function inferPackageFsPath(): Promise<string> {
+    if (!isLanguageServerReady()) {
+        return getPackageFsPathFromActiveEditor();
     }
 
     let sourcePaths: string[] | undefined;
@@ -337,6 +351,25 @@ async function inferPackageFsPath(): Promise<string> {
                 return path.dirname(window.activeTextEditor.document.uri.fsPath);
             }
         }
+    }
+
+    return "";
+}
+
+function getPackageFsPathFromActiveEditor() {
+    if (!window.activeTextEditor) {
+        return "";
+    }
+
+    const fileUri: Uri = window.activeTextEditor.document.uri;
+    const workspaceFolder: WorkspaceFolder | undefined = workspace.getWorkspaceFolder(fileUri);
+    if (!workspaceFolder) {
+        return "";
+    }
+
+    const filePath: string = window.activeTextEditor.document.uri.fsPath;
+    if (filePath.endsWith(".java")) {
+        return path.dirname(filePath);
     }
 
     return "";
@@ -383,6 +416,10 @@ async function isVersionLessThan(fileUri: string, targetVersion: number): Promis
 }
 
 async function resolvePackageName(filePath: string): Promise<string> {
+    if (!isLanguageServerReady()) {
+        return guessPackageName(filePath);
+    }
+
     let sourcePaths: string[] = [];
     const result: IListCommandResult =
             await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
@@ -398,6 +435,25 @@ async function resolvePackageName(filePath: string): Promise<string> {
         if (isPrefix(sourcePath, filePath)) {
             const relative = path.relative(sourcePath, path.dirname(filePath));
             return relative.replace(/[/\\]/g, ".");
+        }
+    }
+
+    return "";
+}
+
+function guessPackageName(filePath: string): string {
+    const packagePath: string = path.dirname(filePath);
+    const knownSourcePathPrefixes: string[] = [
+        "src/main/java/",
+        "src/test/java/",
+        "src\\main\\java\\",
+        "src\\test\\java\\",
+    ];
+
+    for (const prefix of knownSourcePathPrefixes) {
+        const index: number = packagePath.lastIndexOf(prefix);
+        if (index > -1) {
+            return packagePath.substring(index + prefix.length).replace(/[\\\/]/g, ".");
         }
     }
 
