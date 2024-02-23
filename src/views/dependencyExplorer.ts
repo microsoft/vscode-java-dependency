@@ -116,22 +116,22 @@ export class DependencyExplorer implements Disposable {
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW, async (node: DataNode) => {
                 newResource(node);
             }),
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode) => {
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_CLASS, async (node?: DataNode | Uri) => {
                 newJavaFileWithSpecificType(JavaType.CLASS, node);
             }),
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_INTERFACE, async (node?: DataNode) => {
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_INTERFACE, async (node?: DataNode | Uri) => {
                 newJavaFileWithSpecificType(JavaType.INTERFACE, node);
             }),
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ENUM, async (node?: DataNode) => {
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ENUM, async (node?: DataNode | Uri) => {
                 newJavaFileWithSpecificType(JavaType.ENUM, node);
             }),
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_RECORD, async (node?: DataNode) => {
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_RECORD, async (node?: DataNode | Uri) => {
                 newJavaFileWithSpecificType(JavaType.RECORD, node);
             }),
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ANNOTATION, async (node?: DataNode) => {
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ANNOTATION, async (node?: DataNode | Uri) => {
                 newJavaFileWithSpecificType(JavaType.ANNOTATION, node);
             }),
-            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ABSTRACT_CLASS, async (node?: DataNode) => {
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_JAVA_ABSTRACT_CLASS, async (node?: DataNode | Uri) => {
                 newJavaFileWithSpecificType(JavaType.ABSTRACT_CLASS, node);
             }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_NEW_FILE, async (node: DataNode) => {
