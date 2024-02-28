@@ -2,7 +2,7 @@
   "name": "vscode-java-dependency",
   "displayName": "Project Manager for Java",
   "description": "%description%",
-  "version": "0.23.4",
+  "version": "0.23.5",
   "publisher": "vscjava",
   "preview": false,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -46,7 +46,7 @@
   "main": "./main.js",
   "contributes": {
     "javaExtensions": [
-      "./server/com.microsoft.jdtls.ext.core-0.23.4.jar"
+      "./server/com.microsoft.jdtls.ext.core-0.23.5.jar"
     ],
     "commands": [
       {
