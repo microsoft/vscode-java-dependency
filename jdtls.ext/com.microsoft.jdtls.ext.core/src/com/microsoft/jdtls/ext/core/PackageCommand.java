@@ -303,10 +303,8 @@ public class PackageCommand {
         List<PackageNode> result = visitor.getNodes();
 
         // Invisible project will always have the referenced libraries entry
-        if (!ProjectUtils.isVisibleProject(project)) {
+        if (!ProjectUtils.isVisibleProject(project) || hasReferencedLibraries) {
             result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
-        } else if (hasReferencedLibraries) {
-            result.add(PackageNode.IMMUTABLE_REFERENCED_LIBRARIES_CONTAINER);
         }
         return result;
     }
@@ -589,7 +587,7 @@ public class PackageCommand {
             }
 
             // This must be an invisible project.
-            // There might be more than one way to access it, but all containers should link to the same project. 
+            // There might be more than one way to access it, but all containers should link to the same project.
             return containers[0].getProject();
         }
     }

@@ -59,7 +59,8 @@ export class PackageRootNode extends DataNode {
         if (data.entryKind === PackageRootKind.K_BINARY) {
             contextValue = Explorer.ContextValueType.Jar;
             const parent = <ContainerNode>this.getParent();
-            if (parent.path?.startsWith("REFERENCED_LIBRARIES_PATH")) {
+            // currently, we only support editing referenced libraries in unmanaged folders
+            if (parent.path?.startsWith("REFERENCED_LIBRARIES_PATH") && this._project.isUnmanagedFolder()) {
                 contextValue += "+referencedLibrary";
             }
             return contextValue;

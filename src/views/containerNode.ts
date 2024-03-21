@@ -27,7 +27,8 @@ export class ContainerNode extends DataNode {
             return ContainerType.Maven;
         } else if (containerPath.startsWith(ContainerPath.Gradle)) {
             return ContainerType.Gradle;
-        } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary)) {
+        } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary) && this._project.isUnmanagedFolder()) {
+            // currently, we only support editing referenced libraries in unmanaged folders
             return ContainerType.ReferencedLibrary;
         }
         return ContainerType.Unknown;

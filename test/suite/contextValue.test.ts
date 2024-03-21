@@ -182,7 +182,7 @@ const referencedLibrariesContainer: ContainerNode = new ContainerNode({
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.Container,
     path: "REFERENCED_LIBRARIES_PATH",
-}, mavenProject, mavenProject);
+}, mavenProject, unmanagedFolder);
 
 const sourceRoot: PackageRootNode = new PackageRootNode({
     name: "src/main/java",
@@ -220,7 +220,7 @@ const referencedLibraryJar: PackageRootNode = new PackageRootNode({
     uri: Uri.file(__dirname).toString(),
     kind: NodeKind.PackageRoot,
     entryKind: PackageRootKind.K_BINARY,
-} as INodeData, referencedLibrariesContainer, mavenProject);
+} as INodeData, referencedLibrariesContainer, unmanagedFolder);
 
 const sourcePackage: PackageNode = new PackageNode({
     name: "com.microsoft.java",
