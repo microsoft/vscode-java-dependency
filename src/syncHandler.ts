@@ -51,7 +51,7 @@ class SyncHandler implements Disposable {
         try {
             const uris = await this.getWatchingUris();
             for (const uri of uris) {
-                const normalizedPath: string = uri.fsPath;
+                const normalizedPath: string = uri.fsPath?.replace(/[\\\/]+$/, ""); // remove trailing slashes
                 const pattern: RelativePattern = new RelativePattern(normalizedPath, "**/*");
                 const watcher: FileSystemWatcher = workspace.createFileSystemWatcher(pattern);
                 this.disposables.push(watcher);
