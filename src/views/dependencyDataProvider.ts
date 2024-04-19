@@ -64,7 +64,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Reload Project' from Command Palette.");
                 return;
             }
-            const pattern: RelativePattern = new RelativePattern(Uri.parse(node.uri).fsPath, "{pom.xml,*.gradle}");
+            const pattern: RelativePattern = new RelativePattern(Uri.parse(node.uri).fsPath?.replace(/[\\\/]+$/, ""), "{pom.xml,*.gradle}");
             const uris: Uri[] = await workspace.findFiles(pattern, null /*exclude*/, 1 /*maxResults*/);
             if (uris.length >= 1) {
                 commands.executeCommand(Commands.JAVA_PROJECT_CONFIGURATION_UPDATE, uris[0]);
