@@ -270,7 +270,7 @@ const projectTypes: IProjectType[] = [
         metadata: {
             type: ProjectType.Micronaut,
             extensionId: "oracle-labs-graalvm.micronaut",
-            extensionName: "Micronaut® Launch",
+            extensionName: "Launch for Micronaut® framework",
             createCommandId: "extension.micronaut.createProject",
         },
     },
