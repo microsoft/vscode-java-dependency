@@ -23,7 +23,7 @@ import { newJavaFile } from "./explorerCommands/new";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
-    await initializeFromJsonFile(context.asAbsolutePath("./package.json"), { firstParty: true });
+    await initializeFromJsonFile(context.asAbsolutePath("./package.json"));
     await initExpService(context);
     await instrumentOperation("activation", activateExtension)(context);
     addExtensionChangeListener(context);
