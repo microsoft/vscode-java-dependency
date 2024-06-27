@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.23.7
+* fix - Creates file watcher with trailing slash causes problems for other extensions by @testforstephen in https://github.com/microsoft/vscode-java-dependency/pull/829
+* fix - Micronaut® Launch extension renamed. by @dbalek in https://github.com/microsoft/vscode-java-dependency/pull/831
+
 ## 0.23.6
 ### Fixed
 - Referenced Libraries container should be immutable for build tool projects. [PR#826](https://github.com/microsoft/vscode-java-dependency/pull/826)
