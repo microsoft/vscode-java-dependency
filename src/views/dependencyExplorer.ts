@@ -147,6 +147,9 @@ export class DependencyExplorer implements Disposable {
                 }
                 newPackage(cmdNode);
             }),
+            instrumentOperationAsVsCodeCommand(Commands.VIEW_EXPLORER_NEW_PACKAGE, (node: Uri) => {
+                newPackage(node);
+            }),
             instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_REVEAL_FILE_OS, (node?: DataNode) => {
                 const cmdNode = getCmdNode(this._dependencyViewer.selection, node);
                 if (cmdNode?.uri) {
