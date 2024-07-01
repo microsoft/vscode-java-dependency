@@ -513,37 +513,21 @@ function getNewFilePath(basePath: string, className: string): string {
     return path.join(basePath, ...className.split(".")) + ".java";
 }
 
-export async function newPackage(node?: DataNode): Promise<void> {
-    if (!node?.uri || !canCreatePackage(node)) {
+export async function newPackage(node: DataNode | Uri | undefined): Promise<void> {
+    if (!node) {
         return;
     }
 
-    let defaultValue: string;
-    let packageRootPath: string;
-    const nodeKind = node.nodeData.kind;
-    if (nodeKind === NodeKind.Project) {
-        defaultValue = "";
-        packageRootPath = await getPackageFsPath(node) || "";
-    } else if (nodeKind === NodeKind.PackageRoot) {
-        defaultValue = "";
-        packageRootPath = Uri.parse(node.uri).fsPath;
-    } else if (nodeKind === NodeKind.Package) {
-        defaultValue = node.nodeData.name + ".";
-        packageRootPath = getPackageRootPath(Uri.parse(node.uri).fsPath, node.nodeData.name);
-    } else if (nodeKind === NodeKind.PrimaryType) {
-        const primaryTypeNode = <PrimaryTypeNode> node;
-        packageRootPath = primaryTypeNode.getPackageRootPath();
-        if (packageRootPath === "") {
-            window.showErrorMessage("Failed to get the package root path.");
-            return;
-        }
-        const packagePath = await getPackageFsPath(node);
-        if (!packagePath) {
-            window.showErrorMessage("Failed to get the package path.");
-            return;
-        }
-        defaultValue = path.relative(packageRootPath, packagePath).replace(/[\\\/]/g, ".") + ".";
-    } else {
+    if (node instanceof DataNode && (!node.uri || !canCreatePackage(node))) {
+        return;
+    }
+
+    sendInfo("", {
+        "triggernewpackagefrom": node instanceof Uri ? "fileExplorer" : "javaProjectExplorer",
+    });
+
+    const {defaultValue, packageRootPath} = await getPackagePromptInformation(node) || {};
+    if (defaultValue === undefined|| packageRootPath === undefined) {
         return;
     }
 
@@ -570,7 +554,56 @@ export async function newPackage(node?: DataNode): Promise<void> {
         return;
     }
 
+    sendInfo("", {
+        "packageNameContainsDot": packageName.includes(".").toString(),
+    });
+
     await fse.ensureDir(getNewPackagePath(packageRootPath, packageName));
+}
+
+async function getPackagePromptInformation(node: DataNode | Uri): Promise<Record<string, string> | undefined> {
+    if (node instanceof Uri) {
+        return {
+            packageRootPath: node.fsPath,
+            defaultValue: "",
+        }
+    } else if (node instanceof DataNode) {
+        const nodeKind = node.nodeData.kind;
+        if (nodeKind === NodeKind.Project) {
+            return {
+                packageRootPath: await getPackageFsPath(node) || "",
+                defaultValue: "",
+            }
+        } else if (nodeKind === NodeKind.PackageRoot) {
+            return {
+                packageRootPath: Uri.parse(node.uri!).fsPath,
+                defaultValue: "",
+            }
+        } else if (nodeKind === NodeKind.Package) {
+            return {
+                packageRootPath: getPackageRootPath(Uri.parse(node.uri!).fsPath, node.nodeData.name),
+                defaultValue: node.nodeData.name + ".",
+            }
+        } else if (nodeKind === NodeKind.PrimaryType) {
+            const primaryTypeNode = <PrimaryTypeNode> node;
+            const packageRootPath = primaryTypeNode.getPackageRootPath();
+            if (packageRootPath === "") {
+                window.showErrorMessage("Failed to get the package root path.");
+                return undefined;
+            }
+            const packagePath = await getPackageFsPath(node);
+            if (!packagePath) {
+                window.showErrorMessage("Failed to get the package path.");
+                return undefined;
+            }
+            return {
+                packageRootPath: packageRootPath,
+                defaultValue: path.relative(packageRootPath, packagePath).replace(/[\\\/]/g, ".") + ".",
+            }
+        }
+    }
+
+    return undefined;
 }
 
 /**
