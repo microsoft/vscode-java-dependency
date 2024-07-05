@@ -54,6 +54,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_NEW_JAVA_PACKAGE = "java.view.package.newPackage";
 
+    export const VIEW_EXPLORER_NEW_PACKAGE = "java.view.fileExplorer.newPackage";
+
     export const VIEW_PACKAGE_RENAME_FILE = "java.view.package.renameFile";
 
     export const VIEW_PACKAGE_MOVE_FILE_TO_TRASH = "java.view.package.moveFileToTrash";

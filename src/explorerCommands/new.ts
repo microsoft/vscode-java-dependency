@@ -321,15 +321,7 @@ async function inferPackageFsPath(): Promise<string> {
         return getPackageFsPathFromActiveEditor();
     }
 
-    let sourcePaths: string[] | undefined;
-    try {
-        const result = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
-        if (result && result.data && result.data.length) {
-            sourcePaths = result.data.map((entry) => entry.path);
-        }
-    } catch (e) {
-        // do nothing
-    }
+    let sourcePaths: string[] | undefined = (await getSourceRoots())?.data?.map((sourcePath) => sourcePath.path);
 
     if (!window.activeTextEditor) {
         if (sourcePaths?.length === 1) {
@@ -420,14 +412,10 @@ async function resolvePackageName(filePath: string): Promise<string> {
         return guessPackageName(filePath);
     }
 
-    let sourcePaths: string[] = [];
-    const result: IListCommandResult =
-            await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
-    if (result && result.data && result.data.length) {
-        sourcePaths = result.data.map((sourcePath) => sourcePath.path).sort((a, b) => b.length - a.length);
-    }
+    let sourcePaths: string[] = (await getSourceRoots())?.data?.map(
+            (sourcePath) => sourcePath.path).sort((a, b) => b.length - a.length) ?? [];
 
-    if (!sourcePaths || !sourcePaths.length) {
+    if (!sourcePaths?.length) {
         return "";
     }
 
@@ -513,38 +501,28 @@ function getNewFilePath(basePath: string, className: string): string {
     return path.join(basePath, ...className.split(".")) + ".java";
 }
 
-export async function newPackage(node?: DataNode): Promise<void> {
-    if (!node?.uri || !canCreatePackage(node)) {
+export async function newPackage(node: DataNode | Uri | undefined): Promise<void> {
+    if (!node) {
         return;
     }
 
-    let defaultValue: string;
-    let packageRootPath: string;
-    const nodeKind = node.nodeData.kind;
-    if (nodeKind === NodeKind.Project) {
-        defaultValue = "";
-        packageRootPath = await getPackageFsPath(node) || "";
-    } else if (nodeKind === NodeKind.PackageRoot) {
-        defaultValue = "";
-        packageRootPath = Uri.parse(node.uri).fsPath;
-    } else if (nodeKind === NodeKind.Package) {
-        defaultValue = node.nodeData.name + ".";
-        packageRootPath = getPackageRootPath(Uri.parse(node.uri).fsPath, node.nodeData.name);
-    } else if (nodeKind === NodeKind.PrimaryType) {
-        const primaryTypeNode = <PrimaryTypeNode> node;
-        packageRootPath = primaryTypeNode.getPackageRootPath();
-        if (packageRootPath === "") {
-            window.showErrorMessage("Failed to get the package root path.");
-            return;
-        }
-        const packagePath = await getPackageFsPath(node);
-        if (!packagePath) {
-            window.showErrorMessage("Failed to get the package path.");
-            return;
-        }
-        defaultValue = path.relative(packageRootPath, packagePath).replace(/[\\\/]/g, ".") + ".";
-    } else {
+    const isUri = node instanceof Uri;
+    if (!isUri && (!node.uri || !canCreatePackage(node))) {
         return;
+    }
+
+    sendInfo("", {
+        "triggernewpackagefrom": isUri ? "fileExplorer" : "javaProjectExplorer",
+    });
+
+    let {defaultValue, packageRootPath} = (isUri ? await getPackageInformationFromUri(node)
+            : await getPackageInformationFromNode(node)) || {};
+    if (defaultValue === undefined || packageRootPath === undefined) {
+        return;
+    }
+
+    if (defaultValue.length > 0 && !defaultValue.endsWith(".")) {
+        defaultValue += ".";
     }
 
     const packageName: string | undefined = await window.showInputBox({
@@ -571,6 +549,74 @@ export async function newPackage(node?: DataNode): Promise<void> {
     }
 
     await fse.ensureDir(getNewPackagePath(packageRootPath, packageName));
+}
+
+async function getPackageInformationFromUri(uri: Uri): Promise<Record<string, string> | undefined> {
+    const defaultValue = {
+        defaultValue: "",
+        packageRootPath: uri.fsPath,
+    };
+    if (!isLanguageServerReady()) {
+        return defaultValue;
+    }
+
+    let sourcePaths: string[] = (await getSourceRoots())?.data?.map(
+        (sourcePath) => sourcePath.path).sort((a, b) => b.length - a.length) ?? [];
+
+    if (!sourcePaths?.length) {
+        return defaultValue;
+    }
+
+    for (const sourcePath of sourcePaths) {
+        if (isPrefix(sourcePath, uri.fsPath)) {
+            const relative = path.relative(sourcePath, uri.fsPath);
+            return {
+                defaultValue: relative.replace(/[/\\]/g, "."),
+                packageRootPath: sourcePath,
+            };
+        }
+    }
+
+    return defaultValue;
+}
+
+
+async function getPackageInformationFromNode(node: DataNode): Promise<Record<string, string> | undefined> {
+    const nodeKind = node.nodeData.kind;
+    if (nodeKind === NodeKind.Project) {
+        return {
+            packageRootPath: await getPackageFsPath(node) || "",
+            defaultValue: "",
+        }
+    } else if (nodeKind === NodeKind.PackageRoot) {
+        return {
+            packageRootPath: Uri.parse(node.uri!).fsPath,
+            defaultValue: "",
+        }
+    } else if (nodeKind === NodeKind.Package) {
+        return {
+            packageRootPath: getPackageRootPath(Uri.parse(node.uri!).fsPath, node.nodeData.name),
+            defaultValue: node.nodeData.name + ".",
+        }
+    } else if (nodeKind === NodeKind.PrimaryType) {
+        const primaryTypeNode = <PrimaryTypeNode> node;
+        const packageRootPath = primaryTypeNode.getPackageRootPath();
+        if (packageRootPath === "") {
+            window.showErrorMessage("Failed to get the package root path.");
+            return undefined;
+        }
+        const packagePath = await getPackageFsPath(node);
+        if (!packagePath) {
+            window.showErrorMessage("Failed to get the package path.");
+            return undefined;
+        }
+        return {
+            packageRootPath: packageRootPath,
+            defaultValue: path.relative(packageRootPath, packagePath).replace(/[/\\]/g, "."),
+        }
+    }
+
+    return undefined;
 }
 
 /**
@@ -707,4 +753,16 @@ function getBasePath(node: DataNode): string | undefined {
         default:
             return undefined;
     }
+}
+
+async function getSourceRoots(): Promise<IListCommandResult | undefined>{
+    try {
+        const result = await commands.executeCommand<IListCommandResult>(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.LIST_SOURCEPATHS);
+        if (result?.data?.length) {
+            return result;
+        }
+    } catch (e) {
+        // ignore;
+    }
+    return undefined;
 }

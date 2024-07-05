@@ -258,6 +258,11 @@
         "category": "Java"
       },
       {
+        "command": "java.view.fileExplorer.newPackage",
+        "title": "%contributes.commands.java.view.fileExplorer.newPackage%",
+        "category": "Java"
+      },
+      {
         "command": "java.view.package.newFile",
         "title": "%contributes.commands.java.view.package.newFile%",
         "category": "Java",
@@ -503,6 +508,10 @@
           "when": "false"
         },
         {
+          "command": "java.view.fileExplorer.newPackage",
+          "when": "false"
+        },
+        {
           "command": "java.project.build.workspace",
           "when": "false"
         },
@@ -545,24 +554,29 @@
       ],
       "explorer/context": [
         {
-          "command": "java.view.package.revealInProjectExplorer",
-          "when": "resourceFilename =~ /(.*\\.gradle)|(.*\\.gradle\\.kts)|(pom\\.xml)$/ && java:serverMode == Standard",
-          "group": "1_javaactions"
+          "submenu": "javaProject.newJavaFile",
+          "when": "explorerResourceIsFolder",
+          "group": "1_javaactions@10"
         },
         {
-          "command": "java.view.package.revealInProjectExplorer",
-          "when": "resourceExtname == .java && java:serverMode == Standard",
-          "group": "1_javaactions"
+          "command": "java.view.fileExplorer.newPackage",
+          "when": "explorerResourceIsFolder",
+          "group": "1_javaactions@20"
         },
         {
           "command": "_java.project.create.from.fileexplorer.menu",
           "when": "explorerResourceIsFolder",
-          "group": "1_javaactions"
+          "group": "1_javaactions@30"
         },
         {
-          "submenu": "javaProject.newJavaFile",
-          "when": "explorerResourceIsFolder",
-          "group": "1_javaactions"
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceFilename =~ /(.*\\.gradle)|(.*\\.gradle\\.kts)|(pom\\.xml)$/ && java:serverMode == Standard",
+          "group": "1_javaactions@40"
+        },
+        {
+          "command": "java.view.package.revealInProjectExplorer",
+          "when": "resourceExtname == .java && java:serverMode == Standard",
+          "group": "1_javaactions@40"
         }
       ],
       "editor/title": [

@@ -35,6 +35,7 @@
   "contributes.commands.java.view.package.renameFile": "Rename",
   "contributes.commands.java.view.package.moveFileToTrash": "Delete",
   "contributes.commands.java.view.package.deleteFilePermanently": "Delete Permanently",
+  "contributes.commands.java.view.fileExplorer.newPackage": "New Java Package...",
   "contributes.submenus.javaProject.new": "New",
   "contributes.commands.java.view.menus.file.newJavaClass": "New Java File",
   "configuration.java.dependency.showMembers": "Show the members in the explorer",
