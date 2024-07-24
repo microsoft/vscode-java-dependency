@@ -321,7 +321,7 @@ async function inferPackageFsPath(): Promise<string> {
         return getPackageFsPathFromActiveEditor();
     }
 
-    let sourcePaths: string[] | undefined = (await getSourceRoots())?.data?.map((sourcePath) => sourcePath.path);
+    const sourcePaths: string[] | undefined = (await getSourceRoots())?.data?.map((sourcePath) => sourcePath.path);
 
     if (!window.activeTextEditor) {
         if (sourcePaths?.length === 1) {
@@ -412,7 +412,7 @@ async function resolvePackageName(filePath: string): Promise<string> {
         return guessPackageName(filePath);
     }
 
-    let sourcePaths: string[] = (await getSourceRoots())?.data?.map(
+    const sourcePaths: string[] = (await getSourceRoots())?.data?.map(
             (sourcePath) => sourcePath.path).sort((a, b) => b.length - a.length) ?? [];
 
     if (!sourcePaths?.length) {
@@ -515,8 +515,9 @@ export async function newPackage(node: DataNode | Uri | undefined): Promise<void
         "triggernewpackagefrom": isUri ? "fileExplorer" : "javaProjectExplorer",
     });
 
-    let {defaultValue, packageRootPath} = (isUri ? await getPackageInformationFromUri(node)
+    const {defaultValue: tempDefaultValue , packageRootPath} = (isUri ? await getPackageInformationFromUri(node)
             : await getPackageInformationFromNode(node)) || {};
+    let defaultValue = tempDefaultValue;
     if (defaultValue === undefined || packageRootPath === undefined) {
         return;
     }
@@ -560,7 +561,7 @@ async function getPackageInformationFromUri(uri: Uri): Promise<Record<string, st
         return defaultValue;
     }
 
-    let sourcePaths: string[] = (await getSourceRoots())?.data?.map(
+    const sourcePaths: string[] = (await getSourceRoots())?.data?.map(
         (sourcePath) => sourcePath.path).sort((a, b) => b.length - a.length) ?? [];
 
     if (!sourcePaths?.length) {
@@ -587,17 +588,17 @@ async function getPackageInformationFromNode(node: DataNode): Promise<Record<str
         return {
             packageRootPath: await getPackageFsPath(node) || "",
             defaultValue: "",
-        }
+        };
     } else if (nodeKind === NodeKind.PackageRoot) {
         return {
             packageRootPath: Uri.parse(node.uri!).fsPath,
             defaultValue: "",
-        }
+        };
     } else if (nodeKind === NodeKind.Package) {
         return {
             packageRootPath: getPackageRootPath(Uri.parse(node.uri!).fsPath, node.nodeData.name),
             defaultValue: node.nodeData.name + ".",
-        }
+        };
     } else if (nodeKind === NodeKind.PrimaryType) {
         const primaryTypeNode = <PrimaryTypeNode> node;
         const packageRootPath = primaryTypeNode.getPackageRootPath();
@@ -611,9 +612,9 @@ async function getPackageInformationFromNode(node: DataNode): Promise<Record<str
             return undefined;
         }
         return {
-            packageRootPath: packageRootPath,
+            packageRootPath,
             defaultValue: path.relative(packageRootPath, packagePath).replace(/[/\\]/g, "."),
-        }
+        };
     }
 
     return undefined;

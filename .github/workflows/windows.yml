@@ -30,6 +30,9 @@ jobs:
     - name: Install VSCE
       run: npm install -g @vscode/vsce
 
+    - name: Lint
+      run: npm run tslint
+
     - name: Build OSGi bundle
       run: npm run build-server
 
