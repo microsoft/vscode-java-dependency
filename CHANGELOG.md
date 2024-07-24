@@ -4,6 +4,9 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.24.0
+* feat - Support adding new package from file explorer by @jdneo in https://github.com/microsoft/vscode-java-dependency/pull/845
+
 ## 0.23.7
 * fix - Creates file watcher with trailing slash causes problems for other extensions by @testforstephen in https://github.com/microsoft/vscode-java-dependency/pull/829
 * fix - Micronaut® Launch extension renamed. by @dbalek in https://github.com/microsoft/vscode-java-dependency/pull/831
