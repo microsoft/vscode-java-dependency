@@ -42,9 +42,9 @@ extends:
                 clean: true
                 fetchTags: true
               - task: NodeTool@0
-                displayName: Use Node 18.x
+                displayName: Use Node 20.x
                 inputs:
-                  versionSpec: 18.x
+                  versionSpec: 20.x
               - task: JavaToolInstaller@0
                 displayName: Use Java 17
                 inputs:

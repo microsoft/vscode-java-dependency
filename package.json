@@ -1067,7 +1067,7 @@
     "@types/lodash": "^4.14.191",
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^16.18.11",
+    "@types/node": "20.x",
     "@types/semver": "^7.3.13",
     "@types/vscode": "1.83.1",
     "@vscode/test-electron": "^2.3.8",
