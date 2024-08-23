@@ -1070,7 +1070,7 @@
     "@types/node": "20.x",
     "@types/semver": "^7.3.13",
     "@types/vscode": "1.83.1",
-    "@vscode/test-electron": "^2.3.8",
+    "@vscode/test-electron": "^2.4.1",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",
     "mocha": "^9.2.2",
