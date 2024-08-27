@@ -16,10 +16,14 @@ async function main(): Promise<void> {
 
         // Resolve redhat.java dependency
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
-        cp.spawnSync(cli, [...args, '--install-extension', 'redhat.java'], {
+        const options: cp.SpawnSyncOptionsWithStringEncoding = {
             encoding: 'utf-8',
-            stdio: 'inherit'
-        });
+            stdio: 'inherit',
+        };
+        if (process.platform === 'win32') {
+            options.shell = true;
+        }
+        cp.spawnSync(cli, [...args, '--install-extension', 'redhat.java'], options);
 
         // The folder containing the Extension Manifest package.json
         // Passed to `--extensionDevelopmentPath`
