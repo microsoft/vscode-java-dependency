@@ -7,7 +7,7 @@ import {
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperationAsVsCodeCommand, sendError } from "vscode-extension-telemetry-wrapper";
-import { contextManager } from "../../extension.bundle";
+import { contextManager, ContainerNode } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { Context } from "../constants";
 import { appendOutput, executeExportJarTask } from "../tasks/buildArtifact/BuildArtifactTaskProvider";
@@ -123,6 +123,14 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
         const children = (!this._rootItems || !element) ?
             await this.getRootNodes() : await element.getChildren();
+
+        if (children && element instanceof ContainerNode) {
+            if (element.isMavenType() || element.isGradleType()) {
+                children.sort((a, b) => {
+                    return a.getLabel().localeCompare(b.getLabel());
+                });
+            }
+        }
 
         explorerNodeCache.saveNodes(children || []);
         return children;

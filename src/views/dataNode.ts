@@ -17,7 +17,7 @@ export abstract class DataNode extends ExplorerNode {
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         const item = new TreeItem(
-            this._nodeData.displayName || this._nodeData.name,
+            this.getLabel(),
             this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None,
         );
         item.description = this.description;
@@ -40,6 +40,14 @@ export abstract class DataNode extends ExplorerNode {
         }
 
         return item;
+    }
+
+    public getLabel(): string {
+        if (this._nodeData.metaData?.['maven.groupId']) {
+            return `${this._nodeData.metaData?.['maven.groupId']}:${this._nodeData.metaData?.['maven.artifactId']}:${this._nodeData.metaData?.['maven.version']}`;
+        } else {
+            return this._nodeData.displayName ?? this._nodeData.name;
+        }
     }
 
     public get nodeData(): INodeData {

@@ -15,23 +15,48 @@ export class ContainerNode extends DataNode {
         super(nodeData, parent);
     }
 
+    private _containerType: ContainerType;
+
     public get projectBasePath() {
         return this._project.uri && Uri.parse(this._project.uri).fsPath;
     }
 
-    public getContainerType(): string {
+    public getContainerType(): ContainerType {
+        if (this._containerType) {
+            return this._containerType;
+        }
+
         const containerPath: string = this._nodeData.path || "";
         if (containerPath.startsWith(ContainerPath.JRE)) {
-            return ContainerType.JRE;
+            this._containerType = ContainerType.JRE;
         } else if (containerPath.startsWith(ContainerPath.Maven)) {
-            return ContainerType.Maven;
+            this._containerType = ContainerType.Maven;
         } else if (containerPath.startsWith(ContainerPath.Gradle)) {
-            return ContainerType.Gradle;
+            this._containerType = ContainerType.Gradle;
         } else if (containerPath.startsWith(ContainerPath.ReferencedLibrary) && this._project.isUnmanagedFolder()) {
             // currently, we only support editing referenced libraries in unmanaged folders
-            return ContainerType.ReferencedLibrary;
+            this._containerType = ContainerType.ReferencedLibrary;
+        } else {
+            this._containerType = ContainerType.Unknown;
         }
-        return ContainerType.Unknown;
+
+        return this._containerType;
+    }
+
+    public getLabel(): string {
+        if (this._nodeData.metaData?.['maven.groupId']) {
+            return `${this._nodeData.metaData?.['maven.groupId']}:${this._nodeData.metaData?.['maven.artifactId']}:${this._nodeData.metaData?.['maven.version']}`;
+        } else {
+            return this._nodeData.displayName ?? this._nodeData.name;
+        }
+    }
+
+    public isMavenType(): boolean {
+        return this.getContainerType() == ContainerType.Maven;
+    }
+
+    public isGradleType(): boolean {
+        return this.getContainerType() == ContainerType.Gradle;
     }
 
     protected async loadData(): Promise<INodeData[]> {
