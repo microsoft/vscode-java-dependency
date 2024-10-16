@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -78,7 +79,7 @@ public class PackageCommand {
     private static final Map<NodeKind, BiFunction<PackageParams, IProgressMonitor, List<PackageNode>>> commands;
 
     static {
-        commands = new HashMap<>();
+        commands = new EnumMap<>(NodeKind.class);
         commands.put(NodeKind.PROJECT, PackageCommand::getProjectChildren);
         commands.put(NodeKind.CONTAINER, PackageCommand::getContainerChildren);
         commands.put(NodeKind.PACKAGEROOT, PackageCommand::getPackageRootChildren);
