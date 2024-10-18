@@ -34,6 +34,10 @@ export class PrimaryTypeNode extends DataNode {
         return "";
     }
 
+    public getLabel(): string {
+        return this._nodeData.displayName ?? this._nodeData.name;
+    }
+
     protected async loadData(): Promise<SymbolInformation[] | DocumentSymbol[] | undefined> {
         if (!this.hasChildren() || !this.nodeData.uri) {
             return undefined;

@@ -8,7 +8,7 @@ import { INodeData, NodeKind } from "../java/nodeData";
 import { IPackageRootNodeData, PackageRootKind } from "../java/packageRootNodeData";
 import { Settings } from "../settings";
 import { isTest } from "../utility";
-import { ContainerNode } from "./containerNode";
+import { ContainerNode, ContainerType } from "./containerNode";
 import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { ProjectNode } from "./projectNode";
@@ -18,6 +18,16 @@ export class PackageRootNode extends DataNode {
 
     constructor(nodeData: INodeData, parent: DataNode, protected _project: ProjectNode) {
         super(nodeData, parent);
+    }
+
+    public getLabel(): string {
+        if (this.getParent() instanceof ContainerNode) {
+            const parent = this.getParent() as ContainerNode;
+            if (parent.getContainerType() == ContainerType.Maven) {
+                return `${this._nodeData.metaData?.['maven.groupId']}:${this._nodeData.metaData?.['maven.artifactId']}:${this._nodeData.metaData?.['maven.version']}`;
+            }
+        }
+        return this._nodeData.displayName ?? this._nodeData.name;
     }
 
     public isSourceRoot(): boolean {

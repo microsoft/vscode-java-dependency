@@ -15,6 +15,10 @@ export class FolderNode extends DataNode {
         super(nodeData, parent);
     }
 
+    public getLabel(): string {
+        return this._nodeData.displayName ?? this._nodeData.name;
+    }
+
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({
             kind: NodeKind.Folder,

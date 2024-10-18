@@ -44,11 +44,7 @@ export class ContainerNode extends DataNode {
     }
 
     public getLabel(): string {
-        if (this._nodeData.metaData?.['maven.groupId']) {
-            return `${this._nodeData.metaData?.['maven.groupId']}:${this._nodeData.metaData?.['maven.artifactId']}:${this._nodeData.metaData?.['maven.version']}`;
-        } else {
-            return this._nodeData.displayName ?? this._nodeData.name;
-        }
+        return this._nodeData.displayName ?? this._nodeData.name;
     }
 
     public isMavenType(): boolean {

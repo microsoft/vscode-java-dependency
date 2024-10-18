@@ -125,7 +125,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             await this.getRootNodes() : await element.getChildren();
 
         if (children && element instanceof ContainerNode) {
-            if (element.isMavenType() || element.isGradleType()) {
+            if (element.isMavenType()) {
                 children.sort((a, b) => {
                     return a.getLabel().localeCompare(b.getLabel());
                 });
