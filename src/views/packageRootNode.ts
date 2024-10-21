@@ -21,11 +21,8 @@ export class PackageRootNode extends DataNode {
     }
 
     public getLabel(): string {
-        if (this.getParent() instanceof ContainerNode) {
-            const parent = this.getParent() as ContainerNode;
-            if (parent.getContainerType() == ContainerType.Maven) {
-                return `${this._nodeData.metaData?.['maven.groupId']}:${this._nodeData.metaData?.['maven.artifactId']}:${this._nodeData.metaData?.['maven.version']}`;
-            }
+        if (this._nodeData.metaData?.['maven.groupId']) {
+            return `${this._nodeData.metaData?.['maven.groupId']}:${this._nodeData.metaData?.['maven.artifactId']}:${this._nodeData.metaData?.['maven.version']}`;
         }
         return this._nodeData.displayName ?? this._nodeData.name;
     }
