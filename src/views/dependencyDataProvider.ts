@@ -7,7 +7,7 @@ import {
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperationAsVsCodeCommand, sendError } from "vscode-extension-telemetry-wrapper";
-import { contextManager, ContainerNode } from "../../extension.bundle";
+import { contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { Context } from "../constants";
 import { appendOutput, executeExportJarTask } from "../tasks/buildArtifact/BuildArtifactTaskProvider";
