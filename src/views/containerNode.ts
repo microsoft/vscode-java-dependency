@@ -47,14 +47,6 @@ export class ContainerNode extends DataNode {
         return this._nodeData.displayName ?? this._nodeData.name;
     }
 
-    public isMavenType(): boolean {
-        return this.getContainerType() == ContainerType.Maven;
-    }
-
-    public isGradleType(): boolean {
-        return this.getContainerType() == ContainerType.Gradle;
-    }
-
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({ kind: NodeKind.Container, projectUri: this._project.uri, path: this.path });
     }
