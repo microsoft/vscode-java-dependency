@@ -124,12 +124,10 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         const children = (!this._rootItems || !element) ?
             await this.getRootNodes() : await element.getChildren();
 
-        if (children && element instanceof ContainerNode) {
-            if (element.isMavenType()) {
-                children.sort((a, b) => {
-                    return a.getLabel().localeCompare(b.getLabel());
-                });
-            }
+        if (children) {
+            children.sort((a, b) => {
+                return a.getLabel().localeCompare(b.getLabel());
+            });
         }
 
         explorerNodeCache.saveNodes(children || []);
