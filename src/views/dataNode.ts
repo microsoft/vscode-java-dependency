@@ -17,7 +17,7 @@ export abstract class DataNode extends ExplorerNode {
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
         const item = new TreeItem(
-            this.getLabel(),
+            this._nodeData.displayName || this._nodeData.name,
             this.hasChildren() ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None,
         );
         item.description = this.description;
@@ -40,6 +40,10 @@ export abstract class DataNode extends ExplorerNode {
         }
 
         return item;
+    }
+
+    public getDisplayName(): string {
+        return this._nodeData.displayName || this._nodeData.name;
     }
 
     public get nodeData(): INodeData {

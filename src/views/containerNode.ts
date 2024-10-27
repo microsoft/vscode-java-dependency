@@ -43,8 +43,8 @@ export class ContainerNode extends DataNode {
         return this._containerType;
     }
 
-    public getLabel(): string {
-        return this._nodeData.displayName ?? this._nodeData.name;
+    public isMavenType(): boolean {
+        return this._containerType == ContainerType.Maven;
     }
 
     protected async loadData(): Promise<INodeData[]> {

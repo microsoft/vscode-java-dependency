@@ -13,10 +13,6 @@ export class FileNode extends DataNode {
         super(nodeData, parent);
     }
 
-    public getLabel(): string {
-        return this._nodeData.displayName ?? this._nodeData.name;
-    }
-
     protected hasChildren(): boolean {
         return false;
     }

@@ -54,10 +54,6 @@ export class ProjectNode extends DataNode {
         return false;
     }
 
-    public getLabel(): string {
-        return this._nodeData.displayName ?? this._nodeData.name;
-    }
-
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: this.nodeData.uri });
     }

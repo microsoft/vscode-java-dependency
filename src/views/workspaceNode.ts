@@ -14,10 +14,6 @@ export class WorkspaceNode extends DataNode {
         super(nodeData, parent);
     }
 
-    public getLabel(): string {
-        return this._nodeData.displayName ?? this._nodeData.name;
-    }
-
     protected async loadData(): Promise<INodeData[] | undefined> {
         if (!this.nodeData.uri) {
             return undefined;

@@ -34,5 +34,5 @@ export abstract class ExplorerNode {
 
     public abstract computeContextValue(): string | undefined;
 
-    public abstract getLabel(): string;
+    public abstract getDisplayName(): string;
 }

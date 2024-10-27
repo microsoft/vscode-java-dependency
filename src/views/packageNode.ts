@@ -22,10 +22,6 @@ export class PackageNode extends DataNode {
         return parentData.entryKind === PackageRootKind.K_SOURCE || parentData.kind === NodeKind.Project;
     }
 
-    public getLabel(): string {
-        return this._nodeData.displayName ?? this._nodeData.name;
-    }
-
     protected async loadData(): Promise<INodeData[]> {
         return Jdtls.getPackageData({
             kind: NodeKind.Package,

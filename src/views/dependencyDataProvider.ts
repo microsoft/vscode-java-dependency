@@ -7,7 +7,7 @@ import {
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
 } from "vscode";
 import { instrumentOperationAsVsCodeCommand, sendError } from "vscode-extension-telemetry-wrapper";
-import { contextManager } from "../../extension.bundle";
+import { ContainerNode, contextManager } from "../../extension.bundle";
 import { Commands } from "../commands";
 import { Context } from "../constants";
 import { appendOutput, executeExportJarTask } from "../tasks/buildArtifact/BuildArtifactTaskProvider";
@@ -126,7 +126,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
 
         if (children) {
             children.sort((a, b) => {
-                return a.getLabel().localeCompare(b.getLabel());
+                return a.getDisplayName().localeCompare(b.getDisplayName());
             });
         }
 

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
@@ -273,9 +274,30 @@ public class PackageNode {
             for (IClasspathAttribute attribute : resolvedClasspathEntry.getExtraAttributes()) {
                 node.setMetaDataValue(attribute.getName(), attribute.getValue());
             }
+
+            String computedDisplayName = computeDisplayName(node);
+            if (StringUtils.isNotBlank(computedDisplayName)) {
+                node.setDisplayName(computedDisplayName);
+            }
         }
 
         return node;
+    }
+
+    private static String computeDisplayName(PackageRootNode node) {
+        if (node.getMetaData() == null || node.getMetaData().isEmpty()) {
+            return node.getName();
+        }
+
+        String version = (String) node.getMetaData().get("maven.version");
+        String groupId = (String) node.getMetaData().get("maven.groupId");
+        String artifactId = (String) node.getMetaData().get("maven.artifactId");
+
+        if (StringUtils.isBlank(version) || StringUtils.isBlank(groupId) || StringUtils.isBlank(artifactId)) {
+            return node.getName();
+        }
+
+        return groupId + ":" + artifactId + ":" + version;
     }
 
     /**
