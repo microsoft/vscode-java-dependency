@@ -44,7 +44,7 @@ export class ContainerNode extends DataNode {
     }
 
     public isMavenType(): boolean {
-        return this._containerType == ContainerType.Maven;
+        return this._containerType === ContainerType.Maven;
     }
 
     protected async loadData(): Promise<INodeData[]> {
