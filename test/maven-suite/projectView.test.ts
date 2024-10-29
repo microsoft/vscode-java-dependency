@@ -253,6 +253,19 @@ suite("Maven Project View Tests", () => {
         assert.equal(projectChildren.length, 4);
     });
 
+    test("Can maven dependency nodes display in correct groupId:artifactId:version format", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+
+        const roots = await explorer.dataProvider.getChildren();
+        const projectNode = roots![0] as ProjectNode;
+        const projectChildren = await projectNode.getChildren();
+        const mavenDependency = projectChildren[3] as ContainerNode;
+        const mavenChildren = await mavenDependency.getChildren();
+
+        assert.equal(mavenChildren[0].getDisplayName(), "org.hamcrest:hamcrest-core:1.3")
+        assert.equal(mavenChildren[1].getDisplayName(), "junit:junit:4.13.1")
+    });
+
     teardown(async () => {
         // Restore default settings. Some tests might alter them and others depend on a specific setting.
         // Not resetting to the default settings will also show the file as changed in the source control view.
