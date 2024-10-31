@@ -4,6 +4,13 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.24.1
+* Graal Cloud Native Launcher extension renamed. by @dbalek in https://github.com/microsoft/vscode-java-dependency/pull/849
+* ux - display maven and gradle dependencies with pattern 'groupId:artifactId:version ' by @mamilic in https://github.com/microsoft/vscode-java-dependency/pull/859
+
+## New Contributors
+* @mamilic made their first contribution in https://github.com/microsoft/vscode-java-dependency/pull/859
+
 ## 0.24.0
 * feat - Support adding new package from file explorer by @jdneo in https://github.com/microsoft/vscode-java-dependency/pull/845
 
