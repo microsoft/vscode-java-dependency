@@ -33,4 +33,6 @@ export abstract class ExplorerNode {
     public abstract getTreeItem(): TreeItem | Promise<TreeItem>;
 
     public abstract computeContextValue(): string | undefined;
+
+    public abstract getDisplayName(): string;
 }

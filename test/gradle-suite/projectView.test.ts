@@ -3,13 +3,17 @@
 
 import * as assert from "assert";
 import { ContainerNode, contextManager, DataNode, DependencyExplorer,
+    languageServerApiManager,
     PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, setupTestEnv, Uris } from "../shared";
 
 // tslint:disable: only-arrow-functions
 suite("Gradle Project View Tests", () => {
 
-    suiteSetup(setupTestEnv);
+    suiteSetup(async () => {
+        await setupTestEnv();
+        await languageServerApiManager.ready();
+    });
 
     test("Can node render correctly", async function() {
         const explorer = DependencyExplorer.getInstance(contextManager.context);

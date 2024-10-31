@@ -4,13 +4,16 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode,
-    INodeData, Jdtls, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
+    INodeData, Jdtls, languageServerApiManager, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, printNodes, setupTestEnv, Uris } from "../shared";
 
 // tslint:disable: only-arrow-functions
 suite("Maven Project View Tests", () => {
 
-    suiteSetup(setupTestEnv);
+    suiteSetup(async () => {
+        await setupTestEnv();
+        await languageServerApiManager.ready();
+    });
 
     test("Can node render correctly in hierarchical view", async function() {
         await vscode.workspace.getConfiguration("java.dependency").update("packagePresentation", "hierarchical");
@@ -251,6 +254,19 @@ suite("Maven Project View Tests", () => {
         const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
         const projectChildren = await projectNode.getChildren();
         assert.equal(projectChildren.length, 4);
+    });
+
+    test("Can maven dependency nodes display in correct groupId:artifactId:version format", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+
+        const roots = await explorer.dataProvider.getChildren();
+        const projectNode = roots![0] as ProjectNode;
+        const projectChildren = await projectNode.getChildren();
+        const mavenDependency = projectChildren[3] as ContainerNode;
+        const mavenChildren = await mavenDependency.getChildren();
+
+        assert.equal(mavenChildren[0].getDisplayName(), "org.hamcrest:hamcrest-core:1.3");
+        assert.equal(mavenChildren[1].getDisplayName(), "junit:junit:4.13.1");
     });
 
     teardown(async () => {

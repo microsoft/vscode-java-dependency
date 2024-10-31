@@ -18,6 +18,7 @@
     {
       "type": "java",
       "name": "Attach to Plugin",
+      "projectName": "com.microsoft.jdtls.ext.core",
       "request": "attach",
       "hostName": "localhost",
       "port": 1044

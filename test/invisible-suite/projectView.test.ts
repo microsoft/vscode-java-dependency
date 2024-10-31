@@ -3,22 +3,21 @@
 
 import * as assert from "assert";
 import * as fse from "fs-extra";
-import { platform } from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-import { Commands, contextManager, DependencyExplorer, PackageNode, PackageRootNode, ProjectNode } from "../../extension.bundle";
+import { Commands, contextManager, DependencyExplorer, languageServerApiManager, PackageNode, PackageRootNode, ProjectNode } from "../../extension.bundle";
 import { setupTestEnv } from "../shared";
 import { sleep } from "../util";
 
 // tslint:disable: only-arrow-functions
 suite("Invisible Project View Tests", () => {
 
-    suiteSetup(setupTestEnv);
+    suiteSetup(async () => {
+        await setupTestEnv();
+        await languageServerApiManager.ready();
+    });
 
     test("Can execute command java.project.refreshLibraries correctly", async function() {
-        if (platform() === "darwin") {
-            this.skip();
-        }
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
         let projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
@@ -37,9 +36,6 @@ suite("Invisible Project View Tests", () => {
     });
 
     test("Can execute command java.project.removeLibrary correctly", async function() {
-        if (platform() === "darwin") {
-            this.skip();
-        }
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
         let projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;

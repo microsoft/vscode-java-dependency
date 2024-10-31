@@ -28,6 +28,10 @@ export class DocumentSymbolNode extends ExplorerNode {
         super(parent);
     }
 
+    public getDisplayName(): string {
+        return this.symbolInfo.name;
+    }
+
     public getChildren(): ExplorerNode[] | Promise<ExplorerNode[]> {
         const res: ExplorerNode[] = [];
         if (this.symbolInfo?.children?.length) {
@@ -39,7 +43,7 @@ export class DocumentSymbolNode extends ExplorerNode {
     }
 
     public getTreeItem(): TreeItem | Promise<TreeItem> {
-        const item = new TreeItem(this.symbolInfo.name,
+        const item = new TreeItem(this.getDisplayName(),
             this.symbolInfo?.children?.length ? TreeItemCollapsibleState.Collapsed
                 : TreeItemCollapsibleState.None);
         item.iconPath = this.iconPath;

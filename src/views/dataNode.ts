@@ -42,6 +42,10 @@ export abstract class DataNode extends ExplorerNode {
         return item;
     }
 
+    public getDisplayName(): string {
+        return this._nodeData.displayName || this._nodeData.name;
+    }
+
     public get nodeData(): INodeData {
         return this._nodeData;
     }
