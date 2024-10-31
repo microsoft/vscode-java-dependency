@@ -4,13 +4,16 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode,
-    INodeData, Jdtls, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
+    INodeData, Jdtls, languageServerApiManager, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, printNodes, setupTestEnv, Uris } from "../shared";
 
 // tslint:disable: only-arrow-functions
 suite("Maven Project View Tests", () => {
 
-    suiteSetup(setupTestEnv);
+    suiteSetup(async () => {
+        await setupTestEnv();
+        await languageServerApiManager.ready();
+    });
 
     test("Can node render correctly in hierarchical view", async function() {
         await vscode.workspace.getConfiguration("java.dependency").update("packagePresentation", "hierarchical");
