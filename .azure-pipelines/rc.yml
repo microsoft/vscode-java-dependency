@@ -63,7 +63,7 @@ extends:
                 displayName: npm install
                 inputs:
                   verbose: false
-              - task: Bash@3
+              - task: CmdLine@2
                 displayName: npx gulp build_server
                 inputs:
                   targetType: inline
@@ -85,7 +85,7 @@ extends:
                 displayName: Replace AI Key
                 inputs:
                   script: npx json@9.0.6 -I -f package.json -e "this.aiKey=\"%AI_KEY%\""
-              - task: Bash@3
+              - task: CmdLine@2
                 displayName: vsce package
                 inputs:
                   targetType: inline
