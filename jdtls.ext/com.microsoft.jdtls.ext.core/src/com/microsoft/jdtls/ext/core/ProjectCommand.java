@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -65,6 +66,7 @@ import org.eclipse.jdt.ls.core.internal.ResourceUtils;
 import org.eclipse.jdt.ls.core.internal.managers.ProjectsManager;
 import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibraries;
+import org.eclipse.jdt.ls.core.internal.preferences.Preferences.SearchScope;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 
@@ -232,23 +234,32 @@ public final class ProjectCommand {
     }
 
     public static List<MainClassInfo> getMainClasses(List<Object> arguments, IProgressMonitor monitor) throws Exception {
-        List<PackageNode> projectList = listProjects(arguments, monitor);
-        final List<MainClassInfo> res = new ArrayList<>();
-        List<IJavaElement> searchRoots = new ArrayList<>();
-        if (projectList.size() == 0) {
-            return res;
+        List<Object> args = new ArrayList<>(arguments);
+        if (args.size() <= 1) {
+            args.add(Boolean.TRUE);
+        } else {
+            args.set(1, Boolean.TRUE);
         }
-        for (PackageNode project : projectList) {
+        List<PackageNode> projectList = listProjects(args, monitor);
+        if (projectList.size() == 0) {
+            return Collections.emptyList();
+        }
+        final List<MainClassInfo> res = new ArrayList<>();
+        List<IJavaProject> javaProjects = new ArrayList<>();
+        for (PackageNode project: projectList) {
             IJavaProject javaProject = PackageCommand.getJavaProject(project.getUri());
-            for (IPackageFragmentRoot packageFragmentRoot : javaProject.getAllPackageFragmentRoots()) {
-                if (!packageFragmentRoot.isArchive()) {
-                    searchRoots.add(packageFragmentRoot);
-                }
+            if (javaProject != null && javaProject.exists()) {
+                javaProjects.add(javaProject);
             }
         }
-        IJavaSearchScope scope = SearchEngine.createJavaSearchScope(searchRoots.toArray(new IJavaElement[0]));
-        SearchPattern pattern = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
-                IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE);
+        int includeMask = IJavaSearchScope.SOURCES;
+        IJavaSearchScope scope = SearchEngine.createJavaSearchScope(javaProjects.toArray(new IJavaProject[0]),
+                    includeMask);
+        SearchPattern pattern1 = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
+                IJavaSearchConstants.DECLARATIONS, SearchPattern.R_CASE_SENSITIVE | SearchPattern.R_EXACT_MATCH);
+        SearchPattern pattern2 = SearchPattern.createPattern("main() void", IJavaSearchConstants.METHOD,
+                IJavaSearchConstants.DECLARATIONS, SearchPattern.R_CASE_SENSITIVE | SearchPattern.R_EXACT_MATCH);
+        SearchPattern pattern = SearchPattern.createOrPattern(pattern1, pattern2);
         SearchRequestor requestor = new SearchRequestor() {
             @Override
             public void acceptSearchMatch(SearchMatch match) {
@@ -275,7 +286,7 @@ public final class ProjectCommand {
         SearchEngine searchEngine = new SearchEngine();
         try {
             searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()}, scope,
-                    requestor, new NullProgressMonitor());
+                    requestor, monitor);
         } catch (CoreException e) {
             // ignore
         }
