@@ -16,7 +16,7 @@ const jvmOptions = [
 
 // Set MAVEN_OPTS environment variable with JVM options
 const env = { ...process.env };
-env.MAVEN_OPTS = (env.MAVEN_OPTS || '') + ' ' + jvmOptions;
+env.MAVEN_OPTS = env.MAVEN_OPTS ? env.MAVEN_OPTS + ' ' + jvmOptions : jvmOptions;
 
 const mvnCommand = `${mvnw()} clean package`;
 cp.execSync(mvnCommand, {cwd:server_dir, stdio:[0,1,2], env: env} );
