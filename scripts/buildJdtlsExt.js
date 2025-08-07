@@ -7,7 +7,19 @@ const path = require('path');
 
 const server_dir = path.resolve('jdtls.ext');
 
-cp.execSync(mvnw()+ ' clean package', {cwd:server_dir, stdio:[0,1,2]} );
+// Set JVM options to increase XML entity size limits
+const jvmOptions = [
+    '-Djdk.xml.maxGeneralEntitySizeLimit=0',
+    '-Djdk.xml.totalEntitySizeLimit=0',
+    '-Djdk.xml.maxElementDepth=0'
+].join(' ');
+
+// Set MAVEN_OPTS environment variable with JVM options
+const env = { ...process.env };
+env.MAVEN_OPTS = (env.MAVEN_OPTS || '') + ' ' + jvmOptions;
+
+const mvnCommand = `${mvnw()} clean package`;
+cp.execSync(mvnCommand, {cwd:server_dir, stdio:[0,1,2], env: env} );
 copy(path.join(server_dir, 'com.microsoft.jdtls.ext.core/target'), path.resolve('server'), (file) => {
     return /^com.microsoft.jdtls.ext.core.*.jar$/.test(file);
 });
