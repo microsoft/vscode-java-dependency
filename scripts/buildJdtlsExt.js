@@ -8,10 +8,10 @@ const path = require('path');
 const server_dir = path.resolve('jdtls.ext');
 
 // Set JVM options to increase XML entity size limits
+// JDK 24 contains changes to JAXP limits, see: https://bugs.openjdk.org/browse/JDK-8343022
 const jvmOptions = [
     '-Djdk.xml.maxGeneralEntitySizeLimit=0',
-    '-Djdk.xml.totalEntitySizeLimit=0',
-    '-Djdk.xml.maxElementDepth=0'
+    '-Djdk.xml.totalEntitySizeLimit=0'
 ].join(' ');
 
 // Set MAVEN_OPTS environment variable with JVM options
