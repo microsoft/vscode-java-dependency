@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 const cp = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const server_dir = path.resolve('jdtls.ext');
