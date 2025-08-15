@@ -42,6 +42,10 @@ extends:
                 downloadType: specific
                 targetPath: '$(Build.SourcesDirectory)'
             steps:
+              - task: NodeTool@0
+                displayName: Use Node 20.x
+                inputs:
+                  versionSpec: 20.x
               - task: AzureCLI@2
                 displayName: 'Publish Extension'
                 inputs:
