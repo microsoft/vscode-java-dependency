@@ -28,6 +28,7 @@ extends:
                 signing:
                   enabled: true
                   signType: real
+                  signWithProd: true
                   zipSources: false
                   feedSource: 'https://mseng.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
               outputs:
