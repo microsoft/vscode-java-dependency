@@ -89,7 +89,7 @@ export function registerCopilotRelatedFilesProvider(
             };
 
             context.subscriptions.push(
-                api.registerRelatedFilesProvider(id, async (uri, _, token) => {
+                api.registerRelatedFilesProvider(id, async (uri, _context, _cancellationToken) => {
                     const relatedFiles: vscode.Uri[] = [];
                     getDependenciesFromCache(uri).then(dependencyUris => {
                         relatedFiles.push(...dependencyUris.map(dep => vscode.Uri.file(dep)));
