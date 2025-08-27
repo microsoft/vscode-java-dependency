@@ -20,6 +20,7 @@ import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticPr
 import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
+import { registerCopilotRelatedFilesProvider } from "./copilotRelativedFilesProvider";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -81,6 +82,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         }
     ));
     setContextForDeprecatedTasks();
+    registerCopilotRelatedFilesProvider(context);
 }
 
 // this method is called when your extension is deactivated
