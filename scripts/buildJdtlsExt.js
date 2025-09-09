@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 const cp = require('child_process');
-const fse = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
 
 const server_dir = path.resolve('jdtls.ext');
@@ -25,10 +25,10 @@ copy(path.join(server_dir, 'com.microsoft.jdtls.ext.core/target'), path.resolve(
 });
 
 function copy(sourceFolder, targetFolder, fileFilter) {
-    const jars = fse.readdirSync(sourceFolder).filter(file => fileFilter(file));
-    fse.ensureDirSync(targetFolder);
+    const jars = fs.readdirSync(sourceFolder).filter(file => fileFilter(file));
+    fs.mkdirSync(targetFolder, { recursive: true });
     for (const jar of jars) {
-        fse.copyFileSync(path.join(sourceFolder, jar), path.join(targetFolder, path.basename(jar)));
+        fs.copyFileSync(path.join(sourceFolder, jar), path.join(targetFolder, path.basename(jar)));
     }
 }
 
