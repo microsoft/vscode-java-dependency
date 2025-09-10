@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 import { Uri } from "vscode";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 export type DependencyCheckItem = { name: string, supportedVersion: string };
 export type DependencyCheckMetadata = Record<string, DependencyCheckItem>;
 

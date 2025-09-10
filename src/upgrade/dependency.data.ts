@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 import type { DependencyCheckMetadata } from "./type";
 
 const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
