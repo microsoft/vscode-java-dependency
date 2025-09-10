@@ -575,12 +575,12 @@
         },
         {
           "command": "_java.project.create.from.fileexplorer.menu",
-          "when": "explorerResourceIsFolder && isModernizationExtensionInstalled",
+          "when": "explorerResourceIsFolder",
           "group": "1_javaactions@30"
         },
         {
           "command": "java.view.modernizeJavaProject",
-          "when": "explorerResourceIsFolder",
+          "when": "explorerResourceIsFolder && isModernizationExtensionInstalled",
           "group": "1_javaactions@40"
         },
         {
