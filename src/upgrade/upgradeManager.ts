@@ -13,6 +13,7 @@ import { Commands } from "../commands";
 import metadataManager from "./metadataManager";
 import { buildPackageId } from "./utility";
 import notificationManager from "./display/notificationManager";
+import { Settings } from "../settings";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency";
 
@@ -85,6 +86,10 @@ async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]>
     return issues;
 }
 
+function shouldCheckUpgrade() {
+    return Settings.getShowUpgradeReminder();
+}
+
 class UpgradeManager {
     public initialize(context: ExtensionContext) {
         // Command to be used
@@ -97,10 +102,13 @@ class UpgradeManager {
             commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
 
-        upgradeManager.scan();
+        this.scan();
     }
 
     public scan() {
+        if (shouldCheckUpgrade()) {
+            return;
+        }
         workspace.workspaceFolders?.forEach((folder) =>
             this.checkUpgradableComponents(folder)
         );

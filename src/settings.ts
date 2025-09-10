@@ -108,6 +108,10 @@ export class Settings {
         return workspace.getConfiguration("java.dependency").get("refreshDelay", 2000);
     }
 
+    public static getShowUpgradeReminder() {
+        return workspace.getConfiguration("java.dependency").get("showUpgradeReminder", true);
+    }
+
     public static getExportJarTargetPath(): string {
         // tslint:disable-next-line: no-invalid-template-strings
         return workspace.getConfiguration("java.project.exportJar").get<string>("targetPath", "${workspaceFolder}/${workspaceFolderBasename}.jar");

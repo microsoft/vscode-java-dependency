@@ -333,6 +333,11 @@
           "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
         },
+        "java.dependency.showUpgradeReminder": {
+          "type": "boolean",
+          "description": "%configuration.java.dependency.showUpgradeReminder%",
+          "default": true
+        },
         "java.project.exportJar.targetPath": {
           "type": "string",
           "anyOf": [
