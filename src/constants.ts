@@ -34,6 +34,7 @@ export namespace Explorer {
 export namespace ExtensionName {
     export const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
     export const APP_MODERNIZATION_FOR_JAVA = "vscjava.migrate-java-to-azure";
+    export const APP_MODERNIZATION_UPGRADE_FOR_JAVA = "vscjava.vscode-java-upgrade";
 }
 
 export namespace Upgrade {

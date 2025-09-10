@@ -87,7 +87,7 @@ async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]>
 }
 
 function shouldCheckUpgrade() {
-    return Settings.getShowUpgradeReminder();
+    return !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA) && Settings.getShowUpgradeReminder();
 }
 
 class UpgradeManager {
