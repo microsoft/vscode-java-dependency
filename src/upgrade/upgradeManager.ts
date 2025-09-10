@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, type ExtensionContext, workspace, type WorkspaceFolder } from "vscode";
+import { commands, type ExtensionContext, extensions, workspace, type WorkspaceFolder } from "vscode";
 import * as semver from 'semver'
 import { Jdtls } from "../java/jdtls";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { NodeKind, type INodeData } from "../java/nodeData";
-import { Upgrade } from "../constants";
+import { ExtensionName, Upgrade } from "../constants";
 import { UpgradeIssue, UpgradeReason } from "./type";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
@@ -91,6 +91,8 @@ class UpgradeManager {
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_TRIGGER_JAVA_UPGRADE_TOOL, (promptText?: string) => {
             this.runUpgrade(promptText ?? DEFAULT_UPGRADE_PROMPT);
         }));
+        commands.executeCommand('setContext', 'isModernizationExtensionInstalled',
+            !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MODERNIZE_JAVA_PROJECT, () => {
             commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));

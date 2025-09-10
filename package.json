@@ -575,7 +575,7 @@
         },
         {
           "command": "_java.project.create.from.fileexplorer.menu",
-          "when": "explorerResourceIsFolder",
+          "when": "explorerResourceIsFolder && isModernizationExtensionInstalled",
           "group": "1_javaactions@30"
         },
         {
