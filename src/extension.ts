@@ -2,10 +2,8 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-import {
-    commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
-    Range, tasks, TextDocument, TextEditor, Uri, window, workspace
-} from "vscode";
+import { commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
+    Range, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
