@@ -113,7 +113,7 @@ class UpgradeManager {
     }
 
     public static scan() {
-        if (shouldCheckUpgrade()) {
+        if (!shouldCheckUpgrade()) {
             return;
         }
         workspace.workspaceFolders?.forEach((folder) =>
