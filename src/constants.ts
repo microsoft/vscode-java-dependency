@@ -35,6 +35,12 @@ export namespace ExtensionName {
     export const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
 }
 
+export namespace Upgrade {
+    export const DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE = "java-upgrade-assistant";
+    export const DIAGNOSTICS_NAME_FOR_JAVA_ENGINE = "Java Upgrade Assistant";
+    export const LATEST_JAVA_LTS_VESRION = 21;
+}
+
 /**
  * The files names for all the build files we support.
  */
