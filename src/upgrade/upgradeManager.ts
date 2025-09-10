@@ -12,6 +12,7 @@ import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-w
 import { Commands } from "../commands";
 import metadataManager from "./metadataManager";
 import { buildPackageId } from "./utility";
+import notificationManager from "./display/notificationManager";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency";
 
@@ -65,20 +66,22 @@ async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]>
     const issues: UpgradeIssue[] = [];
     issues.push(...getJavaIssues(projectNode));
     const packageData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
-    packageData
-        .filter(x => x.kind === NodeKind.Container)
-        .forEach(async (packageContainer) => {
-            const packages = await Jdtls.getPackageData({
-                kind: NodeKind.Container,
-                projectUri: projectNode.uri,
-                path: packageContainer.path,
-            });
-            packages.forEach(
-                (pkg) => {
-                    issues.push(...getDependencyIssues(pkg))
-                }
-            );
-        });
+    await Promise.allSettled(
+        packageData
+            .filter(x => x.kind === NodeKind.Container)
+            .map(async (packageContainer) => {
+                const packages = await Jdtls.getPackageData({
+                    kind: NodeKind.Container,
+                    projectUri: projectNode.uri,
+                    path: packageContainer.path,
+                });
+                packages.forEach(
+                    (pkg) => {
+                        issues.push(...getDependencyIssues(pkg))
+                    }
+                );
+            })
+    );
     return issues;
 }
 
@@ -110,17 +113,23 @@ class UpgradeManager {
         const projectIssues: Record</* pomPath */string, UpgradeIssue[]> = {};
         const uri = folder.uri.toString();
         const projects = await Jdtls.getProjects(uri);
-        projects.forEach(async (projectNode) => {
+        let hasIssues = false;
+        await Promise.allSettled(projects.map(async (projectNode) => {
             const pomPath = projectNode.metaData?.PomPath as string | undefined;
             if (!pomPath) {
                 return;
             }
 
             const issues = await getProjectIssues(projectNode);
+            if (issues.length > 0) {
+                hasIssues = true;
+            }
             projectIssues[pomPath] = issues;
-        });
+        }));
 
-        // TODO: show notification
+        if (hasIssues) {
+            notificationManager.triggerNotification(projectIssues);
+        }
     }
 
 
