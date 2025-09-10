@@ -91,6 +91,9 @@ class UpgradeManager {
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_TRIGGER_JAVA_UPGRADE_TOOL, (promptText?: string) => {
             this.runUpgrade(promptText ?? DEFAULT_UPGRADE_PROMPT);
         }));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MODERNIZE_JAVA_PROJECT, () => {
+            commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
+        }));
 
         upgradeManager.scan();
     }

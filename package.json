@@ -293,6 +293,11 @@
         "command": "java.view.triggerJavaUpgradeTool",
         "title": "%contributes.commands.java.view.triggerJavaUpgradeTool%",
         "category": "Java"
+      },
+      {
+        "command": "java.view.modernizeJavaProject",
+        "title": "%contributes.commands.java.view.modernizeJavaProject%",
+        "category": "Java"
       }
     ],
     "configuration": {
@@ -572,6 +577,11 @@
           "command": "_java.project.create.from.fileexplorer.menu",
           "when": "explorerResourceIsFolder",
           "group": "1_javaactions@30"
+        },
+        {
+          "command": "java.view.modernizeJavaProject",
+          "when": "explorerResourceIsFolder",
+          "group": "1_javaactions@40"
         },
         {
           "command": "java.view.package.revealInProjectExplorer",
