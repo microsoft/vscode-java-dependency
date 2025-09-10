@@ -2,8 +2,10 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-import { commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
-    Range, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
+import {
+    commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
+    Range, tasks, TextDocument, TextEditor, Uri, window, workspace
+} from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
@@ -20,9 +22,11 @@ import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticPr
 import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
+import upgradeManager from "./upgrade/upgradeManager";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
+    upgradeManager.initialize(context);
     await initializeFromJsonFile(context.asAbsolutePath("./package.json"));
     await initExpService(context);
     await instrumentOperation("activation", activateExtension)(context);

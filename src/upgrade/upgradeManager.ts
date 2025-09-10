@@ -1,0 +1,136 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
+import { commands, type ExtensionContext, workspace, type WorkspaceFolder } from "vscode";
+import * as semver from 'semver'
+import { Jdtls } from "../java/jdtls";
+import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
+import { NodeKind, type INodeData } from "../java/nodeData";
+import { Upgrade } from "../constants";
+import { UpgradeIssue, UpgradeReason } from "./type";
+import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { Commands } from "../commands";
+import metadataManager from "./metadataManager";
+import { buildPackageId } from "./utility";
+
+const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency";
+
+function getJavaIssues(data: INodeData): UpgradeIssue[] {
+    const javaVersion = data.metaData?.MaxSourceVersion as number | undefined;
+    if (!javaVersion) {
+        return [];
+    }
+    if (javaVersion < Upgrade.LATEST_JAVA_LTS_VESRION) {
+        return [{
+            packageId: buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE, "*"),
+            reason: UpgradeReason.ENGINE_TOO_OLD,
+            currentVersion: String(javaVersion),
+            suggestedVersion: String(Upgrade.LATEST_JAVA_LTS_VESRION),
+        }];
+    }
+
+    return [];
+}
+
+function getDependencyIssues(data: INodeData): UpgradeIssue[] {
+    const versionString = data.metaData?.["maven.version"];
+    const groupId = data.metaData?.["maven.groupId"];
+    const artifactId = data.metaData?.["maven.artifactId"];
+    const packageId = buildPackageId(groupId, artifactId);
+    const supportedVersionDefinition = metadataManager.getMetadataById(packageId);
+    if (!versionString || !groupId || !supportedVersionDefinition) {
+        return [];
+    }
+    const currentVersion = semver.coerce(versionString);
+    if (!currentVersion) {
+        return [];
+    }
+    if (!semver.satisfies(currentVersion, supportedVersionDefinition.supportedVersion)) {
+        return [{
+            packageId,
+            packageDisplayName: supportedVersionDefinition.name,
+            reason: UpgradeReason.END_OF_LIFE,
+            currentVersion: versionString,
+            suggestedVersion: "latest", // TODO
+        }];
+    }
+    return [];
+}
+
+async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
+    const pomPath = projectNode.metaData?.PomPath as string | undefined;
+    if (!pomPath) {
+        return [];
+    }
+    const issues: UpgradeIssue[] = [];
+    issues.push(...getJavaIssues(projectNode));
+    const packageData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
+    packageData
+        .filter(x => x.kind === NodeKind.Container)
+        .forEach(async (packageContainer) => {
+            const packages = await Jdtls.getPackageData({
+                kind: NodeKind.Container,
+                projectUri: projectNode.uri,
+                path: packageContainer.path,
+            });
+            packages.forEach(
+                (pkg) => {
+                    issues.push(...getDependencyIssues(pkg))
+                }
+            );
+        });
+    return issues;
+}
+
+class UpgradeManager {
+    public initialize(context: ExtensionContext) {
+        // Command to be used
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_TRIGGER_JAVA_UPGRADE_TOOL, (promptText?: string) => {
+            this.runUpgrade(promptText ?? DEFAULT_UPGRADE_PROMPT);
+        }));
+
+        upgradeManager.scan();
+    }
+
+    public scan() {
+        workspace.workspaceFolders?.forEach((folder) =>
+            this.checkUpgradableComponents(folder)
+        );
+    }
+
+    private async checkUpgradableComponents(folder: WorkspaceFolder) {
+        if (!await languageServerApiManager.ready()) {
+            return;
+        }
+        const hasJavaError: boolean = await Jdtls.checkImportStatus();
+        if (hasJavaError) {
+            return;
+        }
+
+        const projectIssues: Record</* pomPath */string, UpgradeIssue[]> = {};
+        const uri = folder.uri.toString();
+        const projects = await Jdtls.getProjects(uri);
+        projects.forEach(async (projectNode) => {
+            const pomPath = projectNode.metaData?.PomPath as string | undefined;
+            if (!pomPath) {
+                return;
+            }
+
+            const issues = await getProjectIssues(projectNode);
+            projectIssues[pomPath] = issues;
+        });
+
+        // TODO: show notification
+    }
+
+
+    private async runUpgrade(promptText: string) {
+        await commands.executeCommand("workbench.action.chat.open", {
+            query: promptText,
+            isPartialQuery: true
+        });
+    }
+}
+
+const upgradeManager = new UpgradeManager();
+export default upgradeManager;
