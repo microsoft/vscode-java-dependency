@@ -1,3 +1,4 @@
+import { Uri } from "vscode";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 
 export function buildMessage(issue: UpgradeIssue): string {
@@ -40,4 +41,8 @@ export function buildFixPrompt(issue: UpgradeIssue): string {
 
 export function buildPackageId(groupId: string, artifactId: string): string {
     return `${groupId}:${artifactId}`;
+}
+
+export function normalizePath(path: string): string {
+    return Uri.parse(path).toString();
 }
