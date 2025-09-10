@@ -90,11 +90,18 @@ function shouldCheckUpgrade() {
     return !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA) && Settings.getShowUpgradeReminder();
 }
 
+async function runUpgrade(promptText: string) {
+    await commands.executeCommand("workbench.action.chat.open", {
+        query: promptText,
+        isPartialQuery: true
+    });
+}
+
 class UpgradeManager {
-    public initialize(context: ExtensionContext) {
+    public static initialize(context: ExtensionContext) {
         // Command to be used
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_TRIGGER_JAVA_UPGRADE_TOOL, (promptText?: string) => {
-            this.runUpgrade(promptText ?? DEFAULT_UPGRADE_PROMPT);
+            runUpgrade(promptText ?? DEFAULT_UPGRADE_PROMPT);
         }));
         commands.executeCommand('setContext', 'isModernizationExtensionInstalled',
             !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA));
@@ -102,19 +109,19 @@ class UpgradeManager {
             commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
 
-        this.scan();
+        UpgradeManager.scan();
     }
 
-    public scan() {
+    public static scan() {
         if (shouldCheckUpgrade()) {
             return;
         }
         workspace.workspaceFolders?.forEach((folder) =>
-            this.checkUpgradableComponents(folder)
+            UpgradeManager.checkUpgradableComponents(folder)
         );
     }
 
-    private async checkUpgradableComponents(folder: WorkspaceFolder) {
+    private static async checkUpgradableComponents(folder: WorkspaceFolder) {
         if (!await languageServerApiManager.ready()) {
             return;
         }
@@ -144,15 +151,6 @@ class UpgradeManager {
             notificationManager.triggerNotification(projectIssues);
         }
     }
-
-
-    private async runUpgrade(promptText: string) {
-        await commands.executeCommand("workbench.action.chat.open", {
-            query: promptText,
-            isPartialQuery: true
-        });
-    }
 }
 
-const upgradeManager = new UpgradeManager();
-export default upgradeManager;
+export default UpgradeManager;

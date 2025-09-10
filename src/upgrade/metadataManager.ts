@@ -8,9 +8,9 @@ import DEPENDENCIES_TO_SCAN from "./dependency.data";
 
 
 class MetadataManager {
-    private dependencyCheckMetadata: DependencyCheckMetadata = DEPENDENCIES_TO_SCAN;
+    private static dependencyCheckMetadata: DependencyCheckMetadata = DEPENDENCIES_TO_SCAN;
 
-    public getMetadataById(givenPackageId: string): DependencyCheckItem | undefined {
+    public static getMetadataById(givenPackageId: string): DependencyCheckItem | undefined {
         const splits = givenPackageId.split(":", 2);
         const groupId = splits[0];
         const artifactId = splits[1] ?? "";
@@ -27,12 +27,11 @@ class MetadataManager {
         return this.getMetadata(packageId) ?? this.getMetadata(packageIdWithWildcardArtifactId);
     }
 
-    private getMetadata(packageRuleUsed: string) {
+    private static getMetadata(packageRuleUsed: string) {
         return this.dependencyCheckMetadata[packageRuleUsed] ? {
             ...this.dependencyCheckMetadata[packageRuleUsed], packageRuleUsed
         } : undefined;
     }
 }
 
-const metadataManager = new MetadataManager();
-export default metadataManager; 
+export default MetadataManager;
