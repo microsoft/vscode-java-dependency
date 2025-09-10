@@ -24,6 +24,7 @@
   "contributes.commands.java.view.package.copyRelativeFilePath": "Copy Relative Path",
   "contributes.commands.java.view.package.new": "New...",
   "contributes.commands.java.view.package.newJavaClass": "Class...",
+  "contributes.commands.java.view.triggerJavaUpgradeTool": "Upgrade dependencies",
   "contributes.commands.java.view.package.newJavaInterface": "Interface...",
   "contributes.commands.java.view.package.newJavaEnum": "Enum...",
   "contributes.commands.java.view.package.newJavaRecord": "Record...",

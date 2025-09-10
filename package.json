@@ -288,6 +288,11 @@
         "command": "java.view.package.renameFile",
         "title": "%contributes.commands.java.view.package.renameFile%",
         "category": "Java"
+      },
+      {
+        "command": "java.view.triggerJavaUpgradeTool",
+        "title": "%contributes.commands.java.view.triggerJavaUpgradeTool%",
+        "category": "Java"
       }
     ],
     "configuration": {

@@ -42,6 +42,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_NEW_JAVA_CLASS = "java.view.package.newJavaClass";
 
+    export const VIEW_TRIGGER_JAVA_UPGRADE_TOOL = "java.view.triggerJavaUpgradeTool";
+
     export const VIEW_PACKAGE_NEW_JAVA_INTERFACE = "java.view.package.newJavaInterface";
 
     export const VIEW_PACKAGE_NEW_JAVA_ENUM = "java.view.package.newJavaEnum";
