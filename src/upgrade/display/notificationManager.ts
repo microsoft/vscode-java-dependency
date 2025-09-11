@@ -11,7 +11,7 @@ const KEY_PREFIX = 'javaupgrade.notificationManager';
 const IS_CANDIDATE_KEY = `${KEY_PREFIX}.isCandidate`;
 const SESSION_COUNT_KEY = `${KEY_PREFIX}.sessionCount`;
 
-const BUTTON_TEXT_UPGRADE = "Upgrade";
+const BUTTON_TEXT_UPGRADE = "Upgrade Now";
 const BUTTON_TEXT_NOT_NOW = "Not Now";
 const BUTTON_TEXT_DONT_SHOW_AGAIN = "Don't Show Again";
 

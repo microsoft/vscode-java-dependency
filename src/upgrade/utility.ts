@@ -26,7 +26,7 @@ export function buildFixPrompt(issue: UpgradeIssue): string {
             return `upgrade package ${name} to ${suggestedVersion ?? "latest version"} to address CVE issues using java upgrade tools`;
         }
         case UpgradeReason.JRE_TOO_OLD: {
-            return `upgrade java runtime to latest LTS (${Upgrade.LATEST_JAVA_LTS_VESRION}) using java upgrade tools`;
+            return `upgrade java runtime to latest LTS version (${Upgrade.LATEST_JAVA_LTS_VESRION}) using java upgrade tools`;
         }
         default: {
             return `upgrade package ${name} to ${suggestedVersion ?? "latest version"} using java upgrade tools`;
