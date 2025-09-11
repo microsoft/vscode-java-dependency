@@ -41,6 +41,7 @@ export namespace Upgrade {
     export const DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE = "java-upgrade-assistant";
     export const DIAGNOSTICS_NAME_FOR_JAVA_ENGINE = "Java Upgrade Assistant";
     export const LATEST_JAVA_LTS_VESRION = 21;
+    export const SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW = 3;
 }
 
 /**
