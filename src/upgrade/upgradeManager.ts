@@ -148,20 +148,18 @@ class UpgradeManager {
         const projects = await Jdtls.getProjects(uri);
         let hasIssues = false;
         await Promise.allSettled(projects.map(async (projectNode) => {
-            const pomPath = projectNode.metaData?.PomPath as string | undefined;
-            if (!pomPath) {
-                return;
-            }
+            const pomPath = projectNode.metaData?.PomPath as string | undefined ?? "Unknown POM path";
 
             const issues = await getProjectIssues(projectNode);
             if (issues.length > 0) {
                 hasIssues = true;
+                projectIssues[pomPath] = issues;
             }
-            projectIssues[pomPath] = issues;
         }));
 
         if (hasIssues) {
-            notificationManager.triggerNotification(projectIssues);
+            // only show one issue in notifications
+            notificationManager.triggerNotification(Object.values(projectIssues)[0][0]);
         }
     }
 }
