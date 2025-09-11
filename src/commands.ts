@@ -10,6 +10,8 @@ export namespace Commands {
      */
     export const EXECUTE_WORKSPACE_COMMAND = "java.execute.workspaceCommand";
 
+    export const GET_SYMBOLS_FROM_FILE = "java.getSymbolsFromFile";
+
     export const VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW = "java.view.package.changeToFlatPackageView";
 
     export const VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW = "java.view.package.changeToHierarchicalPackageView";
@@ -113,6 +115,8 @@ export namespace Commands {
     export const JAVA_RESOLVEPATH = "java.resolvePath";
 
     export const JAVA_PROJECT_GETMAINCLASSES = "java.project.getMainClasses";
+
+    export const JAVA_PROJECT_RESOLVE_COPILOT_REQUEST = "java.project.resolveCopilotRequest";
 
     export const JAVA_PROJECT_GENERATEJAR = "java.project.generateJar";
 

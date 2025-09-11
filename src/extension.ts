@@ -6,6 +6,7 @@ import { commands, Diagnostic, Extension, ExtensionContext, extensions, language
     Range, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
+import { CopilotHelper } from "./copilotHelper";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
 import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
@@ -48,6 +49,62 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(tasks.registerTaskProvider(BuildArtifactTaskProvider.exportJarType, new BuildArtifactTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
     context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MENUS_FILE_NEW_JAVA_CLASS, newJavaFile));
+    
+    // Add getSymbolsFromFile command
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.GET_SYMBOLS_FROM_FILE, async () => {
+        const activeEditor = window.activeTextEditor;
+        if (!activeEditor) {
+            window.showWarningMessage("No active editor found. Please open a Java file first.");
+            return;
+        }
+        
+        const document = activeEditor.document;
+        if (!document.fileName.endsWith('.java')) {
+            window.showWarningMessage("Please open a Java file to get symbols.");
+            return;
+        }
+        
+        try {
+            const symbols = await CopilotHelper.resolveLocalImports(document.uri);
+            console.log("=== Local Symbols from Current File ===");
+            console.log(`File: ${document.fileName}`);
+            console.log(`Total symbols found: ${symbols.length}`);
+            
+            if (symbols.length > 0) {
+                symbols.forEach((symbol, index) => {
+                    console.log(`${index + 1}. ${symbol}`);
+                });
+                
+                // Also show categorized view
+                const categorized = await CopilotHelper.getLocalImportsByType(document.uri);
+                console.log("\n=== Categorized View ===");
+                if (categorized.classes.length > 0) {
+                    console.log(`Classes (${categorized.classes.length}):`, categorized.classes);
+                }
+                if (categorized.interfaces.length > 0) {
+                    console.log(`Interfaces (${categorized.interfaces.length}):`, categorized.interfaces);
+                }
+                if (categorized.enums.length > 0) {
+                    console.log(`Enums (${categorized.enums.length}):`, categorized.enums);
+                }
+                if (categorized.annotations.length > 0) {
+                    console.log(`Annotations (${categorized.annotations.length}):`, categorized.annotations);
+                }
+                if (categorized.others.length > 0) {
+                    console.log(`Others (${categorized.others.length}):`, categorized.others);
+                }
+            } else {
+                console.log("No local project symbols found in imports.");
+            }
+            console.log("=== End ===");
+            
+            window.showInformationMessage(`Found ${symbols.length} local symbols. Check console for details.`);
+        } catch (error) {
+            console.error("Error getting symbols:", error);
+            window.showErrorMessage(`Error getting symbols: ${error}`);
+        }
+    }));
+    
     context.subscriptions.push(window.onDidChangeActiveTextEditor((e: TextEditor | undefined) => {
         setContextForReloadProject(e?.document);
     }));

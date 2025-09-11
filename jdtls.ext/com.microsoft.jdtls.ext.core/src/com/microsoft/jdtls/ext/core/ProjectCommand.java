@@ -332,6 +332,160 @@ public final class ProjectCommand {
         return hasError;
     }
 
+    public static String[] resolveCopilotRequest(List<Object> arguments, IProgressMonitor monitor) {
+        if (arguments == null || arguments.isEmpty()) {
+            return new String[0];
+        }
+        
+        try {
+            String fileUri = (String) arguments.get(0);
+            
+            // Parse URI manually to avoid restricted API
+            java.net.URI uri = new java.net.URI(fileUri);
+            String filePath = uri.getPath();
+            if (filePath == null) {
+                return new String[0];
+            }
+            
+            IPath path = new Path(filePath);
+            
+            // Get the file resource
+            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+            IFile file = root.getFileForLocation(path);
+            if (file == null || !file.exists()) {
+                return new String[0];
+            }
+            
+            // Get the Java project
+            IJavaProject javaProject = JavaCore.create(file.getProject());
+            if (javaProject == null || !javaProject.exists()) {
+                return new String[0];
+            }
+            
+            // Find the compilation unit
+            IJavaElement javaElement = JavaCore.create(file);
+            if (!(javaElement instanceof org.eclipse.jdt.core.ICompilationUnit)) {
+                return new String[0];
+            }
+            
+            org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
+            
+            // Parse imports and resolve local project files
+            List<String> result = new ArrayList<>();
+            
+            // Get all imports from the compilation unit
+            org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
+            Set<String> processedTypes = new HashSet<>();
+            
+            for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
+                if (monitor.isCanceled()) {
+                    break;
+                }
+                
+                String importName = importDecl.getElementName();
+                if (importName.endsWith(".*")) {
+                    // Handle package imports
+                    String packageName = importName.substring(0, importName.length() - 2);
+                    resolvePackageTypes(javaProject, packageName, result, processedTypes);
+                } else {
+                    // Handle single type imports
+                    resolveSingleType(javaProject, importName, result, processedTypes);
+                }
+            }
+            
+            return result.toArray(new String[0]);
+            
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error in resolveCopilotRequest", e);
+            return new String[0];
+        }
+    }
+    
+    private static void resolveSingleType(IJavaProject javaProject, String typeName, List<String> result, Set<String> processedTypes) {
+        try {
+            if (processedTypes.contains(typeName)) {
+                return;
+            }
+            processedTypes.add(typeName);
+            
+            // Find the type in the project
+            org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
+            if (type != null && type.exists()) {
+                // Check if it's a local project type (not from external dependencies)
+                IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) type.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
+                if (packageRoot != null && packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                    // This is a source type from the local project
+                    extractTypeInfo(type, result);
+                }
+            }
+        } catch (JavaModelException e) {
+            // Log but continue processing other types
+            JdtlsExtActivator.logException("Error resolving type: " + typeName, e);
+        }
+    }
+    
+    private static void resolvePackageTypes(IJavaProject javaProject, String packageName, List<String> result, Set<String> processedTypes) {
+        try {
+            // Find all package fragments with this name
+            IPackageFragmentRoot[] packageRoots = javaProject.getPackageFragmentRoots();
+            for (IPackageFragmentRoot packageRoot : packageRoots) {
+                if (packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                    org.eclipse.jdt.core.IPackageFragment packageFragment = packageRoot.getPackageFragment(packageName);
+                    if (packageFragment != null && packageFragment.exists()) {
+                        // Get all compilation units in this package
+                        org.eclipse.jdt.core.ICompilationUnit[] compilationUnits = packageFragment.getCompilationUnits();
+                        for (org.eclipse.jdt.core.ICompilationUnit cu : compilationUnits) {
+                            // Get all types in the compilation unit
+                            org.eclipse.jdt.core.IType[] types = cu.getAllTypes();
+                            for (org.eclipse.jdt.core.IType type : types) {
+                                String fullTypeName = type.getFullyQualifiedName();
+                                if (!processedTypes.contains(fullTypeName)) {
+                                    processedTypes.add(fullTypeName);
+                                    extractTypeInfo(type, result);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            // Log but continue processing
+            JdtlsExtActivator.logException("Error resolving package: " + packageName, e);
+        }
+    }
+    
+    private static void extractTypeInfo(org.eclipse.jdt.core.IType type, List<String> result) {
+        try {
+            String typeName = type.getFullyQualifiedName();
+            String typeInfo = "";
+            
+            // Determine type kind
+            if (type.isInterface()) {
+                typeInfo = "interface:" + typeName;
+            } else if (type.isClass()) {
+                typeInfo = "class:" + typeName;
+            } else if (type.isEnum()) {
+                typeInfo = "enum:" + typeName;
+            } else if (type.isAnnotation()) {
+                typeInfo = "annotation:" + typeName;
+            } else {
+                typeInfo = "type:" + typeName;
+            }
+            
+            result.add(typeInfo);
+            
+            // Also add nested types
+            org.eclipse.jdt.core.IType[] nestedTypes = type.getTypes();
+            for (org.eclipse.jdt.core.IType nestedType : nestedTypes) {
+                extractTypeInfo(nestedType, result);
+            }
+            
+        } catch (JavaModelException e) {
+            // Log but continue processing other types
+            JdtlsExtActivator.logException("Error extracting type info for: " + type.getElementName(), e);
+        }
+    }
+
     private static void reportExportJarMessage(String terminalId, int severity, String message) {
         if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(terminalId)) {
             String readableSeverity = getSeverityString(severity);

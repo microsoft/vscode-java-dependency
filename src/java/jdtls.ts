@@ -72,6 +72,10 @@ export namespace Jdtls {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINCLASSES, params) || [];
     }
 
+    export async function resolveCopilotRequest(fileUri: string): Promise<string[]> {
+        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_RESOLVE_COPILOT_REQUEST, fileUri) || [];
+    }
+
     export async function exportJar(mainClass: string, classpaths: IClasspath[],
                                     destination: string, terminalId: string, token: CancellationToken): Promise<boolean | undefined> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR,

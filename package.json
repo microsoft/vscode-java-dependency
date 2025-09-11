@@ -50,6 +50,12 @@
     ],
     "commands": [
       {
+        "command": "java.getSymbolsFromFile",
+        "title": "Get Local Symbols from Current File",
+        "category": "Java",
+        "icon": "$(symbol-class)"
+      },
+      {
         "command": "java.project.create",
         "title": "%contributes.commands.java.project.create%",
         "category": "Java",
@@ -349,6 +355,13 @@
       }
     },
     "keybindings": [
+      {
+        "command": "java.getSymbolsFromFile",
+        "key": "ctrl+shift+s",
+        "win": "ctrl+shift+s",
+        "mac": "cmd+shift+s",
+        "when": "java:serverMode == Standard && editorLangId == java"
+      },
       {
         "command": "java.view.package.revealFileInOS",
         "key": "ctrl+alt+r",
