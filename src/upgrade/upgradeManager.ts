@@ -54,7 +54,7 @@ function getUpgrade(versionString: string, supportedVersionDefinition: Dependenc
                     packageDisplayName: supportedVersionDefinition.name,
                     reason,
                     currentVersion: versionString,
-                    suggestedVersion: "latest", // TODO
+                    suggestedVersion: "latest",
                 }
             }
         }
