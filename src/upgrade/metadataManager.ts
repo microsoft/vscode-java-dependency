@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import type { DependencyCheckMetadata, DependencyCheckItem } from "./type";
+import { type DependencyCheckMetadata, type DependencyCheckItem, UpgradeReason } from "./type";
 import { Upgrade } from "../constants";
 import { buildPackageId } from "./utility";
 import DEPENDENCIES_TO_SCAN from "./dependency.data";
@@ -18,6 +18,7 @@ class MetadataManager {
         if (groupId === Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME) {
             return {
                 name: Upgrade.DIAGNOSTICS_NAME_FOR_JAVA_RUNTIME,
+                reason: UpgradeReason.END_OF_LIFE,
                 supportedVersion: `>=${Upgrade.LATEST_JAVA_LTS_VESRION}`,
             };
         }

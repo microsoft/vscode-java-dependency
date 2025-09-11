@@ -7,7 +7,7 @@ import { Jdtls } from "../java/jdtls";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { NodeKind, type INodeData } from "../java/nodeData";
 import { ExtensionName, Upgrade } from "../constants";
-import { UpgradeIssue, UpgradeReason } from "./type";
+import { DependencyCheckItem, UpgradeIssue, UpgradeReason } from "./type";
 import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import metadataManager from "./metadataManager";
@@ -35,6 +35,35 @@ function getJavaIssues(data: INodeData): UpgradeIssue[] {
     return [];
 }
 
+function getUpgrade(versionString: string, supportedVersionDefinition: DependencyCheckItem): Omit<UpgradeIssue, "packageId"> | null {
+    const { reason } = supportedVersionDefinition;
+    switch (reason) {
+        case UpgradeReason.DEPRECATED: {
+            const { alternative } = supportedVersionDefinition;
+            return {
+                packageDisplayName: supportedVersionDefinition.name,
+                reason,
+                currentVersion: versionString,
+                suggestedVersion: alternative,
+            }
+        }
+        case UpgradeReason.END_OF_LIFE: {
+            const currentSemVer = semver.coerce(versionString);
+            if (currentSemVer && !semver.satisfies(currentSemVer, supportedVersionDefinition.supportedVersion)) {
+                return {
+                    packageDisplayName: supportedVersionDefinition.name,
+                    reason,
+                    currentVersion: versionString,
+                    suggestedVersion: "latest", // TODO
+                }
+            }
+        }
+
+    }
+
+    return null;
+}
+
 function getDependencyIssues(data: INodeData): UpgradeIssue[] {
     const versionString = data.metaData?.["maven.version"];
     const groupId = data.metaData?.["maven.groupId"];
@@ -44,18 +73,10 @@ function getDependencyIssues(data: INodeData): UpgradeIssue[] {
     if (!versionString || !groupId || !supportedVersionDefinition) {
         return [];
     }
-    const currentVersion = semver.coerce(versionString);
-    if (!currentVersion) {
-        return [];
-    }
-    if (!semver.satisfies(currentVersion, supportedVersionDefinition.supportedVersion)) {
-        return [{
-            packageId,
-            packageDisplayName: supportedVersionDefinition.name,
-            reason: UpgradeReason.END_OF_LIFE,
-            currentVersion: versionString,
-            suggestedVersion: "latest", // TODO
-        }];
+
+    const upgrade = getUpgrade(versionString, supportedVersionDefinition);
+    if (upgrade) {
+        return [{ ...upgrade, packageId }];
     }
     return [];
 }
