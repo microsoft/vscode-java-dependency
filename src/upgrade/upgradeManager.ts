@@ -15,7 +15,7 @@ import { buildPackageId } from "./utility";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
 
-const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency.";
+const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
     const javaVersion = data.metaData?.MaxSourceVersion as number | undefined;
@@ -109,13 +109,14 @@ class UpgradeManager {
         notificationManager.initialize(context);
 
         // Commands to be used
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_TRIGGER_JAVA_UPGRADE_TOOL, (promptText?: string) => {
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_TRIGGER_JAVA_UPGRADE_TOOL, async (promptText?: string) => {
+            const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
             // The command should typically exist as we checked for the extension before.
-            const hasAgentModeCommand = !!commands.getCommands(true).then(cmds => cmds.includes(Commands.GOTO_AGENT_MODE));
+            const hasAgentModeCommand = (await commands.getCommands(true).then(cmds => cmds.includes(Commands.GOTO_AGENT_MODE)));
             if (hasAgentModeCommand) {
-                commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptText });
+                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
             } else {
-                runUpgrade(promptText ?? DEFAULT_UPGRADE_PROMPT);
+                await runUpgrade(promptToUse);
             }
         }));
         commands.executeCommand('setContext', 'isModernizationExtensionInstalled',
