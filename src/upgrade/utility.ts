@@ -3,24 +3,21 @@
 
 import { Uri } from "vscode";
 import { UpgradeReason, type UpgradeIssue } from "./type";
+import { Upgrade } from "../constants";
 
 export function buildFixPrompt(issue: UpgradeIssue): string {
     const { packageId, packageDisplayName, reason, suggestedVersion } = issue;
     const name = packageDisplayName ?? packageId;
 
-    const suffix = [
-        ...(suggestedVersion ? [`The target version is ${suggestedVersion}.`] : [])
-    ];
-
     switch (reason) {
         case UpgradeReason.END_OF_LIFE: {
-            return [`Upgrade the package ${name}.`, ...suffix].join(" ");
+            return `upgrade package ${name} to ${suggestedVersion ?? "latest version"} using java upgrade tools`;
         }
         case UpgradeReason.CVE: {
-            return [`Upgrade the package ${name} to address CVE issues.`, ...suffix].join(" ");
+            return `upgrade package ${name} to ${suggestedVersion ?? "latest version"} to address CVE issues using java upgrade tools`;
         }
         case UpgradeReason.ENGINE_TOO_OLD: {
-            return [`Upgrade the version of Java.`, ...suffix].join(" ");
+            return `upgrade java runtime to latest LTS (${Upgrade.LATEST_JAVA_LTS_VESRION}) using java upgrade tools`;
         }
     }
 }
