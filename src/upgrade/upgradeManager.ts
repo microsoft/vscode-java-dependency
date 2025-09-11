@@ -24,9 +24,9 @@ function getJavaIssues(data: INodeData): UpgradeIssue[] {
     }
     if (javaVersion < Upgrade.LATEST_JAVA_LTS_VESRION) {
         return [{
-            packageId: buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE, "*"),
+            packageId: buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME, "*"),
             packageDisplayName: "Java Runtime",
-            reason: UpgradeReason.ENGINE_TOO_OLD,
+            reason: UpgradeReason.JRE_TOO_OLD,
             currentVersion: String(javaVersion),
             suggestedVersion: String(Upgrade.LATEST_JAVA_LTS_VESRION),
         }];
@@ -114,7 +114,7 @@ class UpgradeManager {
             // The command should typically exist as we checked for the extension before.
             const hasAgentModeCommand = (await commands.getCommands(true).then(cmds => cmds.includes(Commands.GOTO_AGENT_MODE)));
             if (hasAgentModeCommand) {
-                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
+                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse }).then(x => console.log("OK", x)).catch(e => console.log("ERR", e));
             } else {
                 await runUpgrade(promptToUse);
             }

@@ -9,7 +9,7 @@ export function buildNotificationMessage(issue: UpgradeIssue): string {
     const { packageId, currentVersion, suggestedVersion, packageDisplayName } = issue;
     const name = packageDisplayName ?? packageId;
 
-    if (packageId === buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE, "*")) {
+    if (packageId === buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME, "*")) {
         return `The current project is using an older runtime (Java ${currentVersion}). Do you want to upgrade to the latest LTS (Java ${suggestedVersion})?`
     }
 
@@ -28,7 +28,7 @@ export function buildFixPrompt(issue: UpgradeIssue): string {
         case UpgradeReason.CVE: {
             return `upgrade package ${name} to ${suggestedVersion ?? "latest version"} to address CVE issues using java upgrade tools`;
         }
-        case UpgradeReason.ENGINE_TOO_OLD: {
+        case UpgradeReason.JRE_TOO_OLD: {
             return `upgrade java runtime to latest LTS (${Upgrade.LATEST_JAVA_LTS_VESRION}) using java upgrade tools`;
         }
     }

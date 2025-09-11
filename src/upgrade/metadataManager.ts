@@ -15,9 +15,9 @@ class MetadataManager {
         const groupId = splits[0];
         const artifactId = splits[1] ?? "";
 
-        if (groupId === Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE) {
+        if (groupId === Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME) {
             return {
-                name: Upgrade.DIAGNOSTICS_NAME_FOR_JAVA_ENGINE,
+                name: Upgrade.DIAGNOSTICS_NAME_FOR_JAVA_RUNTIME,
                 supportedVersion: `>=${Upgrade.LATEST_JAVA_LTS_VESRION}`,
             };
         }
