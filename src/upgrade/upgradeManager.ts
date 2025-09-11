@@ -114,7 +114,7 @@ class UpgradeManager {
             // The command should typically exist as we checked for the extension before.
             const hasAgentModeCommand = (await commands.getCommands(true).then(cmds => cmds.includes(Commands.GOTO_AGENT_MODE)));
             if (hasAgentModeCommand) {
-                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse }).then(x => console.log("OK", x)).catch(e => console.log("ERR", e));
+                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
             } else {
                 await runUpgrade(promptToUse);
             }
