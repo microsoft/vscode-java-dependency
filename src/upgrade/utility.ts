@@ -5,6 +5,18 @@ import { Uri } from "vscode";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 import { Upgrade } from "../constants";
 
+export function buildNotificationMessage(issue: UpgradeIssue): string {
+    const { packageId, currentVersion, suggestedVersion, packageDisplayName } = issue;
+    const name = packageDisplayName ?? packageId;
+
+    if (packageId === buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE, "*")) {
+        return `The current project is using an older runtime (Java ${currentVersion}). Do you want to upgrade to the latest LTS (Java ${suggestedVersion})?`
+    }
+
+    return `The current project is using ${name} ${currentVersion}, which reached end of life. Do you want to upgrade to the latest version${suggestedVersion ? ` (${suggestedVersion})` : ""
+        }?`
+}
+
 export function buildFixPrompt(issue: UpgradeIssue): string {
     const { packageId, packageDisplayName, reason, suggestedVersion } = issue;
     const name = packageDisplayName ?? packageId;

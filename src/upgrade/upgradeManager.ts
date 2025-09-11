@@ -25,6 +25,7 @@ function getJavaIssues(data: INodeData): UpgradeIssue[] {
     if (javaVersion < Upgrade.LATEST_JAVA_LTS_VESRION) {
         return [{
             packageId: buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_ENGINE, "*"),
+            packageDisplayName: "Java Runtime",
             reason: UpgradeReason.ENGINE_TOO_OLD,
             currentVersion: String(javaVersion),
             suggestedVersion: String(Upgrade.LATEST_JAVA_LTS_VESRION),
