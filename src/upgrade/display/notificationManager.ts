@@ -46,7 +46,7 @@ class NotificationManager {
 
         switch (selection) {
             case BUTTON_TEXT_UPGRADE: {
-                commands.executeCommand(Commands.JAVA_UPGRADE_TRIGGER_UPGRADE, prompt);
+                commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt);
                 break;
             }
             case BUTTON_TEXT_NOT_NOW: {

@@ -39,7 +39,7 @@
   "contributes.commands.java.view.fileExplorer.newPackage": "New Java Package...",
   "contributes.submenus.javaProject.new": "New",
   "contributes.commands.java.view.menus.file.newJavaClass": "New Java File",
-  "contributes.commands.java.upgrade.triggerUpgrade": "Upgrade dependencies",
+  "contributes.commands.java.upgradeWithCopilot": "Upgrade dependencies",
   "configuration.java.dependency.showMembers": "Show the members in the explorer",
   "configuration.java.dependency.syncWithFolderExplorer": "Link Java Projects Explorer with the active editor",
   "configuration.java.dependency.autoRefresh": "Synchronize Java Projects explorer with changes",

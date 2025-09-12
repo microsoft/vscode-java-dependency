@@ -295,8 +295,8 @@
         "category": "Java"
       },
       {
-        "command": "_java.upgrade.triggerUpgrade",
-        "title": "%contributes.commands.java.upgrade.triggerUpgrade%",
+        "command": "_java.upgradeWithCopilot",
+        "title": "%contributes.commands.java.upgradeWithCopilot%",
         "category": "Java"
       }
     ],

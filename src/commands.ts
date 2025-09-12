@@ -134,7 +134,7 @@ export namespace Commands {
 
     export const JAVA_PROJECT_CHECK_IMPORT_STATUS = "java.project.checkImportStatus";
 
-    export const JAVA_UPGRADE_TRIGGER_UPGRADE = "_java.upgrade.triggerUpgrade";
+    export const JAVA_UPGRADE_WITH_COPILOT = "_java.upgradeWithCopilot";
 
     /**
      * Commands from Visual Studio Code
