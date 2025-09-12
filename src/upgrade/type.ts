@@ -20,3 +20,7 @@ export type UpgradeIssue = {
     currentVersion: string;
     suggestedVersion?: string;
 };
+
+export interface DisplayInterface {
+    render(issues: UpgradeIssue[]): void;
+}

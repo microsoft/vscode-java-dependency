@@ -81,7 +81,7 @@ class UpgradeManager {
 
         if (projectIssues.length > 0) {
             // only show one issue in notifications
-            notificationManager.triggerNotification(projectIssues[0]);
+            notificationManager.render(projectIssues);
         }
     }
 }
