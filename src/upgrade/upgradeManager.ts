@@ -114,7 +114,7 @@ async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]>
 }
 
 function shouldCheckUpgrade() {
-    return Settings.getShowUpgradeReminder()
+    return Settings.getEnableDependencyDiagnostics()
         && !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
 }
 

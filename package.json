@@ -333,9 +333,9 @@
           "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
         },
-        "java.dependency.showUpgradeReminder": {
+        "java.dependency.enableDependencyDiagnostics": {
           "type": "boolean",
-          "description": "%configuration.java.dependency.showUpgradeReminder%",
+          "description": "%configuration.java.dependency.enableDependencyDiagnostics%",
           "default": true
         },
         "java.project.exportJar.targetPath": {

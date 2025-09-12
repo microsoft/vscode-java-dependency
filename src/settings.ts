@@ -108,8 +108,8 @@ export class Settings {
         return workspace.getConfiguration("java.dependency").get("refreshDelay", 2000);
     }
 
-    public static getShowUpgradeReminder() {
-        return workspace.getConfiguration("java.dependency").get("showUpgradeReminder", true);
+    public static getEnableDependencyDiagnostics() {
+        return workspace.getConfiguration("java.dependency").get("enableDependencyDiagnostics", true);
     }
 
     public static getExportJarTargetPath(): string {
