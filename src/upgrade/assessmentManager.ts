@@ -78,10 +78,6 @@ function getDependencyIssues(data: INodeData): UpgradeIssue[] {
 async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
     const issues: UpgradeIssue[] = [];
     issues.push(...getJavaIssues(projectNode));
-    if (issues.length > 0) {
-        // If Java runtime version issue is found, prompt for it only
-        return issues;
-    }
     const packageData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
     await Promise.allSettled(
         packageData
