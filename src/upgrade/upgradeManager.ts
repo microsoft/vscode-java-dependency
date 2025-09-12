@@ -84,10 +84,6 @@ function getDependencyIssues(data: INodeData): UpgradeIssue[] {
 }
 
 async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-    const pomPath = projectNode.metaData?.PomPath as string | undefined;
-    if (!pomPath) {
-        return [];
-    }
     const issues: UpgradeIssue[] = [];
     issues.push(...getJavaIssues(projectNode));
     if (issues.length > 0) {
@@ -169,23 +165,19 @@ class UpgradeManager {
             return;
         }
 
-        const projectIssues: Record</* pomPath */string, UpgradeIssue[]> = {};
+        const projectIssues: UpgradeIssue[] = [];
         const uri = folder.uri.toString();
         const projects = await Jdtls.getProjects(uri);
-        let hasIssues = false;
         await Promise.allSettled(projects.map(async (projectNode) => {
-            const pomPath = projectNode.metaData?.PomPath as string | undefined ?? "Unknown POM path";
-
             const issues = await getProjectIssues(projectNode);
             if (issues.length > 0) {
-                hasIssues = true;
-                projectIssues[pomPath] = issues;
+                projectIssues.push(...issues);
             }
         }));
 
-        if (hasIssues) {
+        if (projectIssues.length > 0) {
             // only show one issue in notifications
-            notificationManager.triggerNotification(Object.values(projectIssues)[0][0]);
+            notificationManager.triggerNotification(projectIssues[0]);
         }
     }
 }

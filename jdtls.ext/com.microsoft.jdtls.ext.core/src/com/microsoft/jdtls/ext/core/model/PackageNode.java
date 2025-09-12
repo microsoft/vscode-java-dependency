@@ -88,8 +88,6 @@ public class PackageNode {
 
     private static final String MAX_SOURCE_VERSION = "MaxSourceVersion";
 
-    private static final String POM_PATH = "PomPath";
-
     /**
      * The name of the PackageNode.
      */
@@ -183,10 +181,6 @@ public class PackageNode {
             int jdkLevel = (int) (CompilerOptions.versionToJdkLevel(sourceVersion, true) >>> 16);
             int majorVersion = Math.max(0, jdkLevel - ClassFileConstants.MAJOR_VERSION_0);
             projectNode.setMetaDataValue(MAX_SOURCE_VERSION, majorVersion);
-            IFile existingPom = proj.getFile("pom.xml");
-            if (existingPom.exists()) {
-                projectNode.setMetaDataValue(POM_PATH, existingPom.getLocation().toOSString());
-            }
         } catch (CoreException e) {
             // do nothing
         }
