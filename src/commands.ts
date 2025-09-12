@@ -42,8 +42,6 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_NEW_JAVA_CLASS = "java.view.package.newJavaClass";
 
-    export const VIEW_TRIGGER_JAVA_UPGRADE_TOOL = "java.view.triggerJavaUpgradeTool";
-
     export const VIEW_MODERNIZE_JAVA_PROJECT = "_java.view.modernizeJavaProject";
 
     export const VIEW_PACKAGE_NEW_JAVA_INTERFACE = "java.view.package.newJavaInterface";
@@ -135,6 +133,8 @@ export namespace Commands {
     export const JAVA_UPDATE_DEPRECATED_TASK = "java.updateDeprecatedTask";
 
     export const JAVA_PROJECT_CHECK_IMPORT_STATUS = "java.project.checkImportStatus";
+
+    export const JAVA_UPGRADE_TRIGGER_UPGRADE = "_java.upgrade.triggerUpgrade";
 
     /**
      * Commands from Visual Studio Code

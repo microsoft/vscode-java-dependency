@@ -131,7 +131,7 @@ class UpgradeManager {
         notificationManager.initialize(context);
 
         // Commands to be used
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_TRIGGER_JAVA_UPGRADE_TOOL, async (promptText?: string) => {
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_TRIGGER_UPGRADE, async (promptText?: string) => {
             const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
             // The command should typically exist as we checked for the extension before.
             const hasAgentModeCommand = (await commands.getCommands(true).then(cmds => cmds.includes(Commands.GOTO_AGENT_MODE)));

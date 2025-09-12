@@ -290,13 +290,13 @@
         "category": "Java"
       },
       {
-        "command": "java.view.triggerJavaUpgradeTool",
-        "title": "%contributes.commands.java.view.triggerJavaUpgradeTool%",
+        "command": "_java.view.modernizeJavaProject",
+        "title": "%contributes.commands.java.view.modernizeJavaProject%",
         "category": "Java"
       },
       {
-        "command": "_java.view.modernizeJavaProject",
-        "title": "%contributes.commands.java.view.modernizeJavaProject%",
+        "command": "_java.upgrade.triggerUpgrade",
+        "title": "%contributes.commands.java.upgrade.triggerUpgrade%",
         "category": "Java"
       }
     ],
