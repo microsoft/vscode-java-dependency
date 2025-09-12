@@ -38,7 +38,7 @@ export namespace ExtensionName {
 }
 
 export namespace Upgrade {
-    export const PACKAGE_ID_FOR_JAVA_RUNTIME = "java-runtime:*";
+    export const PACKAGE_ID_FOR_JAVA_RUNTIME = "java:*";
     export const LATEST_JAVA_LTS_VESRION = 21;
     export const SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW = 3;
 }
