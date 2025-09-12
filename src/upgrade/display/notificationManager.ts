@@ -5,7 +5,6 @@ import { commands, ExtensionContext, window } from "vscode";
 import type { UpgradeIssue } from "../type";
 import { buildFixPrompt, buildNotificationMessage } from "../utility";
 import { Commands } from "../../commands";
-import { Upgrade } from "../../constants";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
 const IS_CANDIDATE_KEY = `${KEY_PREFIX}.isCandidate`;
@@ -14,6 +13,8 @@ const SESSION_COUNT_KEY = `${KEY_PREFIX}.sessionCount`;
 const BUTTON_TEXT_UPGRADE = "Upgrade Now";
 const BUTTON_TEXT_NOT_NOW = "Not Now";
 const BUTTON_TEXT_DONT_SHOW_AGAIN = "Don't Show Again";
+
+const SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW = 3;
 
 class NotificationManager {
     private hasShown = false;
@@ -49,7 +50,7 @@ class NotificationManager {
                 break;
             }
             case BUTTON_TEXT_NOT_NOW: {
-                this.setSessionCount(-1 * Upgrade.SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW);
+                this.setSessionCount(-1 * SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW);
                 break;
             }
             case BUTTON_TEXT_DONT_SHOW_AGAIN: {

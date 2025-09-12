@@ -20,17 +20,18 @@ const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest versio
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
     const javaVersion = data.metaData?.MaxSourceVersion as number | undefined;
-    const javaSupportedVersionDefinition = DEPENDENCY_JAVA_RUNTIME;
+    const { name, reason, supportedVersion, suggestedVersion } = DEPENDENCY_JAVA_RUNTIME;
     if (!javaVersion) {
         return [];
     }
-    if (javaVersion < Upgrade.LATEST_JAVA_LTS_VESRION) {
+    const currentSemVer = semver.coerce(javaVersion);
+    if (currentSemVer && !semver.satisfies(currentSemVer, supportedVersion)) {
         return [{
             packageId: Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME,
-            packageDisplayName: javaSupportedVersionDefinition.name,
-            reason: javaSupportedVersionDefinition.reason,
+            packageDisplayName: name,
             currentVersion: String(javaVersion),
-            suggestedVersion: String(Upgrade.LATEST_JAVA_LTS_VESRION),
+            reason,
+            suggestedVersion,
         }];
     }
 
