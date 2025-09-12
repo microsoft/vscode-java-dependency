@@ -14,19 +14,21 @@ import metadataManager from "./metadataManager";
 import { buildPackageId } from "./utility";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
+import { DEPENDENCY_JAVA_RUNTIME } from "./dependency.data";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
     const javaVersion = data.metaData?.MaxSourceVersion as number | undefined;
+    const javaSupportedVersionDefinition = DEPENDENCY_JAVA_RUNTIME;
     if (!javaVersion) {
         return [];
     }
     if (javaVersion < Upgrade.LATEST_JAVA_LTS_VESRION) {
         return [{
-            packageId: buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME, "*"),
-            packageDisplayName: "Java Runtime",
-            reason: UpgradeReason.JRE_TOO_OLD,
+            packageId: Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME,
+            packageDisplayName: javaSupportedVersionDefinition.name,
+            reason: javaSupportedVersionDefinition.reason,
             currentVersion: String(javaVersion),
             suggestedVersion: String(Upgrade.LATEST_JAVA_LTS_VESRION),
         }];

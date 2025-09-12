@@ -9,7 +9,7 @@ export function buildNotificationMessage(issue: UpgradeIssue): string {
     const { packageId, currentVersion, suggestedVersion, packageDisplayName } = issue;
     const name = packageDisplayName ?? packageId;
 
-    if (packageId === buildPackageId(Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME, "*")) {
+    if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
         return `The current project is using an older runtime (Java ${currentVersion}). Do you want to upgrade to the latest LTS version${suggestedVersion ? ` (${suggestedVersion})` : ""}?`
     }
 

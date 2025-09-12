@@ -38,8 +38,7 @@ export namespace ExtensionName {
 }
 
 export namespace Upgrade {
-    export const DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME = "java-upgrade-assistant";
-    export const DIAGNOSTICS_NAME_FOR_JAVA_RUNTIME = "Java Upgrade Assistant";
+    export const PACKAGE_ID_FOR_JAVA_RUNTIME = "java-runtime:*";
     export const LATEST_JAVA_LTS_VESRION = 21;
     export const SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW = 3;
 }

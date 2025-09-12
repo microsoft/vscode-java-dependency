@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
-export type DependencyCheckItem = { name: string, reason: UpgradeReason } & (
-    { reason: UpgradeReason.END_OF_LIFE, supportedVersion: string } |
-    { reason: UpgradeReason.DEPRECATED, alternative: string }
-);
+export type DependencyCheckItemBase = { name: string, reason: UpgradeReason };
+export type DependencyCheckItemEol = DependencyCheckItemBase & { reason: UpgradeReason.END_OF_LIFE | UpgradeReason.JRE_TOO_OLD, supportedVersion: string };
+export type DependencyCheckItemDeprecated = DependencyCheckItemBase & { reason: UpgradeReason.DEPRECATED, alternative: string };
+export type DependencyCheckItem = (DependencyCheckItemEol | DependencyCheckItemDeprecated);
 export type DependencyCheckMetadata = Record<string, DependencyCheckItem>;
 
 export enum UpgradeReason {

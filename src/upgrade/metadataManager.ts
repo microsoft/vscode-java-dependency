@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { type DependencyCheckMetadata, type DependencyCheckItem, UpgradeReason } from "./type";
-import { Upgrade } from "../constants";
+import { type DependencyCheckMetadata, type DependencyCheckItem } from "./type";
 import { buildPackageId } from "./utility";
 import DEPENDENCIES_TO_SCAN from "./dependency.data";
-
 
 class MetadataManager {
     private static dependencyCheckMetadata: DependencyCheckMetadata = DEPENDENCIES_TO_SCAN;
@@ -14,14 +12,6 @@ class MetadataManager {
         const splits = givenPackageId.split(":", 2);
         const groupId = splits[0];
         const artifactId = splits[1] ?? "";
-
-        if (groupId === Upgrade.DIAGNOSTICS_GROUP_ID_FOR_JAVA_RUNTIME) {
-            return {
-                name: Upgrade.DIAGNOSTICS_NAME_FOR_JAVA_RUNTIME,
-                reason: UpgradeReason.END_OF_LIFE,
-                supportedVersion: `>=${Upgrade.LATEST_JAVA_LTS_VESRION}`,
-            };
-        }
 
         const packageId = buildPackageId(groupId, artifactId);
         const packageIdWithWildcardArtifactId = buildPackageId(groupId, "*");
