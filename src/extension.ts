@@ -70,34 +70,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
             console.log(`File: ${document.fileName}`);
             console.log(`Total symbols found: ${symbols.length}`);
             
-            if (symbols.length > 0) {
-                symbols.forEach((symbol, index) => {
-                    console.log(`${index + 1}. ${symbol}`);
-                });
-                
-                // Also show categorized view
-                const categorized = await CopilotHelper.getLocalImportsByType(document.uri);
-                console.log("\n=== Categorized View ===");
-                if (categorized.classes.length > 0) {
-                    console.log(`Classes (${categorized.classes.length}):`, categorized.classes);
-                }
-                if (categorized.interfaces.length > 0) {
-                    console.log(`Interfaces (${categorized.interfaces.length}):`, categorized.interfaces);
-                }
-                if (categorized.enums.length > 0) {
-                    console.log(`Enums (${categorized.enums.length}):`, categorized.enums);
-                }
-                if (categorized.annotations.length > 0) {
-                    console.log(`Annotations (${categorized.annotations.length}):`, categorized.annotations);
-                }
-                if (categorized.others.length > 0) {
-                    console.log(`Others (${categorized.others.length}):`, categorized.others);
-                }
-            } else {
-                console.log("No local project symbols found in imports.");
-            }
-            console.log("=== End ===");
-            
             window.showInformationMessage(`Found ${symbols.length} local symbols. Check console for details.`);
         } catch (error) {
             console.error("Error getting symbols:", error);

@@ -10,6 +10,7 @@
             <command id="java.project.getMainClasses" />
             <command id="java.project.generateJar" />
             <command id="java.project.checkImportStatus" />
+            <command id="java.project.resolveCopilotRequest" />
         </delegateCommandHandler>
     </extension>
     <extension
