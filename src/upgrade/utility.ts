@@ -13,7 +13,7 @@ export function buildNotificationMessage(issue: UpgradeIssue): string {
         return `The current project is using an older runtime (Java ${currentVersion}). Do you want to upgrade to the latest LTS version${suggestedVersion ? ` (${suggestedVersion})` : ""}?`
     }
 
-    return `The current project is using ${name} ${currentVersion}, which reached end of life. Do you want to upgrade to ${suggestedVersion ? ` ${suggestedVersion}` : "the latest version"
+    return `The current project is using ${name} ${currentVersion}, which has reached end of life. Do you want to upgrade to ${suggestedVersion ? ` ${suggestedVersion}` : "the latest version"
         }?`
 }
 

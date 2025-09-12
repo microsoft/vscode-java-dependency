@@ -45,7 +45,7 @@
   "configuration.java.dependency.autoRefresh": "Synchronize Java Projects explorer with changes",
   "configuration.java.dependency.refreshDelay": "The delay time (ms) the auto refresh is invoked when changes are detected",
   "configuration.java.dependency.packagePresentation": "Package presentation mode: flat or hierarchical",
-  "configuration.java.dependency.enableDependencyDiagnostics": "Show upgrade reminders for Java runtime or dependencies.",
+  "configuration.java.dependency.enableDependencyDiagnostics": "Show reminders when your Java runtimes or dependencies need an upgrade.",
   "configuration.java.project.explorer.showNonJavaResources": "When enabled, the explorer shows non-Java resources.",
   "configuration.java.project.exportJar.targetPath.customization": "The output path of the exported jar. Leave it empty if you want to manually pick the output location.",
   "configuration.java.project.exportJar.targetPath.workspaceFolder": "Export the jar file into the workspace folder. Its name is the same as the folder's.",
