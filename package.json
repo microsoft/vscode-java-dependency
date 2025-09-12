@@ -585,7 +585,7 @@
         },
         {
           "command": "java.view.modernizeJavaProject",
-          "when": "explorerResourceIsFolder && isModernizationExtensionInstalled",
+          "when": "explorerResourceIsFolder && java:serverMode && isModernizationExtensionInstalled",
           "group": "1_javaactions@40"
         },
         {
