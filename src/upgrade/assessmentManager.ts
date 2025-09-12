@@ -49,6 +49,7 @@ function getUpgrade(versionString: string, supportedVersionDefinition: Dependenc
                     packageDisplayName: supportedVersionDefinition.name,
                     reason,
                     currentVersion: versionString,
+                    suggestedVersion: supportedVersionDefinition.suggestedVersion,
                 }
             }
         }
