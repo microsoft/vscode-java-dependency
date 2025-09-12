@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
+
 export type DependencyCheckItemBase = { name: string, reason: UpgradeReason };
 export type DependencyCheckItemEol = DependencyCheckItemBase & { reason: UpgradeReason.END_OF_LIFE | UpgradeReason.JRE_TOO_OLD, supportedVersion: string, suggestedVersion: string };
 export type DependencyCheckItemDeprecated = DependencyCheckItemBase & { reason: UpgradeReason.DEPRECATED, alternative: string };
