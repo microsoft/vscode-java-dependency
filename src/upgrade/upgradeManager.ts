@@ -7,7 +7,7 @@ import { Jdtls } from "../java/jdtls";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { ExtensionName } from "../constants";
 import { UpgradeIssue } from "./type";
-import { instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
@@ -63,26 +63,33 @@ class UpgradeManager {
     }
 
     private static async checkUpgradableComponents(folder: WorkspaceFolder) {
-        if (!await languageServerApiManager.ready()) {
-            return;
-        }
-        const hasJavaError: boolean = await Jdtls.checkImportStatus();
-        if (hasJavaError) {
-            return;
-        }
+        return (instrumentOperation("upgradeManager.checkUpgradableComponents",
+            async (operationId: string) => {
+                if (!await languageServerApiManager.ready()) {
+                    return;
+                }
+                const hasJavaError: boolean = await Jdtls.checkImportStatus();
+                if (hasJavaError) {
+                    return;
+                }
 
-        const projectIssues: UpgradeIssue[] = [];
-        const uri = folder.uri.toString();
-        const projects = await Jdtls.getProjects(uri);
-        await Promise.allSettled(projects.map(async (projectNode) => {
-            const issues = await assessmentManager.getProjectIssues(projectNode);
-            projectIssues.push(...issues);
-        }));
+                const projectIssues: UpgradeIssue[] = [];
+                const uri = folder.uri.toString();
+                const projects = await Jdtls.getProjects(uri);
+                await Promise.allSettled(projects.map(async (projectNode) => {
+                    const issues = await assessmentManager.getProjectIssues(projectNode);
+                    projectIssues.push(...issues);
+                    sendInfo(operationId, {
+                        issuesFoundForPackageId: projectIssues.map(x => x.packageId).join(","),
+                    });
+                }));
 
-        if (projectIssues.length > 0) {
-            // only show one issue in notifications
-            notificationManager.render(projectIssues);
-        }
+                if (projectIssues.length > 0) {
+                    // only show one issue in notifications
+                    notificationManager.render(projectIssues);
+                }
+            }
+        ))()
     }
 }
 
