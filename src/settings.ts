@@ -58,6 +58,10 @@ export class Settings {
         workspace.getConfiguration("java.dependency").update("packagePresentation", PackagePresentation.Hierarchical, false);
     }
 
+    public static disableWorkspaceDependencyDiagnostics() {
+        return workspace.getConfiguration("java.dependency").update("enableDependencyDiagnostics", false, ConfigurationTarget.Workspace);
+    }
+
     public static switchNonJavaResourceFilter(enabled: boolean): void {
         workspace.getConfiguration("java.project.explorer").update(
             "showNonJavaResources",

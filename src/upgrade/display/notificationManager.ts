@@ -5,9 +5,9 @@ import { commands, ExtensionContext, window } from "vscode";
 import type { UpgradeIssue } from "../type";
 import { buildFixPrompt, buildNotificationMessage } from "../utility";
 import { Commands } from "../../commands";
+import { Settings } from "../../settings";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
-const IS_CANDIDATE_KEY = `${KEY_PREFIX}.isCandidate`;
 const SESSION_COUNT_KEY = `${KEY_PREFIX}.sessionCount`;
 
 const BUTTON_TEXT_UPGRADE = "Upgrade Now";
@@ -54,7 +54,7 @@ class NotificationManager {
                 break;
             }
             case BUTTON_TEXT_DONT_SHOW_AGAIN: {
-                this.setCandidate(false);
+                Settings.disableWorkspaceDependencyDiagnostics();
                 break;
             }
         }
@@ -62,7 +62,7 @@ class NotificationManager {
     }
 
     private shouldShow() {
-        return this.isCandidate()
+        return Settings.getEnableDependencyDiagnostics()
             && ((this.getSessionCount() ?? 0) >= 0);
     }
 
@@ -72,14 +72,6 @@ class NotificationManager {
 
     private setSessionCount(num: number) {
         return this.context?.globalState.update(SESSION_COUNT_KEY, num);
-    }
-
-    private isCandidate() {
-        return this.context?.globalState.get<boolean>(IS_CANDIDATE_KEY, true);
-    }
-
-    private setCandidate(isCandidate: boolean) {
-        this.context?.globalState.update(IS_CANDIDATE_KEY, isCandidate);
     }
 }
 
