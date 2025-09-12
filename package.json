@@ -295,7 +295,7 @@
         "category": "Java"
       },
       {
-        "command": "java.view.modernizeJavaProject",
+        "command": "_java.view.modernizeJavaProject",
         "title": "%contributes.commands.java.view.modernizeJavaProject%",
         "category": "Java"
       }
@@ -584,7 +584,7 @@
           "group": "1_javaactions@30"
         },
         {
-          "command": "java.view.modernizeJavaProject",
+          "command": "_java.view.modernizeJavaProject",
           "when": "explorerResourceIsFolder && java:serverMode && isModernizationExtensionInstalled",
           "group": "1_javaactions@40"
         },
