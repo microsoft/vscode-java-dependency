@@ -9,6 +9,7 @@ import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
 import { IMainClassInfo } from "../tasks/buildArtifact/ResolveMainClassExecutor";
 import { INodeData, NodeKind } from "./nodeData";
 import { Settings } from "../settings";
+import { INodeImportClass } from "../copilotHelper";
 
 export namespace Jdtls {
     export async function getProjects(params: string): Promise<INodeData[]> {
@@ -72,8 +73,8 @@ export namespace Jdtls {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINCLASSES, params) || [];
     }
 
-    export async function resolveCopilotRequest(fileUri: string): Promise<string[]> {
-        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_RESOLVE_COPILOT_REQUEST, fileUri) || [];
+    export async function getImportClassContent(fileUri: string): Promise<INodeImportClass[]> {
+        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETIMPORTCLASSCONTENT, fileUri) || [];
     }
 
     export async function exportJar(mainClass: string, classpaths: IClasspath[],
