@@ -52,27 +52,22 @@ class NotificationManager implements DisplayInterface {
                     BUTTON_TEXT_UPGRADE,
                     BUTTON_TEXT_NOT_NOW,
                     BUTTON_TEXT_DONT_SHOW_AGAIN);
+                sendInfo(operationId, {
+                    operationName: "java.dependency.upgradeNotification.runUpgrade",
+                    choice: selection ?? "",
+                });
 
                 switch (selection) {
                     case BUTTON_TEXT_UPGRADE: {
                         commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt);
-                        sendInfo(operationId, {
-                            __event_name__: "java.dependency.upgradeNotification.runUpgrade",
-                        });
                         break;
                     }
                     case BUTTON_TEXT_NOT_NOW: {
                         this.setSessionCount(-1 * SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW);
-                        sendInfo(operationId, {
-                            __event_name__: "java.dependency.upgradeNotification.notNow",
-                        });
                         break;
                     }
                     case BUTTON_TEXT_DONT_SHOW_AGAIN: {
                         Settings.disableWorkspaceDependencyDiagnostics();
-                        sendInfo(operationId, {
-                            __event_name__: "java.dependency.upgradeNotification.dontShowAgain",
-                        });
                         break;
                     }
                 }
