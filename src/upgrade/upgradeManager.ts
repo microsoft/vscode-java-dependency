@@ -21,14 +21,6 @@ function shouldCheckUpgrade() {
         && !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
 }
 
-async function runUpgrade(promptText: string) {
-    await commands.executeCommand('workbench.action.chat.open');
-    await commands.executeCommand('workbench.action.chat.newEditSession', {
-        agentMode: true,
-        inputValue: promptText,
-    });
-}
-
 class UpgradeManager {
     public static initialize(context: ExtensionContext) {
         notificationManager.initialize(context);
@@ -36,13 +28,7 @@ class UpgradeManager {
         // Commands to be used
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string) => {
             const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
-            // The command should typically exist as we checked for the extension before.
-            const hasAgentModeCommand = (await commands.getCommands(true).then(cmds => cmds.includes(Commands.GOTO_AGENT_MODE)));
-            if (hasAgentModeCommand) {
-                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
-            } else {
-                await runUpgrade(promptToUse);
-            }
+            await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
         }));
         commands.executeCommand('setContext', 'isModernizationExtensionInstalled',
             !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA));
