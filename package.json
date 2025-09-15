@@ -333,9 +333,9 @@
           "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
         },
-        "java.dependency.enableDependencyDiagnostics": {
+        "java.dependency.enableDependencyCheckup": {
           "type": "boolean",
-          "description": "%configuration.java.dependency.enableDependencyDiagnostics%",
+          "description": "%configuration.java.dependency.enableDependencyCheckup%",
           "default": true
         },
         "java.project.exportJar.targetPath": {

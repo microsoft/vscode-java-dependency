@@ -15,8 +15,8 @@ import assessmentManager from "./assessmentManager";
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
 
-function shouldCheckUpgrade() {
-    return Settings.getEnableDependencyDiagnostics()
+function shouldRunCheckup() {
+    return Settings.getEnableDependencyCheckup()
         && !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
 }
 
@@ -39,17 +39,17 @@ class UpgradeManager {
     }
 
     public static scan() {
-        if (!shouldCheckUpgrade()) {
+        if (!shouldRunCheckup()) {
             return;
         }
         workspace.workspaceFolders?.forEach((folder) =>
-            UpgradeManager.checkUpgradableComponents(folder)
+            UpgradeManager.runDependencyCheckup(folder)
         );
     }
 
-    private static async checkUpgradableComponents(folder: WorkspaceFolder) {
+    private static async runDependencyCheckup(folder: WorkspaceFolder) {
         return (instrumentOperation("java.dependency.diagnoseDependencyIssues",
-            async () => {
+            async (_operationId: string) => {
                 if (!await languageServerApiManager.ready()) {
                     return;
                 }

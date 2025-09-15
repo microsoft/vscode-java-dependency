@@ -58,8 +58,8 @@ export class Settings {
         workspace.getConfiguration("java.dependency").update("packagePresentation", PackagePresentation.Hierarchical, false);
     }
 
-    public static disableWorkspaceDependencyDiagnostics() {
-        return workspace.getConfiguration("java.dependency").update("enableDependencyDiagnostics", false, ConfigurationTarget.Workspace);
+    public static disableWorkspaceDependencyCheckup() {
+        return workspace.getConfiguration("java.dependency").update("enableDependencyCheckup", false, ConfigurationTarget.Workspace);
     }
 
     public static switchNonJavaResourceFilter(enabled: boolean): void {
@@ -112,8 +112,8 @@ export class Settings {
         return workspace.getConfiguration("java.dependency").get("refreshDelay", 2000);
     }
 
-    public static getEnableDependencyDiagnostics() {
-        return workspace.getConfiguration("java.dependency").get("enableDependencyDiagnostics", true);
+    public static getEnableDependencyCheckup() {
+        return workspace.getConfiguration("java.dependency").get("enableDependencyCheckup", true);
     }
 
     public static getExportJarTargetPath(): string {

@@ -67,7 +67,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                         break;
                     }
                     case BUTTON_TEXT_DONT_SHOW_AGAIN: {
-                        Settings.disableWorkspaceDependencyDiagnostics();
+                        Settings.disableWorkspaceDependencyCheckup();
                         break;
                     }
                 }
@@ -76,7 +76,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
     }
 
     private shouldShow() {
-        return Settings.getEnableDependencyDiagnostics()
+        return Settings.getEnableDependencyCheckup()
             && ((this.getSessionCount() ?? 0) >= 0);
     }
 
