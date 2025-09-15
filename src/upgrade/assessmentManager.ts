@@ -9,6 +9,7 @@ import { DEPENDENCY_JAVA_RUNTIME } from "./dependency.data";
 import { Upgrade } from '../constants';
 import { buildPackageId } from './utility';
 import metadataManager from './metadataManager';
+import { sendInfo } from 'vscode-extension-telemetry-wrapper';
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
     const javaVersion = data.metaData?.MaxSourceVersion as number | undefined;
@@ -59,29 +60,27 @@ function getUpgrade(versionString: string, supportedVersionDefinition: Dependenc
     return null;
 }
 
-function getDependencyIssues(data: INodeData): UpgradeIssue[] {
+function checkDependencyIssue(data: INodeData): UpgradeIssue | null {
     const versionString = data.metaData?.["maven.version"];
     const groupId = data.metaData?.["maven.groupId"];
     const artifactId = data.metaData?.["maven.artifactId"];
     const packageId = buildPackageId(groupId, artifactId);
     const supportedVersionDefinition = metadataManager.getMetadataById(packageId);
     if (!versionString || !groupId || !supportedVersionDefinition) {
-        return [];
+        return null;
     }
 
     const upgrade = getUpgrade(versionString, supportedVersionDefinition);
     if (upgrade) {
-        return [{ ...upgrade, packageId }];
+        return { ...upgrade, packageId };
     }
-    return [];
+    return null;
 }
 
-async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-    const issues: UpgradeIssue[] = [];
-    issues.push(...getJavaIssues(projectNode));
-    const packageData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
-    await Promise.allSettled(
-        packageData
+async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
+    const projectStructureData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
+    const packageContainerIssues = await Promise.allSettled(
+        projectStructureData
             .filter(x => x.kind === NodeKind.Container)
             .map(async (packageContainer) => {
                 const packages = await Jdtls.getPackageData({
@@ -89,13 +88,30 @@ async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]>
                     projectUri: projectNode.uri,
                     path: packageContainer.path,
                 });
-                packages.forEach(
-                    (pkg) => {
-                        issues.push(...getDependencyIssues(pkg))
-                    }
-                );
+
+                return packages.map(checkDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
             })
     );
+
+    return packageContainerIssues
+        .map(x => {
+            if (x.status === "fulfilled") {
+                return x.value;
+            }
+
+            sendInfo("", {
+                operationName: "java.dependency.assessmentManager.getDependencyIssues",
+                failureReason: String(x.reason),
+            });
+            return [];
+        })
+        .reduce((a, b) => [...a, ...b]);
+}
+
+async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
+    const issues: UpgradeIssue[] = [];
+    issues.push(...getJavaIssues(projectNode));
+    issues.push(...(await getDependencyIssues(projectNode)));
     return issues;
 }
 
