@@ -48,7 +48,7 @@ class UpgradeManager {
     }
 
     private static async checkUpgradableComponents(folder: WorkspaceFolder) {
-        return (instrumentOperation("upgradeManager.checkUpgradableComponents",
+        return (instrumentOperation("java.dependency.diagnoseDependencyIssues",
             async () => {
                 if (!await languageServerApiManager.ready()) {
                     return;
