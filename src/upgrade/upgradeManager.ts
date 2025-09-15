@@ -48,7 +48,7 @@ class UpgradeManager {
     }
 
     private static async runDependencyCheckup(folder: WorkspaceFolder) {
-        return (instrumentOperation("java.dependency.diagnoseDependencyIssues",
+        return (instrumentOperation("java.dependency.runDependencyCheckup",
             async (_operationId: string) => {
                 if (!await languageServerApiManager.ready()) {
                     return;
