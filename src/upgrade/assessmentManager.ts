@@ -115,6 +115,31 @@ async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]>
     return issues;
 }
 
+async function getWorkspaceIssues(workspaceUri: string): Promise<UpgradeIssue[]> {
+    const projects = await Jdtls.getProjects(workspaceUri);
+    const projectsIssues = await Promise.allSettled(projects.map(async (projectNode) => {
+        const issues = await getProjectIssues(projectNode);
+        sendInfo("", {
+            issuesFoundForPackageId: JSON.stringify(issues.map(x => `${x.packageId}:${x.currentVersion}`)),
+        });
+        return issues;
+    }));
+
+    const workspaceIssues = projectsIssues.map(x => {
+        if (x.status === "fulfilled") {
+            return x.value;
+        }
+
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getWorkspaceIssues",
+            failureReason: String(x.reason),
+        });
+        return [];
+    }).reduce((a, b) => [...a, ...b]);
+
+    return workspaceIssues;
+}
+
 export default {
-    getProjectIssues
+    getWorkspaceIssues,
 };

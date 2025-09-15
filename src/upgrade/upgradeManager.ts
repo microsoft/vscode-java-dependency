@@ -6,8 +6,7 @@ import { commands, type ExtensionContext, extensions, workspace, type WorkspaceF
 import { Jdtls } from "../java/jdtls";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
 import { ExtensionName } from "../constants";
-import { UpgradeIssue } from "./type";
-import { instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperation, instrumentOperationAsVsCodeCommand } from "vscode-extension-telemetry-wrapper";
 import { Commands } from "../commands";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
@@ -50,7 +49,7 @@ class UpgradeManager {
 
     private static async checkUpgradableComponents(folder: WorkspaceFolder) {
         return (instrumentOperation("upgradeManager.checkUpgradableComponents",
-            async (operationId: string) => {
+            async () => {
                 if (!await languageServerApiManager.ready()) {
                     return;
                 }
@@ -59,20 +58,12 @@ class UpgradeManager {
                     return;
                 }
 
-                const projectIssues: UpgradeIssue[] = [];
                 const uri = folder.uri.toString();
-                const projects = await Jdtls.getProjects(uri);
-                await Promise.allSettled(projects.map(async (projectNode) => {
-                    const issues = await assessmentManager.getProjectIssues(projectNode);
-                    projectIssues.push(...issues);
-                    sendInfo(operationId, {
-                        issuesFoundForPackageId: JSON.stringify(projectIssues.map(x => `${x.packageId}:${x.currentVersion}`)),
-                    });
-                }));
+                const workspaceIssues = await assessmentManager.getWorkspaceIssues(uri);
 
-                if (projectIssues.length > 0) {
+                if (workspaceIssues.length > 0) {
                     // only show one issue in notifications
-                    notificationManager.render(projectIssues);
+                    notificationManager.render(workspaceIssues);
                 }
             }
         ))()
