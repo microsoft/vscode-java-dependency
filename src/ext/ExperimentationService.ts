@@ -28,7 +28,7 @@ export function getExpService() {
 }
 
 export async function init(context: vscode.ExtensionContext): Promise<void> {
-    const packageJson: {[key: string]: any} = require("../package.json");
+    const packageJson: {[key: string]: any} = require("../../package.json");
     // tslint:disable: no-string-literal
     const extensionName = `${packageJson["publisher"]}.${packageJson["name"]}`;
     const extensionVersion = packageJson["version"];
