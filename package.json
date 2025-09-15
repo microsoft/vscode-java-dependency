@@ -565,6 +565,14 @@
         {
           "command": "_java.project.create.from.javaprojectexplorer",
           "when": "false"
+        },
+        {
+          "command": "_java.view.modernizeJavaProject",
+          "when": "false"
+        },
+        {
+          "command": "_java.upgradeWithCopilot",
+          "when": "false"
         }
       ],
       "explorer/context": [
