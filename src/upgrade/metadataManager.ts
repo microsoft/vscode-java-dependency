@@ -3,7 +3,7 @@
 
 import { type DependencyCheckMetadata, type DependencyCheckItem } from "./type";
 import { buildPackageId } from "./utility";
-import DEPENDENCIES_TO_SCAN from "./dependency.data";
+import DEPENDENCIES_TO_SCAN from "./dependency.metadata";
 
 class MetadataManager {
     private static dependencyCheckMetadata: DependencyCheckMetadata = DEPENDENCIES_TO_SCAN;
