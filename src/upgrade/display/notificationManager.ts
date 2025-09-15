@@ -27,7 +27,7 @@ class NotificationManager implements DisplayInterface {
 
     async render(issues: UpgradeIssue[]) {
         return (instrumentOperation(
-            "notificationManager.render",
+            "java.dependency.showUpgradeNotification",
             async (operationId: string) => {
                 if (issues.length === 0) {
                     return;
@@ -57,21 +57,21 @@ class NotificationManager implements DisplayInterface {
                     case BUTTON_TEXT_UPGRADE: {
                         commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt);
                         sendInfo(operationId, {
-                            __event_name__: "javaDependency.notificationManager.runUpgrade",
+                            __event_name__: "java.dependency.upgradeNotification.runUpgrade",
                         });
                         break;
                     }
                     case BUTTON_TEXT_NOT_NOW: {
                         this.setSessionCount(-1 * SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW);
                         sendInfo(operationId, {
-                            __event_name__: "javaDependency.notificationManager.notNow",
+                            __event_name__: "java.dependency.upgradeNotification.notNow",
                         });
                         break;
                     }
                     case BUTTON_TEXT_DONT_SHOW_AGAIN: {
                         Settings.disableWorkspaceDependencyDiagnostics();
                         sendInfo(operationId, {
-                            __event_name__: "javaDependency.notificationManager.dontShowAgain",
+                            __event_name__: "java.dependency.upgradeNotification.dontShowAgain",
                         });
                         break;
                     }
