@@ -22,6 +22,6 @@ export type UpgradeIssue = {
     suggestedVersion?: string;
 };
 
-export interface DisplayInterface {
+export interface IUpgradeIssuesRenderer {
     render(issues: UpgradeIssue[]): void;
 }

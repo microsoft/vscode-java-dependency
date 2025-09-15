@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { commands, ExtensionContext, window } from "vscode";
-import type { DisplayInterface, UpgradeIssue } from "../type";
+import type { IUpgradeIssuesRenderer, UpgradeIssue } from "../type";
 import { buildFixPrompt, buildNotificationMessage } from "../utility";
 import { Commands } from "../../commands";
 import { Settings } from "../../settings";
@@ -17,7 +17,7 @@ const BUTTON_TEXT_DONT_SHOW_AGAIN = "Don't Show Again";
 
 const SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW = 3;
 
-class NotificationManager implements DisplayInterface {
+class NotificationManager implements IUpgradeIssuesRenderer {
     private hasShown = false;
     private context?: ExtensionContext;
 
