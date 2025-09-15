@@ -120,6 +120,7 @@ async function getWorkspaceIssues(workspaceUri: string): Promise<UpgradeIssue[]>
     const projectsIssues = await Promise.allSettled(projects.map(async (projectNode) => {
         const issues = await getProjectIssues(projectNode);
         sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getWorkspaceIssues",
             issuesFoundForPackageId: JSON.stringify(issues.map(x => `${x.packageId}:${x.currentVersion}`)),
         });
         return issues;
