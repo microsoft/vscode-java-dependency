@@ -31,7 +31,7 @@ function getJavaIssues(data: INodeData): UpgradeIssue[] {
     return [];
 }
 
-function getUpgrade(versionString: string, supportedVersionDefinition: DependencyCheckItem): Omit<UpgradeIssue, "packageId"> | null {
+function getUpgradeForDependency(versionString: string, supportedVersionDefinition: DependencyCheckItem): Omit<UpgradeIssue, "packageId"> | null {
     const { reason } = supportedVersionDefinition;
     switch (reason) {
         case UpgradeReason.DEPRECATED: {
@@ -60,7 +60,7 @@ function getUpgrade(versionString: string, supportedVersionDefinition: Dependenc
     return null;
 }
 
-function checkDependencyIssue(data: INodeData): UpgradeIssue | null {
+function getDependencyIssue(data: INodeData): UpgradeIssue | null {
     const versionString = data.metaData?.["maven.version"];
     const groupId = data.metaData?.["maven.groupId"];
     const artifactId = data.metaData?.["maven.artifactId"];
@@ -70,7 +70,7 @@ function checkDependencyIssue(data: INodeData): UpgradeIssue | null {
         return null;
     }
 
-    const upgrade = getUpgrade(versionString, supportedVersionDefinition);
+    const upgrade = getUpgradeForDependency(versionString, supportedVersionDefinition);
     if (upgrade) {
         return { ...upgrade, packageId };
     }
@@ -89,7 +89,7 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
                     path: packageContainer.path,
                 });
 
-                return packages.map(checkDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
+                return packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
             })
     );
 
