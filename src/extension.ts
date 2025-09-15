@@ -11,7 +11,7 @@ import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
 import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
-import { init as initExpService } from "./ext/ExperimentationService";
+import { init as initExpService, getExpService } from "./ext/ExperimentationService";
 import { DeprecatedExportJarTaskProvider, BuildArtifactTaskProvider } from "./tasks/buildArtifact/BuildArtifactTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
@@ -21,6 +21,8 @@ import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticPr
 import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
+import { registerCopilotContextProviders } from "./copilot/contextProvider";
+import { TreatmentVariables, TreatmentVariableValue } from "./ext/treatmentVariables";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -36,6 +38,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         }
     });
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+    await registerContextProviders(context);
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
@@ -150,4 +153,12 @@ function setContextForReloadProject(document: TextDocument | undefined): void {
         }
     }
     contextManager.setContextValue(Context.RELOAD_PROJECT_ACTIVE, false);
+}
+
+async function registerContextProviders(context: ExtensionContext): Promise<void> {
+    TreatmentVariableValue.contextProvider = await getExpService().getTreatmentVariableAsync(TreatmentVariables.VSCodeConfig, TreatmentVariables.ContextProvider, true);
+    // Register additional context providers here
+    if(TreatmentVariableValue.contextProvider) {
+        registerCopilotContextProviders(context);
+    }
 }
