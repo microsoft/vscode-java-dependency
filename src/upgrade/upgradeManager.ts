@@ -80,7 +80,7 @@ class UpgradeManager {
                     const issues = await assessmentManager.getProjectIssues(projectNode);
                     projectIssues.push(...issues);
                     sendInfo(operationId, {
-                        issuesFoundForPackageId: projectIssues.map(x => `${x.packageId}:${x.currentVersion}`).join(","),
+                        issuesFoundForPackageId: JSON.stringify(projectIssues.map(x => `${x.packageId}:${x.currentVersion}`)),
                     });
                 }));
 
