@@ -101,7 +101,6 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
 
             sendInfo("", {
                 operationName: "java.dependency.assessmentManager.getDependencyIssues",
-                failureReason: String(x.reason),
             });
             return [];
         })
@@ -133,7 +132,6 @@ async function getWorkspaceIssues(workspaceUri: string): Promise<UpgradeIssue[]>
 
         sendInfo("", {
             operationName: "java.dependency.assessmentManager.getWorkspaceIssues",
-            failureReason: String(x.reason),
         });
         return [];
     }).reduce((a, b) => [...a, ...b]);
