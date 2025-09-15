@@ -18,20 +18,21 @@ const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
         "reason": UpgradeReason.END_OF_LIFE,
         "name": "Spring Boot",
         "supportedVersion": "2.7.x || >=3.2.x",
-        "suggestedVersion": "6.2",
+        "suggestedVersion": "3.5",
     },
     "org.springframework:*": {
         "reason": UpgradeReason.END_OF_LIFE,
         "name": "Spring Framework",
         "supportedVersion": "5.3.x || >=6.2.x",
-        "suggestedVersion": "3.5"
+        "suggestedVersion": "6.2"
     },
-    "javax:javaee-api": {
-        "reason": UpgradeReason.DEPRECATED,
-        "name": "Java EE",
-        "alternative": "Jakarta EE 10",
+    "org.springframework.security:*": {
+        "reason": UpgradeReason.END_OF_LIFE,
+        "name": "Spring Security",
+        "supportedVersion": "5.7.x || 5.8.x || >=6.2.x",
+        "suggestedVersion": "6.5"
     },
-    "javax:javaee-web-api": {
+    "javax:*": {
         "reason": UpgradeReason.DEPRECATED,
         "name": "Java EE",
         "alternative": "Jakarta EE 10",
