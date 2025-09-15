@@ -66,7 +66,7 @@ class UpgradeManager {
                     notificationManager.render(workspaceIssues);
                 }
             }
-        ))()
+        ))();
     }
 }
 

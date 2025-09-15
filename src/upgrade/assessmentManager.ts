@@ -41,7 +41,7 @@ function getUpgradeForDependency(versionString: string, supportedVersionDefiniti
                 reason,
                 currentVersion: versionString,
                 suggestedVersion: alternative,
-            }
+            };
         }
         case UpgradeReason.END_OF_LIFE: {
             const currentSemVer = semver.coerce(versionString);
@@ -51,7 +51,7 @@ function getUpgradeForDependency(versionString: string, supportedVersionDefiniti
                     reason,
                     currentVersion: versionString,
                     suggestedVersion: supportedVersionDefinition.suggestedVersion,
-                }
+                };
             }
         }
 

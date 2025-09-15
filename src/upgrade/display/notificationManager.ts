@@ -72,7 +72,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                     }
                 }
             }
-        ))()
+        ))();
     }
 
     private shouldShow() {

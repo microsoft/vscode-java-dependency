@@ -10,11 +10,11 @@ export function buildNotificationMessage(issue: UpgradeIssue): string {
     const name = packageDisplayName ?? packageId;
 
     if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
-        return `The current project is using an older runtime (Java ${currentVersion}). Do you want to upgrade to the latest LTS version${suggestedVersion ? ` (${suggestedVersion})` : ""}?`
+        return `The current project is using an older runtime (Java ${currentVersion}). Do you want to upgrade to the latest LTS version${suggestedVersion ? ` (${suggestedVersion})` : ""}?`;
     }
 
     return `The current project is using ${name} ${currentVersion}, which has reached end of life. Do you want to upgrade to ${suggestedVersion ? ` ${suggestedVersion}` : "the latest version"
-        }?`
+        }?`;
 }
 
 export function buildFixPrompt(issue: UpgradeIssue): string {
