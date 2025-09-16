@@ -52,33 +52,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
     context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MENUS_FILE_NEW_JAVA_CLASS, newJavaFile));
     
-    // Add getSymbolsFromFile command
-    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.GET_SYMBOLS_FROM_FILE, async () => {
-        const activeEditor = window.activeTextEditor;
-        if (!activeEditor) {
-            window.showWarningMessage("No active editor found. Please open a Java file first.");
-            return;
-        }
-        
-        const document = activeEditor.document;
-        if (!document.fileName.endsWith('.java')) {
-            window.showWarningMessage("Please open a Java file to get symbols.");
-            return;
-        }
-        
-        try {
-            const symbols = await CopilotHelper.resolveLocalImports(document.uri);
-            console.log("=== Local Symbols from Current File ===");
-            console.log(`File: ${document.fileName}`);
-            console.log(`Total symbols found: ${symbols.length}`);
-            
-            window.showInformationMessage(`Found ${symbols.length} local symbols. Check console for details.`);
-        } catch (error) {
-            console.error("Error getting symbols:", error);
-            window.showErrorMessage(`Error getting symbols: ${error}`);
-        }
-    }));
-    
     context.subscriptions.push(window.onDidChangeActiveTextEditor((e: TextEditor | undefined) => {
         setContextForReloadProject(e?.document);
     }));

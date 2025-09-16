@@ -47,43 +47,6 @@ export async function registerCopilotContextProviders(
             console.log('Failed to find compatible version of GitHub Copilot extension installed. Skip registration of Copilot context provider.');
             return;
         }
-
-        // const provider: ContextProvider<SupportedContextItem> = {
-        //     id: 'vscjava.vscode-java-pack', // use extension id as provider id for now
-        //     selector: [{ language: "*" }],
-        //     resolver: {
-        //         resolve: async (request, token) => {
-        //             console.log('======== java request:', request);
-        //             console.log('======== java token:', token);
-        //             const items = await resolveJavaContext(request, token);
-        //             console.log('======== java context end ===========')
-        //             return items;
-        //         }
-        //     }
-        // };
-
-        // let installCount = 0;
-        // if (copilotClientApi) {
-        //     const disposable = await installContextProvider(copilotClientApi, provider);
-        //     if (disposable) {
-        //         context.subscriptions.push(disposable);
-        //         installCount++;
-        //     }
-        // }
-        // if (copilotChatApi) {
-        //     const disposable = await installContextProvider(copilotChatApi, provider);
-        //     if (disposable) {
-        //         context.subscriptions.push(disposable);
-        //         installCount++;
-        //     }
-        // }
-
-        // if (installCount === 0) {
-        //     console.log('Incompatible GitHub Copilot extension installed. Skip registration of Java context providers.');
-        //     return;
-        // }
-        // console.log('Registration of Java context provider for GitHub Copilot extension succeeded.');
-
         // Register the Java completion context provider
         const javaCompletionProvider = new JavaCopilotCompletionContextProvider();
         let completionProviderInstallCount = 0;
