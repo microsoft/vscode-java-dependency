@@ -6,7 +6,6 @@ import { commands, Diagnostic, Extension, ExtensionContext, extensions, language
     Range, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
-import { CopilotHelper } from "./copilotHelper";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
 import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
