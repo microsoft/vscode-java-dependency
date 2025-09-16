@@ -17,6 +17,10 @@ const BUTTON_TEXT_NOT_NOW = "Not Now";
 const SECONDS_IN_A_DAY = 24 * 60 * 60;
 const SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW = 10 * SECONDS_IN_A_DAY;
 
+function getNowTs() {
+    return Number(new Date()) / 1000;
+}
+
 class NotificationManager implements IUpgradeIssuesRenderer {
     private hasShown = false;
     private context?: ExtensionContext;
@@ -39,8 +43,6 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 }
                 this.hasShown = true;
 
-                this.setNextShowTs((Number(new Date()) / 1000) + SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW);
-
                 if (!this.shouldShow()) {
                     return;
                 }
@@ -62,7 +64,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                         break;
                     }
                     case BUTTON_TEXT_NOT_NOW: {
-                        this.setNextShowTs(-1 * SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW);
+                        this.setNextShowTs(getNowTs() + SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW);
                         break;
                     }
                 }
@@ -72,7 +74,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
 
     private shouldShow() {
         return Settings.getEnableDependencyCheckup()
-            && ((this.getNextShowTs() ?? 0) <= (Number(new Date()) / 1000));
+            && ((this.getNextShowTs() ?? 0) <= getNowTs());
     }
 
     private getNextShowTs() {
