@@ -6,31 +6,37 @@ import { UpgradeReason, type UpgradeIssue } from "./type";
 import { Upgrade } from "../constants";
 
 export function buildNotificationMessage(issue: UpgradeIssue): string {
-    const { packageId, currentVersion, suggestedVersion, packageDisplayName } = issue;
-    const name = packageDisplayName ?? packageId;
+    const { packageId, currentVersion, reason, suggestedVersion: { name: suggestedVersionName, description: suggestedVersionDescription }, packageDisplayName } = issue;
 
     if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
-        return `The current project is using an older runtime (Java ${currentVersion}). Do you want to upgrade to the latest LTS version${suggestedVersion ? ` (${suggestedVersion})` : ""}?`;
+        return `The current project is using an older Java runtime (${currentVersion}). Do you want to upgrade to the latest LTS version ${suggestedVersionName}?`;
     }
-
-    return `The current project is using ${name} ${currentVersion}, which has reached end of life. Do you want to upgrade to ${suggestedVersion ? ` ${suggestedVersion}` : "the latest version"
-        }?`;
-}
-
-export function buildFixPrompt(issue: UpgradeIssue): string {
-    const { packageId, packageDisplayName, reason, suggestedVersion } = issue;
-    const name = packageDisplayName ?? packageId;
 
     switch (reason) {
         case UpgradeReason.CVE: {
-            return `upgrade package ${name} to ${suggestedVersion ?? "the latest version"} to address CVE issues using java upgrade tools`;
+            return `The current project is using ${packageDisplayName} ${currentVersion}, which has CVE issues. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
+        }
+        case UpgradeReason.DEPRECATED:
+        case UpgradeReason.END_OF_LIFE:
+        default: {
+            return `The current project is using ${packageDisplayName} ${currentVersion}, which has reached end of life. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
+        }
+    }
+}
+
+
+export function buildFixPrompt(issue: UpgradeIssue): string {
+    const { packageDisplayName, reason, suggestedVersion: { name: suggestedVersionName } } = issue;
+
+    switch (reason) {
+        case UpgradeReason.CVE: {
+            return `upgrade ${packageDisplayName} to ${suggestedVersionName} to address CVE issues using java upgrade tools`;
         }
         case UpgradeReason.JRE_TOO_OLD: {
-            return `upgrade java runtime to latest LTS version${suggestedVersion ? ` (${suggestedVersion})` : ""
-                } using java upgrade tools`;
+            return `upgrade java runtime to the latest LTS version ${suggestedVersionName} using java upgrade tools`;
         }
         default: {
-            return `upgrade package ${name} to ${suggestedVersion ?? "the latest version"} using java upgrade tools`;
+            return `upgrade ${packageDisplayName} to ${suggestedVersionName} using java upgrade tools`;
         }
     }
 }
