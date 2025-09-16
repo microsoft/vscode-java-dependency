@@ -10,8 +10,6 @@ export namespace Commands {
      */
     export const EXECUTE_WORKSPACE_COMMAND = "java.execute.workspaceCommand";
 
-    export const GET_SYMBOLS_FROM_FILE = "java.getSymbolsFromFile";
-
     export const VIEW_PACKAGE_CHANGETOFLATPACKAGEVIEW = "java.view.package.changeToFlatPackageView";
 
     export const VIEW_PACKAGE_CHANGETOHIERARCHICALPACKAGEVIEW = "java.view.package.changeToHierarchicalPackageView";

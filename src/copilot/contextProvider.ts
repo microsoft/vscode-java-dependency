@@ -9,89 +9,11 @@ import {
     type ContextProvider,
 } from '@github/copilot-language-server';
 import * as vscode from 'vscode';
-import { CopilotHelper, INodeImportClass } from '../copilotHelper';
-import { TreatmentVariables } from '../ext/treatmentVariables';
-import { getExpService } from '../ext/ExperimentationService';
+import { CopilotHelper } from './copilotHelper';
+import { TreatmentVariables } from '../exp/treatmentVariables';
+import { getExpService } from '../exp/ExperimentationService';
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
-import * as crypto from 'crypto';
-
-export enum NodeKind {
-    Workspace = 1,
-    Project = 2,
-    PackageRoot = 3,
-    Package = 4,
-    PrimaryType = 5,
-    CompilationUnit = 6,
-    ClassFile = 7,
-    Container = 8,
-    Folder = 9,
-    File = 10,
-}
-
-// Global cache for storing resolveLocalImports results
-interface CacheEntry {
-    value: INodeImportClass[];
-    timestamp: number;
-}
-
-const globalImportsCache = new Map<string, CacheEntry>();
-const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Generate a hash for the document URI to use as cache key
- * @param uri Document URI
- * @returns Hashed URI string
- */
-function generateCacheKey(uri: vscode.Uri): string {
-    return crypto.createHash('md5').update(uri.toString()).digest('hex');
-}
-
-/**
- * Get cached imports for a document URI
- * @param uri Document URI
- * @returns Cached imports or null if not found/expired
- */
-function getCachedImports(uri: vscode.Uri): INodeImportClass[] | null {
-    const key = generateCacheKey(uri);
-    const cached = globalImportsCache.get(key);
-    
-    if (!cached) {
-        return null;
-    }
-    
-    // Check if cache is expired
-    if (Date.now() - cached.timestamp > CACHE_EXPIRY_TIME) {
-        globalImportsCache.delete(key);
-        return null;
-    }
-    
-    return cached.value;
-}
-
-/**
- * Set cached imports for a document URI
- * @param uri Document URI
- * @param imports Import class array to cache
- */
-function setCachedImports(uri: vscode.Uri, imports: INodeImportClass[]): void {
-    const key = generateCacheKey(uri);
-    globalImportsCache.set(key, {
-        value: imports,
-        timestamp: Date.now()
-    });
-}
-
-/**
- * Clear expired cache entries
- */
-function clearExpiredCache(): void {
-    const now = Date.now();
-    for (const [key, entry] of globalImportsCache.entries()) {
-        if (now - entry.timestamp > CACHE_EXPIRY_TIME) {
-            globalImportsCache.delete(key);
-        }
-    }
-}
+import { contextCache } from './contextCache';
 
 export async function registerCopilotContextProviders(
     context: vscode.ExtensionContext
@@ -107,33 +29,8 @@ export async function registerCopilotContextProviders(
         "contextProviderEnabled": "true",
     });
     
-    // Start periodic cache cleanup
-    const cacheCleanupInterval = setInterval(() => {
-        clearExpiredCache();
-    }, CACHE_EXPIRY_TIME); // Clean up every 5 minutes
-    
-    // Monitor file changes to invalidate cache
-    const fileWatcher = vscode.workspace.createFileSystemWatcher('**/*.java');
-    
-    const invalidateCache = (uri: vscode.Uri) => {
-        const key = generateCacheKey(uri);
-        if (globalImportsCache.has(key)) {
-            globalImportsCache.delete(key);
-            console.log('======== Cache invalidated for:', uri.toString());
-        }
-    };
-    
-    fileWatcher.onDidChange(invalidateCache);
-    fileWatcher.onDidDelete(invalidateCache);
-    
-    // Dispose the interval and file watcher when extension is deactivated
-    context.subscriptions.push(
-        new vscode.Disposable(() => {
-            clearInterval(cacheCleanupInterval);
-            globalImportsCache.clear(); // Clear all cache on disposal
-        }),
-        fileWatcher
-    );
+    // Initialize the context cache
+    contextCache.initialize(context);
     
     try {
         const copilotClientApi = await getCopilotClientApi();
@@ -151,11 +48,11 @@ export async function registerCopilotContextProviders(
                     // Check if we have a cached result for the current active editor
                     const activeEditor = vscode.window.activeTextEditor;
                     if (activeEditor && activeEditor.document.languageId === 'java') {
-                        const cachedImports = getCachedImports(activeEditor.document.uri);
+                        const cachedImports = contextCache.get(activeEditor.document.uri);
                         if (cachedImports) {
                             console.log('======== Using cached imports, cache size:', cachedImports.length);
                             // Return cached result as context items
-                            return cachedImports.map(cls => ({
+                            return cachedImports.map((cls: any) => ({
                                 uri: cls.uri,
                                 value: cls.className,
                                 importance: 70,
@@ -209,8 +106,9 @@ async function resolveJavaContext(_request: ResolveRequest, _token: vscode.Cance
         const document = activeEditor.document;
 
         // 1. Project basic information (High importance)
-        const projectContext = await collectProjectContext(document);
-        const packageName = await getPackageName(document);
+        const copilotHelper = new CopilotHelper();
+        const projectContext = await copilotHelper.collectProjectContext(document);
+        const packageName = await copilotHelper.getPackageName(document);
 
         items.push({
             name: 'java.version',
@@ -237,61 +135,34 @@ async function resolveJavaContext(_request: ResolveRequest, _token: vscode.Cance
         });
 
         // Try to get cached imports first
-        let importClass = getCachedImports(document.uri);
+        let importClass = contextCache.get(document.uri);
         if (!importClass) {
             // If not cached, resolve and cache the result
             importClass = await CopilotHelper.resolveLocalImports(document.uri);
-            setCachedImports(document.uri, importClass);
-            console.log('======== Cached new imports, cache size:', importClass.length);
+            if (importClass) {
+                contextCache.set(document.uri, importClass);
+                console.log('======== Cached new imports, cache size:', importClass.length);
+            }
         } else {
             console.log('======== Using cached imports in resolveJavaContext, cache size:', importClass.length);
         }
         
-        for (const cls of importClass) {
-            items.push({
-                uri: cls.uri,
-                value: cls.className,
-                importance: 70,
-                origin: 'request'
-            });
+        if (importClass) {
+            for (const cls of importClass) {
+                items.push({
+                    uri: cls.uri,
+                    value: cls.className,
+                    importance: 70,
+                    origin: 'request'
+                });
+            }
         }
-
-        console.log('tick time', performance.now() - start);
-
     } catch (error) {
         console.log('Error resolving Java context:', error);
-        // Add error information as context to help with debugging
-        items.push({
-            name: 'java.context.error',
-            value: `${error}`,
-            importance: 10,
-            id: 'java-context-error',
-            origin: 'request'
-        });
     }
     console.log('Total context resolution time:', performance.now() - start, 'ms', ' ,size:', items.length);
     console.log('Context items:', items);
     return items;
-}
-
-async function collectProjectContext(document: vscode.TextDocument): Promise<{ javaVersion: string }> {
-    try {
-        return await vscode.commands.executeCommand("java.project.getSettings", document.uri, ["java.compliance", "java.source", "java.target"]);
-    } catch (error) {
-        console.error('Failed to get Java version:', error);
-        return { javaVersion: 'unknown' };
-    }
-}
-
-async function getPackageName(document: vscode.TextDocument): Promise<string> {
-    try {
-        const text = document.getText();
-        const packageMatch = text.match(/^\s*package\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*;/m);
-        return packageMatch ? packageMatch[1] : 'default package';
-    } catch (error) {
-        console.log('Failed to get package name:', error);
-        return 'unknown';
-    }
 }
 
 interface CopilotApi {

@@ -10,7 +10,7 @@ import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
 import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
-import { init as initExpService } from "./ext/ExperimentationService";
+import { init as initExpService } from "./exp/ExperimentationService";
 import { DeprecatedExportJarTaskProvider, BuildArtifactTaskProvider } from "./tasks/buildArtifact/BuildArtifactTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";

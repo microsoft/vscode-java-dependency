@@ -9,7 +9,6 @@ import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
 import { IMainClassInfo } from "../tasks/buildArtifact/ResolveMainClassExecutor";
 import { INodeData, NodeKind } from "./nodeData";
 import { Settings } from "../settings";
-import { INodeImportClass } from "../copilotHelper";
 
 export namespace Jdtls {
     export async function getProjects(params: string): Promise<INodeData[]> {
@@ -102,4 +101,9 @@ export namespace Jdtls {
 interface IPackageDataParam {
     projectUri: string | undefined;
     [key: string]: any;
+}
+
+export interface INodeImportClass {
+    uri: string;
+    className: string;  // Changed from 'class' to 'className' to match Java code
 }
