@@ -9,13 +9,13 @@ import { Settings } from "../../settings";
 import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
-const SESSION_COUNT_KEY = `${KEY_PREFIX}.sessionCount`;
+const NEXT_SHOW_TS_KEY = `${KEY_PREFIX}.nextShowTs`;
 
 const BUTTON_TEXT_UPGRADE = "Upgrade Now";
 const BUTTON_TEXT_NOT_NOW = "Not Now";
-const BUTTON_TEXT_DONT_SHOW_AGAIN = "Don't Show Again";
 
-const SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW = 3;
+const SECONDS_IN_A_DAY = 24 * 60 * 60;
+const SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW = 10 * SECONDS_IN_A_DAY;
 
 class NotificationManager implements IUpgradeIssuesRenderer {
     private hasShown = false;
@@ -39,7 +39,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 }
                 this.hasShown = true;
 
-                this.setSessionCount((this.getSessionCount() ?? 0) + 1);
+                this.setNextShowTs((Number(new Date()) / 1000) + SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW);
 
                 if (!this.shouldShow()) {
                     return;
@@ -50,8 +50,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 const selection = await window.showInformationMessage(
                     notificationMessage,
                     BUTTON_TEXT_UPGRADE,
-                    BUTTON_TEXT_NOT_NOW,
-                    BUTTON_TEXT_DONT_SHOW_AGAIN);
+                    BUTTON_TEXT_NOT_NOW);
                 sendInfo(operationId, {
                     operationName: "java.dependency.upgradeNotification.runUpgrade",
                     choice: selection ?? "",
@@ -63,11 +62,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                         break;
                     }
                     case BUTTON_TEXT_NOT_NOW: {
-                        this.setSessionCount(-1 * SESSION_COUNT_BEFORE_NOTIFICATION_RESHOW);
-                        break;
-                    }
-                    case BUTTON_TEXT_DONT_SHOW_AGAIN: {
-                        Settings.disableWorkspaceDependencyCheckup();
+                        this.setNextShowTs(-1 * SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW);
                         break;
                     }
                 }
@@ -77,15 +72,15 @@ class NotificationManager implements IUpgradeIssuesRenderer {
 
     private shouldShow() {
         return Settings.getEnableDependencyCheckup()
-            && ((this.getSessionCount() ?? 0) >= 0);
+            && ((this.getNextShowTs() ?? 0) <= (Number(new Date()) / 1000));
     }
 
-    private getSessionCount() {
-        return this.context?.globalState.get<number>(SESSION_COUNT_KEY);
+    private getNextShowTs() {
+        return this.context?.globalState.get<number>(NEXT_SHOW_TS_KEY);
     }
 
-    private setSessionCount(num: number) {
-        return this.context?.globalState.update(SESSION_COUNT_KEY, num);
+    private setNextShowTs(num: number) {
+        return this.context?.globalState.update(NEXT_SHOW_TS_KEY, num);
     }
 }
 
