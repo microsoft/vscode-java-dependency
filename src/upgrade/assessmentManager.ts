@@ -114,8 +114,8 @@ async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]>
     return issues;
 }
 
-async function getWorkspaceIssues(workspaceUri: string): Promise<UpgradeIssue[]> {
-    const projects = await Jdtls.getProjects(workspaceUri);
+async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIssue[]> {
+    const projects = await Jdtls.getProjects(workspaceFolderUri);
     const projectsIssues = await Promise.allSettled(projects.map(async (projectNode) => {
         const issues = await getProjectIssues(projectNode);
         sendInfo("", {
