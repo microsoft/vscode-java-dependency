@@ -38,14 +38,14 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 }
                 const issue = issues[0];
 
+                if (!this.shouldShow()) {
+                    return;
+                }
+
                 if (this.hasShown) {
                     return;
                 }
                 this.hasShown = true;
-
-                if (!this.shouldShow()) {
-                    return;
-                }
 
                 const prompt = buildFixPrompt(issue);
                 const notificationMessage = buildNotificationMessage(issue);
