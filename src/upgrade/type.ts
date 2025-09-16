@@ -3,7 +3,11 @@
 
 export type UpgradeTarget = { name: string; description: string };
 export type DependencyCheckItemBase = { name: string, reason: UpgradeReason, suggestedVersion: UpgradeTarget };
-export type DependencyCheckItemEol = DependencyCheckItemBase & { reason: UpgradeReason.END_OF_LIFE, supportedVersion: string, eolDate: Record<string, string> };
+export type DependencyCheckItemEol = DependencyCheckItemBase & {
+    reason: UpgradeReason.END_OF_LIFE,
+    supportedVersion: string,
+    eolDate: Record<string, string>
+};
 export type DependencyCheckItemJreTooOld = DependencyCheckItemBase & { reason: UpgradeReason.JRE_TOO_OLD };
 export type DependencyCheckItemDeprecated = DependencyCheckItemBase & { reason: UpgradeReason.DEPRECATED };
 export type DependencyCheckItem = (DependencyCheckItemEol | DependencyCheckItemJreTooOld | DependencyCheckItemDeprecated);
