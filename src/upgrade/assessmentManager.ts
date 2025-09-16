@@ -13,48 +13,47 @@ import { sendInfo } from 'vscode-extension-telemetry-wrapper';
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
     const javaVersion = data.metaData?.MaxSourceVersion as number | undefined;
-    const { name, reason, supportedVersion, suggestedVersion } = DEPENDENCY_JAVA_RUNTIME;
+    const { name, supportedVersion } = DEPENDENCY_JAVA_RUNTIME;
     if (!javaVersion) {
         return [];
     }
     const currentSemVer = semver.coerce(javaVersion);
     if (currentSemVer && !semver.satisfies(currentSemVer, supportedVersion)) {
         return [{
+            ...DEPENDENCY_JAVA_RUNTIME,
             packageId: Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME,
             packageDisplayName: name,
             currentVersion: String(javaVersion),
-            reason,
-            suggestedVersion,
         }];
     }
 
     return [];
 }
 
-function getUpgradeForDependency(versionString: string, supportedVersionDefinition: DependencyCheckItem): Omit<UpgradeIssue, "packageId"> | null {
+function getUpgradeForDependency(versionString: string, supportedVersionDefinition: DependencyCheckItem, packageId: string): UpgradeIssue | null {
     const { reason } = supportedVersionDefinition;
     switch (reason) {
         case UpgradeReason.DEPRECATED: {
-            const { alternative } = supportedVersionDefinition;
             return {
+                ...supportedVersionDefinition,
                 packageDisplayName: supportedVersionDefinition.name,
                 reason,
                 currentVersion: versionString,
-                suggestedVersion: alternative,
+                packageId,
             };
         }
         case UpgradeReason.END_OF_LIFE: {
             const currentSemVer = semver.coerce(versionString);
             if (currentSemVer && !semver.satisfies(currentSemVer, supportedVersionDefinition.supportedVersion)) {
                 return {
+                    ...supportedVersionDefinition,
                     packageDisplayName: supportedVersionDefinition.name,
                     reason,
                     currentVersion: versionString,
-                    suggestedVersion: supportedVersionDefinition.suggestedVersion,
+                    packageId,
                 };
             }
         }
-
     }
 
     return null;
@@ -70,11 +69,7 @@ function getDependencyIssue(data: INodeData): UpgradeIssue | null {
         return null;
     }
 
-    const upgrade = getUpgradeForDependency(versionString, supportedVersionDefinition);
-    if (upgrade) {
-        return { ...upgrade, packageId };
-    }
-    return null;
+    return getUpgradeForDependency(versionString, supportedVersionDefinition, packageId);
 }
 
 async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {

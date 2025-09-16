@@ -2,8 +2,23 @@
 // Licensed under the MIT license.
 
 import { Uri } from "vscode";
+import * as semver from "semver";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 import { Upgrade } from "../constants";
+
+
+function findEolDate(currentVersion: string, eolDate: Record<string, string>): string | null {
+    const currentVersionSemVer = semver.coerce(currentVersion);
+    if (!currentVersionSemVer) {
+        return null;
+    }
+    for (const [versionRange, date] of Object.entries(eolDate)) {
+        if (semver.satisfies(currentVersionSemVer, versionRange)) {
+            return date;
+        }
+    }
+    return null;
+}
 
 export function buildNotificationMessage(issue: UpgradeIssue): string {
     const {
@@ -20,29 +35,31 @@ export function buildNotificationMessage(issue: UpgradeIssue): string {
     }
 
     switch (reason) {
-        case UpgradeReason.CVE: {
-            return `The current project is using ${packageDisplayName} ${currentVersion}, which has CVE issues. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
+        case UpgradeReason.END_OF_LIFE: {
+            const { eolDate } = issue;
+            const versionEolDate = findEolDate(currentVersion, eolDate);
+            return `The current project is using ${packageDisplayName} ${currentVersion}, which has reached end of life${versionEolDate ? ` in ${versionEolDate}` : ""
+                }. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
         }
         case UpgradeReason.DEPRECATED:
-        case UpgradeReason.END_OF_LIFE:
         default: {
-            return `The current project is using ${packageDisplayName} ${currentVersion}, which has reached end of life. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
+            return `The current project is using ${packageDisplayName} ${currentVersion}, which has been deprecated. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
         }
     }
 }
 
 
 export function buildFixPrompt(issue: UpgradeIssue): string {
-    const { packageDisplayName, reason, suggestedVersion: { name: suggestedVersionName } } = issue;
+    const { packageDisplayName, reason } = issue;
 
     switch (reason) {
-        case UpgradeReason.CVE: {
-            return `upgrade ${packageDisplayName} to ${suggestedVersionName} to address CVE issues using java upgrade tools`;
-        }
         case UpgradeReason.JRE_TOO_OLD: {
+            const { suggestedVersion: { name: suggestedVersionName } } = issue;
             return `upgrade java runtime to the latest LTS version ${suggestedVersionName} using java upgrade tools`;
         }
-        default: {
+        case UpgradeReason.END_OF_LIFE:
+        case UpgradeReason.DEPRECATED: {
+            const { suggestedVersion: { name: suggestedVersionName } } = issue;
             return `upgrade ${packageDisplayName} to ${suggestedVersionName} using java upgrade tools`;
         }
     }
@@ -55,3 +72,4 @@ export function buildPackageId(groupId: string, artifactId: string): string {
 export function normalizePath(path: string): string {
     return Uri.parse(path).toString();
 }
+
