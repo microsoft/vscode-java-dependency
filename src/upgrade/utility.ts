@@ -6,7 +6,14 @@ import { UpgradeReason, type UpgradeIssue } from "./type";
 import { Upgrade } from "../constants";
 
 export function buildNotificationMessage(issue: UpgradeIssue): string {
-    const { packageId, currentVersion, reason, suggestedVersion: { name: suggestedVersionName, description: suggestedVersionDescription }, packageDisplayName } = issue;
+    const {
+        packageId,
+        currentVersion,
+        reason,
+        suggestedVersion: { name: suggestedVersionName, description: suggestedVersionDescription },
+        packageDisplayName
+    } = issue;
+
 
     if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
         return `The current project is using an older Java runtime (${currentVersion}). Do you want to upgrade to the latest LTS version ${suggestedVersionName}?`;
