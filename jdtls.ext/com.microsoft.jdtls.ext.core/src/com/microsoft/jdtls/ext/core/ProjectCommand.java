@@ -42,7 +42,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaElement;
@@ -66,7 +65,6 @@ import org.eclipse.jdt.ls.core.internal.ResourceUtils;
 import org.eclipse.jdt.ls.core.internal.managers.ProjectsManager;
 import org.eclipse.jdt.ls.core.internal.managers.UpdateClasspathJob;
 import org.eclipse.jdt.ls.core.internal.preferences.Preferences.ReferencedLibraries;
-import org.eclipse.jdt.ls.core.internal.preferences.Preferences.SearchScope;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.CollectionTypeAdapter;
 import org.eclipse.lsp4j.jsonrpc.json.adapters.EnumTypeAdapter;
 
@@ -85,6 +83,16 @@ public final class ProjectCommand {
         public MainClassInfo(String name, String path) {
             this.name = name;
             this.path = path;
+        }
+    }
+
+    private static class ImportClassInfo {
+        public String uri;
+        public String className;
+
+        public ImportClassInfo(String uri, String className) {
+            this.uri = uri;
+            this.className = className;
         }
     }
 
@@ -110,7 +118,7 @@ public final class ProjectCommand {
             projects = ProjectUtils.getAllProjects();
         } else {
             projects = Arrays.stream(ProjectUtils.getJavaProjects())
-                .map(IJavaProject::getProject).toArray(IProject[]::new);
+                    .map(IJavaProject::getProject).toArray(IProject[]::new);
         }
 
         ArrayList<PackageNode> children = new ArrayList<>();
@@ -202,11 +210,14 @@ public final class ProjectCommand {
                 }
                 if (classpath.isArtifact) {
                     MultiStatus resultStatus = writeArchive(new ZipFile(classpath.source),
-                        /* areDirectoryEntriesIncluded = */true, /* isCompressed = */true, target, directories, monitor);
+                            /* areDirectoryEntriesIncluded = */true, /* isCompressed = */true, target, directories,
+                            monitor);
                     int severity = resultStatus.getSeverity();
                     if (severity == IStatus.OK) {
                         java.nio.file.Path path = java.nio.file.Paths.get(classpath.source);
-                        reportExportJarMessage(terminalId, IStatus.OK, "Successfully extracted the file to the exported jar: " + path.getFileName().toString());
+                        reportExportJarMessage(terminalId, IStatus.OK,
+                                "Successfully extracted the file to the exported jar: "
+                                        + path.getFileName().toString());
                         continue;
                     }
                     if (resultStatus.isMultiStatus()) {
@@ -218,9 +229,13 @@ public final class ProjectCommand {
                     }
                 } else {
                     try {
-                        writeFile(new File(classpath.source), new Path(classpath.destination), /* areDirectoryEntriesIncluded = */true,
-                            /* isCompressed = */true, target, directories);
-                        reportExportJarMessage(terminalId, IStatus.OK, "Successfully added the file to the exported jar: " + classpath.destination);
+                        writeFile(new File(classpath.source), new Path(classpath.destination), /*
+                                                                                                * areDirectoryEntriesIncluded
+                                                                                                * =
+                                                                                                */true,
+                                /* isCompressed = */true, target, directories);
+                        reportExportJarMessage(terminalId, IStatus.OK,
+                                "Successfully added the file to the exported jar: " + classpath.destination);
                     } catch (CoreException e) {
                         reportExportJarMessage(terminalId, IStatus.ERROR, e.getMessage());
                     }
@@ -233,7 +248,8 @@ public final class ProjectCommand {
         return true;
     }
 
-    public static List<MainClassInfo> getMainClasses(List<Object> arguments, IProgressMonitor monitor) throws Exception {
+    public static List<MainClassInfo> getMainClasses(List<Object> arguments, IProgressMonitor monitor)
+            throws Exception {
         List<Object> args = new ArrayList<>(arguments);
         if (args.size() <= 1) {
             args.add(Boolean.TRUE);
@@ -246,7 +262,7 @@ public final class ProjectCommand {
         }
         final List<MainClassInfo> res = new ArrayList<>();
         List<IJavaProject> javaProjects = new ArrayList<>();
-        for (PackageNode project: projectList) {
+        for (PackageNode project : projectList) {
             IJavaProject javaProject = PackageCommand.getJavaProject(project.getUri());
             if (javaProject != null && javaProject.exists()) {
                 javaProjects.add(javaProject);
@@ -254,7 +270,7 @@ public final class ProjectCommand {
         }
         int includeMask = IJavaSearchScope.SOURCES;
         IJavaSearchScope scope = SearchEngine.createJavaSearchScope(javaProjects.toArray(new IJavaProject[0]),
-                    includeMask);
+                includeMask);
         SearchPattern pattern1 = SearchPattern.createPattern("main(String[]) void", IJavaSearchConstants.METHOD,
                 IJavaSearchConstants.DECLARATIONS, SearchPattern.R_CASE_SENSITIVE | SearchPattern.R_EXACT_MATCH);
         SearchPattern pattern2 = SearchPattern.createPattern("main() void", IJavaSearchConstants.METHOD,
@@ -285,7 +301,7 @@ public final class ProjectCommand {
         };
         SearchEngine searchEngine = new SearchEngine();
         try {
-            searchEngine.search(pattern, new SearchParticipant[] {SearchEngine.getDefaultSearchParticipant()}, scope,
+            searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope,
                     requestor, monitor);
         } catch (CoreException e) {
             // ignore
@@ -332,11 +348,311 @@ public final class ProjectCommand {
         return hasError;
     }
 
+    public static ImportClassInfo[] getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
+        if (arguments == null || arguments.isEmpty()) {
+            return new ImportClassInfo[0];
+        }
+
+        try {
+            String fileUri = (String) arguments.get(0);
+
+            // Parse URI manually to avoid restricted API
+            java.net.URI uri = new java.net.URI(fileUri);
+            String filePath = uri.getPath();
+            if (filePath == null) {
+                return new ImportClassInfo[0];
+            }
+
+            IPath path = new Path(filePath);
+
+            // Get the file resource
+            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+            IFile file = root.getFileForLocation(path);
+            if (file == null || !file.exists()) {
+                return new ImportClassInfo[0];
+            }
+
+            // Get the Java project
+            IJavaProject javaProject = JavaCore.create(file.getProject());
+            if (javaProject == null || !javaProject.exists()) {
+                return new ImportClassInfo[0];
+            }
+
+            // Find the compilation unit
+            IJavaElement javaElement = JavaCore.create(file);
+            if (!(javaElement instanceof org.eclipse.jdt.core.ICompilationUnit)) {
+                return new ImportClassInfo[0];
+            }
+
+            org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
+
+            // Parse imports and resolve local project files
+            List<ImportClassInfo> result = new ArrayList<>();
+
+            // Get all imports from the compilation unit
+            org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
+            Set<String> processedTypes = new HashSet<>();
+
+            for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
+                if (monitor.isCanceled()) {
+                    break;
+                }
+
+                String importName = importDecl.getElementName();
+                if (importName.endsWith(".*")) {
+                    // Handle package imports
+                    String packageName = importName.substring(0, importName.length() - 2);
+                    resolvePackageTypes(javaProject, packageName, result, processedTypes);
+                } else {
+                    // Handle single type imports
+                    resolveSingleType(javaProject, importName, result, processedTypes);
+                }
+            }
+
+            return result.toArray(new ImportClassInfo[0]);
+
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error in resolveCopilotRequest", e);
+            return new ImportClassInfo[0];
+        }
+    }
+
+    private static void resolveSingleType(IJavaProject javaProject, String typeName, List<ImportClassInfo> result,
+            Set<String> processedTypes) {
+        try {
+            if (processedTypes.contains(typeName)) {
+                return;
+            }
+            processedTypes.add(typeName);
+
+            // Find the type in the project
+            org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
+            if (type != null && type.exists()) {
+                // Check if it's a local project type (not from external dependencies)
+                IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) type
+                        .getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
+                if (packageRoot != null && packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                    // This is a source type from the local project
+                    extractTypeInfo(type, result);
+                }
+            }
+        } catch (JavaModelException e) {
+            // Log but continue processing other types
+            JdtlsExtActivator.logException("Error resolving type: " + typeName, e);
+        }
+    }
+
+    private static void resolvePackageTypes(IJavaProject javaProject, String packageName, List<ImportClassInfo> result,
+            Set<String> processedTypes) {
+        try {
+            // Find all package fragments with this name
+            IPackageFragmentRoot[] packageRoots = javaProject.getPackageFragmentRoots();
+            for (IPackageFragmentRoot packageRoot : packageRoots) {
+                if (packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                    org.eclipse.jdt.core.IPackageFragment packageFragment = packageRoot.getPackageFragment(packageName);
+                    if (packageFragment != null && packageFragment.exists()) {
+                        // Get all compilation units in this package
+                        org.eclipse.jdt.core.ICompilationUnit[] compilationUnits = packageFragment
+                                .getCompilationUnits();
+                        for (org.eclipse.jdt.core.ICompilationUnit cu : compilationUnits) {
+                            // Get all types in the compilation unit
+                            org.eclipse.jdt.core.IType[] types = cu.getAllTypes();
+                            for (org.eclipse.jdt.core.IType type : types) {
+                                String fullTypeName = type.getFullyQualifiedName();
+                                if (!processedTypes.contains(fullTypeName)) {
+                                    processedTypes.add(fullTypeName);
+                                    extractTypeInfo(type, result);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            // Log but continue processing
+            JdtlsExtActivator.logException("Error resolving package: " + packageName, e);
+        }
+    }
+
+    private static void extractTypeInfo(org.eclipse.jdt.core.IType type, List<ImportClassInfo> result) {
+        try {
+            String typeName = type.getFullyQualifiedName();
+            String typeInfo = "";
+
+            // Determine type kind
+            if (type.isInterface()) {
+                typeInfo = "interface:" + typeName;
+            } else if (type.isClass()) {
+                extractDetailedClassInfo(type, result);
+                return; // extractDetailedClassInfo handles adding to result
+            } else if (type.isEnum()) {
+                typeInfo = "enum:" + typeName;
+            } else if (type.isAnnotation()) {
+                typeInfo = "annotation:" + typeName;
+            } else {
+                typeInfo = "type:" + typeName;
+            }
+
+            // Get URI for this type
+            String uri = getTypeUri(type);
+            if (uri != null) {
+                result.add(new ImportClassInfo(uri, typeInfo));
+            }
+
+            // Also add nested types
+            org.eclipse.jdt.core.IType[] nestedTypes = type.getTypes();
+            for (org.eclipse.jdt.core.IType nestedType : nestedTypes) {
+                extractTypeInfo(nestedType, result);
+            }
+
+        } catch (JavaModelException e) {
+            // Log but continue processing other types
+            JdtlsExtActivator.logException("Error extracting type info for: " + type.getElementName(), e);
+        }
+    }
+
+    private static void extractDetailedClassInfo(org.eclipse.jdt.core.IType type, List<ImportClassInfo> result) {
+        try {
+            if (!type.isClass()) {
+                return; // Only process classes
+            }
+
+            String className = type.getFullyQualifiedName();
+            List<String> classDetails = new ArrayList<>();
+
+            // 1. Class declaration information
+            classDetails.add("class:" + className);
+
+            // 2. Modifiers
+            int flags = type.getFlags();
+            List<String> modifiers = new ArrayList<>();
+            if (org.eclipse.jdt.core.Flags.isPublic(flags))
+                modifiers.add("public");
+            if (org.eclipse.jdt.core.Flags.isAbstract(flags))
+                modifiers.add("abstract");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags))
+                modifiers.add("final");
+            if (org.eclipse.jdt.core.Flags.isStatic(flags))
+                modifiers.add("static");
+            if (!modifiers.isEmpty()) {
+                classDetails.add("modifiers:" + String.join(",", modifiers));
+            }
+
+            // 3. Inheritance
+            String superclass = type.getSuperclassName();
+            if (superclass != null && !"Object".equals(superclass)) {
+                classDetails.add("extends:" + superclass);
+            }
+
+            // 4. Implemented interfaces
+            String[] interfaces = type.getSuperInterfaceNames();
+            if (interfaces.length > 0) {
+                classDetails.add("implements:" + String.join(",", interfaces));
+            }
+
+            // 5. Constructors
+            IMethod[] methods = type.getMethods();
+            List<String> constructors = new ArrayList<>();
+            List<String> publicMethods = new ArrayList<>();
+
+            for (IMethod method : methods) {
+                if (method.isConstructor()) {
+                    constructors.add(method.getElementName() + getParameterTypes(method));
+                } else if (org.eclipse.jdt.core.Flags.isPublic(method.getFlags())) {
+                    publicMethods.add(method.getElementName() + getParameterTypes(method));
+                }
+            }
+
+            if (!constructors.isEmpty()) {
+                classDetails.add("constructors:" + String.join(",", constructors));
+            }
+
+            if (!publicMethods.isEmpty()) {
+                classDetails.add("publicMethods:"
+                        + String.join(",", publicMethods.subList(0, Math.min(publicMethods.size(), 10))));
+            }
+
+            // 6. Public fields
+            org.eclipse.jdt.core.IField[] fields = type.getFields();
+            List<String> publicFields = new ArrayList<>();
+            for (org.eclipse.jdt.core.IField field : fields) {
+                if (org.eclipse.jdt.core.Flags.isPublic(field.getFlags())) {
+                    publicFields.add(field.getElementName());
+                }
+            }
+
+            if (!publicFields.isEmpty()) {
+                classDetails.add("publicFields:" + String.join(",", publicFields));
+            }
+
+            // Get URI for this type
+            String uri = getTypeUri(type);
+            if (uri != null) {
+                // Combine all information into one string
+                String classInfo = String.join("|", classDetails);
+                result.add(new ImportClassInfo(uri, classInfo));
+            }
+
+        } catch (JavaModelException e) {
+            JdtlsExtActivator.logException("Error extracting detailed class info", e);
+        }
+    }
+
+    private static String getTypeUri(org.eclipse.jdt.core.IType type) {
+        try {
+            // Get the resource where the type is located
+            IResource resource = type.getResource();
+            if (resource != null && resource.exists()) {
+                // Get the complete path of the file
+                IPath location = resource.getLocation();
+                if (location != null) {
+                    // 转换为 URI 格式
+                    return location.toFile().toURI().toString();
+                }
+
+                // If unable to get physical path, use workspace relative path
+                String workspacePath = resource.getFullPath().toString();
+                IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+                IPath rootLocation = root.getLocation();
+                if (rootLocation != null) {
+                    IPath fullPath = rootLocation.append(workspacePath);
+                    return fullPath.toFile().toURI().toString();
+                }
+            }
+
+            // As a fallback, try to get from compilation unit
+            org.eclipse.jdt.core.ICompilationUnit compilationUnit = type.getCompilationUnit();
+            if (compilationUnit != null) {
+                IResource cuResource = compilationUnit.getResource();
+                if (cuResource != null && cuResource.exists()) {
+                    IPath cuLocation = cuResource.getLocation();
+                    if (cuLocation != null) {
+                        return cuLocation.toFile().toURI().toString();
+                    }
+                }
+            }
+
+            return null;
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error getting type URI for: " + type.getElementName(), e);
+            return null;
+        }
+    }
+
+    // Helper method: Get method parameter types
+    private static String getParameterTypes(IMethod method) {
+        String[] paramTypes = method.getParameterTypes();
+        if (paramTypes.length == 0) {
+            return "()";
+        }
+        return "(" + String.join(",", paramTypes) + ")";
+    }
+
     private static void reportExportJarMessage(String terminalId, int severity, String message) {
         if (StringUtils.isNotBlank(message) && StringUtils.isNotBlank(terminalId)) {
             String readableSeverity = getSeverityString(severity);
             JavaLanguageServerPlugin.getInstance().getClientConnection().executeClientCommand(COMMAND_EXPORT_JAR_REPORT,
-                terminalId, "[" + readableSeverity + "] " + message);
+                    terminalId, "[" + readableSeverity + "] " + message);
         }
     }
 
