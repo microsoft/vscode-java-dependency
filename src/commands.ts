@@ -116,8 +116,6 @@ export namespace Commands {
 
     export const JAVA_PROJECT_GETMAINCLASSES = "java.project.getMainClasses";
 
-    export const JAVA_PROJECT_GETIMPORTCLASSCONTENT = "java.project.getImportClassContent";
-
     export const JAVA_PROJECT_GENERATEJAR = "java.project.generateJar";
 
     export const JAVA_BUILD_WORKSPACE = "java.workspace.compile";

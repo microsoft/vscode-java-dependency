@@ -10,7 +10,7 @@ import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
 import { buildFiles, Context, ExtensionName } from "./constants";
 import { LibraryController } from "./controllers/libraryController";
 import { ProjectController } from "./controllers/projectController";
-import { init as initExpService } from "./exp/ExperimentationService";
+import { init as initExpService } from "./ExperimentationService";
 import { DeprecatedExportJarTaskProvider, BuildArtifactTaskProvider } from "./tasks/buildArtifact/BuildArtifactTaskProvider";
 import { Settings } from "./settings";
 import { syncHandler } from "./syncHandler";
@@ -20,7 +20,6 @@ import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticPr
 import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
-import { registerCopilotContextProviders } from "./copilot/contextProvider";
 import upgradeManager from "./upgrade/upgradeManager";
 
 export async function activate(context: ExtensionContext): Promise<void> {
@@ -38,7 +37,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
         }
     });
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
-    await registerCopilotContextProviders(context);
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
@@ -52,7 +50,6 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(tasks.registerTaskProvider(BuildArtifactTaskProvider.exportJarType, new BuildArtifactTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
     context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MENUS_FILE_NEW_JAVA_CLASS, newJavaFile));
-    
     context.subscriptions.push(window.onDidChangeActiveTextEditor((e: TextEditor | undefined) => {
         setContextForReloadProject(e?.document);
     }));

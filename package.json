@@ -1110,7 +1110,6 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "@github/copilot-language-server": "^1.316.0",
     "await-lock": "^2.2.2",
     "fmtr": "^1.1.4",
     "fs-extra": "^10.1.0",

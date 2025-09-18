@@ -72,10 +72,6 @@ export namespace Jdtls {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETMAINCLASSES, params) || [];
     }
 
-    export async function getImportClassContent(fileUri: string): Promise<INodeImportClass[]> {
-        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GETIMPORTCLASSCONTENT, fileUri) || [];
-    }
-
     export async function exportJar(mainClass: string, classpaths: IClasspath[],
                                     destination: string, terminalId: string, token: CancellationToken): Promise<boolean | undefined> {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GENERATEJAR,
