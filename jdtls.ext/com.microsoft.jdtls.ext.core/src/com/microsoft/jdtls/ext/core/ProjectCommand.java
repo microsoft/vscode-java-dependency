@@ -598,43 +598,14 @@ public final class ProjectCommand {
         }
     }
 
+    // Helper method: Get fully qualified class name (used as identifier instead of file URI)
     private static String getTypeUri(org.eclipse.jdt.core.IType type) {
         try {
-            // Get the resource where the type is located
-            IResource resource = type.getResource();
-            if (resource != null && resource.exists()) {
-                // Get the complete path of the file
-                IPath location = resource.getLocation();
-                if (location != null) {
-                    // 转换为 URI 格式
-                    return location.toFile().toURI().toString();
-                }
-
-                // If unable to get physical path, use workspace relative path
-                String workspacePath = resource.getFullPath().toString();
-                IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-                IPath rootLocation = root.getLocation();
-                if (rootLocation != null) {
-                    IPath fullPath = rootLocation.append(workspacePath);
-                    return fullPath.toFile().toURI().toString();
-                }
-            }
-
-            // As a fallback, try to get from compilation unit
-            org.eclipse.jdt.core.ICompilationUnit compilationUnit = type.getCompilationUnit();
-            if (compilationUnit != null) {
-                IResource cuResource = compilationUnit.getResource();
-                if (cuResource != null && cuResource.exists()) {
-                    IPath cuLocation = cuResource.getLocation();
-                    if (cuLocation != null) {
-                        return cuLocation.toFile().toURI().toString();
-                    }
-                }
-            }
-
-            return null;
+            // Return the fully qualified class name instead of file URI
+            // This matches the import statement format like "com.acme.user.UserService"
+            return type.getFullyQualifiedName();
         } catch (Exception e) {
-            JdtlsExtActivator.logException("Error getting type URI for: " + type.getElementName(), e);
+            JdtlsExtActivator.logException("Error getting type name for: " + type.getElementName(), e);
             return null;
         }
     }
