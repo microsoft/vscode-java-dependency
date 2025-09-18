@@ -288,6 +288,16 @@
         "command": "java.view.package.renameFile",
         "title": "%contributes.commands.java.view.package.renameFile%",
         "category": "Java"
+      },
+      {
+        "command": "_java.view.modernizeJavaProject",
+        "title": "%contributes.commands.java.view.modernizeJavaProject%",
+        "category": "Java"
+      },
+      {
+        "command": "_java.upgradeWithCopilot",
+        "title": "%contributes.commands.java.upgradeWithCopilot%",
+        "category": "Java"
       }
     ],
     "configuration": {
@@ -322,6 +332,11 @@
           ],
           "description": "%configuration.java.dependency.packagePresentation%",
           "default": "flat"
+        },
+        "java.dependency.enableDependencyCheckup": {
+          "type": "boolean",
+          "description": "%configuration.java.dependency.enableDependencyCheckup%",
+          "default": true
         },
         "java.project.exportJar.targetPath": {
           "type": "string",
@@ -550,6 +565,14 @@
         {
           "command": "_java.project.create.from.javaprojectexplorer",
           "when": "false"
+        },
+        {
+          "command": "_java.view.modernizeJavaProject",
+          "when": "false"
+        },
+        {
+          "command": "_java.upgradeWithCopilot",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -567,6 +590,11 @@
           "command": "_java.project.create.from.fileexplorer.menu",
           "when": "explorerResourceIsFolder",
           "group": "1_javaactions@30"
+        },
+        {
+          "command": "_java.view.modernizeJavaProject",
+          "when": "explorerResourceIsFolder && java:serverMode && isModernizationExtensionInstalled",
+          "group": "1_javaactions@40"
         },
         {
           "command": "java.view.package.revealInProjectExplorer",

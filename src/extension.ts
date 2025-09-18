@@ -21,9 +21,11 @@ import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buil
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
 import { registerCopilotContextProviders } from "./copilot/contextProvider";
+import upgradeManager from "./upgrade/upgradeManager";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
+    upgradeManager.initialize(context);
     await initializeFromJsonFile(context.asAbsolutePath("./package.json"));
     await initExpService(context);
     await instrumentOperation("activation", activateExtension)(context);

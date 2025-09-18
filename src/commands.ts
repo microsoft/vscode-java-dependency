@@ -42,6 +42,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_NEW_JAVA_CLASS = "java.view.package.newJavaClass";
 
+    export const VIEW_MODERNIZE_JAVA_PROJECT = "_java.view.modernizeJavaProject";
+
     export const VIEW_PACKAGE_NEW_JAVA_INTERFACE = "java.view.package.newJavaInterface";
 
     export const VIEW_PACKAGE_NEW_JAVA_ENUM = "java.view.package.newJavaEnum";
@@ -134,6 +136,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_CHECK_IMPORT_STATUS = "java.project.checkImportStatus";
 
+    export const JAVA_UPGRADE_WITH_COPILOT = "_java.upgradeWithCopilot";
+
     /**
      * Commands from Visual Studio Code
      */
@@ -157,6 +161,11 @@ export namespace Commands {
     export const GET_ALL_PROJECTS = "java.project.getAll";
 
     export const BUILD_PROJECT = "java.project.build";
+
+    /**
+     * Commands from Java Upgrade Tool
+     */
+    export const GOTO_AGENT_MODE = "javaupgrade.gotoAgentMode";
 
     /**
      * Get the project settings
