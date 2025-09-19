@@ -20,9 +20,11 @@ import { DiagnosticProvider } from "./tasks/buildArtifact/migration/DiagnosticPr
 import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buildArtifact/migration/utils";
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
+import upgradeManager from "./upgrade/upgradeManager";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
+    upgradeManager.initialize(context);
     await initializeFromJsonFile(context.asAbsolutePath("./package.json"));
     await initExpService(context);
     await instrumentOperation("activation", activateExtension)(context);

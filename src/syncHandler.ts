@@ -13,6 +13,7 @@ import { DataNode } from "./views/dataNode";
 import { ExplorerNode } from "./views/explorerNode";
 import { explorerNodeCache } from "./views/nodeCache/explorerNodeCache";
 import { Jdtls } from "./java/jdtls";
+import upgradeManager from "./upgrade/upgradeManager";
 
 const ENABLE_AUTO_REFRESH: string = "java.view.package.enableAutoRefresh";
 const DISABLE_AUTO_REFRESH: string = "java.view.package.disableAutoRefresh";
@@ -46,6 +47,7 @@ class SyncHandler implements Disposable {
 
         this.disposables.push(workspace.onDidChangeWorkspaceFolders(() => {
             this.refresh();
+            upgradeManager.scan();
         }));
 
         try {
