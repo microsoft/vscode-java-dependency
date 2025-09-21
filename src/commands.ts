@@ -169,6 +169,13 @@ export namespace Commands {
      * Get the project settings
      */
     export const GET_PROJECT_SETTINGS = 'java.project.getSettings';
+
+    /**
+     * Commands for Copilot context provider.
+     */
+    export const JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT = 'java.project.getImportClassContent';
+    export const JAVA_COMMAND_GET_IMPORT_CLASS_CONTENT = '_java.project.get.importClassContent';
+
 }
 
 export function executeJavaLanguageServerCommand(...rest: any[]) {

@@ -26,6 +26,10 @@ export class LibraryController implements Disposable {
                 node.uri && this.removeLibrary(Uri.parse(node.uri).fsPath)),
             instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REFRESH_LIBRARIES, () =>
                 this.refreshLibraries()),
+            instrumentOperationAsVsCodeCommand(Commands.JAVA_COMMAND_GET_IMPORT_CLASS_CONTENT, async (uri: string)=>  {
+                console.log('=============== JAVA_COMMAND_GET_IMPORT_CLASS_CONTENT =================');
+                await Jdtls.getImportClassContent(uri)
+            }),
         );
     }
 

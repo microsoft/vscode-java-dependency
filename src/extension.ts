@@ -82,6 +82,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
             await updateExportTaskType(document, range);
         }
     ));
+    
     setContextForDeprecatedTasks();
 }
 

@@ -298,6 +298,11 @@
         "command": "_java.upgradeWithCopilot",
         "title": "%contributes.commands.java.upgradeWithCopilot%",
         "category": "Java"
+      },
+      {
+        "command": "_java.project.get.importClassContent",
+        "title": "%contributes.commands.java.project.getImportClassContent%",
+        "category": "Java"
       }
     ],
     "configuration": {

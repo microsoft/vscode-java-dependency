@@ -3,7 +3,7 @@
 
 
 import * as minimatch from "minimatch";
-import { CancellationToken, Uri, commands, workspace } from "vscode";
+import { CancellationToken, Uri, commands, workspace, window } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
 import { IMainClassInfo } from "../tasks/buildArtifact/ResolveMainClassExecutor";
@@ -92,9 +92,24 @@ export namespace Jdtls {
     export function resolveBuildFiles(): Promise<string[]> {
         return <Promise<string[]>>executeJavaLanguageServerCommand(Commands.JAVA_RESOLVE_BUILD_FILES);
     }
+
+    export async function getImportClassContent(uris: string): Promise<INodeImportClass[]> {
+        if (!uris) {
+            uris = window.activeTextEditor?.document.uri.toString() || '';
+        }
+        const res = await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT, uris) || [];
+        console.log('=============== getImportClassContent =================');
+        console.log(res);
+        return res as INodeImportClass[];
+    }
 }
 
 interface IPackageDataParam {
     projectUri: string | undefined;
     [key: string]: any;
+}
+
+interface INodeImportClass {
+    uri: string;
+    className: string;  // Changed from 'class' to 'className' to match Java code
 }
