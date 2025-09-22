@@ -435,7 +435,21 @@ public final class ProjectCommand {
             String packageName = typeName.substring(0, lastDotIndex);
             String simpleName = typeName.substring(lastDotIndex + 1);
             
-            // Search for the type in source package fragments only
+            // First try to find the type using JDT's built-in type resolution
+            try {
+                org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
+                if (type != null && type.exists() && type.isBinary() == false) {
+                    // This is a local project type (not from a JAR)
+                    extractTypeInfo(type, result);
+                    return;
+                }
+            } catch (JavaModelException e) {
+                JdtlsExtActivator.logException("Error finding type: " + typeName, e);
+                // Fall back to manual search if findType fails
+                return;
+            }
+            
+            // Fallback: Search for the type in source package fragments manually
             IPackageFragmentRoot[] packageRoots = javaProject.getPackageFragmentRoots();
             for (IPackageFragmentRoot packageRoot : packageRoots) {
                 if (packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
@@ -443,7 +457,7 @@ public final class ProjectCommand {
                     if (packageFragment != null && packageFragment.exists()) {
                         // Look for compilation unit with matching name
                         org.eclipse.jdt.core.ICompilationUnit cu = packageFragment.getCompilationUnit(simpleName + ".java");
-                        if (cu != null && cu.exists()) {
+                        if (cu != null && cu.exists() && cu.getResource() != null && cu.getResource().exists()) {
                             // Get primary type from compilation unit
                             org.eclipse.jdt.core.IType primaryType = cu.findPrimaryType();
                             if (primaryType != null && primaryType.exists() && 
