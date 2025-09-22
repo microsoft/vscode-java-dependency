@@ -425,15 +425,44 @@ public final class ProjectCommand {
             }
             processedTypes.add(typeName);
 
-            // Find the type in the project
-            org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
-            if (type != null && type.exists()) {
-                // Check if it's a local project type (not from external dependencies)
-                IPackageFragmentRoot packageRoot = (IPackageFragmentRoot) type
-                        .getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
-                if (packageRoot != null && packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
-                    // This is a source type from the local project
-                    extractTypeInfo(type, result);
+            // Extract package and simple name from the fully qualified type name
+            int lastDotIndex = typeName.lastIndexOf('.');
+            if (lastDotIndex == -1) {
+                // Default package or invalid type name
+                return;
+            }
+            
+            String packageName = typeName.substring(0, lastDotIndex);
+            String simpleName = typeName.substring(lastDotIndex + 1);
+            
+            // Search for the type in source package fragments only
+            IPackageFragmentRoot[] packageRoots = javaProject.getPackageFragmentRoots();
+            for (IPackageFragmentRoot packageRoot : packageRoots) {
+                if (packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                    org.eclipse.jdt.core.IPackageFragment packageFragment = packageRoot.getPackageFragment(packageName);
+                    if (packageFragment != null && packageFragment.exists()) {
+                        // Look for compilation unit with matching name
+                        org.eclipse.jdt.core.ICompilationUnit cu = packageFragment.getCompilationUnit(simpleName + ".java");
+                        if (cu != null && cu.exists()) {
+                            // Get primary type from compilation unit
+                            org.eclipse.jdt.core.IType primaryType = cu.findPrimaryType();
+                            if (primaryType != null && primaryType.exists() && 
+                                typeName.equals(primaryType.getFullyQualifiedName())) {
+                                // This is a local project type
+                                extractTypeInfo(primaryType, result);
+                                return;
+                            }
+                            
+                            // Also check for inner types in the compilation unit
+                            org.eclipse.jdt.core.IType[] allTypes = cu.getAllTypes();
+                            for (org.eclipse.jdt.core.IType type : allTypes) {
+                                if (typeName.equals(type.getFullyQualifiedName())) {
+                                    extractTypeInfo(type, result);
+                                    return;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } catch (JavaModelException e) {
