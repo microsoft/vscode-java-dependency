@@ -103,13 +103,13 @@ extends:
                 displayName: Replace AI Key
                 inputs:
                   script: npx json@9.0.6 -I -f package.json -e "this.aiKey=\"%AI_KEY%\""
-              - task: PowerShell@2
-                displayName: Update package.json
-                inputs:
-                  targetType: inline
-                  script: |-
-                    node ./scripts/prepare-nightly-build.js
-                    Move-Item -Path "./package.insiders.json" -Destination "./package.json" -Force
+              # - task: PowerShell@2
+              #   displayName: Update package.json
+              #   inputs:
+              #     targetType: inline
+              #     script: |-
+              #       node ./scripts/prepare-nightly-build.js
+              #       Move-Item -Path "./package.insiders.json" -Destination "./package.json" -Force
               - script: npx @vscode/vsce@latest package -o extension.vsix
                 displayName: 'vsce package'
               ### Copy files for APIScan
