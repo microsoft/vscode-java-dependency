@@ -110,8 +110,8 @@ extends:
                   script: |-
                     node ./scripts/prepare-nightly-build.js
                     Move-Item -Path "./package.insiders.json" -Destination "./package.json" -Force
-              - script: npx @vscode/vsce@latest package --pre-release -o extension.vsix
-                displayName: 'vsce package --pre-release'
+              - script: npx @vscode/vsce@latest package -o extension.vsix
+                displayName: 'vsce package'
               ### Copy files for APIScan
               - task: CopyFiles@2
                 displayName: "Copy Files for APIScan"
