@@ -399,7 +399,12 @@ public final class ProjectCommand {
                 }
 
                 String importName = importDecl.getElementName();
-                if (importName.endsWith(".*")) {
+                boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
+                
+                if (isStatic) {
+                    // Handle static imports
+                    resolveStaticImport(javaProject, importName, result, processedTypes);
+                } else if (importName.endsWith(".*")) {
                     // Handle package imports
                     String packageName = importName.substring(0, importName.length() - 2);
                     resolvePackageTypes(javaProject, packageName, result, processedTypes);
@@ -488,6 +493,118 @@ public final class ProjectCommand {
         } catch (JavaModelException e) {
             // Log but continue processing other types
             JdtlsExtActivator.logException("Error resolving type: " + typeName, e);
+        }
+    }
+
+    private static void resolveStaticImport(IJavaProject javaProject, String staticImportName, List<ImportClassInfo> result,
+            Set<String> processedTypes) {
+        try {
+            if (staticImportName.endsWith(".*")) {
+                // Static import of all static members from a class: import static MyClass.*;
+                String className = staticImportName.substring(0, staticImportName.length() - 2);
+                resolveStaticMembersFromClass(javaProject, className, result, processedTypes);
+            } else {
+                // Static import of specific member: import static MyClass.myMethod;
+                int lastDotIndex = staticImportName.lastIndexOf('.');
+                if (lastDotIndex > 0) {
+                    String className = staticImportName.substring(0, lastDotIndex);
+                    String memberName = staticImportName.substring(lastDotIndex + 1);
+                    resolveStaticMemberFromClass(javaProject, className, memberName, result, processedTypes);
+                }
+            }
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error resolving static import: " + staticImportName, e);
+        }
+    }
+
+    private static void resolveStaticMembersFromClass(IJavaProject javaProject, String className, 
+            List<ImportClassInfo> result, Set<String> processedTypes) {
+        try {
+            // First resolve the class itself to get context information
+            resolveSingleType(javaProject, className, result, processedTypes);
+            
+            // Find the type and extract its static members
+            org.eclipse.jdt.core.IType type = javaProject.findType(className);
+            if (type != null && type.exists() && !type.isBinary()) {
+                String staticMemberInfo = "staticImport:" + className + ".*";
+                
+                // Add information about available static members
+                List<String> staticMembers = new ArrayList<>();
+                
+                // Get static methods
+                IMethod[] methods = type.getMethods();
+                for (IMethod method : methods) {
+                    int flags = method.getFlags();
+                    if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isPublic(flags)) {
+                        staticMembers.add("method:" + method.getElementName() + getParameterTypes(method));
+                    }
+                }
+                
+                // Get static fields
+                org.eclipse.jdt.core.IField[] fields = type.getFields();
+                for (org.eclipse.jdt.core.IField field : fields) {
+                    int flags = field.getFlags();
+                    if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isPublic(flags)) {
+                        staticMembers.add("field:" + field.getElementName());
+                    }
+                }
+                
+                if (!staticMembers.isEmpty()) {
+                    staticMemberInfo += "|members:" + String.join(",", staticMembers.subList(0, Math.min(staticMembers.size(), 10)));
+                }
+                
+                String uri = getTypeUri(type);
+                if (uri != null) {
+                    result.add(new ImportClassInfo(uri, staticMemberInfo));
+                }
+            }
+        } catch (JavaModelException e) {
+            JdtlsExtActivator.logException("Error resolving static members from: " + className, e);
+        }
+    }
+
+    private static void resolveStaticMemberFromClass(IJavaProject javaProject, String className, String memberName,
+            List<ImportClassInfo> result, Set<String> processedTypes) {
+        try {
+            // First resolve the class itself
+            resolveSingleType(javaProject, className, result, processedTypes);
+            
+            // Find the specific static member
+            org.eclipse.jdt.core.IType type = javaProject.findType(className);
+            if (type != null && type.exists() && !type.isBinary()) {
+                String memberInfo = "staticImport:" + className + "." + memberName;
+                
+                // Check if it's a method
+                IMethod[] methods = type.getMethods();
+                for (IMethod method : methods) {
+                    if (method.getElementName().equals(memberName)) {
+                        int flags = method.getFlags();
+                        if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
+                            memberInfo += "|type:method" + getParameterTypes(method);
+                            break;
+                        }
+                    }
+                }
+                
+                // Check if it's a field
+                org.eclipse.jdt.core.IField[] fields = type.getFields();
+                for (org.eclipse.jdt.core.IField field : fields) {
+                    if (field.getElementName().equals(memberName)) {
+                        int flags = field.getFlags();
+                        if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
+                            memberInfo += "|type:field";
+                            break;
+                        }
+                    }
+                }
+                
+                String uri = getTypeUri(type);
+                if (uri != null) {
+                    result.add(new ImportClassInfo(uri, memberInfo));
+                }
+            }
+        } catch (JavaModelException e) {
+            JdtlsExtActivator.logException("Error resolving static member: " + className + "." + memberName, e);
         }
     }
 
@@ -647,15 +764,38 @@ public final class ProjectCommand {
         }
     }
 
-    // Helper method: Get fully qualified class name (used as identifier instead of file URI)
+    // Helper method: Get file URI/path for the type (instead of fully qualified class name)
     private static String getTypeUri(org.eclipse.jdt.core.IType type) {
         try {
-            // Return the fully qualified class name instead of file URI
-            // This matches the import statement format like "com.acme.user.UserService"
+            // Get the compilation unit that contains this type
+            org.eclipse.jdt.core.ICompilationUnit compilationUnit = type.getCompilationUnit();
+            if (compilationUnit != null) {
+                // Get the underlying resource (file)
+                org.eclipse.core.resources.IResource resource = compilationUnit.getUnderlyingResource();
+                if (resource != null && resource instanceof org.eclipse.core.resources.IFile) {
+                    org.eclipse.core.resources.IFile file = (org.eclipse.core.resources.IFile) resource;
+                    // Get the file location as a file URI
+                    java.net.URI fileUri = file.getLocationURI();
+                    if (fileUri != null) {
+                        return fileUri.toString();
+                    }
+                    
+                    // Fallback: use workspace-relative path as URI
+                    return file.getFullPath().toString();
+                }
+            }
+            
+            // Fallback: if we can't get file URI, return the fully qualified class name
+            // This should rarely happen for source types
             return type.getFullyQualifiedName();
         } catch (Exception e) {
-            JdtlsExtActivator.logException("Error getting type name for: " + type.getElementName(), e);
-            return null;
+            JdtlsExtActivator.logException("Error getting file URI for type: " + type.getElementName(), e);
+            // Fallback to class name in case of error
+            try {
+                return type.getFullyQualifiedName();
+            } catch (Exception e2) {
+                return null;
+            }
         }
     }
 
