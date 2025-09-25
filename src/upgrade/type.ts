@@ -29,3 +29,5 @@ export type UpgradeIssue = {
 export interface IUpgradeIssuesRenderer {
     render(issues: UpgradeIssue[]): void;
 }
+
+export type VersionSet = Record<string, Set<string>>;
