@@ -53,6 +53,10 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 const prompt = buildFixPrompt(issue);
                 const notificationMessage = buildNotificationMessage(issue, hasExtension);
                 const upgradeButtonText = hasExtension ? BUTTON_TEXT_UPGRADE : BUTTON_TEXT_INSTALL_AND_UPGRADE;
+
+                sendInfo(operationId, {
+                    operationName: "java.dependency.upgradeNotification.runUpgradeNotification",
+                });
                 const selection = await window.showInformationMessage(
                     notificationMessage,
                     upgradeButtonText,
