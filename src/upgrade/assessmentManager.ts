@@ -11,12 +11,12 @@ import { buildPackageId } from './utility';
 import metadataManager from './metadataManager';
 import { sendInfo } from 'vscode-extension-telemetry-wrapper';
 
-function getVersionRange(versions: Set<string>) :string {
+function getVersionRange(versions: Set<string>) : string {
     const versionList = [...versions].sort((a, b) => semver.compare(a, b));
     if (versionList.length === 1) {
         return versionList[0];
     }
-    return `${versionList[0]}|${versionList[versionList.length-1]}`;
+    return `${versionList[0]}|${versionList[versionList.length - 1]}`;
 }
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
@@ -78,7 +78,7 @@ function getDependencyIssue(data: INodeData, versionSet: VersionSet): UpgradeIss
     }
 
     if (!versionSet[groupId]) {
-        versionSet[groupId]= new Set();
+        versionSet[groupId] = new Set();
     }
     versionSet[groupId].add(versionString);
 
@@ -97,14 +97,14 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
                     path: packageContainer.path,
                 });
 
-                const versionSet: VersionSet = {};
-                const issues = packages.map(pkg => getDependencyIssue(pkg, versionSet)).filter((x): x is UpgradeIssue => Boolean(x));
-                if (Object.entries(versionSet).length > 0) {
+                const versionsByGroupId: VersionSet = {};
+                const issues = packages.map(pkg => getDependencyIssue(pkg, versionsByGroupId)).filter((x): x is UpgradeIssue => Boolean(x));
+                if (Object.entries(versionsByGroupId).length > 0) {
                     sendInfo("", {
                         operationName: "java.dependency.assessmentManager.getDependencyIssues",
                         versionRangeByGroupId: JSON.stringify(
                             Object.fromEntries(
-                                Object.entries(versionSet).map(([groupId, versionSet]) => [groupId, getVersionRange(versionSet)]),
+                                Object.entries(versionsByGroupId).map(([groupId, versions]) => [groupId, getVersionRange(versions)]),
                             ),
                         ),
                     });
