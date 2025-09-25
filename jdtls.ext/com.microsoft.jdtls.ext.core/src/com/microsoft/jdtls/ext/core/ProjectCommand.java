@@ -58,6 +58,7 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
@@ -348,6 +349,12 @@ public final class ProjectCommand {
         return hasError;
     }
 
+    // Static cache for import information to avoid repeated parsing
+    private static final java.util.concurrent.ConcurrentHashMap<String, ImportClassInfo[]> importCache = 
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.concurrent.ConcurrentHashMap<String, Long> cacheTimestamps = 
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     public static ImportClassInfo[] getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
             return new ImportClassInfo[0];
@@ -356,11 +363,206 @@ public final class ProjectCommand {
         try {
             String fileUri = (String) arguments.get(0);
 
+            // Use JDTUtils for efficient type root resolution (similar to NavigateToDefinitionHandler)
+            org.eclipse.jdt.core.ITypeRoot typeRoot = resolveTypeRootFromUri(fileUri, monitor);
+            if (typeRoot == null || !(typeRoot instanceof org.eclipse.jdt.core.ICompilationUnit)) {
+                return new ImportClassInfo[0];
+            }
+
+            org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) typeRoot;
+            IJavaProject javaProject = compilationUnit.getJavaProject();
+            if (javaProject == null || !javaProject.exists()) {
+                return new ImportClassInfo[0];
+            }
+
+            // Check cache first to avoid redundant parsing
+            return getCachedImportInfo(fileUri, compilationUnit, () -> {
+                return parseImportsWithAST(compilationUnit, javaProject, monitor);
+            });
+
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error in getImportClassContent", e);
+            return new ImportClassInfo[0];
+        }
+    }
+
+    /**
+     * Optimized AST-based import parsing using SharedASTProvider for better performance
+     */
+    private static ImportClassInfo[] parseImportsWithAST(org.eclipse.jdt.core.ICompilationUnit compilationUnit, 
+            IJavaProject javaProject, IProgressMonitor monitor) {
+        try {
+            // Create AST for efficient import processing
+            org.eclipse.jdt.core.dom.ASTParser parser = org.eclipse.jdt.core.dom.ASTParser.newParser(org.eclipse.jdt.core.dom.AST.getJLSLatest());
+            parser.setSource(compilationUnit);
+            parser.setResolveBindings(true);
+            parser.setBindingsRecovery(true);
+            org.eclipse.jdt.core.dom.CompilationUnit ast = (org.eclipse.jdt.core.dom.CompilationUnit) parser.createAST(monitor);
+            
+            if (ast == null || monitor.isCanceled()) {
+                return new ImportClassInfo[0];
+            }
+
+            // Get imports directly from AST (more efficient than IImportDeclaration[])
+            @SuppressWarnings("unchecked")
+            List<org.eclipse.jdt.core.dom.ImportDeclaration> imports = ast.imports();
+            
+            if (imports.isEmpty()) {
+                return new ImportClassInfo[0];
+            }
+
+            List<ImportClassInfo> result = new ArrayList<>();
+            Set<String> processedTypes = new HashSet<>();
+
+            // Process imports with early cancellation support
+            for (org.eclipse.jdt.core.dom.ImportDeclaration importNode : imports) {
+                if (monitor.isCanceled()) {
+                    break;
+                }
+
+                List<ImportClassInfo> importResult = resolveImportFromASTNode(importNode, javaProject, processedTypes, monitor);
+                result.addAll(importResult);
+            }
+
+            return result.toArray(new ImportClassInfo[0]);
+
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error in AST-based import parsing", e);
+            return new ImportClassInfo[0];
+        }
+    }
+
+    /**
+     * Resolve import information from AST node, utilizing binding information when available
+     */
+    private static List<ImportClassInfo> resolveImportFromASTNode(org.eclipse.jdt.core.dom.ImportDeclaration importNode,
+            IJavaProject javaProject, Set<String> processedTypes, IProgressMonitor monitor) {
+        
+        if (monitor.isCanceled()) {
+            return Collections.emptyList();
+        }
+
+        List<ImportClassInfo> result = new ArrayList<>();
+        String importName = importNode.getName().getFullyQualifiedName();
+        boolean isStatic = importNode.isStatic();
+
+        // Try to use AST binding information for faster resolution
+        org.eclipse.jdt.core.dom.IBinding binding = importNode.getName().resolveBinding();
+        if (binding != null && !isStatic) {
+            List<ImportClassInfo> bindingResult = resolveFromBinding(binding, processedTypes);
+            if (!bindingResult.isEmpty()) {
+                return bindingResult;
+            }
+        }
+
+        // Fallback to traditional resolution methods
+        if (isStatic) {
+            resolveStaticImport(javaProject, importName, result, processedTypes);
+        } else if (importName.endsWith(".*")) {
+            String packageName = importName.substring(0, importName.length() - 2);
+            resolvePackageTypes(javaProject, packageName, result, processedTypes);
+        } else {
+            resolveSingleType(javaProject, importName, result, processedTypes);
+        }
+
+        return result;
+    }
+
+    /**
+     * Fast resolution using AST binding information
+     */
+    private static List<ImportClassInfo> resolveFromBinding(org.eclipse.jdt.core.dom.IBinding binding, Set<String> processedTypes) {
+        List<ImportClassInfo> result = new ArrayList<>();
+        
+        try {
+            if (binding instanceof org.eclipse.jdt.core.dom.ITypeBinding) {
+                org.eclipse.jdt.core.dom.ITypeBinding typeBinding = (org.eclipse.jdt.core.dom.ITypeBinding) binding;
+                
+                // Skip binary types and already processed types
+                if (typeBinding.isFromSource()) {
+                    String qualifiedName = typeBinding.getQualifiedName();
+                    if (!processedTypes.contains(qualifiedName)) {
+                        processedTypes.add(qualifiedName);
+                        
+                        // Get IJavaElement from binding
+                        org.eclipse.jdt.core.IJavaElement javaElement = typeBinding.getJavaElement();
+                        if (javaElement instanceof org.eclipse.jdt.core.IType) {
+                            extractTypeInfo((org.eclipse.jdt.core.IType) javaElement, result);
+                        }
+                    }
+                }
+            } else if (binding instanceof org.eclipse.jdt.core.dom.IPackageBinding) {
+                // Handle package bindings for wildcard imports
+                org.eclipse.jdt.core.dom.IPackageBinding packageBinding = (org.eclipse.jdt.core.dom.IPackageBinding) binding;
+                String packageName = packageBinding.getName();
+                
+                // Get Java project from the binding
+                org.eclipse.jdt.core.IJavaElement javaElement = packageBinding.getJavaElement();
+                if (javaElement != null) {
+                    IJavaProject javaProject = javaElement.getJavaProject();
+                    if (javaProject != null) {
+                        resolvePackageTypes(javaProject, packageName, result, processedTypes);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Log but don't fail - fallback methods will handle this
+            JdtlsExtActivator.logException("Error resolving from AST binding: " + binding, e);
+        }
+        
+        return result;
+    }
+
+    /**
+     * Efficient caching mechanism with timestamp-based invalidation
+     */
+    private static ImportClassInfo[] getCachedImportInfo(String fileUri, org.eclipse.jdt.core.ICompilationUnit unit,
+            java.util.function.Supplier<ImportClassInfo[]> resolver) {
+        
+        try {
+            // Get file modification timestamp
+            long lastModified = unit.getResource() != null ? unit.getResource().getModificationStamp() : System.currentTimeMillis();
+            
+            // Check if cache is valid
+            Long cachedTime = cacheTimestamps.get(fileUri);
+            if (cachedTime != null && cachedTime >= lastModified) {
+                ImportClassInfo[] cached = importCache.get(fileUri);
+                if (cached != null) {
+                    return cached; // Cache hit
+                }
+            }
+            
+            // Cache miss or invalid - recompute
+            ImportClassInfo[] result = resolver.get();
+            
+            // Update cache
+            importCache.put(fileUri, result);
+            cacheTimestamps.put(fileUri, System.currentTimeMillis());
+            
+            // Prevent cache from growing too large
+            if (importCache.size() > 1000) {
+                // Remove oldest 20% of entries
+                cleanupCache();
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            // If caching fails, just compute without caching
+            return resolver.get();
+        }
+    }
+
+    /**
+     * Helper method to resolve TypeRoot from URI (similar to NavigateToDefinitionHandler)
+     */
+    private static org.eclipse.jdt.core.ITypeRoot resolveTypeRootFromUri(String fileUri, IProgressMonitor monitor) {
+        try {
             // Parse URI manually to avoid restricted API
             java.net.URI uri = new java.net.URI(fileUri);
             String filePath = uri.getPath();
             if (filePath == null) {
-                return new ImportClassInfo[0];
+                return null;
             }
 
             IPath path = new Path(filePath);
@@ -369,56 +571,42 @@ public final class ProjectCommand {
             IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
             IFile file = root.getFileForLocation(path);
             if (file == null || !file.exists()) {
-                return new ImportClassInfo[0];
-            }
-
-            // Get the Java project
-            IJavaProject javaProject = JavaCore.create(file.getProject());
-            if (javaProject == null || !javaProject.exists()) {
-                return new ImportClassInfo[0];
+                return null;
             }
 
             // Find the compilation unit
             IJavaElement javaElement = JavaCore.create(file);
-            if (!(javaElement instanceof org.eclipse.jdt.core.ICompilationUnit)) {
-                return new ImportClassInfo[0];
+            if (javaElement instanceof org.eclipse.jdt.core.ICompilationUnit) {
+                return (org.eclipse.jdt.core.ICompilationUnit) javaElement;
             }
-
-            org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
-
-            // Parse imports and resolve local project files
-            List<ImportClassInfo> result = new ArrayList<>();
-
-            // Get all imports from the compilation unit
-            org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
-            Set<String> processedTypes = new HashSet<>();
-
-            for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
-                if (monitor.isCanceled()) {
-                    break;
-                }
-
-                String importName = importDecl.getElementName();
-                boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
-                
-                if (isStatic) {
-                    // Handle static imports
-                    resolveStaticImport(javaProject, importName, result, processedTypes);
-                } else if (importName.endsWith(".*")) {
-                    // Handle package imports
-                    String packageName = importName.substring(0, importName.length() - 2);
-                    resolvePackageTypes(javaProject, packageName, result, processedTypes);
-                } else {
-                    // Handle single type imports
-                    resolveSingleType(javaProject, importName, result, processedTypes);
-                }
-            }
-
-            return result.toArray(new ImportClassInfo[0]);
-
+            
+            return null;
         } catch (Exception e) {
-            JdtlsExtActivator.logException("Error in resolveCopilotRequest", e);
-            return new ImportClassInfo[0];
+            return null;
+        }
+    }
+
+    /**
+     * Clean up cache to prevent memory leaks
+     */
+    private static void cleanupCache() {
+        try {
+            int targetSize = (int) (importCache.size() * 0.8); // Keep 80%
+            if (targetSize < importCache.size()) {
+                // Remove oldest entries based on timestamps
+                cacheTimestamps.entrySet().stream()
+                    .sorted(java.util.Map.Entry.comparingByValue())
+                    .limit(importCache.size() - targetSize)
+                    .map(java.util.Map.Entry::getKey)
+                    .forEach(key -> {
+                        importCache.remove(key);
+                        cacheTimestamps.remove(key);
+                    });
+            }
+        } catch (Exception e) {
+            // If cleanup fails, clear everything to be safe
+            importCache.clear();
+            cacheTimestamps.clear();
         }
     }
 

@@ -82,6 +82,12 @@ async function activateExtension(_operationId: string, context: ExtensionContext
             await updateExportTaskType(document, range);
         }
     ));
+    // Test command for getImportClassContent
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(
+        Commands.JAVA_TEST_GET_IMPORT_CLASS_CONTENT, async () => {
+            await testGetImportClassContent();
+        }
+    ));
     setContextForDeprecatedTasks();
 }
 
@@ -123,4 +129,58 @@ function setContextForReloadProject(document: TextDocument | undefined): void {
         }
     }
     contextManager.setContextValue(Context.RELOAD_PROJECT_ACTIVE, false);
+}
+
+/**
+ * Test function for getImportClassContent command
+ */
+async function testGetImportClassContent(): Promise<void> {
+    const activeEditor = window.activeTextEditor;
+    if (!activeEditor) {
+        window.showErrorMessage("No active editor found. Please open a Java file first.");
+        return;
+    }
+
+    const document = activeEditor.document;
+    if (!document.fileName.endsWith(".java")) {
+        window.showErrorMessage("Please open a Java file to test getImportClassContent.");
+        return;
+    }
+
+    try {
+        window.showInformationMessage("Testing getImportClassContent...");
+        
+        // Call the Java command
+        const result = await commands.executeCommand("java.project.getImportClassContent", document.uri.toString());
+        
+        // Show the result in the output channel
+        const outputChannel = window.createOutputChannel("Java Import Class Content Test");
+        outputChannel.clear();
+        outputChannel.appendLine("=== getImportClassContent Test Result ===");
+        outputChannel.appendLine(`File: ${document.fileName}`);
+        outputChannel.appendLine(`URI: ${document.uri.toString()}`);
+        outputChannel.appendLine("");
+        
+        if (result && Array.isArray(result)) {
+            outputChannel.appendLine(`Found ${result.length} import class(es):`);
+            outputChannel.appendLine("");
+            
+            result.forEach((item: any, index: number) => {
+                outputChannel.appendLine(`${index + 1}. URI: ${item.uri}`);
+                outputChannel.appendLine(`   Class Info: ${item.className}`);
+                outputChannel.appendLine("");
+            });
+        } else {
+            outputChannel.appendLine("No import class content found or invalid result format.");
+            outputChannel.appendLine(`Result: ${JSON.stringify(result, null, 2)}`);
+        }
+        
+        outputChannel.show();
+        window.showInformationMessage("getImportClassContent test completed. Check the output channel for results.");
+        
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        window.showErrorMessage(`Error testing getImportClassContent: ${errorMessage}`);
+        console.error("testGetImportClassContent error:", error);
+    }
 }

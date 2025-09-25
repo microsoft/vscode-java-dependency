@@ -136,6 +136,8 @@ export namespace Commands {
 
     export const JAVA_UPGRADE_WITH_COPILOT = "_java.upgradeWithCopilot";
 
+    export const JAVA_TEST_GET_IMPORT_CLASS_CONTENT = "java.test.getImportClassContent";
+
     /**
      * Commands from Visual Studio Code
      */
