@@ -5,6 +5,7 @@ import { commands, extensions, Uri, window } from "vscode";
 import * as semver from "semver";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 import { ExtensionName, Upgrade } from "../constants";
+import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 
 
 function findEolDate(currentVersion: string, eolDate: Record<string, string>): string | null {
@@ -74,24 +75,27 @@ export function normalizePath(path: string): string {
     return Uri.parse(path).toString();
 }
 
-async function checkOrPromptToEnableAppModExtension() {
+async function checkOrPromptToEnableAppModExtension(keyword: string) {
     if (extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA)) {
         return;
     }
 
-    // The extension is disabled if we cannot detect the extension after installing it.
-    await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    const BTN_TEXT = "Show extension in sidebar";
-    const choice2 = await window.showInformationMessage(
-        `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is needed for the feature to work but it seems disabled. Please enable it manually and try again.`,
-        BTN_TEXT
-    );
-    if (choice2 === BTN_TEXT) {
+    // The extension is in a disabled state since we cannot detect the extension after installing it.
+    await instrumentOperation("java.dependency.extensionDisabled", async () => {
         await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    }
+        const BTN_TEXT = "Show extension in sidebar";
+        const choice2 = await window.showInformationMessage(
+            `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required to ${keyword} Java projects but it seems disabled. Please enable it manually and try again.`,
+            { modal: true },
+            BTN_TEXT
+        );
+        if (choice2 === BTN_TEXT) {
+            await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+        }
+    })();
 }
 
-export async function checkOrPromptToInstallAppModExtension(
+export async function checkOrPopupToInstallAppModExtensionForModernization(
     extensionIdToCheck: string,
     notificationText: string,
     buttonText: string): Promise<void> {
@@ -99,22 +103,22 @@ export async function checkOrPromptToInstallAppModExtension(
         return;
     }
 
-    const choice = await window.showInformationMessage(notificationText, buttonText);
+    const choice = await window.showInformationMessage(notificationText, { modal: true }, buttonText);
     if (choice === buttonText) {
         await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
     } else {
         return;
     }
 
-    await checkOrPromptToEnableAppModExtension();
+    await checkOrPromptToEnableAppModExtension("modernize");
 }
 
-export async function checkOrInstallAppModExtension(
+export async function checkOrInstallAppModExtensionForUpgrade(
     extensionIdToCheck: string): Promise<void> {
     if (extensions.getExtension(extensionIdToCheck)) {
         return;
     }
 
     await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    await checkOrPromptToEnableAppModExtension();
+    await checkOrPromptToEnableAppModExtension("upgrade");
 }

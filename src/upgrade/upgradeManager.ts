@@ -11,7 +11,7 @@ import { Commands } from "../commands";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
 import assessmentManager from "./assessmentManager";
-import { checkOrInstallAppModExtension, checkOrPromptToInstallAppModExtension } from "./utility";
+import { checkOrInstallAppModExtensionForUpgrade, checkOrPopupToInstallAppModExtensionForModernization } from "./utility";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
@@ -26,16 +26,16 @@ class UpgradeManager {
 
         // Upgrade project
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string) => {
-            await checkOrInstallAppModExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
+            await checkOrInstallAppModExtensionForUpgrade(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
             const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
             await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
         }));
 
         // Show modernization view
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MODERNIZE_JAVA_PROJECT, async () => {
-            await checkOrPromptToInstallAppModExtension(
+            await checkOrPopupToInstallAppModExtensionForModernization(
                 ExtensionName.APP_MODERNIZATION_FOR_JAVA,
-                "Install GitHub Copilot app modernization to modernize the Java project.",
+                `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required to modernize Java projects. Would you like to install it and modernize this project?`,
                 "Install Extension and Modernize");
             await commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
