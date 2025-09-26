@@ -440,10 +440,29 @@ public final class ProjectCommand {
             String packageName = typeName.substring(0, lastDotIndex);
             String simpleName = typeName.substring(lastDotIndex + 1);
             
-            // Strategy: First search in local source packages (fast), then fallback to global search (slow)
-            // This optimizes for the common case where imports reference local project types
+            // Strategy: Use JDT's global type resolution first (comprehensive), 
+            // then fallback to manual package fragment traversal if needed
             
-            // Fast path: Search for the type in source package fragments directly
+            // Primary path: Use JDT's findType which searches all sources and dependencies
+            try {
+                org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
+                if (type != null && type.exists()) {
+                    // Found type - check if it's a source type we want to process
+                    if (!type.isBinary()) {
+                        // Source type found - extract information and return
+                        extractTypeInfo(type, result);
+                        return;
+                    }
+                    // Note: Binary types (from JARs/JRE) are intentionally ignored
+                    // as they don't provide useful context for code completion
+                }
+            } catch (JavaModelException e) {
+                JdtlsExtActivator.logException("Error in primary type search: " + typeName, e);
+                // Continue to fallback method
+            }
+            
+            // Fallback path: Manual search in local source package fragments
+            // This is used when findType() doesn't return results or fails
             IPackageFragmentRoot[] packageRoots = javaProject.getPackageFragmentRoots();
             for (IPackageFragmentRoot packageRoot : packageRoots) {
                 if (packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
@@ -456,7 +475,7 @@ public final class ProjectCommand {
                             org.eclipse.jdt.core.IType primaryType = cu.findPrimaryType();
                             if (primaryType != null && primaryType.exists() && 
                                 typeName.equals(primaryType.getFullyQualifiedName())) {
-                                // Found local project source type - fast path success
+                                // Found local project source type via fallback method
                                 extractTypeInfo(primaryType, result);
                                 return;
                             }
@@ -472,23 +491,6 @@ public final class ProjectCommand {
                         }
                     }
                 }
-            }
-            
-            // Slow path: Use JDT's global type resolution as fallback for external dependencies
-            // This is only needed if the type is not found in local source packages
-            try {
-                org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
-                if (type != null && type.exists()) {
-                    // Found type in dependencies/JRE, but we only process local source types
-                    // for this specific use case (Copilot context)
-                    if (!type.isBinary()) {
-                        extractTypeInfo(type, result);
-                    }
-                    // Note: Binary types (from JARs) are intentionally ignored
-                    // as they don't provide useful context for code completion
-                }
-            } catch (JavaModelException e) {
-                JdtlsExtActivator.logException("Error finding type in global search: " + typeName, e);
             }
         } catch (JavaModelException e) {
             // Log but continue processing other types
