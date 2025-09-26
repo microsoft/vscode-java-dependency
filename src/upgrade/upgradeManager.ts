@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, type ExtensionContext, extensions, workspace, type WorkspaceFolder } from "vscode";
+import { commands, type ExtensionContext, workspace, type WorkspaceFolder } from "vscode";
 
 import { Jdtls } from "../java/jdtls";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
@@ -11,13 +11,13 @@ import { Commands } from "../commands";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
 import assessmentManager from "./assessmentManager";
+import { checkOrInstallExtension } from "./utility";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
 
 function shouldRunCheckup() {
-    return Settings.getEnableDependencyCheckup()
-        && !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
+    return Settings.getEnableDependencyCheckup();
 }
 
 class UpgradeManager {
@@ -26,13 +26,13 @@ class UpgradeManager {
 
         // Commands to be used
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string) => {
+            await checkOrInstallExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA, ExtensionName.APP_MODERNIZATION_FOR_JAVA);
             const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
             await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
         }));
-        commands.executeCommand('setContext', 'isModernizationExtensionInstalled',
-            !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA));
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MODERNIZE_JAVA_PROJECT, () => {
-            commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MODERNIZE_JAVA_PROJECT, async () => {
+            await checkOrInstallExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+            await commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
 
         UpgradeManager.scan();

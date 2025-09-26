@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { Uri } from "vscode";
+import { commands, extensions, Uri, window } from "vscode";
 import * as semver from "semver";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 import { Upgrade } from "../constants";
@@ -73,3 +73,38 @@ export function normalizePath(path: string): string {
     return Uri.parse(path).toString();
 }
 
+export async function checkOrInstallExtension(extensionIdToCheck: string, extensionIdToInstall?: string): Promise<void> {
+    if (extensions.getExtension(extensionIdToCheck)) {
+        return;
+    }
+
+    const actualExtensionIdToInstall = extensionIdToInstall ?? extensionIdToCheck;
+
+    {
+        const BTN_TEXT = "Install extension";
+        const choice = await window.showInformationMessage(
+            "An extension is needed for the feature to work. Please install it and try again.",
+            BTN_TEXT
+        );
+        if (choice === BTN_TEXT) {
+            await commands.executeCommand("workbench.extensions.installExtension", actualExtensionIdToInstall);
+        }
+    }
+
+    if (extensions.getExtension(actualExtensionIdToInstall)) {
+        return;
+    }
+
+    // In this case the extension is disabled.
+    await commands.executeCommand("workbench.extensions.search", actualExtensionIdToInstall);
+    {
+        const BTN_TEXT = "Show extension in sidebar";
+        const choice = await window.showInformationMessage(
+            "An extension is needed for the feature to work but it seems disabled. Please enable it manually and try again.",
+            BTN_TEXT
+        );
+        if (choice === BTN_TEXT) {
+            await commands.executeCommand("workbench.extensions.search", actualExtensionIdToInstall);
+        }
+    }
+}
