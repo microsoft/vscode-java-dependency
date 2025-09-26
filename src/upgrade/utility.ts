@@ -20,7 +20,7 @@ function findEolDate(currentVersion: string, eolDate: Record<string, string>): s
     return null;
 }
 
-export function buildNotificationMessage(issue: UpgradeIssue): string {
+export function buildNotificationMessage(issue: UpgradeIssue, hasExtension: boolean): string {
     const {
         packageId,
         currentVersion,
@@ -29,21 +29,22 @@ export function buildNotificationMessage(issue: UpgradeIssue): string {
         packageDisplayName
     } = issue;
 
+    const upgradeWord = hasExtension ? "upgrade" : `install ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and upgrade`;
 
     if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
-        return `The current project is using an older Java runtime (${currentVersion}). Do you want to upgrade to the latest LTS version ${suggestedVersionName}?`;
+        return `This project is using an older Java runtime (${currentVersion}). Would you like to ${upgradeWord} it to ${suggestedVersionName} (latest LTS)?`;
     }
 
     switch (reason) {
         case UpgradeReason.END_OF_LIFE: {
             const { eolDate } = issue;
             const versionEolDate = findEolDate(currentVersion, eolDate);
-            return `The current project is using ${packageDisplayName} ${currentVersion}, which has reached end of life${versionEolDate ? ` in ${versionEolDate}` : ""
-                }. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
+            return `This project is using ${packageDisplayName} ${currentVersion}, which has reached end of life${versionEolDate ? ` in ${versionEolDate}` : ""
+                }. Would you like to ${upgradeWord} it to ${suggestedVersionName} (${suggestedVersionDescription})?`;
         }
         case UpgradeReason.DEPRECATED:
         default: {
-            return `The current project is using ${packageDisplayName} ${currentVersion}, which has been deprecated. Do you want to upgrade to ${suggestedVersionName} (${suggestedVersionDescription})?`;
+            return `This project is using ${packageDisplayName} ${currentVersion}, which has been deprecated. Would you like to ${upgradeWord} it to ${suggestedVersionName} (${suggestedVersionDescription})?`;
         }
     }
 }
@@ -73,6 +74,23 @@ export function normalizePath(path: string): string {
     return Uri.parse(path).toString();
 }
 
+async function checkOrPromptToEnableAppModExtension() {
+    if (extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA)) {
+        return;
+    }
+
+    // The extension is disabled if we cannot detect the extension after installing it.
+    await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+    const BTN_TEXT = "Show extension in sidebar";
+    const choice2 = await window.showInformationMessage(
+        `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is needed for the feature to work but it seems disabled. Please enable it manually and try again.`,
+        BTN_TEXT
+    );
+    if (choice2 === BTN_TEXT) {
+        await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+    }
+}
+
 export async function checkOrPromptToInstallAppModExtension(
     extensionIdToCheck: string,
     notificationText: string,
@@ -88,18 +106,15 @@ export async function checkOrPromptToInstallAppModExtension(
         return;
     }
 
-    if (extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA)) {
+    await checkOrPromptToEnableAppModExtension();
+}
+
+export async function checkOrInstallAppModExtension(
+    extensionIdToCheck: string): Promise<void> {
+    if (extensions.getExtension(extensionIdToCheck)) {
         return;
     }
 
-    // In this case the extension is disabled.
-    await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    const BTN_TEXT = "Show extension in sidebar";
-    const choice2 = await window.showInformationMessage(
-        "App Modernization extension is needed for the feature to work but it seems disabled. Please enable it manually and try again.",
-        BTN_TEXT
-    );
-    if (choice2 === BTN_TEXT) {
-        await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    }
+    await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+    await checkOrPromptToEnableAppModExtension();
 }

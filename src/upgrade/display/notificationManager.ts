@@ -1,17 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, ExtensionContext, window } from "vscode";
+import { commands, ExtensionContext, extensions, window } from "vscode";
 import type { IUpgradeIssuesRenderer, UpgradeIssue } from "../type";
 import { buildFixPrompt, buildNotificationMessage } from "../utility";
 import { Commands } from "../../commands";
 import { Settings } from "../../settings";
 import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
+import { ExtensionName } from "../../constants";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
 const NEXT_SHOW_TS_KEY = `${KEY_PREFIX}.nextShowTs`;
 
 const BUTTON_TEXT_UPGRADE = "Upgrade Now";
+const BUTTON_TEXT_INSTALL_AND_UPGRADE = "Install Extension and Upgrade";
 const BUTTON_TEXT_NOT_NOW = "Not Now";
 
 const SECONDS_IN_A_DAY = 24 * 60 * 60;
@@ -47,11 +49,13 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 }
                 this.hasShown = true;
 
+                const hasExtension = !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
                 const prompt = buildFixPrompt(issue);
-                const notificationMessage = buildNotificationMessage(issue);
+                const notificationMessage = buildNotificationMessage(issue, hasExtension);
+                const upgradeButtonText = hasExtension ? BUTTON_TEXT_UPGRADE : BUTTON_TEXT_INSTALL_AND_UPGRADE;
                 const selection = await window.showInformationMessage(
                     notificationMessage,
-                    BUTTON_TEXT_UPGRADE,
+                    upgradeButtonText,
                     BUTTON_TEXT_NOT_NOW);
                 sendInfo(operationId, {
                     operationName: "java.dependency.upgradeNotification.runUpgrade",
@@ -59,7 +63,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 });
 
                 switch (selection) {
-                    case BUTTON_TEXT_UPGRADE: {
+                    case upgradeButtonText: {
                         commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt);
                         break;
                     }
