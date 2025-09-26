@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.25.2
 
+- ux - Improve wording on project modernization by @FluoriteCafe-work in https://github.com/microsoft/vscode-java-dependency/pull/912
 - ux - Check extension existence on-the-fly when needed by @FluoriteCafe-work in https://github.com/microsoft/vscode-java-dependency/pull/911
 
 ## 0.25.0
