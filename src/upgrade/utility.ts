@@ -74,7 +74,7 @@ export function normalizePath(path: string): string {
     return Uri.parse(path).toString();
 }
 
-async function checkOrPromptToEnableAppModExtension() {
+async function checkOrPromptToEnableAppModExtension(keyword: string) {
     if (extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA)) {
         return;
     }
@@ -83,7 +83,8 @@ async function checkOrPromptToEnableAppModExtension() {
     await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
     const BTN_TEXT = "Show extension in sidebar";
     const choice2 = await window.showInformationMessage(
-        `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required for the feature but seems disabled. Please enable it manually and try again.`,
+        `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required to ${keyword} Java projects but it seems disabled. Please enable it manually and try again.`,
+        { modal: true },
         BTN_TEXT
     );
     if (choice2 === BTN_TEXT) {
@@ -91,7 +92,7 @@ async function checkOrPromptToEnableAppModExtension() {
     }
 }
 
-export async function checkOrPopupToInstallAppModExtension(
+export async function checkOrPopupToInstallAppModExtensionForModernization(
     extensionIdToCheck: string,
     notificationText: string,
     buttonText: string): Promise<void> {
@@ -106,15 +107,15 @@ export async function checkOrPopupToInstallAppModExtension(
         return;
     }
 
-    await checkOrPromptToEnableAppModExtension();
+    await checkOrPromptToEnableAppModExtension("modernize");
 }
 
-export async function checkOrInstallAppModExtension(
+export async function checkOrInstallAppModExtensionForUpgrade(
     extensionIdToCheck: string): Promise<void> {
     if (extensions.getExtension(extensionIdToCheck)) {
         return;
     }
 
     await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    await checkOrPromptToEnableAppModExtension();
+    await checkOrPromptToEnableAppModExtension("upgrade");
 }
