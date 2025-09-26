@@ -11,7 +11,7 @@ import { Commands } from "../commands";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
 import assessmentManager from "./assessmentManager";
-import { checkOrInstallExtension } from "./utility";
+import { checkOrPromptToInstallAppModExtension } from "./utility";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
@@ -24,14 +24,22 @@ class UpgradeManager {
     public static initialize(context: ExtensionContext) {
         notificationManager.initialize(context);
 
-        // Commands to be used
+        // Upgrade project
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string) => {
-            await checkOrInstallExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA, ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+            await checkOrPromptToInstallAppModExtension(
+                ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA,
+                "To upgrade the Java project, we need to use the App Modernization extension.",
+                "Install extension and upgrade");
             const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
             await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse });
         }));
+
+        // Show modernization view
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MODERNIZE_JAVA_PROJECT, async () => {
-            await checkOrInstallExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+            await checkOrPromptToInstallAppModExtension(
+                ExtensionName.APP_MODERNIZATION_FOR_JAVA,
+                "To modernize the Java project, we need to use the App Modernization extension.",
+                "Install extension and modernize");
             await commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
 

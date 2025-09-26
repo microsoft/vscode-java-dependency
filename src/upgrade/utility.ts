@@ -4,7 +4,7 @@
 import { commands, extensions, Uri, window } from "vscode";
 import * as semver from "semver";
 import { UpgradeReason, type UpgradeIssue } from "./type";
-import { Upgrade } from "../constants";
+import { ExtensionName, Upgrade } from "../constants";
 
 
 function findEolDate(currentVersion: string, eolDate: Record<string, string>): string | null {
@@ -73,38 +73,33 @@ export function normalizePath(path: string): string {
     return Uri.parse(path).toString();
 }
 
-export async function checkOrInstallExtension(extensionIdToCheck: string, extensionIdToInstall?: string): Promise<void> {
+export async function checkOrPromptToInstallAppModExtension(
+    extensionIdToCheck: string,
+    notificationText: string,
+    buttonText: string): Promise<void> {
     if (extensions.getExtension(extensionIdToCheck)) {
         return;
     }
 
-    const actualExtensionIdToInstall = extensionIdToInstall ?? extensionIdToCheck;
-
-    {
-        const BTN_TEXT = "Install extension";
-        const choice = await window.showInformationMessage(
-            "An extension is needed for the feature to work. Please install it and try again.",
-            BTN_TEXT
-        );
-        if (choice === BTN_TEXT) {
-            await commands.executeCommand("workbench.extensions.installExtension", actualExtensionIdToInstall);
-        }
+    const choice = await window.showInformationMessage(notificationText, buttonText);
+    if (choice === buttonText) {
+        await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+    } else {
+        return;
     }
 
-    if (extensions.getExtension(actualExtensionIdToInstall)) {
+    if (extensions.getExtension(ExtensionName.APP_MODERNIZATION_FOR_JAVA)) {
         return;
     }
 
     // In this case the extension is disabled.
-    await commands.executeCommand("workbench.extensions.search", actualExtensionIdToInstall);
-    {
-        const BTN_TEXT = "Show extension in sidebar";
-        const choice = await window.showInformationMessage(
-            "An extension is needed for the feature to work but it seems disabled. Please enable it manually and try again.",
-            BTN_TEXT
-        );
-        if (choice === BTN_TEXT) {
-            await commands.executeCommand("workbench.extensions.search", actualExtensionIdToInstall);
-        }
+    await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+    const BTN_TEXT = "Show extension in sidebar";
+    const choice2 = await window.showInformationMessage(
+        "App Modernization extension is needed for the feature to work but it seems disabled. Please enable it manually and try again.",
+        BTN_TEXT
+    );
+    if (choice2 === BTN_TEXT) {
+        await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
     }
 }
