@@ -5,6 +5,7 @@ import { commands, extensions, Uri, window } from "vscode";
 import * as semver from "semver";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 import { ExtensionName, Upgrade } from "../constants";
+import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
 
 
 function findEolDate(currentVersion: string, eolDate: Record<string, string>): string | null {
@@ -80,16 +81,18 @@ async function checkOrPromptToEnableAppModExtension(keyword: string) {
     }
 
     // The extension is in a disabled state since we cannot detect the extension after installing it.
-    await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    const BTN_TEXT = "Show extension in sidebar";
-    const choice2 = await window.showInformationMessage(
-        `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required to ${keyword} Java projects but it seems disabled. Please enable it manually and try again.`,
-        { modal: true },
-        BTN_TEXT
-    );
-    if (choice2 === BTN_TEXT) {
+    await instrumentOperation("java.dependency.extensionDisabled", async () => {
         await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-    }
+        const BTN_TEXT = "Show extension in sidebar";
+        const choice2 = await window.showInformationMessage(
+            `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required to ${keyword} Java projects but it seems disabled. Please enable it manually and try again.`,
+            { modal: true },
+            BTN_TEXT
+        );
+        if (choice2 === BTN_TEXT) {
+            await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+        }
+    })()
 }
 
 export async function checkOrPopupToInstallAppModExtensionForModernization(
