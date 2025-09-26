@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.25.2
+
+- ux - Check extension existence on-the-fly when needed by @FluoriteCafe-work in https://github.com/microsoft/vscode-java-dependency/pull/911
+
 ## 0.25.0
 - feat - Remind users to upgrade old (<21) Java and EOL Spring Boot/Framework versions by @FluoriteCafe-work in https://github.com/microsoft/vscode-java-dependency/pull/901
 - feat - Improve ProjectCommand.getMainClasses by @snjeza in https://github.com/microsoft/vscode-java-dependency/pull/883

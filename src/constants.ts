@@ -35,6 +35,7 @@ export namespace ExtensionName {
     export const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
     export const APP_MODERNIZATION_FOR_JAVA = "vscjava.migrate-java-to-azure";
     export const APP_MODERNIZATION_UPGRADE_FOR_JAVA = "vscjava.vscode-java-upgrade";
+    export const APP_MODERNIZATION_EXTENSION_NAME = "GitHub Copilot app modernization";
 }
 
 export namespace Upgrade {
