@@ -79,11 +79,11 @@ async function checkOrPromptToEnableAppModExtension() {
         return;
     }
 
-    // The extension is disabled if we cannot detect the extension after installing it.
+    // The extension is in a disabled state since we cannot detect the extension after installing it.
     await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
     const BTN_TEXT = "Show extension in sidebar";
     const choice2 = await window.showInformationMessage(
-        `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is needed for the feature to work but it seems disabled. Please enable it manually and try again.`,
+        `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required for the feature but seems disabled. Please enable it manually and try again.`,
         BTN_TEXT
     );
     if (choice2 === BTN_TEXT) {
@@ -91,7 +91,7 @@ async function checkOrPromptToEnableAppModExtension() {
     }
 }
 
-export async function checkOrPromptToInstallAppModExtension(
+export async function checkOrPopupToInstallAppModExtension(
     extensionIdToCheck: string,
     notificationText: string,
     buttonText: string): Promise<void> {
@@ -99,7 +99,7 @@ export async function checkOrPromptToInstallAppModExtension(
         return;
     }
 
-    const choice = await window.showInformationMessage(notificationText, buttonText);
+    const choice = await window.showInformationMessage(notificationText, { modal: true }, buttonText);
     if (choice === buttonText) {
         await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
     } else {
