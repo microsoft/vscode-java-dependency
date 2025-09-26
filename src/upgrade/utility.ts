@@ -92,7 +92,7 @@ async function checkOrPromptToEnableAppModExtension(keyword: string) {
         if (choice2 === BTN_TEXT) {
             await commands.executeCommand("workbench.extensions.search", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
         }
-    })()
+    })();
 }
 
 export async function checkOrPopupToInstallAppModExtensionForModernization(
