@@ -35,7 +35,7 @@ class UpgradeManager {
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MODERNIZE_JAVA_PROJECT, async () => {
             await checkOrPopupToInstallAppModExtension(
                 ExtensionName.APP_MODERNIZATION_FOR_JAVA,
-                `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required to modernize Java projects. Would you like to install it to modernize this project?`,
+                `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension is required to modernize Java projects. Would you like to install it and modernize this project?`,
                 "Install Extension and Modernize");
             await commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
