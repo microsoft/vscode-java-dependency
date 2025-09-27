@@ -11,7 +11,7 @@ export const DEPENDENCY_JAVA_RUNTIME = {
     "reason": UpgradeReason.JRE_TOO_OLD,
     "supportedVersion": `>=${LATEST_JAVA_LTS_VESRION}`,
     "suggestedVersion": {
-        "name": String(LATEST_JAVA_LTS_VESRION),
+        "name": `Java ${LATEST_JAVA_LTS_VESRION}`,
         "description": "latest LTS version",
     },
 } as const;
