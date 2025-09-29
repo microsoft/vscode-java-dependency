@@ -30,4 +30,8 @@ export interface IUpgradeIssuesRenderer {
     render(issues: UpgradeIssue[]): void;
 }
 
-export type VersionSet = Record<string, Set<string>>;
+export type PackageDescription = {
+    groupId: string;
+    artifactId: string;
+    version: string;
+}
