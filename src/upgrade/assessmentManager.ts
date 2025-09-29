@@ -31,7 +31,7 @@ function getVersionRange(versions: Set<string>) : string {
     return `${versionList[0]}|${versionList[versionList.length - 1]}`;
 }
 
-function collectVersionRange(pkgs: PackageDescription[]): [string, string][] {
+function collectVersionRange(pkgs: PackageDescription[]): Record<string, string> {
     const versionMap: Record<string, Set<string>> = {};
     for (const pkg of pkgs) {
         const groupId = pkg.groupId;
@@ -41,7 +41,7 @@ function collectVersionRange(pkgs: PackageDescription[]): [string, string][] {
         versionMap[groupId].add(pkg.version);
     }
 
-    return Object.entries(versionMap).map(([groupId, versions]) => [groupId, getVersionRange(versions)]);
+    return Object.fromEntries(Object.entries(versionMap).map(([groupId, versions]) => [groupId, getVersionRange(versions)]));
 }
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
@@ -124,7 +124,7 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
 
                 const issues = packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
                 const versionRangeByGroupId = collectVersionRange(packages.filter(getPackageUpgradeMetadata));
-                if (versionRangeByGroupId.length > 0) {
+                if (Object.keys(versionRangeByGroupId).length > 0) {
                     sendInfo("", {
                         operationName: "java.dependency.assessmentManager.getDependencyIssues",
                         versionRangeByGroupId: JSON.stringify(versionRangeByGroupId),
