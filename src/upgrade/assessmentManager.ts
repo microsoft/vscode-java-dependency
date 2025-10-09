@@ -125,7 +125,7 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
                 const versionRangeByGroupId = collectVersionRange(packages.filter(getPackageUpgradeMetadata));
                 if (Object.keys(versionRangeByGroupId).length > 0) {
                     sendInfo("", {
-                        operationName: "java.dependency.assessmentManager.getDependencyIssues",
+                        operationName: "java.dependency.assessmentManager.getDependencyVersionRange",
                         versionRangeByGroupId: JSON.stringify(versionRangeByGroupId),
                     });
                 }
@@ -141,7 +141,7 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
             }
 
             sendInfo("", {
-                operationName: "java.dependency.assessmentManager.getDependencyIssues",
+                operationName: "java.dependency.assessmentManager.getDependencyIssues.packageDataFailure",
             });
             return [];
         })
