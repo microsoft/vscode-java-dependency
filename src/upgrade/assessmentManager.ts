@@ -50,6 +50,19 @@ function getJavaIssues(data: INodeData): UpgradeIssue[] {
         return [];
     }
     const currentSemVer = semver.coerce(javaVersion);
+
+    const [javaRuntimeGroupId, javaRuntimeArtifactId] = Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME.split(":");
+    sendInfo("", {
+        operationName: "java.dependency.assessmentManager.getJavaVersionRange",
+        versionRangeByGroupId: JSON.stringify(
+            collectVersionRange([{
+                groupId: javaRuntimeGroupId,
+                artifactId: javaRuntimeArtifactId,
+                version: String(javaVersion),
+            }]),
+        ),
+    });
+
     if (currentSemVer && !semver.satisfies(currentSemVer, supportedVersion)) {
         return [{
             ...DEPENDENCY_JAVA_RUNTIME,
