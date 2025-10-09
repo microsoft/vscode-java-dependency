@@ -34,4 +34,4 @@ export type PackageDescription = {
     groupId: string;
     artifactId: string;
     version: string;
-}
+};

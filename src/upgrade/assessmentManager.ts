@@ -4,8 +4,7 @@
 import * as semver from 'semver';
 import { Jdtls } from "../java/jdtls";
 import { NodeKind, type INodeData } from "../java/nodeData";
-import { UpgradeReason } from "./type";
-import type { DependencyCheckItem, UpgradeIssue, PackageDescription } from "./type";
+import { type DependencyCheckItem, type UpgradeIssue, type PackageDescription, UpgradeReason } from "./type";
 import { DEPENDENCY_JAVA_RUNTIME } from "./dependency.metadata";
 import { Upgrade } from '../constants';
 import { buildPackageId } from './utility';
