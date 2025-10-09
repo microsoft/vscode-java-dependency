@@ -29,3 +29,9 @@ export type UpgradeIssue = {
 export interface IUpgradeIssuesRenderer {
     render(issues: UpgradeIssue[]): void;
 }
+
+export type PackageDescription = {
+    groupId: string;
+    artifactId: string;
+    version: string;
+};

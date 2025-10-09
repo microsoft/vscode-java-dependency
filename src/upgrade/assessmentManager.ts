@@ -4,12 +4,44 @@
 import * as semver from 'semver';
 import { Jdtls } from "../java/jdtls";
 import { NodeKind, type INodeData } from "../java/nodeData";
-import { type DependencyCheckItem, UpgradeReason, type UpgradeIssue } from "./type";
+import { type DependencyCheckItem, type UpgradeIssue, type PackageDescription, UpgradeReason } from "./type";
 import { DEPENDENCY_JAVA_RUNTIME } from "./dependency.metadata";
 import { Upgrade } from '../constants';
 import { buildPackageId } from './utility';
 import metadataManager from './metadataManager';
 import { sendInfo } from 'vscode-extension-telemetry-wrapper';
+
+function packageNodeToDescription(node: INodeData): PackageDescription | null {
+    const version = node.metaData?.["maven.version"];
+    const groupId = node.metaData?.["maven.groupId"];
+    const artifactId = node.metaData?.["maven.artifactId"];
+    if (!version || !groupId || !artifactId) {
+        return null;
+    }
+
+    return { version, groupId, artifactId };
+}
+
+function getVersionRange(versions: Set<string>) : string {
+    const versionList = [...versions].sort((a, b) => semver.compare(a, b));
+    if (versionList.length === 1) {
+        return versionList[0];
+    }
+    return `${versionList[0]}|${versionList[versionList.length - 1]}`;
+}
+
+function collectVersionRange(pkgs: PackageDescription[]): Record<string, string> {
+    const versionMap: Record<string, Set<string>> = {};
+    for (const pkg of pkgs) {
+        const groupId = pkg.groupId;
+        if (!versionMap[groupId]) {
+            versionMap[groupId] = new Set();
+        }
+        versionMap[groupId].add(pkg.version);
+    }
+
+    return Object.fromEntries(Object.entries(versionMap).map(([groupId, versions]) => [groupId, getVersionRange(versions)]));
+}
 
 function getJavaIssues(data: INodeData): UpgradeIssue[] {
     const javaVersion = data.metaData?.MaxSourceVersion as number | undefined;
@@ -18,6 +50,19 @@ function getJavaIssues(data: INodeData): UpgradeIssue[] {
         return [];
     }
     const currentSemVer = semver.coerce(javaVersion);
+
+    const [javaRuntimeGroupId, javaRuntimeArtifactId] = Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME.split(":");
+    sendInfo("", {
+        operationName: "java.dependency.assessmentManager.getJavaVersionRange",
+        versionRangeByGroupId: JSON.stringify(
+            collectVersionRange([{
+                groupId: javaRuntimeGroupId,
+                artifactId: javaRuntimeArtifactId,
+                version: String(javaVersion),
+            }]),
+        ),
+    });
+
     if (currentSemVer && !semver.satisfies(currentSemVer, supportedVersion)) {
         return [{
             ...DEPENDENCY_JAVA_RUNTIME,
@@ -31,7 +76,7 @@ function getJavaIssues(data: INodeData): UpgradeIssue[] {
 }
 
 function getUpgradeForDependency(versionString: string, supportedVersionDefinition: DependencyCheckItem, packageId: string): UpgradeIssue | null {
-    const { reason } = supportedVersionDefinition;
+    const reason = supportedVersionDefinition.reason;
     switch (reason) {
         case UpgradeReason.DEPRECATED: {
             return {
@@ -59,17 +104,21 @@ function getUpgradeForDependency(versionString: string, supportedVersionDefiniti
     return null;
 }
 
-function getDependencyIssue(data: INodeData): UpgradeIssue | null {
-    const versionString = data.metaData?.["maven.version"];
-    const groupId = data.metaData?.["maven.groupId"];
-    const artifactId = data.metaData?.["maven.artifactId"];
+function getPackageUpgradeMetadata(pkg: PackageDescription): DependencyCheckItem | null {
+    const { groupId, artifactId } = pkg;
     const packageId = buildPackageId(groupId, artifactId);
-    const supportedVersionDefinition = metadataManager.getMetadataById(packageId);
-    if (!versionString || !groupId || !supportedVersionDefinition) {
+    return metadataManager.getMetadataById(packageId) ?? null;
+}
+
+function getDependencyIssue(pkg: PackageDescription): UpgradeIssue | null {
+    const supportedVersionDefinition = getPackageUpgradeMetadata(pkg);
+    const version = pkg.version;
+    if (!version || !supportedVersionDefinition) {
         return null;
     }
-
-    return getUpgradeForDependency(versionString, supportedVersionDefinition, packageId);
+    const { groupId, artifactId } = pkg;
+    const packageId = buildPackageId(groupId, artifactId);
+    return getUpgradeForDependency(version, supportedVersionDefinition, packageId);
 }
 
 async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
@@ -78,13 +127,23 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
         projectStructureData
             .filter(x => x.kind === NodeKind.Container)
             .map(async (packageContainer) => {
-                const packages = await Jdtls.getPackageData({
+                const packageNodes = await Jdtls.getPackageData({
                     kind: NodeKind.Container,
                     projectUri: projectNode.uri,
                     path: packageContainer.path,
                 });
+                const packages = packageNodes.map(packageNodeToDescription).filter((x): x is PackageDescription => Boolean(x));
 
-                return packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
+                const issues = packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
+                const versionRangeByGroupId = collectVersionRange(packages.filter(getPackageUpgradeMetadata));
+                if (Object.keys(versionRangeByGroupId).length > 0) {
+                    sendInfo("", {
+                        operationName: "java.dependency.assessmentManager.getDependencyVersionRange",
+                        versionRangeByGroupId: JSON.stringify(versionRangeByGroupId),
+                    });
+                }
+
+                return issues;
             })
     );
 
@@ -95,7 +154,7 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
             }
 
             sendInfo("", {
-                operationName: "java.dependency.assessmentManager.getDependencyIssues",
+                operationName: "java.dependency.assessmentManager.getDependencyIssues.packageDataFailure",
             });
             return [];
         })
@@ -113,10 +172,6 @@ async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIs
     const projects = await Jdtls.getProjects(workspaceFolderUri);
     const projectsIssues = await Promise.allSettled(projects.map(async (projectNode) => {
         const issues = await getProjectIssues(projectNode);
-        sendInfo("", {
-            operationName: "java.dependency.assessmentManager.getWorkspaceIssues",
-            issuesFoundForPackageId: JSON.stringify(issues.map(x => `${x.packageId}:${x.currentVersion}`)),
-        });
         return issues;
     }));
 
