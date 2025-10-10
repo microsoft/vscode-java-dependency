@@ -4,6 +4,14 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.26.1
+
+- fix - Calculate package version range for upgrade by @FluoriteCafe-work in https://github.com/microsoft/vscode-java-dependency/pull/910
+
+## 0.26.0
+
+- feat - Add getImportClassContent method to collect import class info by @wenytang-ms in https://github.com/microsoft/vscode-java-dependency/pull/907
+
 ## 0.25.2
 
 - ux - Improve wording on project modernization by @FluoriteCafe-work in https://github.com/microsoft/vscode-java-dependency/pull/912
