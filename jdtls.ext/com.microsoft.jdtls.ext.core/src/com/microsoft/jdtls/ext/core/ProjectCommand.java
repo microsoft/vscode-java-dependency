@@ -86,9 +86,13 @@ public final class ProjectCommand {
         }
     }
 
+    /**
+     * ImportClassInfo - Conforms to Copilot CodeSnippet format
+     * Used to provide Java class context information and JavaDoc to Copilot
+     */
     private static class ImportClassInfo {
-        public String uri;
-        public String className;
+        public String uri;           // File URI (required)
+        public String className;     // Human-readable class description with JavaDoc appended (required)
 
         public ImportClassInfo(String uri, String className) {
             this.uri = uri;
@@ -348,9 +352,9 @@ public final class ProjectCommand {
         return hasError;
     }
 
-    public static ImportClassInfo[] getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
+    public static List<ImportClassInfo> getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
-            return new ImportClassInfo[0];
+            return Collections.emptyList();
         }
 
         try {
@@ -360,7 +364,7 @@ public final class ProjectCommand {
             java.net.URI uri = new java.net.URI(fileUri);
             String filePath = uri.getPath();
             if (filePath == null) {
-                return new ImportClassInfo[0];
+                return Collections.emptyList();
             }
 
             IPath path = new Path(filePath);
@@ -369,25 +373,25 @@ public final class ProjectCommand {
             IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
             IFile file = root.getFileForLocation(path);
             if (file == null || !file.exists()) {
-                return new ImportClassInfo[0];
+                return Collections.emptyList();
             }
 
             // Get the Java project
             IJavaProject javaProject = JavaCore.create(file.getProject());
             if (javaProject == null || !javaProject.exists()) {
-                return new ImportClassInfo[0];
+                return Collections.emptyList();
             }
 
             // Find the compilation unit
             IJavaElement javaElement = JavaCore.create(file);
             if (!(javaElement instanceof org.eclipse.jdt.core.ICompilationUnit)) {
-                return new ImportClassInfo[0];
+                return Collections.emptyList();
             }
 
             org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
 
             // Parse imports and resolve local project files
-            List<ImportClassInfo> result = new ArrayList<>();
+            List<ImportClassInfo> classInfoList = new ArrayList<>();
 
             // Get all imports from the compilation unit
             org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
@@ -403,27 +407,27 @@ public final class ProjectCommand {
                 
                 if (isStatic) {
                     // Handle static imports
-                    resolveStaticImport(javaProject, importName, result, processedTypes);
+                    resolveStaticImport(javaProject, importName, classInfoList, processedTypes, monitor);
                 } else if (importName.endsWith(".*")) {
                     // Handle package imports
                     String packageName = importName.substring(0, importName.length() - 2);
-                    resolvePackageTypes(javaProject, packageName, result, processedTypes);
+                    resolvePackageTypes(javaProject, packageName, classInfoList, processedTypes, monitor);
                 } else {
                     // Handle single type imports
-                    resolveSingleType(javaProject, importName, result, processedTypes);
+                    resolveSingleType(javaProject, importName, classInfoList, processedTypes, monitor);
                 }
             }
 
-            return result.toArray(new ImportClassInfo[0]);
+            return classInfoList;
 
         } catch (Exception e) {
             JdtlsExtActivator.logException("Error in resolveCopilotRequest", e);
-            return new ImportClassInfo[0];
+            return Collections.emptyList();
         }
     }
 
-    private static void resolveSingleType(IJavaProject javaProject, String typeName, List<ImportClassInfo> result,
-            Set<String> processedTypes) {
+    private static void resolveSingleType(IJavaProject javaProject, String typeName, List<ImportClassInfo> classInfoList,
+            Set<String> processedTypes, IProgressMonitor monitor) {
         try {
             if (processedTypes.contains(typeName)) {
                 return;
@@ -450,7 +454,7 @@ public final class ProjectCommand {
                     // Found type - check if it's a source type we want to process
                     if (!type.isBinary()) {
                         // Source type found - extract information and return
-                        extractTypeInfo(type, result);
+                        extractTypeInfo(type, classInfoList, monitor);
                         return;
                     }
                     // Note: Binary types (from JARs/JRE) are intentionally ignored
@@ -476,7 +480,7 @@ public final class ProjectCommand {
                             if (primaryType != null && primaryType.exists() && 
                                 typeName.equals(primaryType.getFullyQualifiedName())) {
                                 // Found local project source type via fallback method
-                                extractTypeInfo(primaryType, result);
+                                extractTypeInfo(primaryType, classInfoList, monitor);
                                 return;
                             }
                             
@@ -484,7 +488,7 @@ public final class ProjectCommand {
                             org.eclipse.jdt.core.IType[] allTypes = cu.getAllTypes();
                             for (org.eclipse.jdt.core.IType type : allTypes) {
                                 if (typeName.equals(type.getFullyQualifiedName())) {
-                                    extractTypeInfo(type, result);
+                                    extractTypeInfo(type, classInfoList, monitor);
                                     return;
                                 }
                             }
@@ -498,20 +502,20 @@ public final class ProjectCommand {
         }
     }
 
-    private static void resolveStaticImport(IJavaProject javaProject, String staticImportName, List<ImportClassInfo> result,
-            Set<String> processedTypes) {
+    private static void resolveStaticImport(IJavaProject javaProject, String staticImportName, List<ImportClassInfo> classInfoList,
+            Set<String> processedTypes, IProgressMonitor monitor) {
         try {
             if (staticImportName.endsWith(".*")) {
                 // Static import of all static members from a class: import static MyClass.*;
                 String className = staticImportName.substring(0, staticImportName.length() - 2);
-                resolveStaticMembersFromClass(javaProject, className, result, processedTypes);
+                resolveStaticMembersFromClass(javaProject, className, classInfoList, processedTypes, monitor);
             } else {
                 // Static import of specific member: import static MyClass.myMethod;
                 int lastDotIndex = staticImportName.lastIndexOf('.');
                 if (lastDotIndex > 0) {
                     String className = staticImportName.substring(0, lastDotIndex);
                     String memberName = staticImportName.substring(lastDotIndex + 1);
-                    resolveStaticMemberFromClass(javaProject, className, memberName, result, processedTypes);
+                    resolveStaticMemberFromClass(javaProject, className, memberName, classInfoList, processedTypes, monitor);
                 }
             }
         } catch (Exception e) {
@@ -520,44 +524,60 @@ public final class ProjectCommand {
     }
 
     private static void resolveStaticMembersFromClass(IJavaProject javaProject, String className, 
-            List<ImportClassInfo> result, Set<String> processedTypes) {
+            List<ImportClassInfo> classInfoList, Set<String> processedTypes, IProgressMonitor monitor) {
         try {
             // First resolve the class itself to get context information
-            resolveSingleType(javaProject, className, result, processedTypes);
+            resolveSingleType(javaProject, className, classInfoList, processedTypes, monitor);
             
             // Find the type and extract its static members
             org.eclipse.jdt.core.IType type = javaProject.findType(className);
             if (type != null && type.exists() && !type.isBinary()) {
-                String staticMemberInfo = "staticImport:" + className + ".*";
-                
-                // Add information about available static members
-                List<String> staticMembers = new ArrayList<>();
+                StringBuilder description = new StringBuilder();
+                description.append("Static Import: ").append(className).append(".*\n");
+                description.append("All static members from ").append(className).append("\n\n");
                 
                 // Get static methods
                 IMethod[] methods = type.getMethods();
+                List<String> staticMethodSigs = new ArrayList<>();
                 for (IMethod method : methods) {
                     int flags = method.getFlags();
                     if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isPublic(flags)) {
-                        staticMembers.add("method:" + method.getElementName() + getParameterTypes(method));
+                        if (staticMethodSigs.size() < 10) {
+                            staticMethodSigs.add(generateMethodSignature(method));
+                        }
                     }
                 }
                 
                 // Get static fields
                 org.eclipse.jdt.core.IField[] fields = type.getFields();
+                List<String> staticFieldSigs = new ArrayList<>();
                 for (org.eclipse.jdt.core.IField field : fields) {
                     int flags = field.getFlags();
                     if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isPublic(flags)) {
-                        staticMembers.add("field:" + field.getElementName());
+                        if (staticFieldSigs.size() < 10) {
+                            staticFieldSigs.add(generateFieldSignature(field));
+                        }
                     }
                 }
                 
-                if (!staticMembers.isEmpty()) {
-                    staticMemberInfo += "|members:" + String.join(",", staticMembers.subList(0, Math.min(staticMembers.size(), 10)));
+                if (!staticMethodSigs.isEmpty()) {
+                    description.append("Static Methods:\n");
+                    for (String sig : staticMethodSigs) {
+                        description.append("  - ").append(sig).append("\n");
+                    }
+                    description.append("\n");
+                }
+                
+                if (!staticFieldSigs.isEmpty()) {
+                    description.append("Static Fields:\n");
+                    for (String sig : staticFieldSigs) {
+                        description.append("  - ").append(sig).append("\n");
+                    }
                 }
                 
                 String uri = getTypeUri(type);
                 if (uri != null) {
-                    result.add(new ImportClassInfo(uri, staticMemberInfo));
+                    classInfoList.add(new ImportClassInfo(uri, description.toString()));
                 }
             }
         } catch (JavaModelException e) {
@@ -566,15 +586,18 @@ public final class ProjectCommand {
     }
 
     private static void resolveStaticMemberFromClass(IJavaProject javaProject, String className, String memberName,
-            List<ImportClassInfo> result, Set<String> processedTypes) {
+            List<ImportClassInfo> classInfoList, Set<String> processedTypes, IProgressMonitor monitor) {
         try {
             // First resolve the class itself
-            resolveSingleType(javaProject, className, result, processedTypes);
+            resolveSingleType(javaProject, className, classInfoList, processedTypes, monitor);
             
             // Find the specific static member
             org.eclipse.jdt.core.IType type = javaProject.findType(className);
             if (type != null && type.exists() && !type.isBinary()) {
-                String memberInfo = "staticImport:" + className + "." + memberName;
+                StringBuilder description = new StringBuilder();
+                description.append("Static Import: ").append(className).append(".").append(memberName).append("\n\n");
+                
+                boolean found = false;
                 
                 // Check if it's a method
                 IMethod[] methods = type.getMethods();
@@ -582,27 +605,35 @@ public final class ProjectCommand {
                     if (method.getElementName().equals(memberName)) {
                         int flags = method.getFlags();
                         if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
-                            memberInfo += "|type:method" + getParameterTypes(method);
+                            description.append("Static Method:\n");
+                            description.append("  - ").append(generateMethodSignature(method)).append("\n");
+                            found = true;
                             break;
                         }
                     }
                 }
                 
                 // Check if it's a field
-                org.eclipse.jdt.core.IField[] fields = type.getFields();
-                for (org.eclipse.jdt.core.IField field : fields) {
-                    if (field.getElementName().equals(memberName)) {
-                        int flags = field.getFlags();
-                        if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
-                            memberInfo += "|type:field";
-                            break;
+                if (!found) {
+                    org.eclipse.jdt.core.IField[] fields = type.getFields();
+                    for (org.eclipse.jdt.core.IField field : fields) {
+                        if (field.getElementName().equals(memberName)) {
+                            int flags = field.getFlags();
+                            if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
+                                description.append("Static Field:\n");
+                                description.append("  - ").append(generateFieldSignature(field)).append("\n");
+                                found = true;
+                                break;
+                            }
                         }
                     }
                 }
                 
-                String uri = getTypeUri(type);
-                if (uri != null) {
-                    result.add(new ImportClassInfo(uri, memberInfo));
+                if (found) {
+                    String uri = getTypeUri(type);
+                    if (uri != null) {
+                        classInfoList.add(new ImportClassInfo(uri, description.toString()));
+                    }
                 }
             }
         } catch (JavaModelException e) {
@@ -610,8 +641,8 @@ public final class ProjectCommand {
         }
     }
 
-    private static void resolvePackageTypes(IJavaProject javaProject, String packageName, List<ImportClassInfo> result,
-            Set<String> processedTypes) {
+    private static void resolvePackageTypes(IJavaProject javaProject, String packageName, List<ImportClassInfo> classInfoList,
+            Set<String> processedTypes, IProgressMonitor monitor) {
         try {
             // Find all package fragments with this name
             IPackageFragmentRoot[] packageRoots = javaProject.getPackageFragmentRoots();
@@ -629,7 +660,7 @@ public final class ProjectCommand {
                                 String fullTypeName = type.getFullyQualifiedName();
                                 if (!processedTypes.contains(fullTypeName)) {
                                     processedTypes.add(fullTypeName);
-                                    extractTypeInfo(type, result);
+                                    extractTypeInfo(type, classInfoList, monitor);
                                 }
                             }
                         }
@@ -642,128 +673,204 @@ public final class ProjectCommand {
         }
     }
 
-    private static void extractTypeInfo(org.eclipse.jdt.core.IType type, List<ImportClassInfo> result) {
+    /**
+     * Extract type information and generate ImportClassInfo conforming to Copilot CodeSnippet format
+     * Also extracts JavaDoc if available and appends it to the class description
+     * Improved version: generates human-readable class descriptions with integrated JavaDoc
+     */
+    private static void extractTypeInfo(org.eclipse.jdt.core.IType type, List<ImportClassInfo> classInfoList, 
+            IProgressMonitor monitor) {
         try {
-            String typeName = type.getFullyQualifiedName();
-            String typeInfo = "";
-
-            // Determine type kind
-            if (type.isInterface()) {
-                typeInfo = "interface:" + typeName;
-            } else if (type.isClass()) {
-                extractDetailedClassInfo(type, result);
-                return; // extractDetailedClassInfo handles adding to result
-            } else if (type.isEnum()) {
-                typeInfo = "enum:" + typeName;
-            } else if (type.isAnnotation()) {
-                typeInfo = "annotation:" + typeName;
-            } else {
-                typeInfo = "type:" + typeName;
-            }
-
-            // Get URI for this type
+            // Get file URI
             String uri = getTypeUri(type);
-            if (uri != null) {
-                result.add(new ImportClassInfo(uri, typeInfo));
+            if (uri == null) {
+                return;
             }
-
-            // Also add nested types
+            
+            // Generate human-readable class description
+            String description = generateClassDescription(type);
+            
+            // Extract JavaDoc (MVP: class-level only) and append to description
+            String javadoc = extractClassJavaDoc(type, monitor);
+            if (javadoc != null && !javadoc.isEmpty()) {
+                description = description + "\n" + javadoc;
+            }
+            
+            // Create ImportClassInfo (conforms to Copilot CodeSnippet format)
+            ImportClassInfo info = new ImportClassInfo(uri, description);
+            classInfoList.add(info);
+            
+            // Recursively process nested types
             org.eclipse.jdt.core.IType[] nestedTypes = type.getTypes();
             for (org.eclipse.jdt.core.IType nestedType : nestedTypes) {
-                extractTypeInfo(nestedType, result);
+                extractTypeInfo(nestedType, classInfoList, monitor);
             }
-
+            
         } catch (JavaModelException e) {
-            // Log but continue processing other types
             JdtlsExtActivator.logException("Error extracting type info for: " + type.getElementName(), e);
         }
     }
 
-    private static void extractDetailedClassInfo(org.eclipse.jdt.core.IType type, List<ImportClassInfo> result) {
+    /**
+     * Extract class-level JavaDoc and convert to plain text
+     * Returns null if no JavaDoc is available
+     * 
+     * Note: For source types, extracts from source comments using getJavadocRange()
+     *       For binary types (JARs), uses getAttachedJavadoc() which requires javadoc.jar
+     */
+    private static String extractClassJavaDoc(org.eclipse.jdt.core.IType type, IProgressMonitor monitor) {
         try {
-            if (!type.isClass()) {
-                return; // Only process classes
-            }
-
-            String className = type.getFullyQualifiedName();
-            List<String> classDetails = new ArrayList<>();
-
-            // 1. Class declaration information
-            classDetails.add("class:" + className);
-
-            // 2. Modifiers
-            int flags = type.getFlags();
-            List<String> modifiers = new ArrayList<>();
-            if (org.eclipse.jdt.core.Flags.isPublic(flags))
-                modifiers.add("public");
-            if (org.eclipse.jdt.core.Flags.isAbstract(flags))
-                modifiers.add("abstract");
-            if (org.eclipse.jdt.core.Flags.isFinal(flags))
-                modifiers.add("final");
-            if (org.eclipse.jdt.core.Flags.isStatic(flags))
-                modifiers.add("static");
-            if (!modifiers.isEmpty()) {
-                classDetails.add("modifiers:" + String.join(",", modifiers));
-            }
-
-            // 3. Inheritance
-            String superclass = type.getSuperclassName();
-            if (superclass != null && !"Object".equals(superclass)) {
-                classDetails.add("extends:" + superclass);
-            }
-
-            // 4. Implemented interfaces
-            String[] interfaces = type.getSuperInterfaceNames();
-            if (interfaces.length > 0) {
-                classDetails.add("implements:" + String.join(",", interfaces));
-            }
-
-            // 5. Constructors
-            IMethod[] methods = type.getMethods();
-            List<String> constructors = new ArrayList<>();
-            List<String> publicMethods = new ArrayList<>();
-
-            for (IMethod method : methods) {
-                if (method.isConstructor()) {
-                    constructors.add(method.getElementName() + getParameterTypes(method));
-                } else if (org.eclipse.jdt.core.Flags.isPublic(method.getFlags())) {
-                    publicMethods.add(method.getElementName() + getParameterTypes(method));
+            // For source types: Read JavaDoc directly from source comments
+            if (!type.isBinary()) {
+                org.eclipse.jdt.core.ISourceRange javadocRange = type.getJavadocRange();
+                if (javadocRange != null) {
+                    org.eclipse.jdt.core.ICompilationUnit cu = type.getCompilationUnit();
+                    if (cu != null) {
+                        String source = cu.getSource();
+                        if (source != null) {
+                            int offset = javadocRange.getOffset();
+                            int length = javadocRange.getLength();
+                            if (offset >= 0 && length > 0 && offset + length <= source.length()) {
+                                String rawJavadoc = source.substring(offset, offset + length);
+                                // Clean up JavaDoc comment markers
+                                String cleanedJavadoc = cleanJavadocComment(rawJavadoc);
+                                if (cleanedJavadoc != null && !cleanedJavadoc.trim().isEmpty()) {
+                                    return cleanedJavadoc.trim();
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // For binary types: Try to get attached JavaDoc from javadoc.jar
+                String htmlJavadoc = type.getAttachedJavadoc(monitor);
+                if (htmlJavadoc != null && !htmlJavadoc.isEmpty()) {
+                    // Convert HTML to plain text
+                    String plainText = stripHtmlTags(htmlJavadoc);
+                    if (plainText != null && !plainText.trim().isEmpty()) {
+                        return plainText.trim();
+                    }
                 }
             }
-
-            if (!constructors.isEmpty()) {
-                classDetails.add("constructors:" + String.join(",", constructors));
-            }
-
-            if (!publicMethods.isEmpty()) {
-                classDetails.add("publicMethods:"
-                        + String.join(",", publicMethods.subList(0, Math.min(publicMethods.size(), 10))));
-            }
-
-            // 6. Public fields
-            org.eclipse.jdt.core.IField[] fields = type.getFields();
-            List<String> publicFields = new ArrayList<>();
-            for (org.eclipse.jdt.core.IField field : fields) {
-                if (org.eclipse.jdt.core.Flags.isPublic(field.getFlags())) {
-                    publicFields.add(field.getElementName());
-                }
-            }
-
-            if (!publicFields.isEmpty()) {
-                classDetails.add("publicFields:" + String.join(",", publicFields));
-            }
-
-            // Get URI for this type
-            String uri = getTypeUri(type);
-            if (uri != null) {
-                // Combine all information into one string
-                String classInfo = String.join("|", classDetails);
-                result.add(new ImportClassInfo(uri, classInfo));
-            }
-
         } catch (JavaModelException e) {
-            JdtlsExtActivator.logException("Error extracting detailed class info", e);
+            // Silent fail - JavaDoc is optional
+            JdtlsExtActivator.logException("Failed to extract JavaDoc for: " + type.getElementName(), e);
         }
+        return null;
+    }
+
+    /**
+     * Clean up raw JavaDoc comment by removing comment markers and asterisks
+     * 
+     * Converts raw JavaDoc comment text into clean readable text
+     */
+    private static String cleanJavadocComment(String rawJavadoc) {
+        if (rawJavadoc == null || rawJavadoc.isEmpty()) {
+            return "";
+        }
+        
+        // Remove opening /** and closing */
+        String cleaned = rawJavadoc;
+        cleaned = cleaned.replaceFirst("^/\\*\\*", "");
+        cleaned = cleaned.replaceFirst("\\*/$", "");
+        
+        // Split into lines and clean each line
+        String[] lines = cleaned.split("\\r?\\n");
+        StringBuilder result = new StringBuilder();
+        
+        for (String line : lines) {
+            // Remove leading whitespace and asterisk
+            String trimmed = line.trim();
+            if (trimmed.startsWith("*")) {
+                trimmed = trimmed.substring(1).trim();
+            }
+            
+            // Skip empty lines at the beginning
+            if (result.length() == 0 && trimmed.isEmpty()) {
+                continue;
+            }
+            
+            // Add line to result
+            if (result.length() > 0 && !trimmed.isEmpty()) {
+                result.append("\n");
+            }
+            result.append(trimmed);
+        }
+        
+        return result.toString();
+    }
+
+    /**
+     * Strip HTML tags and convert HTML entities to plain text
+     * Preserves important structure like paragraphs, code blocks, and lists
+     */
+    private static String stripHtmlTags(String html) {
+        if (html == null || html.isEmpty()) {
+            return "";
+        }
+        
+        // Preserve structure by converting HTML tags to newlines/formatting
+        String text = html;
+        
+        // 1. Preserve code blocks - mark them for special handling
+        text = text.replaceAll("(?i)<pre[^>]*>", "\n```\n");
+        text = text.replaceAll("(?i)</pre>", "\n```\n");
+        text = text.replaceAll("(?i)<code[^>]*>", "`");
+        text = text.replaceAll("(?i)</code>", "`");
+        
+        // 2. Preserve paragraphs and line breaks
+        text = text.replaceAll("(?i)<p[^>]*>", "\n\n");
+        text = text.replaceAll("(?i)</p>", "");
+        text = text.replaceAll("(?i)<br[^>]*>", "\n");
+        text = text.replaceAll("(?i)<div[^>]*>", "\n");
+        text = text.replaceAll("(?i)</div>", "\n");
+        
+        // 3. Preserve lists
+        text = text.replaceAll("(?i)<ul[^>]*>", "\n");
+        text = text.replaceAll("(?i)</ul>", "\n");
+        text = text.replaceAll("(?i)<ol[^>]*>", "\n");
+        text = text.replaceAll("(?i)</ol>", "\n");
+        text = text.replaceAll("(?i)<li[^>]*>", "\n  • ");
+        text = text.replaceAll("(?i)</li>", "");
+        
+        // 4. Preserve definition lists (used for @param, @return, etc.)
+        text = text.replaceAll("(?i)<dl[^>]*>", "\n");
+        text = text.replaceAll("(?i)</dl>", "\n");
+        text = text.replaceAll("(?i)<dt[^>]*>", "\n");
+        text = text.replaceAll("(?i)</dt>", ": ");
+        text = text.replaceAll("(?i)<dd[^>]*>", "");
+        text = text.replaceAll("(?i)</dd>", "\n");
+        
+        // 5. Handle headings
+        text = text.replaceAll("(?i)<h[1-6][^>]*>", "\n\n");
+        text = text.replaceAll("(?i)</h[1-6]>", "\n");
+        
+        // 6. Remove remaining HTML tags
+        text = text.replaceAll("<[^>]+>", "");
+        
+        // 7. Convert HTML entities
+        text = text.replace("&nbsp;", " ");
+        text = text.replace("&lt;", "<");
+        text = text.replace("&gt;", ">");
+        text = text.replace("&amp;", "&");
+        text = text.replace("&quot;", "\"");
+        text = text.replace("&#39;", "'");
+        text = text.replace("&apos;", "'");
+        text = text.replace("&mdash;", "—");
+        text = text.replace("&ndash;", "–");
+        
+        // 8. Clean up excessive whitespace while preserving intentional line breaks
+        // Remove spaces at start/end of lines
+        text = text.replaceAll("[ \\t]+\\n", "\n");
+        text = text.replaceAll("\\n[ \\t]+", "\n");
+        // Collapse multiple spaces within a line
+        text = text.replaceAll("[ \\t]+", " ");
+        // Limit consecutive newlines to maximum 2 (one blank line)
+        text = text.replaceAll("\\n{3,}", "\n\n");
+        
+        text = text.trim();
+        
+        return text;
     }
 
     // Helper method: Get file URI/path for the type (instead of fully qualified class name)
@@ -801,7 +908,345 @@ public final class ProjectCommand {
         }
     }
 
-    // Helper method: Get method parameter types
+    /**
+     * Convert JDT type signature to human-readable format
+     * 
+     * Examples:
+     * - QT; -> T
+     * - QString; -> String
+     * - I -> int, Z -> boolean
+     * - [QString; -> String[]
+     */
+    private static String convertTypeSignature(String jdtSignature) {
+        if (jdtSignature == null || jdtSignature.isEmpty()) {
+            return "void";
+        }
+
+        // Handle array types
+        int arrayDimensions = 0;
+        while (jdtSignature.startsWith("[")) {
+            arrayDimensions++;
+            jdtSignature = jdtSignature.substring(1);
+        }
+
+        String baseType;
+
+        // Handle type parameters and reference types (starts with Q)
+        if (jdtSignature.startsWith("Q") && jdtSignature.endsWith(";")) {
+            baseType = jdtSignature.substring(1, jdtSignature.length() - 1);
+            baseType = baseType.replace('/', '.');
+            
+            // Simplify package name: java.util.List -> List
+            if (baseType.contains(".")) {
+                String[] parts = baseType.split("\\.");
+                baseType = parts[parts.length - 1];
+            }
+        }
+        // Handle fully qualified types (starts with L)
+        else if (jdtSignature.startsWith("L") && jdtSignature.endsWith(";")) {
+            baseType = jdtSignature.substring(1, jdtSignature.length() - 1);
+            baseType = baseType.replace('/', '.');
+            
+            // Simplify package name
+            if (baseType.contains(".")) {
+                String[] parts = baseType.split("\\.");
+                baseType = parts[parts.length - 1];
+            }
+        }
+        // Handle primitive types
+        else {
+            switch (jdtSignature.charAt(0)) {
+                case 'I': baseType = "int"; break;
+                case 'Z': baseType = "boolean"; break;
+                case 'V': baseType = "void"; break;
+                case 'J': baseType = "long"; break;
+                case 'F': baseType = "float"; break;
+                case 'D': baseType = "double"; break;
+                case 'B': baseType = "byte"; break;
+                case 'C': baseType = "char"; break;
+                case 'S': baseType = "short"; break;
+                default: baseType = jdtSignature;
+            }
+        }
+
+        // Add array markers
+        for (int i = 0; i < arrayDimensions; i++) {
+            baseType += "[]";
+        }
+
+        return baseType;
+    }
+
+    /**
+     * Generate human-readable method signature
+     * 
+     * Example: public static <T> Result<T> success(T value)
+     */
+    private static String generateMethodSignature(IMethod method) {
+        StringBuilder sb = new StringBuilder();
+        
+        try {
+            // Access modifiers
+            int flags = method.getFlags();
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) {
+                sb.append("public ");
+            } else if (org.eclipse.jdt.core.Flags.isProtected(flags)) {
+                sb.append("protected ");
+            } else if (org.eclipse.jdt.core.Flags.isPrivate(flags)) {
+                sb.append("private ");
+            }
+            
+            // static/final/abstract modifiers
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
+                sb.append("static ");
+            }
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) {
+                sb.append("final ");
+            }
+            if (org.eclipse.jdt.core.Flags.isAbstract(flags)) {
+                sb.append("abstract ");
+            }
+            
+            // Type parameters (if any)
+            String[] typeParameters = method.getTypeParameterSignatures();
+            if (typeParameters != null && typeParameters.length > 0) {
+                sb.append("<");
+                for (int i = 0; i < typeParameters.length; i++) {
+                    if (i > 0) sb.append(", ");
+                    sb.append(convertTypeSignature(typeParameters[i]));
+                }
+                sb.append("> ");
+            }
+            
+            // Return type (constructors don't have return type)
+            if (!method.isConstructor()) {
+                String returnType = convertTypeSignature(method.getReturnType());
+                sb.append(returnType).append(" ");
+            }
+            
+            // Method name
+            sb.append(method.getElementName()).append("(");
+            
+            // Parameter list
+            String[] paramTypes = method.getParameterTypes();
+            String[] paramNames = method.getParameterNames();
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(convertTypeSignature(paramTypes[i]));
+                if (paramNames != null && i < paramNames.length) {
+                    sb.append(" ").append(paramNames[i]);
+                }
+            }
+            
+            sb.append(")");
+            
+            // Exception declarations
+            String[] exceptionTypes = method.getExceptionTypes();
+            if (exceptionTypes != null && exceptionTypes.length > 0) {
+                sb.append(" throws ");
+                for (int i = 0; i < exceptionTypes.length; i++) {
+                    if (i > 0) sb.append(", ");
+                    sb.append(convertTypeSignature(exceptionTypes[i]));
+                }
+            }
+            
+        } catch (JavaModelException e) {
+            return method.getElementName() + "(...)";
+        }
+        
+        return sb.toString();
+    }
+
+    /**
+     * Generate human-readable field signature
+     * 
+     * Example: private final String message
+     */
+    private static String generateFieldSignature(org.eclipse.jdt.core.IField field) {
+        StringBuilder sb = new StringBuilder();
+        
+        try {
+            // Access modifiers
+            int flags = field.getFlags();
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) {
+                sb.append("public ");
+            } else if (org.eclipse.jdt.core.Flags.isProtected(flags)) {
+                sb.append("protected ");
+            } else if (org.eclipse.jdt.core.Flags.isPrivate(flags)) {
+                sb.append("private ");
+            }
+            
+            // static/final modifiers
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
+                sb.append("static ");
+            }
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) {
+                sb.append("final ");
+            }
+            
+            // Type and name
+            String fieldType = convertTypeSignature(field.getTypeSignature());
+            sb.append(fieldType).append(" ").append(field.getElementName());
+            
+            // If it's a constant, try to get the initial value
+            if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isFinal(flags)) {
+                Object constant = field.getConstant();
+                if (constant != null) {
+                    sb.append(" = ");
+                    if (constant instanceof String) {
+                        sb.append("\"").append(constant).append("\"");
+                    } else {
+                        sb.append(constant);
+                    }
+                }
+            }
+            
+        } catch (JavaModelException e) {
+            return field.getElementName();
+        }
+        
+        return sb.toString();
+    }
+
+    /**
+     * Generate complete class description (natural language format, similar to JavaDoc)
+     */
+    private static String generateClassDescription(org.eclipse.jdt.core.IType type) {
+        StringBuilder description = new StringBuilder();
+        
+        try {
+            String qualifiedName = type.getFullyQualifiedName();
+            String simpleName = type.getElementName();
+            
+            // === 1. Title and signature ===
+            description.append("Class: ").append(qualifiedName).append("\n");
+            
+            // Generate class signature
+            StringBuilder signature = new StringBuilder();
+            int flags = type.getFlags();
+            
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) signature.append("public ");
+            if (org.eclipse.jdt.core.Flags.isAbstract(flags)) signature.append("abstract ");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) signature.append("final ");
+            
+            if (type.isInterface()) {
+                signature.append("interface ");
+            } else if (type.isEnum()) {
+                signature.append("enum ");
+            } else if (type.isAnnotation()) {
+                signature.append("@interface ");
+            } else {
+                signature.append("class ");
+            }
+            
+            signature.append(simpleName);
+            
+            // Type parameters
+            String[] typeParams = type.getTypeParameterSignatures();
+            if (typeParams != null && typeParams.length > 0) {
+                signature.append("<");
+                for (int i = 0; i < typeParams.length; i++) {
+                    if (i > 0) signature.append(", ");
+                    signature.append(convertTypeSignature(typeParams[i]));
+                }
+                signature.append(">");
+            }
+            
+            // Inheritance relationship
+            String superclass = type.getSuperclassName();
+            if (superclass != null && !superclass.equals("Object") && !type.isInterface()) {
+                signature.append(" extends ").append(superclass);
+            }
+            
+            // Implemented interfaces
+            String[] interfaces = type.getSuperInterfaceNames();
+            if (interfaces != null && interfaces.length > 0) {
+                if (type.isInterface()) {
+                    signature.append(" extends ");
+                } else {
+                    signature.append(" implements ");
+                }
+                for (int i = 0; i < interfaces.length; i++) {
+                    if (i > 0) signature.append(", ");
+                    signature.append(interfaces[i]);
+                }
+            }
+            
+            description.append("Signature: ").append(signature).append("\n\n");
+            
+            // === 2. Constructors ===
+            IMethod[] methods = type.getMethods();
+            List<String> constructorSigs = new ArrayList<>();
+            
+            for (IMethod method : methods) {
+                if (method.isConstructor()) {
+                    constructorSigs.add(generateMethodSignature(method));
+                }
+            }
+            
+            if (!constructorSigs.isEmpty()) {
+                description.append("Constructors:\n");
+                for (String sig : constructorSigs) {
+                    description.append("  - ").append(sig).append("\n");
+                }
+                description.append("\n");
+            }
+            
+            // === 3. Public methods (limited to first 10) ===
+            List<String> methodSigs = new ArrayList<>();
+            int methodCount = 0;
+            
+            for (IMethod method : methods) {
+                if (!method.isConstructor() && org.eclipse.jdt.core.Flags.isPublic(method.getFlags())) {
+                    if (methodCount < 10) {
+                        methodSigs.add(generateMethodSignature(method));
+                        methodCount++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            
+            if (!methodSigs.isEmpty()) {
+                description.append("Methods:\n");
+                for (String sig : methodSigs) {
+                    description.append("  - ").append(sig).append("\n");
+                }
+                if (methodCount == 10 && methods.length > methodCount) {
+                    description.append("  - ... (more methods available)\n");
+                }
+                description.append("\n");
+            }
+            
+            // === 4. Public fields (limited to first 10) ===
+            org.eclipse.jdt.core.IField[] fields = type.getFields();
+            List<String> fieldSigs = new ArrayList<>();
+            int fieldCount = 0;
+            
+            for (org.eclipse.jdt.core.IField field : fields) {
+                if (org.eclipse.jdt.core.Flags.isPublic(field.getFlags()) && fieldCount < 10) {
+                    fieldSigs.add(generateFieldSignature(field));
+                    fieldCount++;
+                }
+            }
+            
+            if (!fieldSigs.isEmpty()) {
+                description.append("Fields:\n");
+                for (String sig : fieldSigs) {
+                    description.append("  - ").append(sig).append("\n");
+                }
+            }
+            
+        } catch (JavaModelException e) {
+            return "Error generating description for type: " + e.getMessage();
+        }
+        
+        return description.toString();
+    }
+
+    // Helper method: Get method parameter types (deprecated - use generateMethodSignature instead)
     private static String getParameterTypes(IMethod method) {
         String[] paramTypes = method.getParameterTypes();
         if (paramTypes.length == 0) {
