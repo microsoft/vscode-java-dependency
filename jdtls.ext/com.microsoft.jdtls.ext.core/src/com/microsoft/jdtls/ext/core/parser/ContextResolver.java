@@ -672,7 +672,151 @@ public class ContextResolver {
     }
 
     /**
-     * Generate human-readable method signature
+     * Extract summary description from method JavaDoc
+     * Returns the first sentence or paragraph of the JavaDoc as a brief description
+     */
+    private static String extractMethodJavaDocSummary(IMethod method) {
+        try {
+            // Try to get JavaDoc from source
+            org.eclipse.jdt.core.ISourceRange javadocRange = method.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = method.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (!isNotEmpty(rawJavadoc)) {
+                return "";
+            }
+            
+            // Clean the JavaDoc comment
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            
+            // Extract the description (before any @param, @return, @throws tags)
+            String description = extractJavadocDescription(cleaned);
+            
+            // Get first sentence or limit length
+            String summary = getFirstSentenceOrLimit(description, 120);
+            
+            return summary;
+            
+        } catch (Exception e) {
+            // Silently fail and return empty string
+            return "";
+        }
+    }
+
+    /**
+     * Extract the main description part from JavaDoc (before @tags)
+     */
+    private static String extractJavadocDescription(String cleanedJavadoc) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
+            return "";
+        }
+        
+        // Split into lines and extract description before @tags
+        String[] lines = cleanedJavadoc.split("\\n");
+        StringBuilder description = new StringBuilder();
+        
+        for (String line : lines) {
+            String trimmedLine = line.trim();
+            // Check if line starts with @tag
+            if (trimmedLine.startsWith("@")) {
+                break; // Stop at first tag
+            }
+            
+            // Skip empty lines at the beginning
+            if (description.length() == 0 && trimmedLine.isEmpty()) {
+                continue;
+            }
+            
+            if (description.length() > 0) {
+                description.append(" ");
+            }
+            description.append(trimmedLine);
+        }
+        
+        return description.toString().trim();
+    }
+
+    /**
+     * Get the first sentence or limit the text to maxLength characters
+     */
+    private static String getFirstSentenceOrLimit(String text, int maxLength) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        
+        // Try to find the first sentence (ending with ., !, or ?)
+        int firstPeriod = text.indexOf(". ");
+        int firstExclamation = text.indexOf("! ");
+        int firstQuestion = text.indexOf("? ");
+        
+        int firstSentenceEnd = -1;
+        if (firstPeriod != -1) firstSentenceEnd = firstPeriod;
+        if (firstExclamation != -1 && (firstSentenceEnd == -1 || firstExclamation < firstSentenceEnd)) {
+            firstSentenceEnd = firstExclamation;
+        }
+        if (firstQuestion != -1 && (firstSentenceEnd == -1 || firstQuestion < firstSentenceEnd)) {
+            firstSentenceEnd = firstQuestion;
+        }
+        
+        // If we found a sentence ending and it's within reasonable length
+        if (firstSentenceEnd != -1 && firstSentenceEnd < maxLength) {
+            return text.substring(0, firstSentenceEnd + 1).trim();
+        }
+        
+        // Otherwise, limit to maxLength
+        if (text.length() > maxLength) {
+            // Try to cut at a word boundary
+            int lastSpace = text.lastIndexOf(' ', maxLength);
+            if (lastSpace > maxLength / 2) {
+                return text.substring(0, lastSpace).trim() + "...";
+            }
+            return text.substring(0, maxLength).trim() + "...";
+        }
+        
+        return text.trim();
+    }
+
+    /**
+     * Extract summary description from field JavaDoc
+     */
+    private static String extractFieldJavaDocSummary(org.eclipse.jdt.core.IField field) {
+        try {
+            // Try to get JavaDoc from source
+            org.eclipse.jdt.core.ISourceRange javadocRange = field.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = field.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (!isNotEmpty(rawJavadoc)) {
+                return "";
+            }
+            
+            // Clean the JavaDoc comment
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            
+            // Extract the description (before any @tags)
+            String description = extractJavadocDescription(cleaned);
+            
+            // Get first sentence or limit length
+            String summary = getFirstSentenceOrLimit(description, 120);
+            
+            return summary;
+            
+        } catch (Exception e) {
+            // Silently fail and return empty string
+            return "";
+        }
+    }
+
+    /**
+     * Generate human-readable method signature with JavaDoc description
      */
     public static String generateMethodSignature(IMethod method) {
         StringBuilder sb = new StringBuilder();
@@ -731,11 +875,17 @@ public class ContextResolver {
             return method.getElementName() + "(...)";
         }
         
+        // Extract JavaDoc description and prepend if exists
+        String javadocSummary = extractMethodJavaDocSummary(method);
+        if (isNotEmpty(javadocSummary)) {
+            return "// " + javadocSummary + "\n      " + sb.toString();
+        }
+        
         return sb.toString();
     }
 
     /**
-     * Generate human-readable field signature
+     * Generate human-readable field signature with JavaDoc description
      */
     public static String generateFieldSignature(org.eclipse.jdt.core.IField field) {
         StringBuilder sb = new StringBuilder();
@@ -764,6 +914,12 @@ public class ContextResolver {
             
         } catch (JavaModelException e) {
             return field.getElementName();
+        }
+        
+        // Extract JavaDoc description and prepend if exists
+        String javadocSummary = extractFieldJavaDocSummary(field);
+        if (isNotEmpty(javadocSummary)) {
+            return "// " + javadocSummary + "\n      " + sb.toString();
         }
         
         return sb.toString();
