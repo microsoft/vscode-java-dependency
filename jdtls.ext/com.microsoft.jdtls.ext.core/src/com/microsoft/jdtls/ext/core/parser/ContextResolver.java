@@ -12,6 +12,7 @@
 package com.microsoft.jdtls.ext.core.parser;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -30,6 +31,17 @@ import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
  * Handles import resolution, JavaDoc extraction, and class description generation.
  */
 public class ContextResolver {
+
+    // Pre-compiled regex patterns for performance
+    private static final Pattern MARKDOWN_CODE_PATTERN = Pattern.compile("(?s)```(?:java)?\\n?(.*?)```");
+    private static final Pattern HTML_PRE_PATTERN = Pattern.compile("(?is)<pre[^>]*>(.*?)</pre>");
+    private static final Pattern HTML_CODE_PATTERN = Pattern.compile("(?is)<code[^>]*>(.*?)</code>");
+    
+    // Constants for limiting displayed members
+    private static final int MAX_METHODS_TO_DISPLAY = 10;
+    private static final int MAX_FIELDS_TO_DISPLAY = 10;
+    private static final int MAX_STATIC_METHODS_TO_DISPLAY = 10;
+    private static final int MAX_STATIC_FIELDS_TO_DISPLAY = 10;
 
     /**
      * ImportClassInfo - Conforms to Copilot CodeSnippet format
@@ -170,7 +182,7 @@ public class ContextResolver {
                 for (IMethod method : methods) {
                     int flags = method.getFlags();
                     if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isPublic(flags)) {
-                        if (staticMethodSigs.size() < 10) {
+                        if (staticMethodSigs.size() < MAX_STATIC_METHODS_TO_DISPLAY) {
                             staticMethodSigs.add(generateMethodSignature(method));
                         }
                     }
@@ -182,7 +194,7 @@ public class ContextResolver {
                 for (org.eclipse.jdt.core.IField field : fields) {
                     int flags = field.getFlags();
                     if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isPublic(flags)) {
-                        if (staticFieldSigs.size() < 10) {
+                        if (staticFieldSigs.size() < MAX_STATIC_FIELDS_TO_DISPLAY) {
                             staticFieldSigs.add(generateFieldSignature(field));
                         }
                     }
@@ -321,15 +333,12 @@ public class ContextResolver {
                 return;
             }
             
-            // Generate human-readable class description
-            String description = generateClassDescription(type);
-            
-            // Extract relevant JavaDoc content (code snippets with fallback strategy)
+            // Extract relevant JavaDoc content first (code snippets with fallback strategy)
             // This uses a hybrid approach: AST extraction -> HTML extraction -> Markdown extraction -> fallback
             String relevantJavadoc = extractRelevantJavaDocContent(type, monitor);
-            if (isNotEmpty(relevantJavadoc)) {
-                description = description + "\n" + relevantJavadoc;
-            }
+            
+            // Generate human-readable class description with JavaDoc inserted after signature
+            String description = generateClassDescription(type, relevantJavadoc);
             
             // Create ImportClassInfo (conforms to Copilot CodeSnippet format)
             ImportClassInfo info = new ImportClassInfo(uri, description);
@@ -385,8 +394,10 @@ public class ContextResolver {
 
     /**
      * Generate complete class description (natural language format, similar to JavaDoc)
+     * @param type the Java type to describe
+     * @param javadoc optional JavaDoc content to insert after signature (can be null or empty)
      */
-    public static String generateClassDescription(org.eclipse.jdt.core.IType type) {
+    public static String generateClassDescription(org.eclipse.jdt.core.IType type, String javadoc) {
         StringBuilder description = new StringBuilder();
         
         try {
@@ -449,7 +460,12 @@ public class ContextResolver {
             
             description.append("Signature: ").append(signature).append("\n\n");
             
-            // === 2. Constructors ===
+            // === 2. JavaDoc (inserted after signature) ===
+            if (isNotEmpty(javadoc)) {
+                description.append("JavaDoc:\n").append(javadoc).append("\n\n");
+            }
+            
+            // === 3. Constructors ===
             IMethod[] methods = type.getMethods();
             List<String> constructorSigs = new ArrayList<>();
             
@@ -467,13 +483,13 @@ public class ContextResolver {
                 description.append("\n");
             }
             
-            // === 3. Public methods (limited to first 10) ===
+            // === 4. Public methods (limited to first 10) ===
             List<String> methodSigs = new ArrayList<>();
             int methodCount = 0;
             
             for (IMethod method : methods) {
                 if (!method.isConstructor() && org.eclipse.jdt.core.Flags.isPublic(method.getFlags())) {
-                    if (methodCount < 10) {
+                    if (methodCount < MAX_METHODS_TO_DISPLAY) {
                         methodSigs.add(generateMethodSignature(method));
                         methodCount++;
                     } else {
@@ -487,19 +503,19 @@ public class ContextResolver {
                 for (String sig : methodSigs) {
                     description.append("  - ").append(sig).append("\n");
                 }
-                if (methodCount == 10 && methods.length > methodCount) {
+                if (methodCount == MAX_METHODS_TO_DISPLAY && methods.length > methodCount) {
                     description.append("  - ... (more methods available)\n");
                 }
                 description.append("\n");
             }
             
-            // === 4. Public fields (limited to first 10) ===
+            // === 5. Public fields (limited to first 10) ===
             org.eclipse.jdt.core.IField[] fields = type.getFields();
             List<String> fieldSigs = new ArrayList<>();
             int fieldCount = 0;
             
             for (org.eclipse.jdt.core.IField field : fields) {
-                if (org.eclipse.jdt.core.Flags.isPublic(field.getFlags()) && fieldCount < 10) {
+                if (org.eclipse.jdt.core.Flags.isPublic(field.getFlags()) && fieldCount < MAX_FIELDS_TO_DISPLAY) {
                     fieldSigs.add(generateFieldSignature(field));
                     fieldCount++;
                 }
@@ -552,13 +568,13 @@ public class ContextResolver {
             }
 
             StringBuilder allCodeSnippets = new StringBuilder();
+            Set<String> seenCodeSnippets = new HashSet<>();
 
             // 1. Extract markdown code blocks (```...```)
-            Pattern markdownPattern = Pattern.compile("(?s)```(?:java)?\\n?(.*?)```");
-            Matcher markdownMatcher = markdownPattern.matcher(rawJavadoc);
+            Matcher markdownMatcher = MARKDOWN_CODE_PATTERN.matcher(rawJavadoc);
             while (markdownMatcher.find()) {
                 String code = markdownMatcher.group(1).trim();
-                if (isNotEmpty(code)) {
+                if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
                     allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
@@ -569,22 +585,20 @@ public class ContextResolver {
             cleanedForHtml = convertHtmlEntities(cleanedForHtml);
 
             // Priority 1: <pre> blocks (often contain well-formatted code)
-            Pattern prePattern = Pattern.compile("(?is)<pre[^>]*>(.*?)</pre>");
-            Matcher preMatcher = prePattern.matcher(cleanedForHtml);
+            Matcher preMatcher = HTML_PRE_PATTERN.matcher(cleanedForHtml);
             while (preMatcher.find()) {
                 String code = preMatcher.group(1).replaceAll("(?i)<code[^>]*>", "").replaceAll("(?i)</code>", "").trim();
-                if (isNotEmpty(code)) {
+                if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
                     allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
 
             // Priority 2: <code> blocks (for inline snippets)
-            Pattern codePattern = Pattern.compile("(?is)<code[^>]*>(.*?)</code>");
-            Matcher codeMatcher = codePattern.matcher(cleanedForHtml);
+            Matcher codeMatcher = HTML_CODE_PATTERN.matcher(cleanedForHtml);
             while (codeMatcher.find()) {
                 String code = codeMatcher.group(1).trim();
-                // Avoid adding duplicates that might be inside <pre><code>
-                if (isNotEmpty(code) && allCodeSnippets.indexOf(code) == -1) {
+                // Use HashSet for O(1) duplicate checking
+                if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
                     allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
@@ -804,12 +818,18 @@ public class ContextResolver {
         if (jdtSignature.startsWith("Q") && jdtSignature.endsWith(";")) {
             baseType = jdtSignature.substring(1, jdtSignature.length() - 1);
             baseType = baseType.replace('/', '.');
+            
+            // Handle generic type parameters (e.g., "QResult<QUser;>;")
+            baseType = processGenericTypes(baseType);
             baseType = simplifyTypeName(baseType);
         }
         // Handle fully qualified types (starts with L)
         else if (jdtSignature.startsWith("L") && jdtSignature.endsWith(";")) {
             baseType = jdtSignature.substring(1, jdtSignature.length() - 1);
             baseType = baseType.replace('/', '.');
+            
+            // Handle generic type parameters
+            baseType = processGenericTypes(baseType);
             baseType = simplifyTypeName(baseType);
         }
         // Handle primitive types
@@ -835,16 +855,78 @@ public class ContextResolver {
 
         return baseType;
     }
+    
+    /**
+     * Process generic type parameters in a type name
+     * Example: "Result<QUser;>" -> "Result<User>"
+     */
+    private static String processGenericTypes(String typeName) {
+        if (typeName == null || !typeName.contains("<")) {
+            return typeName;
+        }
+        
+        StringBuilder result = new StringBuilder();
+        int i = 0;
+        
+        while (i < typeName.length()) {
+            char c = typeName.charAt(i);
+            
+            if (c == '<' || c == ',' || c == ' ') {
+                // Keep angle brackets, commas, and spaces
+                result.append(c);
+                i++;
+                
+                // Skip whitespace after comma or opening bracket
+                while (i < typeName.length() && typeName.charAt(i) == ' ') {
+                    result.append(' ');
+                    i++;
+                }
+                
+                // Check if next is a type parameter (Q or L prefix)
+                if (i < typeName.length()) {
+                    char next = typeName.charAt(i);
+                    
+                    if (next == 'Q' || next == 'L') {
+                        // Find the end of this type parameter (marked by ;)
+                        int endIndex = typeName.indexOf(';', i);
+                        if (endIndex != -1) {
+                            // Extract the type parameter and convert it
+                            String typeParam = typeName.substring(i + 1, endIndex);
+                            
+                            // Recursively process nested generics
+                            typeParam = processGenericTypes(typeParam);
+                            typeParam = simplifyTypeName(typeParam);
+                            
+                            result.append(typeParam);
+                            i = endIndex + 1; // Skip past the semicolon
+                        } else {
+                            result.append(next);
+                            i++;
+                        }
+                    } else {
+                        // Not a type parameter, just append
+                        result.append(next);
+                        i++;
+                    }
+                }
+            } else {
+                result.append(c);
+                i++;
+            }
+        }
+        
+        return result.toString();
+    }
 
     /**
      * Simplify fully qualified type name to just the simple name
      */
     private static String simplifyTypeName(String qualifiedName) {
-        if (qualifiedName == null || !qualifiedName.contains(".")) {
+        if (qualifiedName == null) {
             return qualifiedName;
         }
-        String[] parts = qualifiedName.split("\\.");
-        return parts[parts.length - 1];
+        int lastDot = qualifiedName.lastIndexOf('.');
+        return lastDot == -1 ? qualifiedName : qualifiedName.substring(lastDot + 1);
     }
 
     /**
