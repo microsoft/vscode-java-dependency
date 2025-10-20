@@ -135,23 +135,23 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         }
 
         // Get workspace folder from document URI to get project URI
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-        if (workspaceFolder) {
-            // Check for cancellation before calling external libraries metadata
-            JavaContextProviderUtils.checkCancellation(copilotCancel);
-            // Get external libraries metadata as an array of Trait objects
-            const metadata = await CopilotHelper.getExternalLibrariesMetadata(workspaceFolder.uri, copilotCancel);
-            // Check for cancellation after resolution
-            JavaContextProviderUtils.checkCancellation(copilotCancel);
+        // const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+        // if (workspaceFolder) {
+        //     // Check for cancellation before calling external libraries metadata
+        //     JavaContextProviderUtils.checkCancellation(copilotCancel);
+        //     // Get external libraries metadata as an array of Trait objects
+        //     const metadata = await CopilotHelper.getExternalLibrariesMetadata(workspaceFolder.uri, copilotCancel);
+        //     // Check for cancellation after resolution
+        //     JavaContextProviderUtils.checkCancellation(copilotCancel);
             
-            // The metadata is already in Trait format (array of {name, value} objects)
-            if (metadata && metadata.length > 0) {
-                // Check cancellation once after receiving all traits
-                JavaContextProviderUtils.checkCancellation(copilotCancel);
+        //     // The metadata is already in Trait format (array of {name, value} objects)
+        //     if (metadata && metadata.length > 0) {
+        //         // Check cancellation once after receiving all traits
+        //         JavaContextProviderUtils.checkCancellation(copilotCancel);
                 
-                items.push(...metadata);
-            }
-        }
+        //         items.push(...metadata);
+        //     }
+        // }
     } catch (error: any) {
         if (error instanceof CopilotCancellationError) {
             sendContextTelemetry(request, start, items.length, "cancelled_by_copilot");
