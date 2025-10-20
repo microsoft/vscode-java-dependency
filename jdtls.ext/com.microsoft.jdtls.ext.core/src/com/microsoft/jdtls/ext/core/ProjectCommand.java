@@ -341,9 +341,20 @@ public final class ProjectCommand {
         return hasError;
     }
 
+    // Threshold for triggering external dependency resolution
+    // If project source classes < this value, supplement with external dependencies
+    private static final int MIN_SOURCE_CLASSES_THRESHOLD = 5;
+    
+    // Maximum number of external dependency classes to include
+    private static final int MAX_DEPENDENCY_CLASSES = 10;
+    
+    // Maximum methods to display for binary (external) classes
+    private static final int MAX_METHODS_FOR_BINARY = 5;
+
     /**
      * Get import class content for Copilot integration.
      * This method extracts information about imported classes from a Java file.
+     * Uses an adaptive strategy: only includes external dependencies when project sources are sparse.
      * 
      * @param arguments List containing the file URI as the first element
      * @param monitor Progress monitor for cancellation support
@@ -395,6 +406,7 @@ public final class ProjectCommand {
             org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
             Set<String> processedTypes = new HashSet<>();
 
+            // Phase 1: Resolve project source classes only
             for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
                 if (monitor.isCanceled()) {
                     break;
@@ -414,6 +426,36 @@ public final class ProjectCommand {
                     // Handle single type imports - delegate to ContextResolver
                     ContextResolver.resolveSingleType(javaProject, importName, classInfoList, processedTypes, monitor);
                 }
+            }
+
+            // Phase 2: Adaptive external dependency resolution
+            // Only trigger if project source classes are sparse (< threshold)
+            if (classInfoList.size() < MIN_SOURCE_CLASSES_THRESHOLD && !monitor.isCanceled()) {
+                // Track external classes separately to apply limits
+                List<ImportClassInfo> externalClasses = new ArrayList<>();
+                
+                for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
+                    if (monitor.isCanceled() || externalClasses.size() >= MAX_DEPENDENCY_CLASSES) {
+                        break;
+                    }
+
+                    String importName = importDecl.getElementName();
+                    boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
+                    
+                    // Skip package imports (*.* ) - too broad for external dependencies
+                    if (importName.endsWith(".*")) {
+                        continue;
+                    }
+                    
+                    // Resolve external (binary) types with simplified content
+                    if (!isStatic) {
+                        ContextResolver.resolveBinaryType(javaProject, importName, externalClasses, 
+                                processedTypes, MAX_METHODS_FOR_BINARY, monitor);
+                    }
+                }
+                
+                // Append external classes after project sources
+                classInfoList.addAll(externalClasses);
             }
 
             return classInfoList;

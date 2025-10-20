@@ -49,11 +49,11 @@ public class ContextResolver {
      */
     public static class ImportClassInfo {
         public String uri;           // File URI (required)
-        public String className;     // Human-readable class description with JavaDoc appended (required)
+        public String value;     // Human-readable class description with JavaDoc appended (required)
 
-        public ImportClassInfo(String uri, String className) {
+        public ImportClassInfo(String uri, String value) {
             this.uri = uri;
-            this.className = className;
+            this.value = value;
         }
     }
 
@@ -63,15 +63,16 @@ public class ContextResolver {
     public static void resolveSingleType(IJavaProject javaProject, String typeName, List<ImportClassInfo> classInfoList,
             Set<String> processedTypes, IProgressMonitor monitor) {
         try {
+            // Check if already processed to avoid duplicates
             if (processedTypes.contains(typeName)) {
                 return;
             }
-            processedTypes.add(typeName);
 
             // Extract package and simple name from the fully qualified type name
             int lastDotIndex = typeName.lastIndexOf('.');
             if (lastDotIndex == -1) {
-                // Default package or invalid type name
+                // Default package or invalid type name - mark as processed to avoid retry
+                processedTypes.add(typeName);
                 return;
             }
             
@@ -87,12 +88,14 @@ public class ContextResolver {
                 if (type != null && type.exists()) {
                     // Found type - check if it's a source type we want to process
                     if (!type.isBinary()) {
-                        // Source type found - extract information and return
+                        // Source type found - mark as processed and extract information
+                        processedTypes.add(typeName);
                         extractTypeInfo(type, classInfoList, monitor);
                         return;
                     }
-                    // Note: Binary types (from JARs/JRE) are intentionally ignored
-                    // as they don't provide useful context for code completion
+                    // Binary types (from JARs/JRE) found but not processed in Phase 1
+                    // Do NOT mark as processed - let Phase 2 handle them if triggered
+                    return;
                 }
             } catch (JavaModelException e) {
                 JdtlsExtActivator.logException("Error in primary type search: " + typeName, e);
@@ -114,6 +117,7 @@ public class ContextResolver {
                             if (primaryType != null && primaryType.exists() && 
                                 typeName.equals(primaryType.getFullyQualifiedName())) {
                                 // Found local project source type via fallback method
+                                processedTypes.add(typeName);
                                 extractTypeInfo(primaryType, classInfoList, monitor);
                                 return;
                             }
@@ -122,6 +126,7 @@ public class ContextResolver {
                             org.eclipse.jdt.core.IType[] allTypes = cu.getAllTypes();
                             for (org.eclipse.jdt.core.IType type : allTypes) {
                                 if (typeName.equals(type.getFullyQualifiedName())) {
+                                    processedTypes.add(typeName);
                                     extractTypeInfo(type, classInfoList, monitor);
                                     return;
                                 }
@@ -130,9 +135,14 @@ public class ContextResolver {
                     }
                 }
             }
+            
+            // Type not found - mark as processed to avoid repeated failed lookups
+            processedTypes.add(typeName);
+            
         } catch (JavaModelException e) {
-            // Log but continue processing other types
+            // Log and mark as processed even on error to avoid repeated failures
             JdtlsExtActivator.logException("Error resolving type: " + typeName, e);
+            processedTypes.add(typeName);
         }
     }
 
@@ -285,6 +295,47 @@ public class ContextResolver {
     }
 
     /**
+     * Resolve a binary type (from external JAR/JRE) with simplified content.
+     * This method is used for external dependencies when project sources are sparse.
+     * 
+     * @param javaProject The Java project context
+     * @param typeName Fully qualified type name (e.g., "java.util.ArrayList")
+     * @param classInfoList List to append resolved class information
+     * @param processedTypes Set tracking already processed types to avoid duplicates
+     * @param maxMethods Maximum number of methods to include (to limit token usage)
+     * @param monitor Progress monitor for cancellation
+     */
+    public static void resolveBinaryType(IJavaProject javaProject, String typeName, 
+            List<ImportClassInfo> classInfoList, Set<String> processedTypes, 
+            int maxMethods, IProgressMonitor monitor) {
+        try {
+            if (processedTypes.contains(typeName)) {
+                return;
+            }
+            
+            // Use JDT's findType which searches all sources and dependencies
+            org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
+            if (type == null || !type.exists()) {
+                return;
+            }
+            
+            // Only process binary types (from JARs/JRE)
+            if (!type.isBinary()) {
+                return; // Skip source types - they should be handled by resolveSingleType
+            }
+            
+            processedTypes.add(typeName);
+            
+            // Extract simplified information for binary types
+            extractBinaryTypeInfo(type, classInfoList, maxMethods, monitor);
+            
+        } catch (JavaModelException e) {
+            // Log but continue processing other types
+            JdtlsExtActivator.logException("Error resolving binary type: " + typeName, e);
+        }
+    }
+
+    /**
      * Resolve all types in a package (for wildcard imports)
      */
     public static void resolvePackageTypes(IJavaProject javaProject, String packageName, List<ImportClassInfo> classInfoList,
@@ -352,6 +403,225 @@ public class ContextResolver {
             
         } catch (JavaModelException e) {
             JdtlsExtActivator.logException("Error extracting type info for: " + type.getElementName(), e);
+        }
+    }
+
+    /**
+     * Extract simplified information for binary types (external dependencies).
+     * This method extracts only essential information to reduce token usage:
+     * - Class signature (modifiers, name, generics, extends/implements)
+     * - Limited number of public methods (no implementation details)
+     * - Public fields (if any)
+     * - Basic class-level JavaDoc if available
+     * 
+     * @param type Binary type from JAR/JRE
+     * @param classInfoList List to append resolved class information
+     * @param maxMethods Maximum number of methods to include
+     * @param monitor Progress monitor for cancellation
+     */
+    public static void extractBinaryTypeInfo(org.eclipse.jdt.core.IType type, 
+            List<ImportClassInfo> classInfoList, int maxMethods, IProgressMonitor monitor) {
+        try {
+            // Use a placeholder URI for binary types (they don't have local file paths)
+            String uri = "jar://" + type.getFullyQualifiedName().replace('.', '/') + ".class";
+            
+            // Generate simplified class description for binary types
+            StringBuilder sb = new StringBuilder();
+            
+            // 1. Extract class-level JavaDoc (brief summary only)
+            String javadoc = extractBriefJavaDoc(type);
+            if (javadoc != null && !javadoc.isEmpty()) {
+                sb.append("/**\n * ").append(javadoc).append("\n */\n");
+            }
+            
+            // 2. Class signature (modifiers, name, generics, inheritance)
+            sb.append(generateClassSignature(type));
+            sb.append(" {\n\n");
+            
+            // 3. Public fields (limit to first 5)
+            org.eclipse.jdt.core.IField[] fields = type.getFields();
+            int fieldCount = 0;
+            for (org.eclipse.jdt.core.IField field : fields) {
+                if (fieldCount >= 5) break;
+                if (org.eclipse.jdt.core.Flags.isPublic(field.getFlags())) {
+                    sb.append("    ").append(generateBinaryFieldSignature(field)).append("\n");
+                    fieldCount++;
+                }
+            }
+            if (fieldCount > 0) {
+                sb.append("\n");
+            }
+            
+            // 4. Public methods (limited by maxMethods parameter)
+            org.eclipse.jdt.core.IMethod[] methods = type.getMethods();
+            int methodCount = 0;
+            for (org.eclipse.jdt.core.IMethod method : methods) {
+                if (methodCount >= maxMethods) break;
+                if (org.eclipse.jdt.core.Flags.isPublic(method.getFlags())) {
+                    sb.append("    ").append(generateBinaryMethodSignature(method)).append("\n");
+                    methodCount++;
+                }
+            }
+            
+            sb.append("}\n");
+            
+            // Add note indicating this is simplified external dependency info
+            sb.append("// Note: External dependency - showing simplified signature only\n");
+            
+            // Create ImportClassInfo
+            ImportClassInfo info = new ImportClassInfo(uri, sb.toString());
+            classInfoList.add(info);
+            
+        } catch (JavaModelException e) {
+            JdtlsExtActivator.logException("Error extracting binary type info for: " + type.getElementName(), e);
+        }
+    }
+
+    /**
+     * Generate class signature with modifiers, name, generics, and inheritance
+     */
+    private static String generateClassSignature(org.eclipse.jdt.core.IType type) throws JavaModelException {
+        StringBuilder sb = new StringBuilder();
+        
+        // Modifiers
+        int flags = type.getFlags();
+        if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+        if (org.eclipse.jdt.core.Flags.isAbstract(flags) && !type.isInterface()) sb.append("abstract ");
+        if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+        
+        // Type kind
+        if (type.isInterface()) {
+            sb.append("interface ");
+        } else if (type.isEnum()) {
+            sb.append("enum ");
+        } else if (type.isAnnotation()) {
+            sb.append("@interface ");
+        } else {
+            sb.append("class ");
+        }
+        
+        // Simple name
+        sb.append(type.getElementName());
+        
+        // Type parameters
+        org.eclipse.jdt.core.ITypeParameter[] typeParams = type.getTypeParameters();
+        if (typeParams != null && typeParams.length > 0) {
+            sb.append("<");
+            for (int i = 0; i < typeParams.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(typeParams[i].getElementName());
+            }
+            sb.append(">");
+        }
+        
+        // Superclass
+        String superclass = type.getSuperclassName();
+        if (superclass != null && !superclass.equals("Object") && !type.isInterface()) {
+            sb.append(" extends ").append(simplifyTypeName(superclass));
+        }
+        
+        // Interfaces
+        String[] interfaces = type.getSuperInterfaceNames();
+        if (interfaces != null && interfaces.length > 0) {
+            if (type.isInterface()) {
+                sb.append(" extends ");
+            } else {
+                sb.append(" implements ");
+            }
+            for (int i = 0; i < interfaces.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(simplifyTypeName(interfaces[i]));
+            }
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Extract brief JavaDoc summary for binary types (first sentence only)
+     */
+    private static String extractBriefJavaDoc(org.eclipse.jdt.core.IType type) {
+        try {
+            String javadoc = type.getAttachedJavadoc(null);
+            if (javadoc == null || javadoc.isEmpty()) {
+                return null;
+            }
+            
+            // Extract first sentence (up to first period followed by space or newline)
+            int endIndex = javadoc.indexOf(". ");
+            if (endIndex == -1) {
+                endIndex = javadoc.indexOf(".\n");
+            }
+            if (endIndex != -1) {
+                return javadoc.substring(0, endIndex + 1).trim();
+            }
+            
+            // If no sentence boundary found, limit to 120 characters
+            return javadoc.length() > 120 ? javadoc.substring(0, 120) + "..." : javadoc;
+            
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Generate simplified field signature for binary types
+     */
+    private static String generateBinaryFieldSignature(org.eclipse.jdt.core.IField field) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            
+            // Modifiers
+            int flags = field.getFlags();
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+            
+            // Type and name
+            sb.append(simplifyTypeName(org.eclipse.jdt.core.Signature.toString(field.getTypeSignature())));
+            sb.append(" ").append(field.getElementName()).append(";");
+            
+            return sb.toString();
+        } catch (JavaModelException e) {
+            return "// Error generating field signature";
+        }
+    }
+
+    /**
+     * Generate simplified method signature for binary types (no implementation)
+     */
+    private static String generateBinaryMethodSignature(org.eclipse.jdt.core.IMethod method) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            
+            // Modifiers
+            int flags = method.getFlags();
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+            if (org.eclipse.jdt.core.Flags.isAbstract(flags)) sb.append("abstract ");
+            
+            // Return type (skip for constructors)
+            if (!method.isConstructor()) {
+                sb.append(simplifyTypeName(org.eclipse.jdt.core.Signature.toString(method.getReturnType())));
+                sb.append(" ");
+            }
+            
+            // Method name
+            sb.append(method.getElementName()).append("(");
+            
+            // Parameters (simplified - just types, no names)
+            String[] paramTypes = method.getParameterTypes();
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(simplifyTypeName(org.eclipse.jdt.core.Signature.toString(paramTypes[i])));
+            }
+            
+            sb.append(");");
+            
+            return sb.toString();
+        } catch (JavaModelException e) {
+            return "// Error generating method signature";
         }
     }
 
@@ -827,6 +1097,7 @@ public class ContextResolver {
             appendOtherModifiers(sb, flags, true);
             
             // Type parameters (if any)
+            @SuppressWarnings("deprecation")
             String[] typeParameters = method.getTypeParameterSignatures();
             if (typeParameters != null && typeParameters.length > 0) {
                 sb.append("<");
