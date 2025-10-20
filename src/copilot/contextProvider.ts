@@ -40,7 +40,6 @@ export async function registerCopilotContextProviders(
         if (installCount === 0) {
             return;
         }
-        console.log('======= register context provider =======')
         
         sendInfo("", {
             "action": "registerCopilotContextProvider",
@@ -103,8 +102,6 @@ function sendContextTelemetry(request: ResolveRequest, start: number, itemCount:
 async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode.CancellationToken): Promise<SupportedContextItem[]> {
     const items: SupportedContextItem[] = [];
     const start = performance.now();
-    const documentUri = request.documentContext.uri;
-    const caretOffset = request.documentContext.offset;
     
     try {
         // Check for cancellation before starting
@@ -120,7 +117,6 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
 
         // Resolve imports directly without caching
         const importClass = await CopilotHelper.resolveLocalImports(document.uri, copilotCancel);
-        console.trace('Resolved imports count:', importClass?.length || 0);
         
         // Check for cancellation after resolution
         JavaContextProviderUtils.checkCancellation(copilotCancel);
@@ -137,18 +133,14 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             
             items.push(...contextItems);
         }
-        console.log('------ d1');
 
         // Get workspace folder from document URI to get project URI
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
         if (workspaceFolder) {
             // Check for cancellation before calling external libraries metadata
             JavaContextProviderUtils.checkCancellation(copilotCancel);
-            console.log('----------- d2')
             // Get external libraries metadata as an array of Trait objects
             const metadata = await CopilotHelper.getExternalLibrariesMetadata(workspaceFolder.uri, copilotCancel);
-            console.trace('Resolved external libraries metadata count:', metadata.length);
-            console.log('--------- d3')
             // Check for cancellation after resolution
             JavaContextProviderUtils.checkCancellation(copilotCancel);
             
@@ -173,16 +165,12 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         // Send telemetry for general errors (but continue with partial results)
         sendContextTelemetry(request, start, items.length, "error_partial_results", error.message || "unknown_error");
         
-        console.error(`Error resolving Java context for ${documentUri}:${caretOffset}:`, error);
-        
         // Return partial results and log completion for error case
         return items;
     }
     
     // Send telemetry data once at the end for success case
     sendContextTelemetry(request, start, items.length, "succeeded");
-    console.log('========= Finish context provider, time:', performance.now() - start, " item.length", items.length);
-    console.dir(items)
     return items;
 }
 
