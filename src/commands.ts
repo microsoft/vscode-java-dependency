@@ -136,8 +136,6 @@ export namespace Commands {
 
     export const JAVA_PROJECT_GET_DEPENDENCIES = "java.project.getDependencies";
 
-    export const JAVA_PROJECT_SHOW_DEPENDENCIES = "java.project.showDependencies";
-
     export const JAVA_UPGRADE_WITH_COPILOT = "_java.upgradeWithCopilot";
 
     /**

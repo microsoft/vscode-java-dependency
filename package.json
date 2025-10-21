@@ -298,12 +298,6 @@
         "command": "_java.upgradeWithCopilot",
         "title": "%contributes.commands.java.upgradeWithCopilot%",
         "category": "Java"
-      },
-      {
-        "command": "java.project.showDependencies",
-        "title": "Show Project Dependencies",
-        "category": "Java",
-        "icon": "$(info)"
       }
     ],
     "configuration": {
@@ -744,11 +738,6 @@
           "command": "java.project.rebuild",
           "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "8_execution@6"
-        },
-        {
-          "command": "java.project.showDependencies",
-          "when": "view == javaProjectExplorer && viewItem =~ /java:(project|workspace)(?=.*?\\b\\+uri\\b)/",
-          "group": "8_execution@7"
         },
         {
           "submenu": "javaProject.new",
