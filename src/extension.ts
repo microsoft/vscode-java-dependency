@@ -22,6 +22,7 @@ import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionPr
 import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
 import { registerCopilotContextProviders } from "./copilot/contextProvider";
+import { Jdtls, IDependencyInfo } from "./java/jdtls";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -85,6 +86,133 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         }
     ));
     setContextForDeprecatedTasks();
+    
+    // Register command to show project dependencies
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(
+        Commands.JAVA_PROJECT_SHOW_DEPENDENCIES, async (uri?: Uri) => {
+            try {
+                let projectUri: string;
+                
+                if (uri) {
+                    // If URI is provided, use it
+                    projectUri = uri.toString();
+                } else {
+                    // Otherwise, use the first workspace folder
+                    const workspaceFolders = workspace.workspaceFolders;
+                    if (!workspaceFolders || workspaceFolders.length === 0) {
+                        window.showErrorMessage("No workspace folder found. Please open a Java project.");
+                        return;
+                    }
+                    projectUri = workspaceFolders[0].uri.toString();
+                }
+                
+                // Call the Java command to get dependencies
+                const start = performance.now();
+                const dependencies: IDependencyInfo[] = await Jdtls.getProjectDependencies(projectUri);
+                const end = performance.now();
+                
+                if (!dependencies || dependencies.length === 0) {
+                    window.showInformationMessage("No dependency information found for this project.");
+                    return;
+                }
+                
+                // Create output channel to display results
+                const outputChannel = window.createOutputChannel("Java Project Dependencies");
+                outputChannel.clear();
+                outputChannel.appendLine("=".repeat(80));
+                outputChannel.appendLine("Java Project Dependencies Information");
+                outputChannel.appendLine("=".repeat(80));
+                outputChannel.appendLine(`Time span: ${end - start}ms`);
+                
+                // Group dependencies by category
+                const basicInfo: IDependencyInfo[] = [];
+                const javaInfo: IDependencyInfo[] = [];
+                const libraries: IDependencyInfo[] = [];
+                const projectRefs: IDependencyInfo[] = [];
+                const others: IDependencyInfo[] = [];
+                
+                for (const dep of dependencies) {
+                    if (dep.key === "projectName" || dep.key === "projectLocation") {
+                        basicInfo.push(dep);
+                    } else if (dep.key.includes("java") || dep.key.includes("jre") || 
+                               dep.key.includes("Compatibility") || dep.key === "buildTool" || 
+                               dep.key === "moduleName") {
+                        javaInfo.push(dep);
+                    } else if (dep.key.startsWith("library_")) {
+                        libraries.push(dep);
+                    } else if (dep.key.startsWith("projectReference_")) {
+                        projectRefs.push(dep);
+                    } else {
+                        others.push(dep);
+                    }
+                }
+                
+                // Display basic information
+                if (basicInfo.length > 0) {
+                    outputChannel.appendLine("📦 Basic Information:");
+                    outputChannel.appendLine("-".repeat(80));
+                    for (const dep of basicInfo) {
+                        outputChannel.appendLine(`  ${dep.key}: ${dep.value}`);
+                    }
+                    outputChannel.appendLine("");
+                }
+                
+                // Display Java/JDK information
+                if (javaInfo.length > 0) {
+                    outputChannel.appendLine("☕ Java/JDK Information:");
+                    outputChannel.appendLine("-".repeat(80));
+                    for (const dep of javaInfo) {
+                        outputChannel.appendLine(`  ${dep.key}: ${dep.value}`);
+                    }
+                    outputChannel.appendLine("");
+                }
+                
+                // Display libraries
+                if (libraries.length > 0) {
+                    outputChannel.appendLine("📚 Dependencies Libraries:");
+                    outputChannel.appendLine("-".repeat(80));
+                    for (const dep of libraries) {
+                        outputChannel.appendLine(`  ${dep.value}`);
+                    }
+                    outputChannel.appendLine("");
+                }
+                
+                // Display project references
+                if (projectRefs.length > 0) {
+                    outputChannel.appendLine("🔗 Project References:");
+                    outputChannel.appendLine("-".repeat(80));
+                    for (const dep of projectRefs) {
+                        outputChannel.appendLine(`  ${dep.value}`);
+                    }
+                    outputChannel.appendLine("");
+                }
+                
+                // Display other information
+                if (others.length > 0) {
+                    outputChannel.appendLine("ℹ️  Other Information:");
+                    outputChannel.appendLine("-".repeat(80));
+                    for (const dep of others) {
+                        outputChannel.appendLine(`  ${dep.key}: ${dep.value}`);
+                    }
+                    outputChannel.appendLine("");
+                }
+                
+                outputChannel.appendLine("=".repeat(80));
+                outputChannel.appendLine(`Total entries: ${dependencies.length}`);
+                outputChannel.appendLine("=".repeat(80));
+                
+                // Show the output channel
+                outputChannel.show();
+                
+                window.showInformationMessage(
+                    `Successfully retrieved ${dependencies.length} dependency entries. Check the Output panel.`
+                );
+                
+            } catch (error) {
+                window.showErrorMessage(`Failed to get project dependencies: ${error}`);
+            }
+        }
+    ));
 }
 
 // this method is called when your extension is deactivated

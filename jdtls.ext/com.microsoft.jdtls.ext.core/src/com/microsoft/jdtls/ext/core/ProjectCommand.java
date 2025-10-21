@@ -44,6 +44,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
@@ -87,7 +88,15 @@ public final class ProjectCommand {
         }
     }
 
+    private static class DependencyInfo {
+        public String key;
+        public String value;
 
+        public DependencyInfo(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
 
     private static class Classpath {
         public String source;
@@ -489,6 +498,150 @@ public final class ProjectCommand {
             default:
                 return "UNKNOWN STATUS";
         }
+    }
+
+    /**
+     * Get project dependencies information including JDK version.
+     * 
+     * @param arguments List containing the project URI as the first element
+     * @param monitor Progress monitor for cancellation support
+     * @return List of DependencyInfo containing key-value pairs of project information
+     */
+    public static List<DependencyInfo> getProjectDependencies(List<Object> arguments, IProgressMonitor monitor) {
+        List<DependencyInfo> result = new ArrayList<>();
+        
+        if (arguments == null || arguments.isEmpty()) {
+            return result;
+        }
+
+        try {
+            String projectUri = (String) arguments.get(0);
+            IPath projectPath = ResourceUtils.canonicalFilePathFromURI(projectUri);
+            
+            // Find the project
+            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+            IProject project = null;
+            
+            for (IProject p : ProjectUtils.getAllProjects()) {
+                if (p.getLocation() != null && p.getLocation().equals(projectPath)) {
+                    project = p;
+                    break;
+                }
+            }
+            
+            if (project == null || !project.isAccessible()) {
+                return result;
+            }
+            
+            IJavaProject javaProject = JavaCore.create(project);
+            if (javaProject == null || !javaProject.exists()) {
+                return result;
+            }
+            
+            // Add project name
+            result.add(new DependencyInfo("projectName", project.getName()));
+            
+            // Add project location
+            if (project.getLocation() != null) {
+                result.add(new DependencyInfo("projectLocation", project.getLocation().toOSString()));
+            }
+            
+            // Add JDK version
+            String javaVersion = javaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true);
+            if (javaVersion != null) {
+                result.add(new DependencyInfo("javaVersion", javaVersion));
+            }
+            
+            // Add source compatibility
+            String sourceCompliance = javaProject.getOption(JavaCore.COMPILER_SOURCE, true);
+            if (sourceCompliance != null) {
+                result.add(new DependencyInfo("sourceCompatibility", sourceCompliance));
+            }
+            
+            // Add target compatibility
+            String targetCompliance = javaProject.getOption(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, true);
+            if (targetCompliance != null) {
+                result.add(new DependencyInfo("targetCompatibility", targetCompliance));
+            }
+            
+            // Add module name if it's a modular project
+            String moduleName = getModuleName(javaProject);
+            if (moduleName != null) {
+                result.add(new DependencyInfo("moduleName", moduleName));
+            }
+            
+            // Get classpath entries (dependencies)
+            try {
+                IClasspathEntry[] classpathEntries = javaProject.getResolvedClasspath(true);
+                int libCount = 0;
+                int projectRefCount = 0;
+                
+                for (IClasspathEntry entry : classpathEntries) {
+                    if (monitor.isCanceled()) {
+                        break;
+                    }
+                    
+                    switch (entry.getEntryKind()) {
+                        case IClasspathEntry.CPE_LIBRARY:
+                            libCount++;
+                            IPath libPath = entry.getPath();
+                            if (libPath != null) {
+                                String libName = libPath.lastSegment();
+                                result.add(new DependencyInfo("library_" + libCount, 
+                                    libName + " (" + libPath.toOSString() + ")"));
+                            }
+                            break;
+                        case IClasspathEntry.CPE_PROJECT:
+                            projectRefCount++;
+                            IPath projectRefPath = entry.getPath();
+                            if (projectRefPath != null) {
+                                result.add(new DependencyInfo("projectReference_" + projectRefCount, 
+                                    projectRefPath.lastSegment()));
+                            }
+                            break;
+                        case IClasspathEntry.CPE_CONTAINER:
+                            String containerPath = entry.getPath().toString();
+                            if (containerPath.contains("JRE_CONTAINER")) {
+                                result.add(new DependencyInfo("jreContainerPath", containerPath));
+                                // Try to extract JRE name from container path
+                                try {
+                                    IPath containerIPath = entry.getPath();
+                                    String vmInstallName = JavaRuntime.getVMInstallName(containerIPath);
+                                    if (vmInstallName != null) {
+                                        result.add(new DependencyInfo("jreContainer", vmInstallName));
+                                    }
+                                } catch (Exception e) {
+                                    // Ignore if unable to get VM install name
+                                }
+                            } else if (containerPath.contains("MAVEN")) {
+                                result.add(new DependencyInfo("buildTool", "Maven"));
+                            } else if (containerPath.contains("GRADLE")) {
+                                result.add(new DependencyInfo("buildTool", "Gradle"));
+                            }
+                            break;
+                    }
+                }
+                
+                // Add summary counts
+                result.add(new DependencyInfo("totalLibraries", String.valueOf(libCount)));
+                result.add(new DependencyInfo("totalProjectReferences", String.valueOf(projectRefCount)));
+                
+            } catch (JavaModelException e) {
+                JdtlsExtActivator.logException("Error getting classpath entries", e);
+            }
+            
+            // Add build tool info by checking for build files
+            if (project.getFile("pom.xml").exists()) {
+                result.add(new DependencyInfo("buildTool", "Maven"));
+            } else if (project.getFile("build.gradle").exists() || project.getFile("build.gradle.kts").exists()) {
+                result.add(new DependencyInfo("buildTool", "Gradle"));
+            }
+            
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error in getProjectDependencies", e);
+        }
+        
+        return result;
     }
 
     private static final class LinkedFolderVisitor implements IResourceVisitor {
