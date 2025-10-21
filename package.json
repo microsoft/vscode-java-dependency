@@ -298,6 +298,12 @@
         "command": "_java.upgradeWithCopilot",
         "title": "%contributes.commands.java.upgradeWithCopilot%",
         "category": "Java"
+      },
+      {
+        "command": "java.project.showProjectInfo",
+        "title": "Show Project Information (with execution time)",
+        "category": "Java",
+        "icon": "$(info)"
       }
     ],
     "configuration": {

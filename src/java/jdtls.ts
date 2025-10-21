@@ -92,6 +92,48 @@ export namespace Jdtls {
     export function resolveBuildFiles(): Promise<string[]> {
         return <Promise<string[]>>executeJavaLanguageServerCommand(Commands.JAVA_RESOLVE_BUILD_FILES);
     }
+
+    /**
+     * Project information returned as key-value pairs
+     */
+    export interface IProjectInfo {
+        projectName?: string;
+        projectPath?: string;
+        projectType?: string;          // "Maven" | "Gradle" | "Java"
+        javaVersion?: string;
+        complianceLevel?: string;
+        sourceLevel?: string;
+        targetLevel?: string;
+        vmName?: string;
+        vmVersion?: string;
+        vmLocation?: string;
+        buildToolVersion?: string;
+        dependencies?: IDependencyInfo[];
+        sourceRoots?: string[];
+        outputPaths?: string[];
+    }
+
+    /**
+     * Dependency information as key-value pairs
+     */
+    export interface IDependencyInfo {
+        name: string;
+        path: string;
+        version?: string;
+        scope: string;
+        type: string;                  // "library" | "container" | "project" | "variable"
+    }
+
+    /**
+     * Get comprehensive project information including dependencies and build configuration.
+     * Returns a Map/object with key-value pairs.
+     * 
+     * @param projectUri The URI of the project
+     * @returns Project information as key-value pairs
+     */
+    export async function getProjectInfo(projectUri: string): Promise<IProjectInfo | undefined> {
+        return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_PROJECT_INFO, projectUri);
+    }
 }
 
 interface IPackageDataParam {

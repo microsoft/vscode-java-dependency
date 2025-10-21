@@ -134,6 +134,10 @@ export namespace Commands {
 
     export const JAVA_PROJECT_CHECK_IMPORT_STATUS = "java.project.checkImportStatus";
 
+    export const JAVA_PROJECT_GET_PROJECT_INFO = "java.project.getProjectInfo";
+
+    export const JAVA_PROJECT_SHOW_PROJECT_INFO = "java.project.showProjectInfo";
+
     export const JAVA_UPGRADE_WITH_COPILOT = "_java.upgradeWithCopilot";
 
     /**

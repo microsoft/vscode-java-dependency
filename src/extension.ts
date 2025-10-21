@@ -22,6 +22,7 @@ import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionPr
 import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
 import { registerCopilotContextProviders } from "./copilot/contextProvider";
+import { getProjectInfoCommand } from "./commands/getProjectInfo";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -52,6 +53,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     context.subscriptions.push(tasks.registerTaskProvider(BuildArtifactTaskProvider.exportJarType, new BuildArtifactTaskProvider()));
     context.subscriptions.push(tasks.registerTaskProvider(BuildTaskProvider.type, new BuildTaskProvider()));
     context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_MENUS_FILE_NEW_JAVA_CLASS, newJavaFile));
+    context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_SHOW_PROJECT_INFO, getProjectInfoCommand));
     context.subscriptions.push(window.onDidChangeActiveTextEditor((e: TextEditor | undefined) => {
         setContextForReloadProject(e?.document);
     }));
