@@ -19,6 +19,19 @@ import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
 
 public class ProjectResolver {
     
+    // Constants for dependency info keys
+    private static final String KEY_BUILD_TOOL = "buildTool";
+    private static final String KEY_PROJECT_NAME = "projectName";
+    private static final String KEY_PROJECT_LOCATION = "projectLocation";
+    private static final String KEY_JAVA_VERSION = "javaVersion";
+    private static final String KEY_SOURCE_COMPATIBILITY = "sourceCompatibility";
+    private static final String KEY_TARGET_COMPATIBILITY = "targetCompatibility";
+    private static final String KEY_MODULE_NAME = "moduleName";
+    private static final String KEY_TOTAL_LIBRARIES = "totalLibraries";
+    private static final String KEY_TOTAL_PROJECT_REFS = "totalProjectReferences";
+    private static final String KEY_JRE_CONTAINER_PATH = "jreContainerPath";
+    private static final String KEY_JRE_CONTAINER = "jreContainer";
+    
     public static class DependencyInfo {
         public String key;
         public String value;
@@ -88,37 +101,21 @@ public class ProjectResolver {
      * Add basic project information including name, location, and Java version settings.
      */
     private static void addBasicProjectInfo(List<DependencyInfo> result, IProject project, IJavaProject javaProject) {
-        // Add project name
-        result.add(new DependencyInfo("projectName", project.getName()));
+        result.add(new DependencyInfo(KEY_PROJECT_NAME, project.getName()));
         
-        // Add project location
-        if (project.getLocation() != null) {
-            result.add(new DependencyInfo("projectLocation", project.getLocation().toOSString()));
-        }
+        addIfNotNull(result, KEY_PROJECT_LOCATION, 
+            project.getLocation() != null ? project.getLocation().toOSString() : null);
         
-        // Add JDK version
-        String javaVersion = javaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true);
-        if (javaVersion != null) {
-            result.add(new DependencyInfo("javaVersion", javaVersion));
-        }
+        addIfNotNull(result, KEY_JAVA_VERSION, 
+            javaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true));
         
-        // Add source compatibility
-        String sourceCompliance = javaProject.getOption(JavaCore.COMPILER_SOURCE, true);
-        if (sourceCompliance != null) {
-            result.add(new DependencyInfo("sourceCompatibility", sourceCompliance));
-        }
+        addIfNotNull(result, KEY_SOURCE_COMPATIBILITY, 
+            javaProject.getOption(JavaCore.COMPILER_SOURCE, true));
         
-        // Add target compatibility
-        String targetCompliance = javaProject.getOption(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, true);
-        if (targetCompliance != null) {
-            result.add(new DependencyInfo("targetCompatibility", targetCompliance));
-        }
+        addIfNotNull(result, KEY_TARGET_COMPATIBILITY, 
+            javaProject.getOption(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, true));
         
-        // Add module name if it's a modular project
-        String moduleName = getModuleName(javaProject);
-        if (moduleName != null) {
-            result.add(new DependencyInfo("moduleName", moduleName));
-        }
+        addIfNotNull(result, KEY_MODULE_NAME, getModuleName(javaProject));
     }
     
     /**
@@ -151,8 +148,8 @@ public class ProjectResolver {
             }
             
             // Add summary counts
-            result.add(new DependencyInfo("totalLibraries", String.valueOf(libCount)));
-            result.add(new DependencyInfo("totalProjectReferences", String.valueOf(projectRefCount)));
+            result.add(new DependencyInfo(KEY_TOTAL_LIBRARIES, String.valueOf(libCount)));
+            result.add(new DependencyInfo(KEY_TOTAL_PROJECT_REFS, String.valueOf(projectRefCount)));
             
         } catch (JavaModelException e) {
             JdtlsExtActivator.logException("Error getting classpath entries", e);
@@ -165,9 +162,8 @@ public class ProjectResolver {
     private static void processLibraryEntry(List<DependencyInfo> result, IClasspathEntry entry, int libCount) {
         IPath libPath = entry.getPath();
         if (libPath != null) {
-            String libName = libPath.lastSegment();
             result.add(new DependencyInfo("library_" + libCount, 
-                libName + " (" + libPath.toOSString() + ")"));
+                libPath.lastSegment() + " (" + libPath.toOSString() + ")"));
         }
     }
     
@@ -187,33 +183,36 @@ public class ProjectResolver {
      */
     private static void processContainerEntry(List<DependencyInfo> result, IClasspathEntry entry) {
         String containerPath = entry.getPath().toString();
+        
         if (containerPath.contains("JRE_CONTAINER")) {
-            result.add(new DependencyInfo("jreContainerPath", containerPath));
-            // Try to extract JRE name from container path
+            result.add(new DependencyInfo(KEY_JRE_CONTAINER_PATH, containerPath));
             try {
-                IPath containerIPath = entry.getPath();
-                String vmInstallName = JavaRuntime.getVMInstallName(containerIPath);
-                if (vmInstallName != null) {
-                    result.add(new DependencyInfo("jreContainer", vmInstallName));
-                }
+                String vmInstallName = JavaRuntime.getVMInstallName(entry.getPath());
+                addIfNotNull(result, KEY_JRE_CONTAINER, vmInstallName);
             } catch (Exception e) {
                 // Ignore if unable to get VM install name
             }
         } else if (containerPath.contains("MAVEN")) {
-            result.add(new DependencyInfo("buildTool", "Maven"));
+            result.add(new DependencyInfo(KEY_BUILD_TOOL, "Maven"));
         } else if (containerPath.contains("GRADLE")) {
-            result.add(new DependencyInfo("buildTool", "Gradle"));
+            result.add(new DependencyInfo(KEY_BUILD_TOOL, "Gradle"));
         }
     }
     
     /**
      * Detect build tool by checking for build configuration files.
+     * Only adds if not already detected from classpath containers.
      */
     private static void detectBuildTool(List<DependencyInfo> result, IProject project) {
+        // Check if buildTool already set from container
+        if (hasBuildToolInfo(result)) {
+            return;
+        }
+        
         if (project.getFile("pom.xml").exists()) {
-            result.add(new DependencyInfo("buildTool", "Maven"));
+            result.add(new DependencyInfo(KEY_BUILD_TOOL, "Maven"));
         } else if (project.getFile("build.gradle").exists() || project.getFile("build.gradle.kts").exists()) {
-            result.add(new DependencyInfo("buildTool", "Gradle"));
+            result.add(new DependencyInfo(KEY_BUILD_TOOL, "Gradle"));
         }
     }
     
@@ -226,9 +225,30 @@ public class ProjectResolver {
         }
         try {
             org.eclipse.jdt.core.IModuleDescription module = project.getModuleDescription();
-            return module == null ? null : module.getElementName();
+            return module != null ? module.getElementName() : null;
         } catch (Exception e) {
             return null;
         }
+    }
+    
+    /**
+     * Helper method to add dependency info only if value is not null.
+     */
+    private static void addIfNotNull(List<DependencyInfo> result, String key, String value) {
+        if (value != null) {
+            result.add(new DependencyInfo(key, value));
+        }
+    }
+    
+    /**
+     * Check if buildTool info is already present in result list.
+     */
+    private static boolean hasBuildToolInfo(List<DependencyInfo> result) {
+        for (DependencyInfo info : result) {
+            if (KEY_BUILD_TOOL.equals(info.key)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -597,34 +597,18 @@ public class ContextResolver {
      * Performance optimization: Skip JavaDoc extraction for binary types to avoid expensive I/O
      */
     private static String extractBriefJavaDoc(org.eclipse.jdt.core.IType type) {
+        // Performance optimization: Skip JavaDoc extraction for binary types
+        // getAttachedJavadoc() is expensive - may involve JAR reading, network downloads, HTML parsing
+        if (type.isBinary()) {
+            return null;
+        }
+        
         try {
-            // Performance optimization: Skip JavaDoc extraction for binary types
-            // getAttachedJavadoc() is very expensive - it may involve:
-            // - Reading from JAR files
-            // - Network downloads from Maven Central
-            // - Parsing large HTML documents
-            // For binary types, the method signatures alone provide sufficient context
-            if (type.isBinary()) {
-                return null;
-            }
-            
             String javadoc = type.getAttachedJavadoc(null);
             if (javadoc == null || javadoc.isEmpty()) {
                 return null;
             }
-            
-            // Extract first sentence (up to first period followed by space or newline)
-            int endIndex = javadoc.indexOf(". ");
-            if (endIndex == -1) {
-                endIndex = javadoc.indexOf(".\n");
-            }
-            if (endIndex != -1) {
-                return javadoc.substring(0, endIndex + 1).trim();
-            }
-            
-            // If no sentence boundary found, limit to 120 characters
-            return javadoc.length() > 120 ? javadoc.substring(0, 120) + "..." : javadoc;
-            
+            return getFirstSentenceOrLimit(javadoc, 120);
         } catch (Exception e) {
             return null;
         }
@@ -634,61 +618,14 @@ public class ContextResolver {
      * Generate simplified field signature for binary types
      */
     private static String generateBinaryFieldSignature(org.eclipse.jdt.core.IField field) {
-        try {
-            StringBuilder sb = new StringBuilder();
-            
-            // Modifiers
-            int flags = field.getFlags();
-            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
-            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
-            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
-            
-            // Type and name
-            sb.append(simplifyTypeName(org.eclipse.jdt.core.Signature.toString(field.getTypeSignature())));
-            sb.append(" ").append(field.getElementName()).append(";");
-            
-            return sb.toString();
-        } catch (JavaModelException e) {
-            return "// Error generating field signature";
-        }
+        return generateFieldSignatureInternal(field, true);
     }
 
     /**
      * Generate simplified method signature for binary types (no implementation)
      */
     private static String generateBinaryMethodSignature(org.eclipse.jdt.core.IMethod method) {
-        try {
-            StringBuilder sb = new StringBuilder();
-            
-            // Modifiers
-            int flags = method.getFlags();
-            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
-            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
-            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
-            if (org.eclipse.jdt.core.Flags.isAbstract(flags)) sb.append("abstract ");
-            
-            // Return type (skip for constructors)
-            if (!method.isConstructor()) {
-                sb.append(simplifyTypeName(org.eclipse.jdt.core.Signature.toString(method.getReturnType())));
-                sb.append(" ");
-            }
-            
-            // Method name
-            sb.append(method.getElementName()).append("(");
-            
-            // Parameters (simplified - just types, no names)
-            String[] paramTypes = method.getParameterTypes();
-            for (int i = 0; i < paramTypes.length; i++) {
-                if (i > 0) sb.append(", ");
-                sb.append(simplifyTypeName(org.eclipse.jdt.core.Signature.toString(paramTypes[i])));
-            }
-            
-            sb.append(");");
-            
-            return sb.toString();
-        } catch (JavaModelException e) {
-            return "// Error generating method signature";
-        }
+        return generateMethodSignatureInternal(method, true, false);
     }
 
     /**
@@ -1012,35 +949,7 @@ public class ContextResolver {
      * Returns the first sentence or paragraph of the JavaDoc as a brief description
      */
     private static String extractMethodJavaDocSummary(IMethod method) {
-        try {
-            // Try to get JavaDoc from source
-            org.eclipse.jdt.core.ISourceRange javadocRange = method.getJavadocRange();
-            if (javadocRange == null) {
-                return "";
-            }
-            
-            String rawJavadoc = method.getCompilationUnit().getSource()
-                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
-            
-            if (!isNotEmpty(rawJavadoc)) {
-                return "";
-            }
-            
-            // Clean the JavaDoc comment
-            String cleaned = cleanJavadocComment(rawJavadoc);
-            
-            // Extract the description (before any @param, @return, @throws tags)
-            String description = extractJavadocDescription(cleaned);
-            
-            // Get first sentence or limit length
-            String summary = getFirstSentenceOrLimit(description, 120);
-            
-            return summary;
-            
-        } catch (Exception e) {
-            // Silently fail and return empty string
-            return "";
-        }
+        return extractJavaDocSummaryFromElement(method);
     }
 
     /**
@@ -1084,33 +993,25 @@ public class ContextResolver {
             return "";
         }
         
-        // Try to find the first sentence (ending with ., !, or ?)
-        int firstPeriod = text.indexOf(". ");
-        int firstExclamation = text.indexOf("! ");
-        int firstQuestion = text.indexOf("? ");
-        
+        // Find first sentence boundary (., !, ?)
+        int[] boundaries = {text.indexOf(". "), text.indexOf(".\n"), text.indexOf("! "), text.indexOf("? ")};
         int firstSentenceEnd = -1;
-        if (firstPeriod != -1) firstSentenceEnd = firstPeriod;
-        if (firstExclamation != -1 && (firstSentenceEnd == -1 || firstExclamation < firstSentenceEnd)) {
-            firstSentenceEnd = firstExclamation;
-        }
-        if (firstQuestion != -1 && (firstSentenceEnd == -1 || firstQuestion < firstSentenceEnd)) {
-            firstSentenceEnd = firstQuestion;
+        for (int boundary : boundaries) {
+            if (boundary != -1 && (firstSentenceEnd == -1 || boundary < firstSentenceEnd)) {
+                firstSentenceEnd = boundary;
+            }
         }
         
-        // If we found a sentence ending and it's within reasonable length
+        // Return first sentence if within reasonable length
         if (firstSentenceEnd != -1 && firstSentenceEnd < maxLength) {
             return text.substring(0, firstSentenceEnd + 1).trim();
         }
         
-        // Otherwise, limit to maxLength
+        // Otherwise truncate at maxLength with word boundary
         if (text.length() > maxLength) {
-            // Try to cut at a word boundary
             int lastSpace = text.lastIndexOf(' ', maxLength);
-            if (lastSpace > maxLength / 2) {
-                return text.substring(0, lastSpace).trim() + "...";
-            }
-            return text.substring(0, maxLength).trim() + "...";
+            int cutPoint = (lastSpace > maxLength / 2) ? lastSpace : maxLength;
+            return text.substring(0, cutPoint).trim() + "...";
         }
         
         return text.trim();
@@ -1120,175 +1021,24 @@ public class ContextResolver {
      * Extract summary description from field JavaDoc
      */
     private static String extractFieldJavaDocSummary(org.eclipse.jdt.core.IField field) {
-        try {
-            // Try to get JavaDoc from source
-            org.eclipse.jdt.core.ISourceRange javadocRange = field.getJavadocRange();
-            if (javadocRange == null) {
-                return "";
-            }
-            
-            String rawJavadoc = field.getCompilationUnit().getSource()
-                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
-            
-            if (!isNotEmpty(rawJavadoc)) {
-                return "";
-            }
-            
-            // Clean the JavaDoc comment
-            String cleaned = cleanJavadocComment(rawJavadoc);
-            
-            // Extract the description (before any @tags)
-            String description = extractJavadocDescription(cleaned);
-            
-            // Get first sentence or limit length
-            String summary = getFirstSentenceOrLimit(description, 120);
-            
-            return summary;
-            
-        } catch (Exception e) {
-            // Silently fail and return empty string
-            return "";
-        }
+        return extractJavaDocSummaryFromElement(field);
     }
 
     /**
      * Generate human-readable method signature with JavaDoc description
      */
     public static String generateMethodSignature(IMethod method) {
-        StringBuilder sb = new StringBuilder();
-        
-        try {
-            int flags = method.getFlags();
-            appendAccessModifiers(sb, flags);
-            appendOtherModifiers(sb, flags, true);
-            
-            // Type parameters (if any)
-            @SuppressWarnings("deprecation")
-            String[] typeParameters = method.getTypeParameterSignatures();
-            if (typeParameters != null && typeParameters.length > 0) {
-                sb.append("<");
-                for (int i = 0; i < typeParameters.length; i++) {
-                    if (i > 0) sb.append(", ");
-                    sb.append(convertTypeSignature(typeParameters[i]));
-                }
-                sb.append("> ");
-            }
-            
-            // Return type (constructors don't have return type)
-            if (!method.isConstructor()) {
-                String returnType = convertTypeSignature(method.getReturnType());
-                sb.append(returnType).append(" ");
-            }
-            
-            // Method name
-            sb.append(method.getElementName()).append("(");
-            
-            // Parameter list
-            String[] paramTypes = method.getParameterTypes();
-            String[] paramNames = method.getParameterNames();
-            for (int i = 0; i < paramTypes.length; i++) {
-                if (i > 0) {
-                    sb.append(", ");
-                }
-                sb.append(convertTypeSignature(paramTypes[i]));
-                if (paramNames != null && i < paramNames.length) {
-                    sb.append(" ").append(paramNames[i]);
-                }
-            }
-            
-            sb.append(")");
-            
-            // Exception declarations
-            String[] exceptionTypes = method.getExceptionTypes();
-            if (exceptionTypes != null && exceptionTypes.length > 0) {
-                sb.append(" throws ");
-                for (int i = 0; i < exceptionTypes.length; i++) {
-                    if (i > 0) sb.append(", ");
-                    sb.append(convertTypeSignature(exceptionTypes[i]));
-                }
-            }
-            
-        } catch (JavaModelException e) {
-            return method.getElementName() + "(...)";
-        }
-        
-        // Extract JavaDoc description and prepend if exists
-        String javadocSummary = extractMethodJavaDocSummary(method);
-        if (isNotEmpty(javadocSummary)) {
-            return "// " + javadocSummary + "\n      " + sb.toString();
-        }
-        
-        return sb.toString();
+        return generateMethodSignatureInternal(method, false, true);
     }
 
     /**
      * Generate human-readable field signature with JavaDoc description
      */
     public static String generateFieldSignature(org.eclipse.jdt.core.IField field) {
-        StringBuilder sb = new StringBuilder();
-        
-        try {
-            int flags = field.getFlags();
-            appendAccessModifiers(sb, flags);
-            appendOtherModifiers(sb, flags, false);
-            
-            // Type and name
-            String fieldType = convertTypeSignature(field.getTypeSignature());
-            sb.append(fieldType).append(" ").append(field.getElementName());
-            
-            // If it's a constant, try to get the initial value
-            if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isFinal(flags)) {
-                Object constant = field.getConstant();
-                if (constant != null) {
-                    sb.append(" = ");
-                    if (constant instanceof String) {
-                        sb.append("\"").append(constant).append("\"");
-                    } else {
-                        sb.append(constant);
-                    }
-                }
-            }
-            
-        } catch (JavaModelException e) {
-            return field.getElementName();
-        }
-        
-        // Extract JavaDoc description and prepend if exists
-        String javadocSummary = extractFieldJavaDocSummary(field);
-        if (isNotEmpty(javadocSummary)) {
-            return "// " + javadocSummary + "\n      " + sb.toString();
-        }
-        
-        return sb.toString();
+        return generateFieldSignatureInternal(field, false);
     }
 
-    /**
-     * Append access modifiers (public/protected/private) to StringBuilder
-     */
-    private static void appendAccessModifiers(StringBuilder sb, int flags) {
-        if (org.eclipse.jdt.core.Flags.isPublic(flags)) {
-            sb.append("public ");
-        } else if (org.eclipse.jdt.core.Flags.isProtected(flags)) {
-            sb.append("protected ");
-        } else if (org.eclipse.jdt.core.Flags.isPrivate(flags)) {
-            sb.append("private ");
-        }
-    }
 
-    /**
-     * Append other modifiers (static/final/abstract) to StringBuilder
-     */
-    private static void appendOtherModifiers(StringBuilder sb, int flags, boolean isMethod) {
-        if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
-            sb.append("static ");
-        }
-        if (org.eclipse.jdt.core.Flags.isFinal(flags)) {
-            sb.append("final ");
-        }
-        if (isMethod && org.eclipse.jdt.core.Flags.isAbstract(flags)) {
-            sb.append("abstract ");
-        }
-    }
 
     /**
      * Convert JDT type signature to human-readable format
@@ -1420,6 +1170,173 @@ public class ContextResolver {
         }
         int lastDot = qualifiedName.lastIndexOf('.');
         return lastDot == -1 ? qualifiedName : qualifiedName.substring(lastDot + 1);
+    }
+
+    /**
+     * Unified JavaDoc summary extractor for methods and fields
+     */
+    private static String extractJavaDocSummaryFromElement(org.eclipse.jdt.core.IMember element) {
+        try {
+            org.eclipse.jdt.core.ISourceRange javadocRange = element.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = element.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (rawJavadoc == null || rawJavadoc.isEmpty()) {
+                return "";
+            }
+            
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            String description = extractJavadocDescription(cleaned);
+            return getFirstSentenceOrLimit(description, 120);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * Unified method signature generator (handles both source and binary types)
+     * @param simplified true for binary types (no parameter names, no JavaDoc)
+     * @param includeJavadoc true to include JavaDoc comments
+     */
+    private static String generateMethodSignatureInternal(IMethod method, boolean simplified, boolean includeJavadoc) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            int flags = method.getFlags();
+            
+            // Modifiers
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+            if (!simplified) {
+                if (org.eclipse.jdt.core.Flags.isProtected(flags)) sb.append("protected ");
+                if (org.eclipse.jdt.core.Flags.isPrivate(flags)) sb.append("private ");
+            }
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+            if (org.eclipse.jdt.core.Flags.isAbstract(flags)) sb.append("abstract ");
+            
+            // Type parameters (only for non-simplified)
+            if (!simplified) {
+                @SuppressWarnings("deprecation")
+                String[] typeParameters = method.getTypeParameterSignatures();
+                if (typeParameters != null && typeParameters.length > 0) {
+                    sb.append("<");
+                    for (int i = 0; i < typeParameters.length; i++) {
+                        if (i > 0) sb.append(", ");
+                        sb.append(convertTypeSignature(typeParameters[i]));
+                    }
+                    sb.append("> ");
+                }
+            }
+            
+            // Return type (skip for constructors)
+            if (!method.isConstructor()) {
+                String returnType = simplified ? 
+                    simplifyTypeName(org.eclipse.jdt.core.Signature.toString(method.getReturnType())) :
+                    convertTypeSignature(method.getReturnType());
+                sb.append(returnType).append(" ");
+            }
+            
+            // Method name and parameters
+            sb.append(method.getElementName()).append("(");
+            String[] paramTypes = method.getParameterTypes();
+            String[] paramNames = simplified ? null : method.getParameterNames();
+            
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (i > 0) sb.append(", ");
+                String paramType = simplified ? 
+                    simplifyTypeName(org.eclipse.jdt.core.Signature.toString(paramTypes[i])) :
+                    convertTypeSignature(paramTypes[i]);
+                sb.append(paramType);
+                if (paramNames != null && i < paramNames.length) {
+                    sb.append(" ").append(paramNames[i]);
+                }
+            }
+            sb.append(")");
+            
+            // Exception declarations (only for non-simplified)
+            if (!simplified) {
+                String[] exceptionTypes = method.getExceptionTypes();
+                if (exceptionTypes != null && exceptionTypes.length > 0) {
+                    sb.append(" throws ");
+                    for (int i = 0; i < exceptionTypes.length; i++) {
+                        if (i > 0) sb.append(", ");
+                        sb.append(convertTypeSignature(exceptionTypes[i]));
+                    }
+                }
+            } else {
+                sb.append(";");
+            }
+            
+            // Add JavaDoc if requested
+            if (includeJavadoc) {
+                String javadocSummary = extractMethodJavaDocSummary(method);
+                if (javadocSummary != null && !javadocSummary.isEmpty()) {
+                    return "// " + javadocSummary + "\n      " + sb.toString();
+                }
+            }
+            
+            return sb.toString();
+        } catch (JavaModelException e) {
+            return simplified ? "// Error generating method signature" : method.getElementName() + "(...)";
+        }
+    }
+
+    /**
+     * Unified field signature generator (handles both source and binary types)
+     * @param simplified true for binary types (no constant values, no JavaDoc)
+     */
+    private static String generateFieldSignatureInternal(org.eclipse.jdt.core.IField field, boolean simplified) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            int flags = field.getFlags();
+            
+            // Modifiers
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+            if (!simplified) {
+                if (org.eclipse.jdt.core.Flags.isProtected(flags)) sb.append("protected ");
+                if (org.eclipse.jdt.core.Flags.isPrivate(flags)) sb.append("private ");
+            }
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+            
+            // Type and name
+            String fieldType = simplified ?
+                simplifyTypeName(org.eclipse.jdt.core.Signature.toString(field.getTypeSignature())) :
+                convertTypeSignature(field.getTypeSignature());
+            sb.append(fieldType).append(" ").append(field.getElementName());
+            
+            // Constant value (only for non-simplified)
+            if (!simplified && org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isFinal(flags)) {
+                Object constant = field.getConstant();
+                if (constant != null) {
+                    sb.append(" = ");
+                    if (constant instanceof String) {
+                        sb.append("\"").append(constant).append("\"");
+                    } else {
+                        sb.append(constant);
+                    }
+                }
+            }
+            
+            if (simplified) {
+                sb.append(";");
+            }
+            
+            // Add JavaDoc if not simplified
+            if (!simplified) {
+                String javadocSummary = extractFieldJavaDocSummary(field);
+                if (javadocSummary != null && !javadocSummary.isEmpty()) {
+                    return "// " + javadocSummary + "\n      " + sb.toString();
+                }
+            }
+            
+            return sb.toString();
+        } catch (JavaModelException e) {
+            return simplified ? "// Error generating field signature" : field.getElementName();
+        }
     }
 
     /**
