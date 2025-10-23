@@ -21,7 +21,6 @@ import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buil
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
-import { registerCopilotContextProviders } from "./copilot/contextProvider";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -38,7 +37,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
         }
     });
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
-    await registerCopilotContextProviders(context);
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
