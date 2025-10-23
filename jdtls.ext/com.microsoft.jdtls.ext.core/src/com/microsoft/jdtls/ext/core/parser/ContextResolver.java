@@ -43,109 +43,26 @@ public class ContextResolver {
     private static final int MAX_STATIC_METHODS_TO_DISPLAY = 10;
     private static final int MAX_STATIC_FIELDS_TO_DISPLAY = 10;
 
-    // Common JDK types to skip (Copilot already has good understanding of these)
-    // These are well-known classes that don't need to be extracted from JARs
-    private static final Set<String> SKIP_COMMON_JDK_TYPES = new HashSet<>();
+    // Common JDK packages to skip (Copilot already has good understanding of these)
+    // These are well-known packages whose classes don't need to be extracted from JARs
+    private static final Set<String> SKIP_COMMON_JDK_PACKAGES = new HashSet<>();
     static {
-        // java.lang - fundamental types
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Object");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.String");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Integer");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Long");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Double");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Float");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Boolean");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Character");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Byte");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Short");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Number");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Void");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Class");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.System");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Math");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Thread");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Runnable");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Exception");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.RuntimeException");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Throwable");
-        SKIP_COMMON_JDK_TYPES.add("java.lang.Error");
-        
-        // java.util - collections
-        SKIP_COMMON_JDK_TYPES.add("java.util.List");
-        SKIP_COMMON_JDK_TYPES.add("java.util.ArrayList");
-        SKIP_COMMON_JDK_TYPES.add("java.util.LinkedList");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Map");
-        SKIP_COMMON_JDK_TYPES.add("java.util.HashMap");
-        SKIP_COMMON_JDK_TYPES.add("java.util.LinkedHashMap");
-        SKIP_COMMON_JDK_TYPES.add("java.util.TreeMap");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Set");
-        SKIP_COMMON_JDK_TYPES.add("java.util.HashSet");
-        SKIP_COMMON_JDK_TYPES.add("java.util.LinkedHashSet");
-        SKIP_COMMON_JDK_TYPES.add("java.util.TreeSet");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Collection");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Iterator");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Queue");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Deque");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Stack");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Vector");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Optional");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Arrays");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Collections");
-        SKIP_COMMON_JDK_TYPES.add("java.util.Comparator");
-        
-        // java.io - I/O
-        SKIP_COMMON_JDK_TYPES.add("java.io.File");
-        SKIP_COMMON_JDK_TYPES.add("java.io.IOException");
-        SKIP_COMMON_JDK_TYPES.add("java.io.InputStream");
-        SKIP_COMMON_JDK_TYPES.add("java.io.OutputStream");
-        SKIP_COMMON_JDK_TYPES.add("java.io.Reader");
-        SKIP_COMMON_JDK_TYPES.add("java.io.Writer");
-        SKIP_COMMON_JDK_TYPES.add("java.io.BufferedReader");
-        SKIP_COMMON_JDK_TYPES.add("java.io.BufferedWriter");
-        SKIP_COMMON_JDK_TYPES.add("java.io.FileReader");
-        SKIP_COMMON_JDK_TYPES.add("java.io.FileWriter");
-        SKIP_COMMON_JDK_TYPES.add("java.io.PrintWriter");
-        SKIP_COMMON_JDK_TYPES.add("java.io.Serializable");
-        
-        // java.nio - NIO
-        SKIP_COMMON_JDK_TYPES.add("java.nio.file.Path");
-        SKIP_COMMON_JDK_TYPES.add("java.nio.file.Paths");
-        SKIP_COMMON_JDK_TYPES.add("java.nio.file.Files");
-        SKIP_COMMON_JDK_TYPES.add("java.nio.ByteBuffer");
-        
-        // java.time - Date/Time API
-        SKIP_COMMON_JDK_TYPES.add("java.time.LocalDate");
-        SKIP_COMMON_JDK_TYPES.add("java.time.LocalDateTime");
-        SKIP_COMMON_JDK_TYPES.add("java.time.LocalTime");
-        SKIP_COMMON_JDK_TYPES.add("java.time.Instant");
-        SKIP_COMMON_JDK_TYPES.add("java.time.Duration");
-        SKIP_COMMON_JDK_TYPES.add("java.time.Period");
-        SKIP_COMMON_JDK_TYPES.add("java.time.ZonedDateTime");
-        
-        // java.util.concurrent - Concurrency
-        SKIP_COMMON_JDK_TYPES.add("java.util.concurrent.ExecutorService");
-        SKIP_COMMON_JDK_TYPES.add("java.util.concurrent.Future");
-        SKIP_COMMON_JDK_TYPES.add("java.util.concurrent.CompletableFuture");
-        SKIP_COMMON_JDK_TYPES.add("java.util.concurrent.ConcurrentHashMap");
-        
-        // java.util.stream - Streams
-        SKIP_COMMON_JDK_TYPES.add("java.util.stream.Stream");
-        SKIP_COMMON_JDK_TYPES.add("java.util.stream.Collectors");
-        
-        // java.util.function - Functional interfaces
-        SKIP_COMMON_JDK_TYPES.add("java.util.function.Function");
-        SKIP_COMMON_JDK_TYPES.add("java.util.function.Consumer");
-        SKIP_COMMON_JDK_TYPES.add("java.util.function.Supplier");
-        SKIP_COMMON_JDK_TYPES.add("java.util.function.Predicate");
-        
-        // java.net - Networking
-        SKIP_COMMON_JDK_TYPES.add("java.net.URL");
-        SKIP_COMMON_JDK_TYPES.add("java.net.URI");
-        SKIP_COMMON_JDK_TYPES.add("java.net.HttpURLConnection");
-        
-        // java.util.regex - Regular expressions
-        SKIP_COMMON_JDK_TYPES.add("java.util.regex.Pattern");
-        SKIP_COMMON_JDK_TYPES.add("java.util.regex.Matcher");
+        // Core Java packages - Copilot has excellent understanding of these
+        SKIP_COMMON_JDK_PACKAGES.add("java.lang");           // Object, String, Integer, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.util");           // Collections, List, Map, Set, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.io");             // File, InputStream, Reader, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.nio");            // ByteBuffer, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.nio.file");       // Path, Paths, Files
+        SKIP_COMMON_JDK_PACKAGES.add("java.time");           // LocalDate, LocalDateTime, Instant, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.concurrent"); // ExecutorService, Future, CompletableFuture, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.stream");    // Stream, Collectors
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.function");  // Function, Consumer, Supplier, Predicate
+        SKIP_COMMON_JDK_PACKAGES.add("java.net");            // URL, URI, HttpURLConnection
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.regex");     // Pattern, Matcher
+        SKIP_COMMON_JDK_PACKAGES.add("java.math");           // BigDecimal, BigInteger
+        SKIP_COMMON_JDK_PACKAGES.add("java.text");           // DateFormat, SimpleDateFormat, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.sql");            // Connection, ResultSet, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("javax.sql");           // DataSource, etc.
     }
 
     /**
@@ -249,6 +166,32 @@ public class ContextResolver {
             JdtlsExtActivator.logException("Error resolving type: " + typeName, e);
             processedTypes.add(typeName);
         }
+    }
+
+    /**
+     * Check if a type belongs to a common JDK package that should be skipped.
+     * Uses package-level matching for efficient filtering.
+     * 
+     * @param typeName Fully qualified type name (e.g., "java.lang.String")
+     * @return true if the type is from a common JDK package
+     */
+    private static boolean isCommonJdkType(String typeName) {
+        if (typeName == null || typeName.isEmpty()) {
+            return false;
+        }
+        
+        // Extract package name from fully qualified type name
+        int lastDotIndex = typeName.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return false; // No package (default package)
+        }
+        
+        String packageName = typeName.substring(0, lastDotIndex);
+        
+        // Check if package matches any common JDK package
+        // This includes both exact matches and sub-packages
+        return SKIP_COMMON_JDK_PACKAGES.contains(packageName) || 
+               SKIP_COMMON_JDK_PACKAGES.stream().anyMatch(pkg -> packageName.startsWith(pkg + "."));
     }
 
     /**
@@ -418,9 +361,9 @@ public class ContextResolver {
                 return;
             }
             
-            // Performance optimization: Skip common JDK types that Copilot already understands well
+            // Performance optimization: Skip common JDK packages that Copilot already understands well
             // This significantly reduces processing time for external dependencies
-            if (SKIP_COMMON_JDK_TYPES.contains(typeName)) {
+            if (isCommonJdkType(typeName)) {
                 processedTypes.add(typeName);
                 return;
             }
