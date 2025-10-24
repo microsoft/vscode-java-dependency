@@ -82,6 +82,10 @@ export namespace Jdtls {
         return commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_CHECK_IMPORT_STATUS) || false;
     }
 
+    export async function getProjectDependencies(projectUri: string): Promise<IDependencyInfo[]> {
+        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_DEPENDENCIES, projectUri) || [];
+    }
+
     export enum CompileWorkspaceStatus {
         Failed = 0,
         Succeed = 1,
@@ -97,4 +101,9 @@ export namespace Jdtls {
 interface IPackageDataParam {
     projectUri: string | undefined;
     [key: string]: any;
+}
+
+export interface IDependencyInfo {
+    key: string;
+    value: string;
 }

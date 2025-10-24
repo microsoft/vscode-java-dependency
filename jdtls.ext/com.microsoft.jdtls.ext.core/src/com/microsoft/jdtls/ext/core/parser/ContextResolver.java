@@ -43,6 +43,28 @@ public class ContextResolver {
     private static final int MAX_STATIC_METHODS_TO_DISPLAY = 10;
     private static final int MAX_STATIC_FIELDS_TO_DISPLAY = 10;
 
+    // Common JDK packages to skip (Copilot already has good understanding of these)
+    // These are well-known packages whose classes don't need to be extracted from JARs
+    private static final Set<String> SKIP_COMMON_JDK_PACKAGES = new HashSet<>();
+    static {
+        // Core Java packages - Copilot has excellent understanding of these
+        SKIP_COMMON_JDK_PACKAGES.add("java.lang");           // Object, String, Integer, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.util");           // Collections, List, Map, Set, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.io");             // File, InputStream, Reader, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.nio");            // ByteBuffer, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.nio.file");       // Path, Paths, Files
+        SKIP_COMMON_JDK_PACKAGES.add("java.time");           // LocalDate, LocalDateTime, Instant, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.concurrent"); // ExecutorService, Future, CompletableFuture, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.stream");    // Stream, Collectors
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.function");  // Function, Consumer, Supplier, Predicate
+        SKIP_COMMON_JDK_PACKAGES.add("java.net");            // URL, URI, HttpURLConnection
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.regex");     // Pattern, Matcher
+        SKIP_COMMON_JDK_PACKAGES.add("java.math");           // BigDecimal, BigInteger
+        SKIP_COMMON_JDK_PACKAGES.add("java.text");           // DateFormat, SimpleDateFormat, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("java.sql");            // Connection, ResultSet, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("javax.sql");           // DataSource, etc.
+    }
+
     /**
      * ImportClassInfo - Conforms to Copilot CodeSnippet format
      * Used to provide Java class context information and JavaDoc to Copilot
@@ -51,9 +73,9 @@ public class ContextResolver {
         public String uri;           // File URI (required)
         public String className;     // Human-readable class description with JavaDoc appended (required)
 
-        public ImportClassInfo(String uri, String className) {
+        public ImportClassInfo(String uri, String value) {
             this.uri = uri;
-            this.className = className;
+            this.className = value;
         }
     }
 
@@ -63,15 +85,16 @@ public class ContextResolver {
     public static void resolveSingleType(IJavaProject javaProject, String typeName, List<ImportClassInfo> classInfoList,
             Set<String> processedTypes, IProgressMonitor monitor) {
         try {
+            // Check if already processed to avoid duplicates
             if (processedTypes.contains(typeName)) {
                 return;
             }
-            processedTypes.add(typeName);
 
             // Extract package and simple name from the fully qualified type name
             int lastDotIndex = typeName.lastIndexOf('.');
             if (lastDotIndex == -1) {
-                // Default package or invalid type name
+                // Default package or invalid type name - mark as processed to avoid retry
+                processedTypes.add(typeName);
                 return;
             }
             
@@ -87,12 +110,14 @@ public class ContextResolver {
                 if (type != null && type.exists()) {
                     // Found type - check if it's a source type we want to process
                     if (!type.isBinary()) {
-                        // Source type found - extract information and return
+                        // Source type found - mark as processed and extract information
+                        processedTypes.add(typeName);
                         extractTypeInfo(type, classInfoList, monitor);
                         return;
                     }
-                    // Note: Binary types (from JARs/JRE) are intentionally ignored
-                    // as they don't provide useful context for code completion
+                    // Binary types (from JARs/JRE) found but not processed in Phase 1
+                    // Do NOT mark as processed - let Phase 2 handle them if triggered
+                    return;
                 }
             } catch (JavaModelException e) {
                 JdtlsExtActivator.logException("Error in primary type search: " + typeName, e);
@@ -114,6 +139,7 @@ public class ContextResolver {
                             if (primaryType != null && primaryType.exists() && 
                                 typeName.equals(primaryType.getFullyQualifiedName())) {
                                 // Found local project source type via fallback method
+                                processedTypes.add(typeName);
                                 extractTypeInfo(primaryType, classInfoList, monitor);
                                 return;
                             }
@@ -122,6 +148,7 @@ public class ContextResolver {
                             org.eclipse.jdt.core.IType[] allTypes = cu.getAllTypes();
                             for (org.eclipse.jdt.core.IType type : allTypes) {
                                 if (typeName.equals(type.getFullyQualifiedName())) {
+                                    processedTypes.add(typeName);
                                     extractTypeInfo(type, classInfoList, monitor);
                                     return;
                                 }
@@ -130,10 +157,41 @@ public class ContextResolver {
                     }
                 }
             }
+            
+            // Type not found - mark as processed to avoid repeated failed lookups
+            processedTypes.add(typeName);
+            
         } catch (JavaModelException e) {
-            // Log but continue processing other types
+            // Log and mark as processed even on error to avoid repeated failures
             JdtlsExtActivator.logException("Error resolving type: " + typeName, e);
+            processedTypes.add(typeName);
         }
+    }
+
+    /**
+     * Check if a type belongs to a common JDK package that should be skipped.
+     * Uses package-level matching for efficient filtering.
+     * 
+     * @param typeName Fully qualified type name (e.g., "java.lang.String")
+     * @return true if the type is from a common JDK package
+     */
+    private static boolean isCommonJdkType(String typeName) {
+        if (typeName == null || typeName.isEmpty()) {
+            return false;
+        }
+        
+        // Extract package name from fully qualified type name
+        int lastDotIndex = typeName.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return false; // No package (default package)
+        }
+        
+        String packageName = typeName.substring(0, lastDotIndex);
+        
+        // Check if package matches any common JDK package
+        // This includes both exact matches and sub-packages
+        return SKIP_COMMON_JDK_PACKAGES.contains(packageName) || 
+               SKIP_COMMON_JDK_PACKAGES.stream().anyMatch(pkg -> packageName.startsWith(pkg + "."));
     }
 
     /**
@@ -285,6 +343,54 @@ public class ContextResolver {
     }
 
     /**
+     * Resolve a binary type (from external JAR/JRE) with simplified content.
+     * This method is used for external dependencies when project sources are sparse.
+     * 
+     * @param javaProject The Java project context
+     * @param typeName Fully qualified type name (e.g., "java.util.ArrayList")
+     * @param classInfoList List to append resolved class information
+     * @param processedTypes Set tracking already processed types to avoid duplicates
+     * @param maxMethods Maximum number of methods to include (to limit token usage)
+     * @param monitor Progress monitor for cancellation
+     */
+    public static void resolveBinaryType(IJavaProject javaProject, String typeName, 
+            List<ImportClassInfo> classInfoList, Set<String> processedTypes, 
+            int maxMethods, IProgressMonitor monitor) {
+        try {
+            if (processedTypes.contains(typeName)) {
+                return;
+            }
+            
+            // Performance optimization: Skip common JDK packages that Copilot already understands well
+            // This significantly reduces processing time for external dependencies
+            if (isCommonJdkType(typeName)) {
+                processedTypes.add(typeName);
+                return;
+            }
+            
+            // Use JDT's findType which searches all sources and dependencies
+            org.eclipse.jdt.core.IType type = javaProject.findType(typeName);
+            if (type == null || !type.exists()) {
+                return;
+            }
+            
+            // Only process binary types (from JARs/JRE)
+            if (!type.isBinary()) {
+                return; // Skip source types - they should be handled by resolveSingleType
+            }
+            
+            processedTypes.add(typeName);
+            
+            // Extract simplified information for binary types
+            extractBinaryTypeInfo(type, classInfoList, maxMethods, monitor);
+            
+        } catch (JavaModelException e) {
+            // Log but continue processing other types
+            JdtlsExtActivator.logException("Error resolving binary type: " + typeName, e);
+        }
+    }
+
+    /**
      * Resolve all types in a package (for wildcard imports)
      */
     public static void resolvePackageTypes(IJavaProject javaProject, String packageName, List<ImportClassInfo> classInfoList,
@@ -353,6 +459,173 @@ public class ContextResolver {
         } catch (JavaModelException e) {
             JdtlsExtActivator.logException("Error extracting type info for: " + type.getElementName(), e);
         }
+    }
+
+    /**
+     * Extract simplified information for binary types (external dependencies).
+     * This method extracts only essential information to reduce token usage:
+     * - Class signature (modifiers, name, generics, extends/implements)
+     * - Limited number of public methods (no implementation details)
+     * - Public fields (if any)
+     * - Basic class-level JavaDoc if available
+     * 
+     * @param type Binary type from JAR/JRE
+     * @param classInfoList List to append resolved class information
+     * @param maxMethods Maximum number of methods to include
+     * @param monitor Progress monitor for cancellation
+     */
+    public static void extractBinaryTypeInfo(org.eclipse.jdt.core.IType type, 
+            List<ImportClassInfo> classInfoList, int maxMethods, IProgressMonitor monitor) {
+        try {
+            // Use a placeholder URI for binary types (they don't have local file paths)
+            String uri = "jar://" + type.getFullyQualifiedName().replace('.', '/') + ".class";
+            
+            // Generate simplified class description for binary types
+            StringBuilder sb = new StringBuilder();
+            
+            // 1. Extract class-level JavaDoc (brief summary only)
+            String javadoc = extractBriefJavaDoc(type);
+            if (javadoc != null && !javadoc.isEmpty()) {
+                sb.append("/**\n * ").append(javadoc).append("\n */\n");
+            }
+            
+            // 2. Class signature (modifiers, name, generics, inheritance)
+            sb.append(generateClassSignature(type));
+            sb.append(" {\n\n");
+            
+            // 3. Public fields (limit to first 5)
+            org.eclipse.jdt.core.IField[] fields = type.getFields();
+            int fieldCount = 0;
+            for (org.eclipse.jdt.core.IField field : fields) {
+                if (fieldCount >= 5) break;
+                if (org.eclipse.jdt.core.Flags.isPublic(field.getFlags())) {
+                    sb.append("    ").append(generateBinaryFieldSignature(field)).append("\n");
+                    fieldCount++;
+                }
+            }
+            if (fieldCount > 0) {
+                sb.append("\n");
+            }
+            
+            // 4. Public methods (limited by maxMethods parameter)
+            org.eclipse.jdt.core.IMethod[] methods = type.getMethods();
+            int methodCount = 0;
+            for (org.eclipse.jdt.core.IMethod method : methods) {
+                if (methodCount >= maxMethods) break;
+                if (org.eclipse.jdt.core.Flags.isPublic(method.getFlags())) {
+                    sb.append("    ").append(generateBinaryMethodSignature(method)).append("\n");
+                    methodCount++;
+                }
+            }
+            
+            sb.append("}\n");
+            
+            // Add note indicating this is simplified external dependency info
+            sb.append("// Note: External dependency - showing simplified signature only\n");
+            
+            // Create ImportClassInfo
+            ImportClassInfo info = new ImportClassInfo(uri, sb.toString());
+            classInfoList.add(info);
+            
+        } catch (JavaModelException e) {
+            JdtlsExtActivator.logException("Error extracting binary type info for: " + type.getElementName(), e);
+        }
+    }
+
+    /**
+     * Generate class signature with modifiers, name, generics, and inheritance
+     */
+    private static String generateClassSignature(org.eclipse.jdt.core.IType type) throws JavaModelException {
+        StringBuilder sb = new StringBuilder();
+        
+        // Modifiers
+        int flags = type.getFlags();
+        if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+        if (org.eclipse.jdt.core.Flags.isAbstract(flags) && !type.isInterface()) sb.append("abstract ");
+        if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+        
+        // Type kind
+        if (type.isInterface()) {
+            sb.append("interface ");
+        } else if (type.isEnum()) {
+            sb.append("enum ");
+        } else if (type.isAnnotation()) {
+            sb.append("@interface ");
+        } else {
+            sb.append("class ");
+        }
+        
+        // Simple name
+        sb.append(type.getElementName());
+        
+        // Type parameters
+        org.eclipse.jdt.core.ITypeParameter[] typeParams = type.getTypeParameters();
+        if (typeParams != null && typeParams.length > 0) {
+            sb.append("<");
+            for (int i = 0; i < typeParams.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(typeParams[i].getElementName());
+            }
+            sb.append(">");
+        }
+        
+        // Superclass
+        String superclass = type.getSuperclassName();
+        if (superclass != null && !superclass.equals("Object") && !type.isInterface()) {
+            sb.append(" extends ").append(simplifyTypeName(superclass));
+        }
+        
+        // Interfaces
+        String[] interfaces = type.getSuperInterfaceNames();
+        if (interfaces != null && interfaces.length > 0) {
+            if (type.isInterface()) {
+                sb.append(" extends ");
+            } else {
+                sb.append(" implements ");
+            }
+            for (int i = 0; i < interfaces.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(simplifyTypeName(interfaces[i]));
+            }
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Extract brief JavaDoc summary for binary types (first sentence only)
+     * Performance optimization: Skip JavaDoc extraction for binary types to avoid expensive I/O
+     */
+    private static String extractBriefJavaDoc(org.eclipse.jdt.core.IType type) {
+        // Performance optimization: Skip JavaDoc extraction for binary types
+        // getAttachedJavadoc() is expensive - may involve JAR reading, network downloads, HTML parsing
+        if (type.isBinary()) {
+            return null;
+        }
+        
+        try {
+            String javadoc = type.getAttachedJavadoc(null);
+            if (javadoc == null || javadoc.isEmpty()) {
+                return null;
+            }
+            return getFirstSentenceOrLimit(javadoc, 120);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Generate simplified field signature for binary types
+     */
+    private static String generateBinaryFieldSignature(org.eclipse.jdt.core.IField field) {
+        return generateFieldSignatureInternal(field, true);
+    }
+
+    /**
+     * Generate simplified method signature for binary types (no implementation)
+     */
+    private static String generateBinaryMethodSignature(org.eclipse.jdt.core.IMethod method) {
+        return generateMethodSignatureInternal(method, true, false);
     }
 
     /**
@@ -676,35 +949,7 @@ public class ContextResolver {
      * Returns the first sentence or paragraph of the JavaDoc as a brief description
      */
     private static String extractMethodJavaDocSummary(IMethod method) {
-        try {
-            // Try to get JavaDoc from source
-            org.eclipse.jdt.core.ISourceRange javadocRange = method.getJavadocRange();
-            if (javadocRange == null) {
-                return "";
-            }
-            
-            String rawJavadoc = method.getCompilationUnit().getSource()
-                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
-            
-            if (!isNotEmpty(rawJavadoc)) {
-                return "";
-            }
-            
-            // Clean the JavaDoc comment
-            String cleaned = cleanJavadocComment(rawJavadoc);
-            
-            // Extract the description (before any @param, @return, @throws tags)
-            String description = extractJavadocDescription(cleaned);
-            
-            // Get first sentence or limit length
-            String summary = getFirstSentenceOrLimit(description, 120);
-            
-            return summary;
-            
-        } catch (Exception e) {
-            // Silently fail and return empty string
-            return "";
-        }
+        return extractJavaDocSummaryFromElement(method);
     }
 
     /**
@@ -748,33 +993,25 @@ public class ContextResolver {
             return "";
         }
         
-        // Try to find the first sentence (ending with ., !, or ?)
-        int firstPeriod = text.indexOf(". ");
-        int firstExclamation = text.indexOf("! ");
-        int firstQuestion = text.indexOf("? ");
-        
+        // Find first sentence boundary (., !, ?)
+        int[] boundaries = {text.indexOf(". "), text.indexOf(".\n"), text.indexOf("! "), text.indexOf("? ")};
         int firstSentenceEnd = -1;
-        if (firstPeriod != -1) firstSentenceEnd = firstPeriod;
-        if (firstExclamation != -1 && (firstSentenceEnd == -1 || firstExclamation < firstSentenceEnd)) {
-            firstSentenceEnd = firstExclamation;
-        }
-        if (firstQuestion != -1 && (firstSentenceEnd == -1 || firstQuestion < firstSentenceEnd)) {
-            firstSentenceEnd = firstQuestion;
+        for (int boundary : boundaries) {
+            if (boundary != -1 && (firstSentenceEnd == -1 || boundary < firstSentenceEnd)) {
+                firstSentenceEnd = boundary;
+            }
         }
         
-        // If we found a sentence ending and it's within reasonable length
+        // Return first sentence if within reasonable length
         if (firstSentenceEnd != -1 && firstSentenceEnd < maxLength) {
             return text.substring(0, firstSentenceEnd + 1).trim();
         }
         
-        // Otherwise, limit to maxLength
+        // Otherwise truncate at maxLength with word boundary
         if (text.length() > maxLength) {
-            // Try to cut at a word boundary
             int lastSpace = text.lastIndexOf(' ', maxLength);
-            if (lastSpace > maxLength / 2) {
-                return text.substring(0, lastSpace).trim() + "...";
-            }
-            return text.substring(0, maxLength).trim() + "...";
+            int cutPoint = (lastSpace > maxLength / 2) ? lastSpace : maxLength;
+            return text.substring(0, cutPoint).trim() + "...";
         }
         
         return text.trim();
@@ -784,174 +1021,24 @@ public class ContextResolver {
      * Extract summary description from field JavaDoc
      */
     private static String extractFieldJavaDocSummary(org.eclipse.jdt.core.IField field) {
-        try {
-            // Try to get JavaDoc from source
-            org.eclipse.jdt.core.ISourceRange javadocRange = field.getJavadocRange();
-            if (javadocRange == null) {
-                return "";
-            }
-            
-            String rawJavadoc = field.getCompilationUnit().getSource()
-                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
-            
-            if (!isNotEmpty(rawJavadoc)) {
-                return "";
-            }
-            
-            // Clean the JavaDoc comment
-            String cleaned = cleanJavadocComment(rawJavadoc);
-            
-            // Extract the description (before any @tags)
-            String description = extractJavadocDescription(cleaned);
-            
-            // Get first sentence or limit length
-            String summary = getFirstSentenceOrLimit(description, 120);
-            
-            return summary;
-            
-        } catch (Exception e) {
-            // Silently fail and return empty string
-            return "";
-        }
+        return extractJavaDocSummaryFromElement(field);
     }
 
     /**
      * Generate human-readable method signature with JavaDoc description
      */
     public static String generateMethodSignature(IMethod method) {
-        StringBuilder sb = new StringBuilder();
-        
-        try {
-            int flags = method.getFlags();
-            appendAccessModifiers(sb, flags);
-            appendOtherModifiers(sb, flags, true);
-            
-            // Type parameters (if any)
-            String[] typeParameters = method.getTypeParameterSignatures();
-            if (typeParameters != null && typeParameters.length > 0) {
-                sb.append("<");
-                for (int i = 0; i < typeParameters.length; i++) {
-                    if (i > 0) sb.append(", ");
-                    sb.append(convertTypeSignature(typeParameters[i]));
-                }
-                sb.append("> ");
-            }
-            
-            // Return type (constructors don't have return type)
-            if (!method.isConstructor()) {
-                String returnType = convertTypeSignature(method.getReturnType());
-                sb.append(returnType).append(" ");
-            }
-            
-            // Method name
-            sb.append(method.getElementName()).append("(");
-            
-            // Parameter list
-            String[] paramTypes = method.getParameterTypes();
-            String[] paramNames = method.getParameterNames();
-            for (int i = 0; i < paramTypes.length; i++) {
-                if (i > 0) {
-                    sb.append(", ");
-                }
-                sb.append(convertTypeSignature(paramTypes[i]));
-                if (paramNames != null && i < paramNames.length) {
-                    sb.append(" ").append(paramNames[i]);
-                }
-            }
-            
-            sb.append(")");
-            
-            // Exception declarations
-            String[] exceptionTypes = method.getExceptionTypes();
-            if (exceptionTypes != null && exceptionTypes.length > 0) {
-                sb.append(" throws ");
-                for (int i = 0; i < exceptionTypes.length; i++) {
-                    if (i > 0) sb.append(", ");
-                    sb.append(convertTypeSignature(exceptionTypes[i]));
-                }
-            }
-            
-        } catch (JavaModelException e) {
-            return method.getElementName() + "(...)";
-        }
-        
-        // Extract JavaDoc description and prepend if exists
-        String javadocSummary = extractMethodJavaDocSummary(method);
-        if (isNotEmpty(javadocSummary)) {
-            return "// " + javadocSummary + "\n      " + sb.toString();
-        }
-        
-        return sb.toString();
+        return generateMethodSignatureInternal(method, false, true);
     }
 
     /**
      * Generate human-readable field signature with JavaDoc description
      */
     public static String generateFieldSignature(org.eclipse.jdt.core.IField field) {
-        StringBuilder sb = new StringBuilder();
-        
-        try {
-            int flags = field.getFlags();
-            appendAccessModifiers(sb, flags);
-            appendOtherModifiers(sb, flags, false);
-            
-            // Type and name
-            String fieldType = convertTypeSignature(field.getTypeSignature());
-            sb.append(fieldType).append(" ").append(field.getElementName());
-            
-            // If it's a constant, try to get the initial value
-            if (org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isFinal(flags)) {
-                Object constant = field.getConstant();
-                if (constant != null) {
-                    sb.append(" = ");
-                    if (constant instanceof String) {
-                        sb.append("\"").append(constant).append("\"");
-                    } else {
-                        sb.append(constant);
-                    }
-                }
-            }
-            
-        } catch (JavaModelException e) {
-            return field.getElementName();
-        }
-        
-        // Extract JavaDoc description and prepend if exists
-        String javadocSummary = extractFieldJavaDocSummary(field);
-        if (isNotEmpty(javadocSummary)) {
-            return "// " + javadocSummary + "\n      " + sb.toString();
-        }
-        
-        return sb.toString();
+        return generateFieldSignatureInternal(field, false);
     }
 
-    /**
-     * Append access modifiers (public/protected/private) to StringBuilder
-     */
-    private static void appendAccessModifiers(StringBuilder sb, int flags) {
-        if (org.eclipse.jdt.core.Flags.isPublic(flags)) {
-            sb.append("public ");
-        } else if (org.eclipse.jdt.core.Flags.isProtected(flags)) {
-            sb.append("protected ");
-        } else if (org.eclipse.jdt.core.Flags.isPrivate(flags)) {
-            sb.append("private ");
-        }
-    }
 
-    /**
-     * Append other modifiers (static/final/abstract) to StringBuilder
-     */
-    private static void appendOtherModifiers(StringBuilder sb, int flags, boolean isMethod) {
-        if (org.eclipse.jdt.core.Flags.isStatic(flags)) {
-            sb.append("static ");
-        }
-        if (org.eclipse.jdt.core.Flags.isFinal(flags)) {
-            sb.append("final ");
-        }
-        if (isMethod && org.eclipse.jdt.core.Flags.isAbstract(flags)) {
-            sb.append("abstract ");
-        }
-    }
 
     /**
      * Convert JDT type signature to human-readable format
@@ -1083,6 +1170,173 @@ public class ContextResolver {
         }
         int lastDot = qualifiedName.lastIndexOf('.');
         return lastDot == -1 ? qualifiedName : qualifiedName.substring(lastDot + 1);
+    }
+
+    /**
+     * Unified JavaDoc summary extractor for methods and fields
+     */
+    private static String extractJavaDocSummaryFromElement(org.eclipse.jdt.core.IMember element) {
+        try {
+            org.eclipse.jdt.core.ISourceRange javadocRange = element.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = element.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (rawJavadoc == null || rawJavadoc.isEmpty()) {
+                return "";
+            }
+            
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            String description = extractJavadocDescription(cleaned);
+            return getFirstSentenceOrLimit(description, 120);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * Unified method signature generator (handles both source and binary types)
+     * @param simplified true for binary types (no parameter names, no JavaDoc)
+     * @param includeJavadoc true to include JavaDoc comments
+     */
+    private static String generateMethodSignatureInternal(IMethod method, boolean simplified, boolean includeJavadoc) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            int flags = method.getFlags();
+            
+            // Modifiers
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+            if (!simplified) {
+                if (org.eclipse.jdt.core.Flags.isProtected(flags)) sb.append("protected ");
+                if (org.eclipse.jdt.core.Flags.isPrivate(flags)) sb.append("private ");
+            }
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+            if (org.eclipse.jdt.core.Flags.isAbstract(flags)) sb.append("abstract ");
+            
+            // Type parameters (only for non-simplified)
+            if (!simplified) {
+                @SuppressWarnings("deprecation")
+                String[] typeParameters = method.getTypeParameterSignatures();
+                if (typeParameters != null && typeParameters.length > 0) {
+                    sb.append("<");
+                    for (int i = 0; i < typeParameters.length; i++) {
+                        if (i > 0) sb.append(", ");
+                        sb.append(convertTypeSignature(typeParameters[i]));
+                    }
+                    sb.append("> ");
+                }
+            }
+            
+            // Return type (skip for constructors)
+            if (!method.isConstructor()) {
+                String returnType = simplified ? 
+                    simplifyTypeName(org.eclipse.jdt.core.Signature.toString(method.getReturnType())) :
+                    convertTypeSignature(method.getReturnType());
+                sb.append(returnType).append(" ");
+            }
+            
+            // Method name and parameters
+            sb.append(method.getElementName()).append("(");
+            String[] paramTypes = method.getParameterTypes();
+            String[] paramNames = simplified ? null : method.getParameterNames();
+            
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (i > 0) sb.append(", ");
+                String paramType = simplified ? 
+                    simplifyTypeName(org.eclipse.jdt.core.Signature.toString(paramTypes[i])) :
+                    convertTypeSignature(paramTypes[i]);
+                sb.append(paramType);
+                if (paramNames != null && i < paramNames.length) {
+                    sb.append(" ").append(paramNames[i]);
+                }
+            }
+            sb.append(")");
+            
+            // Exception declarations (only for non-simplified)
+            if (!simplified) {
+                String[] exceptionTypes = method.getExceptionTypes();
+                if (exceptionTypes != null && exceptionTypes.length > 0) {
+                    sb.append(" throws ");
+                    for (int i = 0; i < exceptionTypes.length; i++) {
+                        if (i > 0) sb.append(", ");
+                        sb.append(convertTypeSignature(exceptionTypes[i]));
+                    }
+                }
+            } else {
+                sb.append(";");
+            }
+            
+            // Add JavaDoc if requested
+            if (includeJavadoc) {
+                String javadocSummary = extractMethodJavaDocSummary(method);
+                if (javadocSummary != null && !javadocSummary.isEmpty()) {
+                    return "// " + javadocSummary + "\n      " + sb.toString();
+                }
+            }
+            
+            return sb.toString();
+        } catch (JavaModelException e) {
+            return simplified ? "// Error generating method signature" : method.getElementName() + "(...)";
+        }
+    }
+
+    /**
+     * Unified field signature generator (handles both source and binary types)
+     * @param simplified true for binary types (no constant values, no JavaDoc)
+     */
+    private static String generateFieldSignatureInternal(org.eclipse.jdt.core.IField field, boolean simplified) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            int flags = field.getFlags();
+            
+            // Modifiers
+            if (org.eclipse.jdt.core.Flags.isPublic(flags)) sb.append("public ");
+            if (!simplified) {
+                if (org.eclipse.jdt.core.Flags.isProtected(flags)) sb.append("protected ");
+                if (org.eclipse.jdt.core.Flags.isPrivate(flags)) sb.append("private ");
+            }
+            if (org.eclipse.jdt.core.Flags.isStatic(flags)) sb.append("static ");
+            if (org.eclipse.jdt.core.Flags.isFinal(flags)) sb.append("final ");
+            
+            // Type and name
+            String fieldType = simplified ?
+                simplifyTypeName(org.eclipse.jdt.core.Signature.toString(field.getTypeSignature())) :
+                convertTypeSignature(field.getTypeSignature());
+            sb.append(fieldType).append(" ").append(field.getElementName());
+            
+            // Constant value (only for non-simplified)
+            if (!simplified && org.eclipse.jdt.core.Flags.isStatic(flags) && org.eclipse.jdt.core.Flags.isFinal(flags)) {
+                Object constant = field.getConstant();
+                if (constant != null) {
+                    sb.append(" = ");
+                    if (constant instanceof String) {
+                        sb.append("\"").append(constant).append("\"");
+                    } else {
+                        sb.append(constant);
+                    }
+                }
+            }
+            
+            if (simplified) {
+                sb.append(";");
+            }
+            
+            // Add JavaDoc if not simplified
+            if (!simplified) {
+                String javadocSummary = extractFieldJavaDocSummary(field);
+                if (javadocSummary != null && !javadocSummary.isEmpty()) {
+                    return "// " + javadocSummary + "\n      " + sb.toString();
+                }
+            }
+            
+            return sb.toString();
+        } catch (JavaModelException e) {
+            return simplified ? "// Error generating field signature" : field.getElementName();
+        }
     }
 
     /**
