@@ -350,20 +350,13 @@ public final class ProjectCommand {
         return hasError;
     }
 
-    // Threshold for triggering external dependency resolution
-    // If project source classes < this value, supplement with external dependencies
-    private static final int MIN_SOURCE_CLASSES_THRESHOLD = 5;
-    
-    // Maximum number of external dependency classes to include
-    private static final int MAX_DEPENDENCY_CLASSES = 10;
-    
     // Maximum methods to display for binary (external) classes
-    private static final int MAX_METHODS_FOR_BINARY = 5;
+    private static final int MAX_METHODS_FOR_BINARY = 50;
 
     /**
      * Get import class content for Copilot integration.
      * This method extracts information about imported classes from a Java file.
-     * Uses an adaptive strategy: only includes external dependencies when project sources are sparse.
+     * Uses a time-controlled strategy: prioritizes internal classes, adds external classes only if time permits.
      * 
      * @param arguments List containing the file URI as the first element
      * @param monitor Progress monitor for cancellation support
@@ -373,6 +366,11 @@ public final class ProjectCommand {
         if (arguments == null || arguments.isEmpty()) {
             return Collections.emptyList();
         }
+
+        // Time control: total budget 80ms, early return at 75ms
+        long startTime = System.currentTimeMillis();
+        final long TIME_BUDGET_MS = 80;
+        final long EARLY_RETURN_MS = 75;
 
         try {
             String fileUri = (String) arguments.get(0);
@@ -408,17 +406,18 @@ public final class ProjectCommand {
             org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
 
             // Parse imports and resolve local project files
-            // Delegate to JavaContentParser for processing
             List<ImportClassInfo> classInfoList = new ArrayList<>();
 
             // Get all imports from the compilation unit
             org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
             Set<String> processedTypes = new HashSet<>();
 
-            // Phase 1: Resolve project source classes only
+            // Phase 1: Priority - Resolve project source classes (internal)
             for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
-                if (monitor.isCanceled()) {
-                    break;
+                // Check time budget before each operation
+                long elapsed = System.currentTimeMillis() - startTime;
+                if (monitor.isCanceled() || elapsed >= EARLY_RETURN_MS) {
+                    return classInfoList; // Early return if approaching time limit
                 }
 
                 String importName = importDecl.getElementName();
@@ -437,34 +436,41 @@ public final class ProjectCommand {
                 }
             }
 
-            // Phase 2: Adaptive external dependency resolution
-            // Only trigger if project source classes are sparse (< threshold)
-            if (classInfoList.size() < MIN_SOURCE_CLASSES_THRESHOLD && !monitor.isCanceled()) {
-                // Track external classes separately to apply limits
-                List<ImportClassInfo> externalClasses = new ArrayList<>();
+            // Phase 2: If time permits, resolve external dependencies
+            long elapsedAfterInternal = System.currentTimeMillis() - startTime;
+            if (elapsedAfterInternal < EARLY_RETURN_MS && !monitor.isCanceled()) {
+                // Calculate remaining time budget for external classes
+                long remainingTime = TIME_BUDGET_MS - elapsedAfterInternal;
                 
-                for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
-                    if (monitor.isCanceled() || externalClasses.size() >= MAX_DEPENDENCY_CLASSES) {
-                        break;
-                    }
+                // Only proceed with external if we have reasonable time left (at least 15ms)
+                if (remainingTime >= 15) {
+                    List<ImportClassInfo> externalClasses = new ArrayList<>();
+                    
+                    for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
+                        // Check time before each external resolution
+                        long currentElapsed = System.currentTimeMillis() - startTime;
+                        if (monitor.isCanceled() || currentElapsed >= EARLY_RETURN_MS) {
+                            break;
+                        }
 
-                    String importName = importDecl.getElementName();
-                    boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
-                    
-                    // Skip package imports (*.* ) - too broad for external dependencies
-                    if (importName.endsWith(".*")) {
-                        continue;
+                        String importName = importDecl.getElementName();
+                        boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
+                        
+                        // Skip package imports (*.* ) - too broad for external dependencies
+                        if (importName.endsWith(".*")) {
+                            continue;
+                        }
+                        
+                        // Resolve external (binary) types with simplified content
+                        if (!isStatic) {
+                            ContextResolver.resolveBinaryType(javaProject, importName, externalClasses, 
+                                    processedTypes, MAX_METHODS_FOR_BINARY, monitor);
+                        }
                     }
                     
-                    // Resolve external (binary) types with simplified content
-                    if (!isStatic) {
-                        ContextResolver.resolveBinaryType(javaProject, importName, externalClasses, 
-                                processedTypes, MAX_METHODS_FOR_BINARY, monitor);
-                    }
+                    // Append external classes after project sources
+                    classInfoList.addAll(externalClasses);
                 }
-                
-                // Append external classes after project sources
-                classInfoList.addAll(externalClasses);
             }
 
             return classInfoList;
