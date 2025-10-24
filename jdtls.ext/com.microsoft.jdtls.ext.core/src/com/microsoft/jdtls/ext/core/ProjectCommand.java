@@ -71,6 +71,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.microsoft.jdtls.ext.core.parser.ContextResolver;
 import com.microsoft.jdtls.ext.core.parser.ContextResolver.ImportClassInfo;
+import com.microsoft.jdtls.ext.core.parser.ProjectResolver;
 import com.microsoft.jdtls.ext.core.model.PackageNode;
 
 public final class ProjectCommand {
@@ -87,7 +88,15 @@ public final class ProjectCommand {
         }
     }
 
+    private static class DependencyInfo {
+        public String key;
+        public String value;
 
+        public DependencyInfo(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
 
     private static class Classpath {
         public String source;
@@ -344,6 +353,7 @@ public final class ProjectCommand {
     /**
      * Get import class content for Copilot integration.
      * This method extracts information about imported classes from a Java file.
+     * Uses a time-controlled strategy: prioritizes internal classes, adds external classes only if time permits.
      * 
      * @param arguments List containing the file URI as the first element
      * @param monitor Progress monitor for cancellation support
@@ -353,6 +363,11 @@ public final class ProjectCommand {
         if (arguments == null || arguments.isEmpty()) {
             return Collections.emptyList();
         }
+
+        // Time control: total budget 80ms, early return at 75ms
+        long startTime = System.currentTimeMillis();
+        final long TIME_BUDGET_MS = 80;
+        final long EARLY_RETURN_MS = 75;
 
         try {
             String fileUri = (String) arguments.get(0);
@@ -388,16 +403,18 @@ public final class ProjectCommand {
             org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
 
             // Parse imports and resolve local project files
-            // Delegate to JavaContentParser for processing
             List<ImportClassInfo> classInfoList = new ArrayList<>();
 
             // Get all imports from the compilation unit
             org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
             Set<String> processedTypes = new HashSet<>();
 
+            // Phase 1: Priority - Resolve project source classes (internal)
             for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
-                if (monitor.isCanceled()) {
-                    break;
+                // Check time budget before each operation
+                long elapsed = System.currentTimeMillis() - startTime;
+                if (monitor.isCanceled() || elapsed >= EARLY_RETURN_MS) {
+                    return classInfoList; // Early return if approaching time limit
                 }
 
                 String importName = importDecl.getElementName();
@@ -413,6 +430,43 @@ public final class ProjectCommand {
                 } else {
                     // Handle single type imports - delegate to ContextResolver
                     ContextResolver.resolveSingleType(javaProject, importName, classInfoList, processedTypes, monitor);
+                }
+            }
+
+            // Phase 2: If time permits, resolve external dependencies
+            long elapsedAfterInternal = System.currentTimeMillis() - startTime;
+            if (elapsedAfterInternal < EARLY_RETURN_MS && !monitor.isCanceled()) {
+                // Calculate remaining time budget for external classes
+                long remainingTime = TIME_BUDGET_MS - elapsedAfterInternal;
+                
+                // Only proceed with external if we have reasonable time left (at least 15ms)
+                if (remainingTime >= 15) {
+                    List<ImportClassInfo> externalClasses = new ArrayList<>();
+                    
+                    for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
+                        // Check time before each external resolution
+                        long currentElapsed = System.currentTimeMillis() - startTime;
+                        if (monitor.isCanceled() || currentElapsed >= EARLY_RETURN_MS) {
+                            break;
+                        }
+
+                        String importName = importDecl.getElementName();
+                        boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
+                        
+                        // Skip package imports (*.* ) - too broad for external dependencies
+                        if (importName.endsWith(".*")) {
+                            continue;
+                        }
+                        
+                        // Resolve external (binary) types with simplified content
+                        if (!isStatic) {
+                            ContextResolver.resolveBinaryType(javaProject, importName, externalClasses, 
+                                    processedTypes, Integer.MAX_VALUE, monitor);
+                        }
+                    }
+                    
+                    // Append external classes after project sources
+                    classInfoList.addAll(externalClasses);
                 }
             }
 
@@ -447,6 +501,30 @@ public final class ProjectCommand {
             default:
                 return "UNKNOWN STATUS";
         }
+    }
+
+    /**
+     * Get project dependencies information including JDK version.
+     * 
+     * @param arguments List containing the project URI as the first element
+     * @param monitor Progress monitor for cancellation support
+     * @return List of DependencyInfo containing key-value pairs of project information
+     */
+    public static List<DependencyInfo> getProjectDependencies(List<Object> arguments, IProgressMonitor monitor) {
+        if (arguments == null || arguments.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String projectUri = (String) arguments.get(0);
+        List<ProjectResolver.DependencyInfo> resolverResult = ProjectResolver.resolveProjectDependencies(projectUri, monitor);
+        
+        // Convert ProjectResolver.DependencyInfo to ProjectCommand.DependencyInfo
+        List<DependencyInfo> result = new ArrayList<>();
+        for (ProjectResolver.DependencyInfo info : resolverResult) {
+            result.add(new DependencyInfo(info.key, info.value));
+        }
+        
+        return result;
     }
 
     private static final class LinkedFolderVisitor implements IResourceVisitor {
