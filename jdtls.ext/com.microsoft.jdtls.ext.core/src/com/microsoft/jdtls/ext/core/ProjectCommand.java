@@ -350,9 +350,6 @@ public final class ProjectCommand {
         return hasError;
     }
 
-    // Maximum methods to display for binary (external) classes
-    private static final int MAX_METHODS_FOR_BINARY = 50;
-
     /**
      * Get import class content for Copilot integration.
      * This method extracts information about imported classes from a Java file.
@@ -464,7 +461,7 @@ public final class ProjectCommand {
                         // Resolve external (binary) types with simplified content
                         if (!isStatic) {
                             ContextResolver.resolveBinaryType(javaProject, importName, externalClasses, 
-                                    processedTypes, MAX_METHODS_FOR_BINARY, monitor);
+                                    processedTypes, Integer.MAX_VALUE, monitor);
                         }
                     }
                     
