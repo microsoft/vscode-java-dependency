@@ -9,6 +9,7 @@ import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
 import { IMainClassInfo } from "../tasks/buildArtifact/ResolveMainClassExecutor";
 import { INodeData, NodeKind } from "./nodeData";
 import { Settings } from "../settings";
+import { INodeImportClass } from "../copilot/copilotHelper";
 
 export namespace Jdtls {
     export async function getProjects(params: string): Promise<INodeData[]> {
@@ -84,6 +85,10 @@ export namespace Jdtls {
 
     export async function getProjectDependencies(projectUri: string): Promise<IDependencyInfo[]> {
         return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_DEPENDENCIES, projectUri) || [];
+    }
+
+    export async function getImportClassContent(fileUri: string, token: CancellationToken): Promise<INodeImportClass[]> {
+        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT, fileUri, token) || [];
     }
 
     export enum CompileWorkspaceStatus {

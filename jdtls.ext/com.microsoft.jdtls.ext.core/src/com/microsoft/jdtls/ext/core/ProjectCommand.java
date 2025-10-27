@@ -516,6 +516,10 @@ public final class ProjectCommand {
         }
 
         String projectUri = (String) arguments.get(0);
+        if (projectUri == null || projectUri.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         List<ProjectResolver.DependencyInfo> resolverResult = ProjectResolver.resolveProjectDependencies(projectUri, monitor);
         
         // Convert ProjectResolver.DependencyInfo to ProjectCommand.DependencyInfo
