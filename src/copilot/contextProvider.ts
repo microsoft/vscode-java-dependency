@@ -49,6 +49,7 @@ export async function registerCopilotContextProviders(
             "status": "succeeded",
             "installCount": installCount
         });
+        console.log('Java Copilot context provider registered successfully.');
     }
     catch (error) {
         sendError(new ContextProviderRegistrationError('Failed to register Copilot context provider: ' + ((error as Error).message || "unknown_error")));
@@ -119,18 +120,29 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         const projectUri = workspaceFolders[0];
 
         // Resolve project dependencies first
-        const projectDependencies = await CopilotHelper.resolveProjectDependencies(projectUri.uri, copilotCancel);
-
+        const projectDependenciesResult = await CopilotHelper.resolveProjectDependenciesWithReason(projectUri.uri, copilotCancel);
+        console.dir(projectDependenciesResult);
+        // Check for cancellation after dependency resolution
+        JavaContextProviderUtils.checkCancellation(copilotCancel);
+        
+        // Send telemetry if there was an error resolving project dependencies
+        if (projectDependenciesResult.hasError && projectDependenciesResult.errorReason) {
+            sendInfo("", {
+                "action": "resolveProjectDependencies",
+                "status": "ContextEmpty",
+                "ContextEmptyReason": projectDependenciesResult.errorReason
+            });
+        }
         // Check for cancellation after dependency resolution
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         
         // Convert project dependencies to Trait items
-        if (projectDependencies && Object.keys(projectDependencies).length > 0) {
-            for (const [key, value] of Object.entries(projectDependencies)) {
+        if (projectDependenciesResult.dependencyInfoList && projectDependenciesResult.dependencyInfoList.length > 0) {
+            for (const dep of projectDependenciesResult.dependencyInfoList) {
                 items.push({
-                    name: key,
-                    value: value,
-                    importance: 50
+                    name: dep.key,
+                    value: dep.value,
+                    importance: 70
                 });
             }
         }
@@ -139,18 +151,28 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         JavaContextProviderUtils.checkCancellation(copilotCancel);
 
         // Resolve imports directly without caching
-        const importClass = await CopilotHelper.resolveLocalImports(document.uri, copilotCancel);
-        
+        const importClassResult = await CopilotHelper.resolveLocalImportsWithReason(document.uri, copilotCancel);
+        console.dir(importClassResult);
         // Check for cancellation after resolution
         JavaContextProviderUtils.checkCancellation(copilotCancel);
+        
+        // Send telemetry if there was an error resolving imports
+        if (importClassResult.hasError && importClassResult.errorReason) {
+            sendInfo("", {
+                "action": "resolveLocalImports",
+                "status": "ContextEmpty",
+                "ContextEmptyReason": importClassResult.errorReason
+            });
+            console.log("Context resolution - local imports error: " + importClassResult.errorReason);
+        }
         
         // Check for cancellation before processing results
         JavaContextProviderUtils.checkCancellation(copilotCancel);
 
-        if (importClass) {
+        if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
             // Process imports in batches to reduce cancellation check overhead
-            const contextItems = JavaContextProviderUtils.createContextItemsFromImports(importClass);
-            
+            const contextItems = JavaContextProviderUtils.createContextItemsFromImports(importClassResult.classInfoList);
+            console.dir(contextItems);
             // Check cancellation once after creating all items
             JavaContextProviderUtils.checkCancellation(copilotCancel);
             

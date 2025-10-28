@@ -98,6 +98,101 @@ public final class ProjectCommand {
         }
     }
 
+    /**
+     * Error reasons for ImportClassContent operation
+     */
+    public enum ImportClassContentErrorReason {
+        NULL_ARGUMENTS("Arguments null or empty"),
+        INVALID_URI("URI invalid or empty"),
+        URI_PARSE_FAILED("URI parse failed"),
+        FILE_NOT_FOUND("File not found"),
+        FILE_NOT_EXISTS("File does not exist"),
+        NOT_JAVA_PROJECT("Not in Java project"),
+        PROJECT_NOT_EXISTS("Java project not exists"),
+        NOT_COMPILATION_UNIT("Not Java compilation unit"),
+        NO_IMPORTS("No import declarations"),
+        OPERATION_CANCELLED("Operation cancelled"),
+        TIME_LIMIT_EXCEEDED("Time limit exceeded"),
+        NO_RESULTS("No classes resolved"),
+        PROCESSING_EXCEPTION("Processing exception");
+
+        private final String message;
+
+        ImportClassContentErrorReason(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
+
+    /**
+     * Error reasons for ProjectDependencies operation
+     */
+    public enum ProjectDependenciesErrorReason {
+        NULL_ARGUMENTS("Arguments null or empty"),
+        INVALID_URI("URI invalid or empty"),
+        URI_PARSE_FAILED("URI parse failed"),
+        MALFORMED_URI("Malformed URI syntax"),
+        OPERATION_CANCELLED("Operation cancelled"),
+        RESOLVER_NULL_RESULT("Resolver returned null"),
+        NO_DEPENDENCIES("No dependencies resolved"),
+        PROCESSING_EXCEPTION("Processing exception");
+
+        private final String message;
+
+        ProjectDependenciesErrorReason(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
+
+    /**
+     * Result wrapper for getImportClassContent method
+     */
+    public static class ImportClassContentResult {
+        public List<ImportClassInfo> classInfoList;
+        public String errorReason;  // Use String for JSON serialization compatibility
+        public boolean hasError;
+
+        public ImportClassContentResult(List<ImportClassInfo> classInfoList) {
+            this.classInfoList = classInfoList;
+            this.errorReason = null;
+            this.hasError = false;
+        }
+
+        public ImportClassContentResult(ImportClassContentErrorReason errorReason) {
+            this.classInfoList = Collections.emptyList();
+            this.errorReason = errorReason.getMessage();  // Use enum message
+            this.hasError = true;
+        }
+    }
+
+    /**
+     * Result wrapper for getProjectDependencies method
+     */
+    public static class ProjectDependenciesResult {
+        public List<DependencyInfo> dependencyInfoList;
+        public String errorReason;  // Use String for JSON serialization compatibility
+        public boolean hasError;
+
+        public ProjectDependenciesResult(List<DependencyInfo> dependencyInfoList) {
+            this.dependencyInfoList = dependencyInfoList;
+            this.errorReason = null;
+            this.hasError = false;
+        }
+
+        public ProjectDependenciesResult(ProjectDependenciesErrorReason errorReason) {
+            this.dependencyInfoList = new ArrayList<>();
+            this.errorReason = errorReason.getMessage();  // Use enum message
+            this.hasError = true;
+        }
+    }
+
     private static class Classpath {
         public String source;
         public String destination;
@@ -351,17 +446,34 @@ public final class ProjectCommand {
     }
 
     /**
-     * Get import class content for Copilot integration.
-     * This method extracts information about imported classes from a Java file.
-     * Uses a time-controlled strategy: prioritizes internal classes, adds external classes only if time permits.
+     * Get import class content for Copilot integration (backward compatibility wrapper).
+     * This method maintains compatibility with the original return type.
      * 
      * @param arguments List containing the file URI as the first element
      * @param monitor Progress monitor for cancellation support
      * @return List of ImportClassInfo containing class information and JavaDoc
      */
     public static List<ImportClassInfo> getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
+        ImportClassContentResult result = getImportClassContentWithReason(arguments, monitor);
+        if (result.hasError) {
+            // Log the error reason for debugging
+            JdtlsExtActivator.logError("getImportClassContent failed: " + result.errorReason);
+        }
+        return result.classInfoList;
+    }
+
+    /**
+     * Get import class content for Copilot integration with detailed error reporting.
+     * This method extracts information about imported classes from a Java file.
+     * Uses a time-controlled strategy: prioritizes internal classes, adds external classes only if time permits.
+     * 
+     * @param arguments List containing the file URI as the first element
+     * @param monitor Progress monitor for cancellation support
+     * @return ImportClassContentResult containing class information and error reason if applicable
+     */
+    public static ImportClassContentResult getImportClassContentWithReason(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
-            return Collections.emptyList();
+            return new ImportClassContentResult(ImportClassContentErrorReason.NULL_ARGUMENTS);
         }
 
         // Time control: total budget 80ms, early return at 75ms
@@ -371,12 +483,15 @@ public final class ProjectCommand {
 
         try {
             String fileUri = (String) arguments.get(0);
+            if (fileUri == null || fileUri.trim().isEmpty()) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.INVALID_URI);
+            }
 
             // Parse URI manually to avoid restricted API
             java.net.URI uri = new java.net.URI(fileUri);
             String filePath = uri.getPath();
             if (filePath == null) {
-                return Collections.emptyList();
+                return new ImportClassContentResult(ImportClassContentErrorReason.URI_PARSE_FAILED);
             }
 
             IPath path = new Path(filePath);
@@ -384,20 +499,26 @@ public final class ProjectCommand {
             // Get the file resource
             IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
             IFile file = root.getFileForLocation(path);
-            if (file == null || !file.exists()) {
-                return Collections.emptyList();
+            if (file == null) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_FOUND);
+            }
+            if (!file.exists()) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_EXISTS);
             }
 
             // Get the Java project
             IJavaProject javaProject = JavaCore.create(file.getProject());
-            if (javaProject == null || !javaProject.exists()) {
-                return Collections.emptyList();
+            if (javaProject == null) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_JAVA_PROJECT);
+            }
+            if (!javaProject.exists()) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.PROJECT_NOT_EXISTS);
             }
 
             // Find the compilation unit
             IJavaElement javaElement = JavaCore.create(file);
             if (!(javaElement instanceof org.eclipse.jdt.core.ICompilationUnit)) {
-                return Collections.emptyList();
+                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_COMPILATION_UNIT);
             }
 
             org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
@@ -409,12 +530,20 @@ public final class ProjectCommand {
             org.eclipse.jdt.core.IImportDeclaration[] imports = compilationUnit.getImports();
             Set<String> processedTypes = new HashSet<>();
 
+            // Check if file has no imports
+            if (imports == null || imports.length == 0) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.NO_IMPORTS);
+            }
+
             // Phase 1: Priority - Resolve project source classes (internal)
             for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
                 // Check time budget before each operation
                 long elapsed = System.currentTimeMillis() - startTime;
-                if (monitor.isCanceled() || elapsed >= EARLY_RETURN_MS) {
-                    return classInfoList; // Early return if approaching time limit
+                if (monitor.isCanceled()) {
+                    return new ImportClassContentResult(ImportClassContentErrorReason.OPERATION_CANCELLED);
+                }
+                if (elapsed >= EARLY_RETURN_MS) {
+                    return new ImportClassContentResult(ImportClassContentErrorReason.TIME_LIMIT_EXCEEDED);
                 }
 
                 String importName = importDecl.getElementName();
@@ -470,11 +599,15 @@ public final class ProjectCommand {
                 }
             }
 
-            return classInfoList;
+            // Success case - return the resolved class information
+            if (classInfoList.isEmpty()) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.NO_RESULTS);
+            }
+            return new ImportClassContentResult(classInfoList);
 
         } catch (Exception e) {
             JdtlsExtActivator.logException("Error in getImportClassContent", e);
-            return Collections.emptyList();
+            return new ImportClassContentResult(ImportClassContentErrorReason.PROCESSING_EXCEPTION);
         }
     }
 
@@ -503,32 +636,67 @@ public final class ProjectCommand {
         }
     }
 
+
     /**
-     * Get project dependencies information including JDK version.
+     * Get project dependencies information with detailed error reporting.
+     * This method extracts project dependency information including JDK version, build tool, etc.
      * 
      * @param arguments List containing the project URI as the first element
      * @param monitor Progress monitor for cancellation support
-     * @return List of DependencyInfo containing key-value pairs of project information
+     * @return ProjectDependenciesResult containing dependency information and error reason if applicable
      */
-    public static List<DependencyInfo> getProjectDependencies(List<Object> arguments, IProgressMonitor monitor) {
+    public static ProjectDependenciesResult getProjectDependencies(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
-            return new ArrayList<>();
+            return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NULL_ARGUMENTS);
         }
 
-        String projectUri = (String) arguments.get(0);
-        if (projectUri == null || projectUri.isEmpty()) {
-            return new ArrayList<>();
-        }
+        try {
+            String projectUri = (String) arguments.get(0);
+            if (projectUri == null || projectUri.trim().isEmpty()) {
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.INVALID_URI);
+            }
 
-        List<ProjectResolver.DependencyInfo> resolverResult = ProjectResolver.resolveProjectDependencies(projectUri, monitor);
-        
-        // Convert ProjectResolver.DependencyInfo to ProjectCommand.DependencyInfo
-        List<DependencyInfo> result = new ArrayList<>();
-        for (ProjectResolver.DependencyInfo info : resolverResult) {
-            result.add(new DependencyInfo(info.key, info.value));
+            // Validate URI format
+            try {
+                java.net.URI uri = new java.net.URI(projectUri);
+                if (uri.getPath() == null) {
+                    return new ProjectDependenciesResult(ProjectDependenciesErrorReason.URI_PARSE_FAILED);
+                }
+            } catch (java.net.URISyntaxException e) {
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.MALFORMED_URI);
+            }
+
+            // Check if monitor is cancelled before processing
+            if (monitor.isCanceled()) {
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.OPERATION_CANCELLED);
+            }
+
+            List<ProjectResolver.DependencyInfo> resolverResult = ProjectResolver.resolveProjectDependencies(projectUri, monitor);
+            
+            // Check if resolver returned null (should not happen, but defensive programming)
+            if (resolverResult == null) {
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.RESOLVER_NULL_RESULT);
+            }
+
+            // Convert ProjectResolver.DependencyInfo to ProjectCommand.DependencyInfo
+            List<DependencyInfo> result = new ArrayList<>();
+            for (ProjectResolver.DependencyInfo info : resolverResult) {
+                if (info != null) {
+                    result.add(new DependencyInfo(info.key, info.value));
+                }
+            }
+            
+            // Check if no dependencies were resolved
+            if (result.isEmpty()) {
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NO_DEPENDENCIES);
+            }
+
+            return new ProjectDependenciesResult(result);
+
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Error in getProjectDependenciesWithReason", e);
+            return new ProjectDependenciesResult(ProjectDependenciesErrorReason.PROCESSING_EXCEPTION);
         }
-        
-        return result;
     }
 
     private static final class LinkedFolderVisitor implements IResourceVisitor {
