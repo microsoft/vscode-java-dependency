@@ -264,7 +264,6 @@ export namespace CopilotHelper {
         
         // Resolve project dependencies
         const projectDependenciesResult = await resolveProjectDependenciesWithReason(projectUri.uri, copilotCancel);
-        console.dir(projectDependenciesResult);
         
         // Check for cancellation after dependency resolution
         checkCancellation(copilotCancel);
@@ -330,7 +329,6 @@ export namespace CopilotHelper {
 
         // Resolve imports directly without caching
         const importClassResult = await resolveLocalImportsWithReason(documentUri, copilotCancel);
-        console.dir(importClassResult);
         
         // Check for cancellation after resolution
         checkCancellation(copilotCancel);
@@ -338,7 +336,6 @@ export namespace CopilotHelper {
         // Send telemetry if result is empty
         if (importClassResult.isEmpty && importClassResult.emptyReason) {
             sendTelemetry("resolveLocalImports", "ContextEmpty", importClassResult.emptyReason);
-            console.log("Context resolution - local imports empty: " + importClassResult.emptyReason);
         } else if (importClassResult.classInfoList.length === 0) {
             // No error but still empty - likely no imports in file
             sendTelemetry("resolveLocalImports", "ContextEmpty", "NoImportsResults");
@@ -350,7 +347,6 @@ export namespace CopilotHelper {
         if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
             // Process imports in batches to reduce cancellation check overhead
             const contextItems = createContextItems(importClassResult.classInfoList);
-            console.dir(contextItems);
             
             // Check cancellation once after creating all items
             checkCancellation(copilotCancel);

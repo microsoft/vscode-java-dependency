@@ -49,7 +49,6 @@ export async function registerCopilotContextProviders(
             "status": "succeeded",
             "installCount": installCount
         });
-        console.log('Java Copilot context provider registered successfully.');
     }
     catch (error) {
         sendError(new ContextProviderRegistrationError('Failed to register Copilot context provider: ' + ((error as Error).message || "unknown_error")));
