@@ -12,8 +12,8 @@ export interface INodeImportClass {
 
 export interface IImportClassContentResult {
     classInfoList: INodeImportClass[];
-    errorReason?: string;
-    hasError: boolean;
+    emptyReason?: string;
+    isEmpty: boolean;
 }
 
 export interface IProjectDependency {
@@ -22,8 +22,8 @@ export interface IProjectDependency {
 
 export interface IProjectDependenciesResult {
     dependencyInfoList: Array<{ key: string; value: string }>;
-    errorReason?: string;
-    hasError: boolean;
+    emptyReason?: string;
+    isEmpty: boolean;
 }
 /**
  * Helper class for Copilot integration to analyze Java project dependencies
@@ -50,8 +50,8 @@ export namespace CopilotHelper {
         if (cancellationToken?.isCancellationRequested) {
             return {
                 classInfoList: [],
-                errorReason: "Copilot_Cancellation_requested",
-                hasError: false
+                emptyReason: "CopilotCancelled",
+                isEmpty: true
             };
         }
 
@@ -77,8 +77,8 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         classInfoList: [],
-                        errorReason: "Command returned null result",
-                        hasError: true
+                        emptyReason: "CommandNullResult",
+                        isEmpty: true
                     };
                 }
                 
@@ -96,8 +96,8 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         classInfoList: [],
-                        errorReason: "Command returned null result",
-                        hasError: true
+                        emptyReason: "CommandNullResult",
+                        isEmpty: true
                     };
                 }
                 
@@ -107,25 +107,25 @@ export namespace CopilotHelper {
             if (error.message === 'Operation cancelled') {
                 return {
                     classInfoList: [],
-                    errorReason: "Copilot_Cancellation_requested",
-                    hasError: true
+                    emptyReason: "CopilotCancelled",
+                    isEmpty: true
                 };
             }
             
             if (error.message === 'Operation timed out') {
                 return {
                     classInfoList: [],
-                    errorReason: "Operation timed out after 80ms",
-                    hasError: true
+                    emptyReason: "Timeout",
+                    isEmpty: true
                 };
             }
             
-            const errorMessage = 'Failed_Get_Import_Info: ' + ((error as Error).message || "unknown_error");
+            const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
             sendError(new GetImportClassContentError(errorMessage));
             return {
                 classInfoList: [],
-                errorReason: errorMessage,
-                hasError: true
+                emptyReason: errorMessage,
+                isEmpty: true
             };
         }
     }
@@ -158,8 +158,8 @@ export namespace CopilotHelper {
         if (cancellationToken?.isCancellationRequested) {
             return {
                 dependencyInfoList: [],
-                errorReason: "Copilot_Cancellation_requested",
-                hasError: true
+                emptyReason: "CopilotCancelled",
+                isEmpty: true
             };
         }
 
@@ -185,8 +185,8 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         dependencyInfoList: [],
-                        errorReason: "Command returned null result",
-                        hasError: true
+                        emptyReason: "CommandNullResult",
+                        isEmpty: true
                     };
                 }
                 
@@ -204,8 +204,8 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         dependencyInfoList: [],
-                        errorReason: "Command returned null result",
-                        hasError: true
+                        emptyReason: "CommandNullResult",
+                        isEmpty: true
                     };
                 }
                 
@@ -215,26 +215,149 @@ export namespace CopilotHelper {
             if (error.message === 'Operation cancelled') {
                 return {
                     dependencyInfoList: [],
-                    errorReason: 'Copilot_Cancellation_requested',
-                    hasError: true
+                    emptyReason: 'CopilotCancelled',
+                    isEmpty: true
                 };
             }
             
             if (error.message === 'Operation timed out') {
                 return {
                     dependencyInfoList: [],
-                    errorReason: "Operation timed out after 40ms",
-                    hasError: true
+                    emptyReason: "Timeout",
+                    isEmpty: true
                 };
             }
             
-            const errorMessage = 'Failed to get project dependencies: ' + ((error as Error).message || "unknown_error");
+            const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
             sendError(new GetProjectDependenciesError(errorMessage));
             return {
                 dependencyInfoList: [],
-                errorReason: errorMessage,
-                hasError: true
+                emptyReason: errorMessage,
+                isEmpty: true
             };
         }
+    }
+
+    /**
+     * Resolves project dependencies and converts them to context items with cancellation support
+     * @param workspaceFolders The workspace folders, or undefined if none
+     * @param copilotCancel Cancellation token from Copilot
+     * @param checkCancellation Function to check for cancellation
+     * @param sendTelemetry Function to send telemetry data
+     * @returns Array of context items for project dependencies, or empty array if no workspace folders
+     */
+    export async function resolveAndConvertProjectDependencies(
+        workspaceFolders: readonly { uri: Uri }[] | undefined,
+        copilotCancel: CancellationToken,
+        checkCancellation: (token: CancellationToken) => void,
+        sendTelemetry: (action: string, status: string, reason?: string) => void
+    ): Promise<Array<{ name: string; value: string; importance: number }>> {
+        const items: Array<{ name: string; value: string; importance: number }> = [];
+        
+        // Check if workspace folders exist
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            sendTelemetry("resolveProjectDependencies", "ContextEmpty", "NoWorkspace");
+            return items;
+        }
+        
+        const projectUri = workspaceFolders[0];
+        
+        // Resolve project dependencies
+        const projectDependenciesResult = await resolveProjectDependenciesWithReason(projectUri.uri, copilotCancel);
+        console.dir(projectDependenciesResult);
+        
+        // Check for cancellation after dependency resolution
+        checkCancellation(copilotCancel);
+        
+        // Send telemetry if result is empty
+        if (projectDependenciesResult.isEmpty && projectDependenciesResult.emptyReason) {
+            sendTelemetry("resolveProjectDependencies", "ContextEmpty", projectDependenciesResult.emptyReason);
+        } else if (projectDependenciesResult.dependencyInfoList.length === 0) {
+            // No error but still empty - likely no dependencies in project
+            sendTelemetry("resolveProjectDependencies", "ContextEmpty", "NoDependenciesResults");
+        }
+        
+        // Check for cancellation after telemetry
+        checkCancellation(copilotCancel);
+        
+        // Convert project dependencies to context items
+        if (projectDependenciesResult.dependencyInfoList && projectDependenciesResult.dependencyInfoList.length > 0) {
+            for (const dep of projectDependenciesResult.dependencyInfoList) {
+                items.push({
+                    name: dep.key,
+                    value: dep.value,
+                    importance: 70
+                });
+            }
+        }
+        
+        return items;
+    }
+
+    /**
+     * Resolves local imports and converts them to context items with cancellation support
+     * @param activeEditor The active text editor, or undefined if none
+     * @param copilotCancel Cancellation token from Copilot
+     * @param checkCancellation Function to check for cancellation
+     * @param sendTelemetry Function to send telemetry data
+     * @param createContextItems Function to create context items from imports
+     * @returns Array of context items for local imports, or empty array if no valid editor
+     */
+    export async function resolveAndConvertLocalImports(
+        activeEditor: { document: { uri: Uri; languageId: string } } | undefined,
+        copilotCancel: CancellationToken,
+        checkCancellation: (token: CancellationToken) => void,
+        sendTelemetry: (action: string, status: string, reason?: string) => void,
+        createContextItems: (classInfoList: any[]) => any[]
+    ): Promise<any[]> {
+        const items: any[] = [];
+        
+        // Check if there's an active editor with a Java document
+        if (!activeEditor) {
+            sendTelemetry("resolveLocalImports", "ContextEmpty", "NoActiveEditor");
+            return items;
+        }
+        
+        if (activeEditor.document.languageId !== 'java') {
+            sendTelemetry("resolveLocalImports", "ContextEmpty", "NotJavaFile");
+            return items;
+        }
+        
+        const documentUri = activeEditor.document.uri;
+        
+        // Check for cancellation before resolving imports
+        checkCancellation(copilotCancel);
+
+        // Resolve imports directly without caching
+        const importClassResult = await resolveLocalImportsWithReason(documentUri, copilotCancel);
+        console.dir(importClassResult);
+        
+        // Check for cancellation after resolution
+        checkCancellation(copilotCancel);
+        
+        // Send telemetry if result is empty
+        if (importClassResult.isEmpty && importClassResult.emptyReason) {
+            sendTelemetry("resolveLocalImports", "ContextEmpty", importClassResult.emptyReason);
+            console.log("Context resolution - local imports empty: " + importClassResult.emptyReason);
+        } else if (importClassResult.classInfoList.length === 0) {
+            // No error but still empty - likely no imports in file
+            sendTelemetry("resolveLocalImports", "ContextEmpty", "NoImportsResults");
+        }
+        
+        // Check for cancellation before processing results
+        checkCancellation(copilotCancel);
+
+        if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
+            // Process imports in batches to reduce cancellation check overhead
+            const contextItems = createContextItems(importClassResult.classInfoList);
+            console.dir(contextItems);
+            
+            // Check cancellation once after creating all items
+            checkCancellation(copilotCancel);
+            
+            items.push(...contextItems);
+        }
+        
+        return items;
     }
 }

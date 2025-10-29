@@ -99,22 +99,22 @@ public final class ProjectCommand {
     }
 
     /**
-     * Error reasons for ImportClassContent operation
+     * Empty reasons for ImportClassContent operation
      */
     public enum ImportClassContentErrorReason {
-        NULL_ARGUMENTS("Arguments null or empty"),
-        INVALID_URI("URI invalid or empty"),
-        URI_PARSE_FAILED("URI parse failed"),
-        FILE_NOT_FOUND("File not found"),
-        FILE_NOT_EXISTS("File does not exist"),
-        NOT_JAVA_PROJECT("Not in Java project"),
-        PROJECT_NOT_EXISTS("Java project not exists"),
-        NOT_COMPILATION_UNIT("Not Java compilation unit"),
-        NO_IMPORTS("No import declarations"),
-        OPERATION_CANCELLED("Operation cancelled"),
-        TIME_LIMIT_EXCEEDED("Time limit exceeded"),
-        NO_RESULTS("No classes resolved"),
-        PROCESSING_EXCEPTION("Processing exception");
+        NULL_ARGUMENTS("NullArgs"),
+        INVALID_URI("InvalidUri"),
+        URI_PARSE_FAILED("UriParseFail"),
+        FILE_NOT_FOUND("FileNotFound"),
+        FILE_NOT_EXISTS("FileNotExists"),
+        NOT_JAVA_PROJECT("NotJavaProject"),
+        PROJECT_NOT_EXISTS("ProjectNotExists"),
+        NOT_COMPILATION_UNIT("NotCompilationUnit"),
+        NO_IMPORTS("NoImports"),
+        OPERATION_CANCELLED("Cancelled"),
+        TIME_LIMIT_EXCEEDED("Timeout"),
+        NO_RESULTS("NoResults"),
+        PROCESSING_EXCEPTION("ProcessingError");
 
         private final String message;
 
@@ -128,17 +128,17 @@ public final class ProjectCommand {
     }
 
     /**
-     * Error reasons for ProjectDependencies operation
+     * Empty reasons for ProjectDependencies operation
      */
     public enum ProjectDependenciesErrorReason {
-        NULL_ARGUMENTS("Arguments null or empty"),
-        INVALID_URI("URI invalid or empty"),
-        URI_PARSE_FAILED("URI parse failed"),
-        MALFORMED_URI("Malformed URI syntax"),
-        OPERATION_CANCELLED("Operation cancelled"),
-        RESOLVER_NULL_RESULT("Resolver returned null"),
-        NO_DEPENDENCIES("No dependencies resolved"),
-        PROCESSING_EXCEPTION("Processing exception");
+        NULL_ARGUMENTS("NullArgs"),
+        INVALID_URI("InvalidUri"),
+        URI_PARSE_FAILED("UriParseFail"),
+        MALFORMED_URI("MalformedUri"),
+        OPERATION_CANCELLED("Cancelled"),
+        RESOLVER_NULL_RESULT("ResolverNull"),
+        NO_DEPENDENCIES("NoDependencies"),
+        PROCESSING_EXCEPTION("ProcessingError");
 
         private final String message;
 
@@ -156,19 +156,19 @@ public final class ProjectCommand {
      */
     public static class ImportClassContentResult {
         public List<ImportClassInfo> classInfoList;
-        public String errorReason;  // Use String for JSON serialization compatibility
-        public boolean hasError;
+        public String emptyReason;  // Reason why the result is empty
+        public boolean isEmpty;
 
         public ImportClassContentResult(List<ImportClassInfo> classInfoList) {
             this.classInfoList = classInfoList;
-            this.errorReason = null;
-            this.hasError = false;
+            this.emptyReason = null;
+            this.isEmpty = false;
         }
 
         public ImportClassContentResult(ImportClassContentErrorReason errorReason) {
             this.classInfoList = Collections.emptyList();
-            this.errorReason = errorReason.getMessage();  // Use enum message
-            this.hasError = true;
+            this.emptyReason = errorReason.getMessage();  // Use enum message
+            this.isEmpty = true;
         }
     }
 
@@ -177,19 +177,19 @@ public final class ProjectCommand {
      */
     public static class ProjectDependenciesResult {
         public List<DependencyInfo> dependencyInfoList;
-        public String errorReason;  // Use String for JSON serialization compatibility
-        public boolean hasError;
+        public String emptyReason;  // Reason why the result is empty
+        public boolean isEmpty;
 
         public ProjectDependenciesResult(List<DependencyInfo> dependencyInfoList) {
             this.dependencyInfoList = dependencyInfoList;
-            this.errorReason = null;
-            this.hasError = false;
+            this.emptyReason = null;
+            this.isEmpty = false;
         }
 
         public ProjectDependenciesResult(ProjectDependenciesErrorReason errorReason) {
             this.dependencyInfoList = new ArrayList<>();
-            this.errorReason = errorReason.getMessage();  // Use enum message
-            this.hasError = true;
+            this.emptyReason = errorReason.getMessage();  // Use enum message
+            this.isEmpty = true;
         }
     }
 
@@ -446,23 +446,6 @@ public final class ProjectCommand {
     }
 
     /**
-     * Get import class content for Copilot integration (backward compatibility wrapper).
-     * This method maintains compatibility with the original return type.
-     * 
-     * @param arguments List containing the file URI as the first element
-     * @param monitor Progress monitor for cancellation support
-     * @return List of ImportClassInfo containing class information and JavaDoc
-     */
-    public static List<ImportClassInfo> getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
-        ImportClassContentResult result = getImportClassContentWithReason(arguments, monitor);
-        if (result.hasError) {
-            // Log the error reason for debugging
-            JdtlsExtActivator.logError("getImportClassContent failed: " + result.errorReason);
-        }
-        return result.classInfoList;
-    }
-
-    /**
      * Get import class content for Copilot integration with detailed error reporting.
      * This method extracts information about imported classes from a Java file.
      * Uses a time-controlled strategy: prioritizes internal classes, adds external classes only if time permits.
@@ -471,7 +454,7 @@ public final class ProjectCommand {
      * @param monitor Progress monitor for cancellation support
      * @return ImportClassContentResult containing class information and error reason if applicable
      */
-    public static ImportClassContentResult getImportClassContentWithReason(List<Object> arguments, IProgressMonitor monitor) {
+    public static ImportClassContentResult getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
             return new ImportClassContentResult(ImportClassContentErrorReason.NULL_ARGUMENTS);
         }

@@ -104,80 +104,48 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         // Check for cancellation before starting
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         
-        // Get current document and position information
-        const activeEditor = vscode.window.activeTextEditor;
-        if (!activeEditor || activeEditor.document.languageId !== 'java') {
-            return items;
-        }
-
-        const document = activeEditor.document;
-        
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            return items;
-        }
-
-        const projectUri = workspaceFolders[0];
-
-        // Resolve project dependencies first
-        const projectDependenciesResult = await CopilotHelper.resolveProjectDependenciesWithReason(projectUri.uri, copilotCancel);
-        console.dir(projectDependenciesResult);
-        // Check for cancellation after dependency resolution
-        JavaContextProviderUtils.checkCancellation(copilotCancel);
-        
-        // Send telemetry if there was an error resolving project dependencies
-        if (projectDependenciesResult.hasError && projectDependenciesResult.errorReason) {
-            sendInfo("", {
-                "action": "resolveProjectDependencies",
-                "status": "ContextEmpty",
-                "ContextEmptyReason": projectDependenciesResult.errorReason
-            });
-        }
-        // Check for cancellation after dependency resolution
-        JavaContextProviderUtils.checkCancellation(copilotCancel);
-        
-        // Convert project dependencies to Trait items
-        if (projectDependenciesResult.dependencyInfoList && projectDependenciesResult.dependencyInfoList.length > 0) {
-            for (const dep of projectDependenciesResult.dependencyInfoList) {
-                items.push({
-                    name: dep.key,
-                    value: dep.value,
-                    importance: 70
-                });
+        // Resolve project dependencies and convert to context items
+        const projectDependencyItems = await CopilotHelper.resolveAndConvertProjectDependencies(
+            vscode.workspace.workspaceFolders,
+            copilotCancel,
+            JavaContextProviderUtils.checkCancellation,
+            (action: string, status: string, reason?: string) => {
+                const telemetryData: any = {
+                    "action": action,
+                    "status": status
+                };
+                if (reason) {
+                    telemetryData.ContextEmptyReason = reason;
+                }
+                sendInfo("", telemetryData);
             }
-        }
-        
-        // Check for cancellation before resolving imports
+        );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
+        
+        items.push(...projectDependencyItems);
 
-        // Resolve imports directly without caching
-        const importClassResult = await CopilotHelper.resolveLocalImportsWithReason(document.uri, copilotCancel);
-        console.dir(importClassResult);
-        // Check for cancellation after resolution
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         
-        // Send telemetry if there was an error resolving imports
-        if (importClassResult.hasError && importClassResult.errorReason) {
-            sendInfo("", {
-                "action": "resolveLocalImports",
-                "status": "ContextEmpty",
-                "ContextEmptyReason": importClassResult.errorReason
-            });
-            console.log("Context resolution - local imports error: " + importClassResult.errorReason);
-        }
-        
-        // Check for cancellation before processing results
+        // Resolve local imports and convert to context items
+        const localImportItems = await CopilotHelper.resolveAndConvertLocalImports(
+            vscode.window.activeTextEditor,
+            copilotCancel,
+            JavaContextProviderUtils.checkCancellation,
+            (action: string, status: string, reason?: string) => {
+                const telemetryData: any = {
+                    "action": action,
+                    "status": status
+                };
+                if (reason) {
+                    telemetryData.ContextEmptyReason = reason;
+                }
+                sendInfo("", telemetryData);
+            },
+            JavaContextProviderUtils.createContextItemsFromImports
+        );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-
-        if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
-            // Process imports in batches to reduce cancellation check overhead
-            const contextItems = JavaContextProviderUtils.createContextItemsFromImports(importClassResult.classInfoList);
-            console.dir(contextItems);
-            // Check cancellation once after creating all items
-            JavaContextProviderUtils.checkCancellation(copilotCancel);
-            
-            items.push(...contextItems);
-        }
+        
+        items.push(...localImportItems);
     } catch (error: any) {
         if (error instanceof CopilotCancellationError) {
             sendContextTelemetry(request, start, items, "cancelled_by_copilot");

@@ -39,8 +39,6 @@ public class CommandHandler implements IDelegateCommandHandler {
                     return ProjectCommand.checkImportStatus();
                 case "java.project.getImportClassContent":
                     return ProjectCommand.getImportClassContent(arguments, monitor);
-                case "java.project.getImportClassContentWithReason":
-                    return ProjectCommand.getImportClassContentWithReason(arguments, monitor);
                 case "java.project.getDependencies":
                     return ProjectCommand.getProjectDependencies(arguments, monitor);
                 default:
