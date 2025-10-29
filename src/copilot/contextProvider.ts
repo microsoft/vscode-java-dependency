@@ -42,6 +42,7 @@ export async function registerCopilotContextProviders(
         if (installCount === 0) {
             return;
         }
+        console.log('===== register Copilot Java context provider succeeded =====');
         
         sendInfo("", {
             "action": "registerCopilotContextProvider",
@@ -119,6 +120,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
                 sendInfo("", telemetryData);
             }
         );
+        console.dir(projectDependencyItems);
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         
         items.push(...projectDependencyItems);
@@ -142,6 +144,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             },
             JavaContextProviderUtils.createContextItemsFromImports
         );
+        console.dir(localImportItems);
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         
         items.push(...localImportItems);

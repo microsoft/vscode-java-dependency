@@ -38,10 +38,6 @@ export namespace Commands {
 
     export const EXPORT_JAR_REPORT = "java.view.package.exportJarReport";
 
-    export const IMPORT_CLASS_CONTENT_TELEMETRY = "java.importClassContent.telemetry";
-
-    export const PROJECT_DEPENDENCIES_TELEMETRY = "java.projectDependencies.telemetry";
-
     export const VIEW_PACKAGE_NEW = "java.view.package.new";
 
     export const VIEW_PACKAGE_NEW_JAVA_CLASS = "java.view.package.newJavaClass";
@@ -135,8 +131,6 @@ export namespace Commands {
     export const INSTALL_EXTENSION = "java.project.installExtension";
 
     export const JAVA_UPDATE_DEPRECATED_TASK = "java.updateDeprecatedTask";
-
-    export const JAVA_PROJECT_CHECK_IMPORT_STATUS = "java.project.checkImportStatus";
 
     export const JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT = "java.project.getImportClassContent";
 
