@@ -5,6 +5,29 @@ import { commands, Uri, CancellationToken } from "vscode";
 import { sendError } from "vscode-extension-telemetry-wrapper";
 import { GetImportClassContentError, GetProjectDependenciesError } from "./utils";
 import { Commands } from '../commands';
+
+/**
+ * Enum for error messages used in Promise rejection
+ */
+export enum ErrorMessage {
+    OperationCancelled = "Operation cancelled",
+    OperationTimedOut = "Operation timed out"
+}
+
+/**
+ * Enum for empty reason codes when operations return empty results
+ */
+export enum EmptyReason {
+    CopilotCancelled = "CopilotCancelled",
+    CommandNullResult = "CommandNullResult",
+    Timeout = "Timeout",
+    NoWorkspace = "NoWorkspace",
+    NoDependenciesResults = "NoDependenciesResults",
+    NoActiveEditor = "NoActiveEditor",
+    NotJavaFile = "NotJavaFile",
+    NoImportsResults = "NoImportsResults"
+}
+
 export interface INodeImportClass {
     uri: string;
     value: string;  // Changed from 'class' to 'className' to match Java code
@@ -50,7 +73,7 @@ export namespace CopilotHelper {
         if (cancellationToken?.isCancellationRequested) {
             return {
                 classInfoList: [],
-                emptyReason: "CopilotCancelled",
+                emptyReason: EmptyReason.CopilotCancelled,
                 isEmpty: true
             };
         }
@@ -64,12 +87,12 @@ export namespace CopilotHelper {
                     commandPromise,
                     new Promise<IImportClassContentResult>((_, reject) => {
                         cancellationToken.onCancellationRequested(() => {
-                            reject(new Error('Operation cancelled'));
+                            reject(new Error(ErrorMessage.OperationCancelled));
                         });
                     }),
                     new Promise<IImportClassContentResult>((_, reject) => {
                         setTimeout(() => {
-                            reject(new Error('Operation timed out'));
+                            reject(new Error(ErrorMessage.OperationTimedOut));
                         }, 80); // 80ms timeout
                     })
                 ]);
@@ -77,7 +100,7 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         classInfoList: [],
-                        emptyReason: "CommandNullResult",
+                        emptyReason: EmptyReason.CommandNullResult,
                         isEmpty: true
                     };
                 }
@@ -88,7 +111,7 @@ export namespace CopilotHelper {
                     commandPromise,
                     new Promise<IImportClassContentResult>((_, reject) => {
                         setTimeout(() => {
-                            reject(new Error('Operation timed out'));
+                            reject(new Error(ErrorMessage.OperationTimedOut));
                         }, 80); // 80ms timeout
                     })
                 ]);
@@ -96,7 +119,7 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         classInfoList: [],
-                        emptyReason: "CommandNullResult",
+                        emptyReason: EmptyReason.CommandNullResult,
                         isEmpty: true
                     };
                 }
@@ -104,18 +127,18 @@ export namespace CopilotHelper {
                 return result;
             }
         } catch (error: any) {
-            if (error.message === 'Operation cancelled') {
+            if (error.message === ErrorMessage.OperationCancelled) {
                 return {
                     classInfoList: [],
-                    emptyReason: "CopilotCancelled",
+                    emptyReason: EmptyReason.CopilotCancelled,
                     isEmpty: true
                 };
             }
             
-            if (error.message === 'Operation timed out') {
+            if (error.message === ErrorMessage.OperationTimedOut) {
                 return {
                     classInfoList: [],
-                    emptyReason: "Timeout",
+                    emptyReason: EmptyReason.Timeout,
                     isEmpty: true
                 };
             }
@@ -158,7 +181,7 @@ export namespace CopilotHelper {
         if (cancellationToken?.isCancellationRequested) {
             return {
                 dependencyInfoList: [],
-                emptyReason: "CopilotCancelled",
+                emptyReason: EmptyReason.CopilotCancelled,
                 isEmpty: true
             };
         }
@@ -172,12 +195,12 @@ export namespace CopilotHelper {
                     commandPromise,
                     new Promise<IProjectDependenciesResult>((_, reject) => {
                         cancellationToken.onCancellationRequested(() => {
-                            reject(new Error('Operation cancelled'));
+                            reject(new Error(ErrorMessage.OperationCancelled));
                         });
                     }),
                     new Promise<IProjectDependenciesResult>((_, reject) => {
                         setTimeout(() => {
-                            reject(new Error('Operation timed out'));
+                            reject(new Error(ErrorMessage.OperationTimedOut));
                         }, 40); // 40ms timeout
                     })
                 ]);
@@ -185,7 +208,7 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         dependencyInfoList: [],
-                        emptyReason: "CommandNullResult",
+                        emptyReason: EmptyReason.CommandNullResult,
                         isEmpty: true
                     };
                 }
@@ -196,7 +219,7 @@ export namespace CopilotHelper {
                     commandPromise,
                     new Promise<IProjectDependenciesResult>((_, reject) => {
                         setTimeout(() => {
-                            reject(new Error('Operation timed out'));
+                            reject(new Error(ErrorMessage.OperationTimedOut));
                         }, 40); // 40ms timeout
                     })
                 ]);
@@ -204,7 +227,7 @@ export namespace CopilotHelper {
                 if (!result) {
                     return {
                         dependencyInfoList: [],
-                        emptyReason: "CommandNullResult",
+                        emptyReason: EmptyReason.CommandNullResult,
                         isEmpty: true
                     };
                 }
@@ -212,18 +235,18 @@ export namespace CopilotHelper {
                 return result;
             }
         } catch (error: any) {
-            if (error.message === 'Operation cancelled') {
+            if (error.message === ErrorMessage.OperationCancelled) {
                 return {
                     dependencyInfoList: [],
-                    emptyReason: 'CopilotCancelled',
+                    emptyReason: EmptyReason.CopilotCancelled,
                     isEmpty: true
                 };
             }
             
-            if (error.message === 'Operation timed out') {
+            if (error.message === ErrorMessage.OperationTimedOut) {
                 return {
                     dependencyInfoList: [],
-                    emptyReason: "Timeout",
+                    emptyReason: EmptyReason.Timeout,
                     isEmpty: true
                 };
             }
@@ -256,7 +279,7 @@ export namespace CopilotHelper {
         
         // Check if workspace folders exist
         if (!workspaceFolders || workspaceFolders.length === 0) {
-            sendTelemetry("resolveProjectDependencies", "ContextEmpty", "NoWorkspace");
+            sendTelemetry("resolveProjectDependencies", "ContextEmpty", EmptyReason.NoWorkspace);
             return items;
         }
         
@@ -273,7 +296,7 @@ export namespace CopilotHelper {
             sendTelemetry("resolveProjectDependencies", "ContextEmpty", projectDependenciesResult.emptyReason);
         } else if (projectDependenciesResult.dependencyInfoList.length === 0) {
             // No error but still empty - likely no dependencies in project
-            sendTelemetry("resolveProjectDependencies", "ContextEmpty", "NoDependenciesResults");
+            sendTelemetry("resolveProjectDependencies", "ContextEmpty", EmptyReason.NoDependenciesResults);
         }
         
         // Check for cancellation after telemetry
@@ -314,12 +337,12 @@ export namespace CopilotHelper {
         
         // Check if there's an active editor with a Java document
         if (!activeEditor) {
-            sendTelemetry("resolveLocalImports", "ContextEmpty", "NoActiveEditor");
+            sendTelemetry("resolveLocalImports", "ContextEmpty", EmptyReason.NoActiveEditor);
             return items;
         }
         
         if (activeEditor.document.languageId !== 'java') {
-            sendTelemetry("resolveLocalImports", "ContextEmpty", "NotJavaFile");
+            sendTelemetry("resolveLocalImports", "ContextEmpty", EmptyReason.NotJavaFile);
             return items;
         }
         
@@ -339,7 +362,7 @@ export namespace CopilotHelper {
             sendTelemetry("resolveLocalImports", "ContextEmpty", importClassResult.emptyReason);
         } else if (importClassResult.classInfoList.length === 0) {
             // No error but still empty - likely no imports in file
-            sendTelemetry("resolveLocalImports", "ContextEmpty", "NoImportsResults");
+            sendTelemetry("resolveLocalImports", "ContextEmpty", EmptyReason.NoImportsResults);
         }
         
         // Check for cancellation before processing results
