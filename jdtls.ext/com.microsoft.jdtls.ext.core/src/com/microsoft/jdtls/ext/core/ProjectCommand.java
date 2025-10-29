@@ -445,6 +445,12 @@ public final class ProjectCommand {
         return hasError;
     }
 
+    // This method reserver for pack.
+    public static List<ImportClassInfo> getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
+        ImportClassContentResult result = getImportClassContentWithResult(arguments, monitor);
+        return result == null ? Collections.emptyList() : result.classInfoList;
+    }
+
     /**
      * Get import class content for Copilot integration with detailed error reporting.
      * This method extracts information about imported classes from a Java file.
@@ -454,7 +460,7 @@ public final class ProjectCommand {
      * @param monitor Progress monitor for cancellation support
      * @return ImportClassContentResult containing class information and error reason if applicable
      */
-    public static ImportClassContentResult getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
+    public static ImportClassContentResult getImportClassContentWithResult(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
             return new ImportClassContentResult(ImportClassContentErrorReason.NULL_ARGUMENTS);
         }
@@ -619,6 +625,12 @@ public final class ProjectCommand {
         }
     }
 
+    // resverved for pack.
+    public static List<DependencyInfo> getProjectDependencies(List<Object> arguments, IProgressMonitor monitor) {
+        ProjectDependenciesResult result = getProjectDependenciesWithResult(arguments, monitor);
+        return result == null ? Collections.emptyList() : result.dependencyInfoList;
+    }
+
 
     /**
      * Get project dependencies information with detailed error reporting.
@@ -628,7 +640,7 @@ public final class ProjectCommand {
      * @param monitor Progress monitor for cancellation support
      * @return ProjectDependenciesResult containing dependency information and error reason if applicable
      */
-    public static ProjectDependenciesResult getProjectDependencies(List<Object> arguments, IProgressMonitor monitor) {
+    public static ProjectDependenciesResult getProjectDependenciesWithResult(List<Object> arguments, IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
             return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NULL_ARGUMENTS);
         }
