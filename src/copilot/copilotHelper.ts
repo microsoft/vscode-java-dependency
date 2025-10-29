@@ -4,7 +4,7 @@
 import { commands, Uri, CancellationToken } from "vscode";
 import { sendError } from "vscode-extension-telemetry-wrapper";
 import { GetImportClassContentError, GetProjectDependenciesError } from "./utils";
-
+import { Commands } from '../commands';
 export interface INodeImportClass {
     uri: string;
     value: string;  // Changed from 'class' to 'className' to match Java code
@@ -57,7 +57,7 @@ export namespace CopilotHelper {
 
         try {
             // Use the new command with error reason support
-            const commandPromise = commands.executeCommand("java.execute.workspaceCommand", "java.project.getImportClassContent", fileUri.toString()) as Promise<IImportClassContentResult>;
+            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT, fileUri.toString()) as Promise<IImportClassContentResult>;
             
             if (cancellationToken) {
                 const result = await Promise.race([
@@ -165,7 +165,7 @@ export namespace CopilotHelper {
 
         try {
             // Use the new command with error reason support
-            const commandPromise = commands.executeCommand("java.execute.workspaceCommand", "java.project.getDependencies", projectUri.toString()) as Promise<IProjectDependenciesResult>;
+            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_DEPENDENCIES, projectUri.toString()) as Promise<IProjectDependenciesResult>;
             
             if (cancellationToken) {
                 const result = await Promise.race([

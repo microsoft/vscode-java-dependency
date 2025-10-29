@@ -132,6 +132,8 @@ export namespace Commands {
 
     export const JAVA_UPDATE_DEPRECATED_TASK = "java.updateDeprecatedTask";
 
+    export const JAVA_PROJECT_CHECK_IMPORT_STATUS = "java.project.checkImportStatus";
+
     export const JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT = "java.project.getImportClassContent";
 
     export const JAVA_PROJECT_GET_DEPENDENCIES = "java.project.getDependencies";
