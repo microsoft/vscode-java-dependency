@@ -312,7 +312,6 @@ export namespace CopilotHelper {
                 });
             }
         }
-        // console.dir(items);
         
         return items;
     }
@@ -377,7 +376,6 @@ export namespace CopilotHelper {
             
             items.push(...contextItems);
         }
-        // console.dir(items);
         
         return items;
     }
