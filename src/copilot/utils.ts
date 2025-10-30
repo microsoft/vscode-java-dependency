@@ -11,9 +11,9 @@ import {
  * Error classes for Copilot context provider cancellation handling
  */
 export class CancellationError extends Error {
-    static readonly canceled = "Canceled";
+    static readonly CANCELED = "Canceled";
     constructor() {
-        super(CancellationError.canceled);
+        super(CancellationError.CANCELED);
         this.name = this.message;
     }
 }

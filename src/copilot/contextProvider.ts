@@ -121,7 +121,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             sendContextTelemetry(request, start, items, "cancelled_by_copilot");
             throw error;
         }
-        if (error instanceof vscode.CancellationError || error.message === CancellationError.Canceled) {
+        if (error instanceof vscode.CancellationError || error.message === CancellationError.CANCELED) {
             sendContextTelemetry(request, start, items, "cancelled_internally");
             throw new InternalCancellationError();
         }
