@@ -44,7 +44,7 @@ export interface IProjectDependency {
 }
 
 export interface IProjectDependenciesResult {
-    dependencyInfoList: Array<{ key: string; value: string }>;
+    dependencyInfoList: { key: string; value: string }[];
     emptyReason?: string;
     isEmpty: boolean;
 }
@@ -80,9 +80,11 @@ export namespace CopilotHelper {
 
         try {
             const normalizedUri = decodeURIComponent(Uri.file(fileUri.fsPath).toString());
-            
-            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT, normalizedUri) as Promise<IImportClassContentResult>;
-            
+            const commandPromise = commands.executeCommand(
+                Commands.EXECUTE_WORKSPACE_COMMAND,
+                Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT,
+                normalizedUri
+            ) as Promise<IImportClassContentResult>;
             if (cancellationToken) {
                 const result = await Promise.race([
                     commandPromise,
@@ -97,7 +99,6 @@ export namespace CopilotHelper {
                         }, 80); // 80ms timeout
                     })
                 ]);
-                
                 if (!result) {
                     return {
                         classInfoList: [],
@@ -105,7 +106,6 @@ export namespace CopilotHelper {
                         isEmpty: true
                     };
                 }
-                
                 return result;
             } else {
                 const result = await Promise.race([
@@ -116,7 +116,6 @@ export namespace CopilotHelper {
                         }, 80); // 80ms timeout
                     })
                 ]);
-                
                 if (!result) {
                     return {
                         classInfoList: [],
@@ -124,7 +123,6 @@ export namespace CopilotHelper {
                         isEmpty: true
                     };
                 }
-                
                 return result;
             }
         } catch (error: any) {
@@ -135,7 +133,6 @@ export namespace CopilotHelper {
                     isEmpty: true
                 };
             }
-            
             if (error.message === ErrorMessage.OperationTimedOut) {
                 return {
                     classInfoList: [],
@@ -143,7 +140,6 @@ export namespace CopilotHelper {
                     isEmpty: true
                 };
             }
-            
             const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
             sendError(new GetImportClassContentError(errorMessage));
             return {
@@ -162,13 +158,13 @@ export namespace CopilotHelper {
      */
     export async function resolveProjectDependencies(projectUri: Uri, cancellationToken?: CancellationToken): Promise<IProjectDependency> {
         const result = await resolveProjectDependenciesWithReason(projectUri, cancellationToken);
-        
+
         // Convert to legacy format
         const dependencies: IProjectDependency = {};
         for (const dep of result.dependencyInfoList) {
             dependencies[dep.key] = dep.value;
         }
-        
+
         return dependencies;
     }
 
@@ -178,7 +174,10 @@ export namespace CopilotHelper {
      * @param cancellationToken Optional cancellation token to abort the operation
      * @returns Result object containing project dependencies and error information
      */
-    export async function resolveProjectDependenciesWithReason(projectUri: Uri, cancellationToken?: CancellationToken): Promise<IProjectDependenciesResult> {
+    export async function resolveProjectDependenciesWithReason(
+        projectUri: Uri,
+        cancellationToken?: CancellationToken
+    ): Promise<IProjectDependenciesResult> {
         if (cancellationToken?.isCancellationRequested) {
             return {
                 dependencyInfoList: [],
@@ -189,9 +188,12 @@ export namespace CopilotHelper {
 
         try {
             const normalizedUri = decodeURIComponent(Uri.file(projectUri.fsPath).toString());
+            const commandPromise = commands.executeCommand(
+                Commands.EXECUTE_WORKSPACE_COMMAND,
+                Commands.JAVA_PROJECT_GET_DEPENDENCIES,
+                normalizedUri
+            ) as Promise<IProjectDependenciesResult>;
 
-            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_DEPENDENCIES, normalizedUri) as Promise<IProjectDependenciesResult>;
-            
             if (cancellationToken) {
                 const result = await Promise.race([
                     commandPromise,
@@ -206,7 +208,6 @@ export namespace CopilotHelper {
                         }, 40); // 40ms timeout
                     })
                 ]);
-                
                 if (!result) {
                     return {
                         dependencyInfoList: [],
@@ -214,7 +215,6 @@ export namespace CopilotHelper {
                         isEmpty: true
                     };
                 }
-                
                 return result;
             } else {
                 const result = await Promise.race([
@@ -225,7 +225,6 @@ export namespace CopilotHelper {
                         }, 40); // 40ms timeout
                     })
                 ]);
-                
                 if (!result) {
                     return {
                         dependencyInfoList: [],
@@ -233,7 +232,6 @@ export namespace CopilotHelper {
                         isEmpty: true
                     };
                 }
-                
                 return result;
             }
         } catch (error: any) {
@@ -244,7 +242,6 @@ export namespace CopilotHelper {
                     isEmpty: true
                 };
             }
-            
             if (error.message === ErrorMessage.OperationTimedOut) {
                 return {
                     dependencyInfoList: [],
@@ -252,7 +249,6 @@ export namespace CopilotHelper {
                     isEmpty: true
                 };
             }
-            
             const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
             sendError(new GetProjectDependenciesError(errorMessage));
             return {
@@ -274,40 +270,38 @@ export namespace CopilotHelper {
         workspaceFolders: readonly { uri: Uri }[] | undefined,
         copilotCancel: CancellationToken,
         checkCancellation: (token: CancellationToken) => void
-    ): Promise<Array<{ name: string; value: string; importance: number }>> {
+    ): Promise<{ name: string; value: string; importance: number }[]> {
         const items: any[] = [];
-        
         // Check if workspace folders exist
         if (!workspaceFolders || workspaceFolders.length === 0) {
             sendContextOperationTelemetry("resolveProjectDependencies", "ContextEmpty", sendInfo, EmptyReason.NoWorkspace);
             return items;
         }
-        
         const projectUri = workspaceFolders[0];
-        
+
         // Resolve project dependencies
         const projectDependenciesResult = await resolveProjectDependenciesWithReason(projectUri.uri, copilotCancel);
-        
+
         // Check for cancellation after dependency resolution
         checkCancellation(copilotCancel);
-        
+
         // Send telemetry if result is empty
         if (projectDependenciesResult.isEmpty && projectDependenciesResult.emptyReason) {
             sendContextOperationTelemetry("resolveProjectDependencies", "ContextEmpty", sendInfo, projectDependenciesResult.emptyReason);
         }
-        
+
         // Check for cancellation after telemetry
         checkCancellation(copilotCancel);
-        
+
         // Convert project dependencies to context items
         if (projectDependenciesResult.dependencyInfoList && projectDependenciesResult.dependencyInfoList.length > 0) {
             const contextItems = JavaContextProviderUtils.createContextItemsFromProjectDependencies(projectDependenciesResult.dependencyInfoList);
-            
+
             // Check cancellation once after creating all items
             checkCancellation(copilotCancel);
             items.push(...contextItems);
         }
-        
+
         return items;
     }
 
@@ -325,46 +319,40 @@ export namespace CopilotHelper {
         checkCancellation: (token: CancellationToken) => void
     ): Promise<any[]> {
         const items: any[] = [];
-        
         // Check if there's an active editor with a Java document
         if (!activeEditor) {
             sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NoActiveEditor);
             return items;
         }
-        
         if (activeEditor.document.languageId !== 'java') {
             sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NotJavaFile);
             return items;
         }
-        
+
         const documentUri = activeEditor.document.uri;
-        
+
         // Check for cancellation before resolving imports
         checkCancellation(copilotCancel);
-
         // Resolve imports directly without caching
         const importClassResult = await resolveLocalImportsWithReason(documentUri, copilotCancel);
-        
+
         // Check for cancellation after resolution
         checkCancellation(copilotCancel);
-        
+
         // Send telemetry if result is empty
         if (importClassResult.isEmpty && importClassResult.emptyReason) {
             sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, importClassResult.emptyReason);
         }
         // Check for cancellation before processing results
         checkCancellation(copilotCancel);
-
         if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
             // Process imports in batches to reduce cancellation check overhead
             const contextItems = JavaContextProviderUtils.createContextItemsFromImports(importClassResult.classInfoList);
-            
             // Check cancellation once after creating all items
             checkCancellation(copilotCancel);
-            
             items.push(...contextItems);
         }
-        
+
         return items;
     }
 }

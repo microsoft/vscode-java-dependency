@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 import * as vscode from 'vscode';
 import {
     ContextProviderApiV1,
@@ -9,9 +11,9 @@ import {
  * Error classes for Copilot context provider cancellation handling
  */
 export class CancellationError extends Error {
-    static readonly Canceled = "Canceled";
+    static readonly canceled = "Canceled";
     constructor() {
-        super(CancellationError.Canceled);
+        super(CancellationError.canceled);
         this.name = this.message;
     }
 }
@@ -49,7 +51,7 @@ export class JavaContextProviderUtils {
         }
     }
 
-    static createContextItemsFromProjectDependencies(projectDepsResults: Array<{ key: string; value: string }>): SupportedContextItem[] {
+    static createContextItemsFromProjectDependencies(projectDepsResults: { key: string; value: string }[]): SupportedContextItem[] {
         return projectDepsResults.map(dep => ({
             name: dep.key,
             value: dep.value,
@@ -82,13 +84,13 @@ export class JavaContextProviderUtils {
      * Install context provider on available APIs
      */
     static async installContextProviderOnApis(
-        apis: CopilotApiWrapper, 
-        provider: ContextProvider<SupportedContextItem>, 
+        apis: CopilotApiWrapper,
+        provider: ContextProvider<SupportedContextItem>,
         context: vscode.ExtensionContext,
         installFn: (api: CopilotApi, provider: ContextProvider<SupportedContextItem>) => Promise<vscode.Disposable | undefined>
     ): Promise<number> {
         let installCount = 0;
-        
+
         if (apis.clientApi) {
             const disposable = await installFn(apis.clientApi, provider);
             if (disposable) {
@@ -96,7 +98,7 @@ export class JavaContextProviderUtils {
                 installCount++;
             }
         }
-        
+
         if (apis.chatApi) {
             const disposable = await installFn(apis.chatApi, provider);
             if (disposable) {
@@ -104,7 +106,7 @@ export class JavaContextProviderUtils {
                 installCount++;
             }
         }
-        
+
         return installCount;
     }
 
@@ -118,27 +120,27 @@ export class JavaContextProviderUtils {
         if (items.length === 0) {
             return 0;
         }
-        
+
         // Use reduce for better performance
         const totalChars = items.reduce((sum, item) => {
             let itemChars = 0;
             // Direct property access is faster than 'in' operator
             const value = (item as any).value;
             const name = (item as any).name;
-            
+
             if (value && typeof value === 'string') {
                 itemChars += value.length;
             }
             if (name && typeof name === 'string') {
                 itemChars += name.length;
             }
-            
+
             return sum + itemChars;
         }, 0);
-        
+
         // Approximate: 1 token ≈ 4 characters
         // Use bitwise shift for faster division by 4
-        return (totalChars >> 2) + (totalChars & 3 ? 1 : 0);
+        return Math.ceil(totalChars / 4);
     }
 }
 
@@ -215,8 +217,8 @@ export class ContextProviderResolverError extends Error {
  * @param sendInfo The sendInfo function from vscode-extension-telemetry-wrapper
  */
 export function sendContextOperationTelemetry(
-    action: string, 
-    status: string, 
+    action: string,
+    status: string,
     sendInfo: (eventName: string, properties?: any) => void,
     reason?: string
 ): void {

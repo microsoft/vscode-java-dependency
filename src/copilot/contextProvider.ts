@@ -29,30 +29,28 @@ export async function registerCopilotContextProviders(
         if (!apis.clientApi || !apis.chatApi) {
             return;
         }
-
         // Register the Java completion context provider
         const provider: ContextProvider<SupportedContextItem> = {
             id: 'vscjava.vscode-java-dependency', // use extension id as provider id for now
             selector: [{ language: "java" }],
             resolver: { resolve: createJavaContextResolver() }
         };
-
         const installCount = await JavaContextProviderUtils.installContextProviderOnApis(apis, provider, context, installContextProvider);
-
         if (installCount === 0) {
             return;
         }
-        
         sendInfo("", {
             "action": "registerCopilotContextProvider",
             "extension": 'vscjava.vscode-java-dependency',
             "status": "succeeded",
             "installCount": installCount
         });
-        console.log(`Registered Copilot context provider for Java on ${installCount} APIs.`);
     }
     catch (error) {
-        sendError(new ContextProviderRegistrationError('Failed to register Copilot context provider: ' + ((error as Error).message || "unknown_error")));
+        const errorMessage = (error as Error).message || "unknown_error";
+        sendError(new ContextProviderRegistrationError(
+            'Failed to register Copilot context provider: ' + errorMessage
+        ));
     }
 }
 
@@ -64,7 +62,6 @@ function createJavaContextResolver(): ContextResolverFunction {
         try {
             // Check for immediate cancellation
             JavaContextProviderUtils.checkCancellation(copilotCancel);
-            
             return await resolveJavaContext(request, copilotCancel);
         } catch (error: any) {
             sendError(new ContextProviderResolverError('Java Context Resolution Failed: ' + ((error as Error).message || "unknown_error")));
@@ -88,22 +85,18 @@ function sendContextTelemetry(request: ResolveRequest, start: number, items: Sup
         "tokenCount": tokenCount,
         "status": status
     };
-    
     if (error) {
         telemetryData.error = error;
     }
-    
     sendInfo("", telemetryData);
 }
 
 async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode.CancellationToken): Promise<SupportedContextItem[]> {
     const items: SupportedContextItem[] = [];
     const start = performance.now();
-    
     try {
         // Check for cancellation before starting
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-        
         // Resolve project dependencies and convert to context items
         const projectDependencyItems = await CopilotHelper.resolveAndConvertProjectDependencies(
             vscode.workspace.workspaceFolders,
@@ -111,11 +104,10 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             JavaContextProviderUtils.checkCancellation
         );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-        console.dir(projectDependencyItems);
         items.push(...projectDependencyItems);
 
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-        
+
         // Resolve local imports and convert to context items
         const localImportItems = await CopilotHelper.resolveAndConvertLocalImports(
             vscode.window.activeTextEditor,
@@ -123,7 +115,6 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             JavaContextProviderUtils.checkCancellation
         );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-        console.dir(localImportItems);
         items.push(...localImportItems);
     } catch (error: any) {
         if (error instanceof CopilotCancellationError) {
@@ -134,17 +125,17 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             sendContextTelemetry(request, start, items, "cancelled_internally");
             throw new InternalCancellationError();
         }
-        
+
         // Send telemetry for general errors (but continue with partial results)
         sendContextTelemetry(request, start, items, "error_partial_results", error.message || "unknown_error");
-        
+
         // Return partial results and log completion for error case
         return items;
     }
 
     // Send telemetry data once at the end for success case
     sendContextTelemetry(request, start, items, "succeeded");
-    
+
     return items;
 }
 
