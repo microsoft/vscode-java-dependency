@@ -107,17 +107,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         const projectDependencyItems = await CopilotHelper.resolveAndConvertProjectDependencies(
             vscode.workspace.workspaceFolders,
             copilotCancel,
-            JavaContextProviderUtils.checkCancellation,
-            (action: string, status: string, reason?: string) => {
-                const telemetryData: any = {
-                    "action": action,
-                    "status": status
-                };
-                if (reason) {
-                    telemetryData.ContextEmptyReason = reason;
-                }
-                sendInfo("", telemetryData);
-            }
+            JavaContextProviderUtils.checkCancellation
         );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         
@@ -129,18 +119,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         const localImportItems = await CopilotHelper.resolveAndConvertLocalImports(
             vscode.window.activeTextEditor,
             copilotCancel,
-            JavaContextProviderUtils.checkCancellation,
-            (action: string, status: string, reason?: string) => {
-                const telemetryData: any = {
-                    "action": action,
-                    "status": status
-                };
-                if (reason) {
-                    telemetryData.ContextEmptyReason = reason;
-                }
-                sendInfo("", telemetryData);
-            },
-            JavaContextProviderUtils.createContextItemsFromImports
+            JavaContextProviderUtils.checkCancellation
         );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         

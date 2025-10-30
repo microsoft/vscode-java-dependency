@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 import { commands, Uri, CancellationToken } from "vscode";
-import { sendError } from "vscode-extension-telemetry-wrapper";
-import { GetImportClassContentError, GetProjectDependenciesError } from "./utils";
+import { sendError, sendInfo } from "vscode-extension-telemetry-wrapper";
+import { GetImportClassContentError, GetProjectDependenciesError, sendContextOperationTelemetry, JavaContextProviderUtils } from "./utils";
 import { Commands } from '../commands';
 
 /**
@@ -79,8 +79,9 @@ export namespace CopilotHelper {
         }
 
         try {
-            // Use the new command with error reason support
-            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT, fileUri.toString()) as Promise<IImportClassContentResult>;
+            const normalizedUri = decodeURIComponent(Uri.file(fileUri.fsPath).toString());
+            
+            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT, normalizedUri) as Promise<IImportClassContentResult>;
             
             if (cancellationToken) {
                 const result = await Promise.race([
@@ -187,8 +188,9 @@ export namespace CopilotHelper {
         }
 
         try {
-            // Use the new command with error reason support
-            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_DEPENDENCIES, projectUri.toString()) as Promise<IProjectDependenciesResult>;
+            const normalizedUri = decodeURIComponent(Uri.file(projectUri.fsPath).toString());
+
+            const commandPromise = commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_PROJECT_GET_DEPENDENCIES, normalizedUri) as Promise<IProjectDependenciesResult>;
             
             if (cancellationToken) {
                 const result = await Promise.race([
@@ -266,20 +268,18 @@ export namespace CopilotHelper {
      * @param workspaceFolders The workspace folders, or undefined if none
      * @param copilotCancel Cancellation token from Copilot
      * @param checkCancellation Function to check for cancellation
-     * @param sendTelemetry Function to send telemetry data
      * @returns Array of context items for project dependencies, or empty array if no workspace folders
      */
     export async function resolveAndConvertProjectDependencies(
         workspaceFolders: readonly { uri: Uri }[] | undefined,
         copilotCancel: CancellationToken,
-        checkCancellation: (token: CancellationToken) => void,
-        sendTelemetry: (action: string, status: string, reason?: string) => void
+        checkCancellation: (token: CancellationToken) => void
     ): Promise<Array<{ name: string; value: string; importance: number }>> {
-        const items: Array<{ name: string; value: string; importance: number }> = [];
+        const items: any[] = [];
         
         // Check if workspace folders exist
         if (!workspaceFolders || workspaceFolders.length === 0) {
-            sendTelemetry("resolveProjectDependencies", "ContextEmpty", EmptyReason.NoWorkspace);
+            sendContextOperationTelemetry("resolveProjectDependencies", "ContextEmpty", sendInfo, EmptyReason.NoWorkspace);
             return items;
         }
         
@@ -293,10 +293,7 @@ export namespace CopilotHelper {
         
         // Send telemetry if result is empty
         if (projectDependenciesResult.isEmpty && projectDependenciesResult.emptyReason) {
-            sendTelemetry("resolveProjectDependencies", "ContextEmpty", projectDependenciesResult.emptyReason);
-        } else if (projectDependenciesResult.dependencyInfoList.length === 0) {
-            // No error but still empty - likely no dependencies in project
-            sendTelemetry("resolveProjectDependencies", "ContextEmpty", EmptyReason.NoDependenciesResults);
+            sendContextOperationTelemetry("resolveProjectDependencies", "ContextEmpty", sendInfo, projectDependenciesResult.emptyReason);
         }
         
         // Check for cancellation after telemetry
@@ -304,13 +301,11 @@ export namespace CopilotHelper {
         
         // Convert project dependencies to context items
         if (projectDependenciesResult.dependencyInfoList && projectDependenciesResult.dependencyInfoList.length > 0) {
-            for (const dep of projectDependenciesResult.dependencyInfoList) {
-                items.push({
-                    name: dep.key,
-                    value: dep.value,
-                    importance: 70
-                });
-            }
+            const contextItems = JavaContextProviderUtils.createContextItemsFromProjectDependencies(projectDependenciesResult.dependencyInfoList);
+            
+            // Check cancellation once after creating all items
+            checkCancellation(copilotCancel);
+            items.push(...contextItems);
         }
         
         return items;
@@ -321,27 +316,24 @@ export namespace CopilotHelper {
      * @param activeEditor The active text editor, or undefined if none
      * @param copilotCancel Cancellation token from Copilot
      * @param checkCancellation Function to check for cancellation
-     * @param sendTelemetry Function to send telemetry data
      * @param createContextItems Function to create context items from imports
      * @returns Array of context items for local imports, or empty array if no valid editor
      */
     export async function resolveAndConvertLocalImports(
         activeEditor: { document: { uri: Uri; languageId: string } } | undefined,
         copilotCancel: CancellationToken,
-        checkCancellation: (token: CancellationToken) => void,
-        sendTelemetry: (action: string, status: string, reason?: string) => void,
-        createContextItems: (classInfoList: any[]) => any[]
+        checkCancellation: (token: CancellationToken) => void
     ): Promise<any[]> {
         const items: any[] = [];
         
         // Check if there's an active editor with a Java document
         if (!activeEditor) {
-            sendTelemetry("resolveLocalImports", "ContextEmpty", EmptyReason.NoActiveEditor);
+            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NoActiveEditor);
             return items;
         }
         
         if (activeEditor.document.languageId !== 'java') {
-            sendTelemetry("resolveLocalImports", "ContextEmpty", EmptyReason.NotJavaFile);
+            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NotJavaFile);
             return items;
         }
         
@@ -358,18 +350,14 @@ export namespace CopilotHelper {
         
         // Send telemetry if result is empty
         if (importClassResult.isEmpty && importClassResult.emptyReason) {
-            sendTelemetry("resolveLocalImports", "ContextEmpty", importClassResult.emptyReason);
-        } else if (importClassResult.classInfoList.length === 0) {
-            // No error but still empty - likely no imports in file
-            sendTelemetry("resolveLocalImports", "ContextEmpty", EmptyReason.NoImportsResults);
+            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, importClassResult.emptyReason);
         }
-        
         // Check for cancellation before processing results
         checkCancellation(copilotCancel);
 
         if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
             // Process imports in batches to reduce cancellation check overhead
-            const contextItems = createContextItems(importClassResult.classInfoList);
+            const contextItems = JavaContextProviderUtils.createContextItemsFromImports(importClassResult.classInfoList);
             
             // Check cancellation once after creating all items
             checkCancellation(copilotCancel);

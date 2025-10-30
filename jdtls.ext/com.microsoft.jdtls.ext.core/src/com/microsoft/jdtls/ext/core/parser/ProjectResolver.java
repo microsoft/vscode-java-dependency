@@ -229,6 +229,7 @@ public class ProjectResolver {
     /**
      * Resolve project dependencies information including JDK version.
      * Uses cache with automatic invalidation on project changes.
+     * Supports both single projects and multi-module aggregator projects.
      * 
      * @param projectUri The project URI
      * @param monitor Progress monitor for cancellation support
@@ -252,8 +253,14 @@ public class ProjectResolver {
             }
             
             IJavaProject javaProject = JavaCore.create(project);
+            
+            // Check if this is a Java project
             if (javaProject == null || !javaProject.exists()) {
-                return result;
+                // Not a Java project - might be an aggregator/parent project
+                // Try to find Java sub-projects under this path
+                JdtlsExtActivator.logInfo("Not a Java project: " + project.getName() + 
+                    ", checking for sub-projects");
+                return resolveAggregatorProjectDependencies(root, projectPath, monitor);
             }
             
             // Generate cache key based on project location
@@ -289,6 +296,210 @@ public class ProjectResolver {
         }
         
         return result;
+    }
+    
+    /**
+     * Resolve dependencies for an aggregator/parent project by finding and processing all Java sub-projects.
+     * This handles multi-module Maven/Gradle projects where the parent is not a Java project itself.
+     * Returns aggregated information useful for AI context (Java version, common dependencies, build tool).
+     * 
+     * @param root The workspace root
+     * @param parentPath The path of the parent/aggregator project
+     * @param monitor Progress monitor
+     * @return Aggregated dependency information from all sub-projects
+     */
+    private static List<DependencyInfo> resolveAggregatorProjectDependencies(
+            IWorkspaceRoot root, IPath parentPath, IProgressMonitor monitor) {
+        
+        List<DependencyInfo> result = new ArrayList<>();
+        List<IJavaProject> javaProjects = new ArrayList<>();
+        
+        // Find all Java projects under the parent path
+        IProject[] allProjects = root.getProjects();
+        for (IProject p : allProjects) {
+            if (p.getLocation() != null && parentPath.isPrefixOf(p.getLocation())) {
+                try {
+                    if (p.isAccessible() && p.hasNature(JavaCore.NATURE_ID)) {
+                        IJavaProject jp = JavaCore.create(p);
+                        if (jp != null && jp.exists()) {
+                            javaProjects.add(jp);
+                        }
+                    }
+                } catch (CoreException e) {
+                    // Skip this project
+                }
+            }
+        }
+        
+        if (javaProjects.isEmpty()) {
+            JdtlsExtActivator.logInfo("No Java sub-projects found under: " + parentPath.toOSString());
+            return result;
+        }
+        
+        JdtlsExtActivator.logInfo("Found " + javaProjects.size() + 
+            " Java sub-project(s) under: " + parentPath.toOSString());
+        
+        // Mark as aggregator project
+        result.add(new DependencyInfo("aggregatorProject", "true"));
+        result.add(new DependencyInfo("totalSubProjects", String.valueOf(javaProjects.size())));
+        
+        // Collect sub-project names for reference
+        StringBuilder projectNames = new StringBuilder();
+        for (int i = 0; i < javaProjects.size(); i++) {
+            if (i > 0) projectNames.append(", ");
+            projectNames.append(javaProjects.get(i).getProject().getName());
+        }
+        result.add(new DependencyInfo("subProjectNames", projectNames.toString()));
+        
+        // Determine the primary/representative Java version (most common or highest)
+        String primaryJavaVersion = determinePrimaryJavaVersion(javaProjects);
+        if (primaryJavaVersion != null) {
+            result.add(new DependencyInfo(KEY_JAVA_VERSION, primaryJavaVersion));
+        }
+        
+        // Collect all unique libraries across sub-projects (top 10 most common)
+        Map<String, Integer> libraryFrequency = collectLibraryFrequency(javaProjects, monitor);
+        addTopLibraries(result, libraryFrequency, 10);
+        
+        // Detect build tool from parent directory
+        IProject parentProject = findProjectByPath(root, parentPath);
+        if (parentProject != null) {
+            detectBuildTool(result, parentProject);
+        }
+        
+        // Get JRE container info from first sub-project (usually consistent across modules)
+        if (!javaProjects.isEmpty()) {
+            extractJreInfo(result, javaProjects.get(0));
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Determine the primary Java version from all sub-projects.
+     * Returns the most common version, or the highest if there's a tie.
+     */
+    private static String determinePrimaryJavaVersion(List<IJavaProject> javaProjects) {
+        Map<String, Integer> versionCount = new ConcurrentHashMap<>();
+        
+        for (IJavaProject jp : javaProjects) {
+            String version = jp.getOption(JavaCore.COMPILER_COMPLIANCE, true);
+            if (version != null) {
+                versionCount.put(version, versionCount.getOrDefault(version, 0) + 1);
+            }
+        }
+        
+        if (versionCount.isEmpty()) {
+            return null;
+        }
+        
+        // Find most common version (or highest if tie)
+        return versionCount.entrySet().stream()
+            .max((e1, e2) -> {
+                int countCompare = Integer.compare(e1.getValue(), e2.getValue());
+                if (countCompare != 0) return countCompare;
+                // If same count, prefer higher version
+                return e1.getKey().compareTo(e2.getKey());
+            })
+            .map(Map.Entry::getKey)
+            .orElse(null);
+    }
+    
+    /**
+     * Collect frequency of all libraries across sub-projects.
+     * Returns a map of library name to frequency count.
+     */
+    private static Map<String, Integer> collectLibraryFrequency(
+            List<IJavaProject> javaProjects, IProgressMonitor monitor) {
+        
+        Map<String, Integer> libraryFrequency = new ConcurrentHashMap<>();
+        
+        for (IJavaProject jp : javaProjects) {
+            if (monitor.isCanceled()) {
+                break;
+            }
+            
+            try {
+                IClasspathEntry[] entries = jp.getResolvedClasspath(true);
+                for (IClasspathEntry entry : entries) {
+                    if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
+                        IPath libPath = entry.getPath();
+                        if (libPath != null) {
+                            String libName = libPath.lastSegment();
+                            libraryFrequency.put(libName, 
+                                libraryFrequency.getOrDefault(libName, 0) + 1);
+                        }
+                    }
+                }
+            } catch (JavaModelException e) {
+                // Skip this project
+            }
+        }
+        
+        return libraryFrequency;
+    }
+    
+    /**
+     * Add top N most common libraries to result.
+     */
+    private static void addTopLibraries(List<DependencyInfo> result, 
+            Map<String, Integer> libraryFrequency, int topN) {
+        
+        if (libraryFrequency.isEmpty()) {
+            result.add(new DependencyInfo(KEY_TOTAL_LIBRARIES, "0"));
+            return;
+        }
+        
+        // Sort by frequency (descending) and take top N
+        List<Map.Entry<String, Integer>> topLibs = libraryFrequency.entrySet().stream()
+            .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
+            .limit(topN)
+            .collect(java.util.stream.Collectors.toList());
+        
+        result.add(new DependencyInfo(KEY_TOTAL_LIBRARIES, 
+            String.valueOf(libraryFrequency.size())));
+        
+        // Add top common libraries
+        int index = 1;
+        for (Map.Entry<String, Integer> entry : topLibs) {
+            result.add(new DependencyInfo("commonLibrary_" + index, 
+                entry.getKey() + " (used in " + entry.getValue() + " modules)"));
+            index++;
+        }
+    }
+    
+    /**
+     * Extract JRE container information from a Java project.
+     */
+    private static void extractJreInfo(List<DependencyInfo> result, IJavaProject javaProject) {
+        try {
+            IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
+            for (IClasspathEntry entry : entries) {
+                if (entry.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
+                    String containerPath = entry.getPath().toString();
+                    if (containerPath.contains("JRE_CONTAINER")) {
+                        try {
+                            String vmInstallName = JavaRuntime.getVMInstallName(entry.getPath());
+                            addIfNotNull(result, KEY_JRE_CONTAINER, vmInstallName);
+                            return;
+                        } catch (Exception e) {
+                            // Fallback: extract from path
+                            if (containerPath.contains("JavaSE-")) {
+                                int startIdx = containerPath.lastIndexOf("JavaSE-");
+                                String version = containerPath.substring(startIdx);
+                                if (version.contains("/")) {
+                                    version = version.substring(0, version.indexOf("/"));
+                                }
+                                result.add(new DependencyInfo(KEY_JRE_CONTAINER, version));
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            // Ignore
+        }
     }
     
     /**

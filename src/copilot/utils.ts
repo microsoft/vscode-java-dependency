@@ -49,6 +49,14 @@ export class JavaContextProviderUtils {
         }
     }
 
+    static createContextItemsFromProjectDependencies(projectDepsResults: Array<{ key: string; value: string }>): SupportedContextItem[] {
+        return projectDepsResults.map(dep => ({
+            name: dep.key,
+            value: dep.value,
+            importance: 70
+        }));
+    }
+
     /**
      * Create context items from import classes
      */
@@ -56,22 +64,9 @@ export class JavaContextProviderUtils {
         return importClasses.map((cls: any) => ({
             uri: cls.uri,
             value: cls.value,
-            importance: 70,
+            importance: 80,
             origin: 'request' as const
         }));
-    }
-
-    /**
-     * Create a basic Java version context item
-     */
-    static createJavaVersionItem(javaVersion: string): SupportedContextItem {
-        return {
-            name: 'java.version',
-            value: javaVersion,
-            importance: 90,
-            id: 'java-version',
-            origin: 'request'
-        };
     }
 
     /**
@@ -210,4 +205,27 @@ export class ContextProviderResolverError extends Error {
         super(message);
         this.name = 'ContextProviderResolverError';
     }
+}
+
+/**
+ * Send telemetry data for context operations (like resolveProjectDependencies, resolveLocalImports)
+ * @param action The action being performed
+ * @param status The status of the action (e.g., "ContextEmpty", "succeeded")
+ * @param reason Optional reason for empty context
+ * @param sendInfo The sendInfo function from vscode-extension-telemetry-wrapper
+ */
+export function sendContextOperationTelemetry(
+    action: string, 
+    status: string, 
+    sendInfo: (eventName: string, properties?: any) => void,
+    reason?: string
+): void {
+    const telemetryData: any = {
+        "action": action,
+        "status": status
+    };
+    if (reason) {
+        telemetryData.ContextEmptyReason = reason;
+    }
+    sendInfo("", telemetryData);
 }
