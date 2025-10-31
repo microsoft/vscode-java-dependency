@@ -30,7 +30,7 @@ export enum EmptyReason {
 
 export interface INodeImportClass {
     uri: string;
-    value: string;  // Changed from 'class' to 'className' to match Java code
+    value: string;
 }
 
 export interface IImportClassContentResult {
@@ -175,7 +175,7 @@ export namespace CopilotHelper {
      * @returns Result object containing project dependencies and error information
      */
     export async function resolveProjectDependenciesWithReason(
-        projectUri: Uri,
+        fileUri: Uri,
         cancellationToken?: CancellationToken
     ): Promise<IProjectDependenciesResult> {
         if (cancellationToken?.isCancellationRequested) {
@@ -187,7 +187,7 @@ export namespace CopilotHelper {
         }
 
         try {
-            const normalizedUri = decodeURIComponent(Uri.file(projectUri.fsPath).toString());
+            const normalizedUri = decodeURIComponent(Uri.file(fileUri.fsPath).toString());
             const commandPromise = commands.executeCommand(
                 Commands.EXECUTE_WORKSPACE_COMMAND,
                 Commands.JAVA_PROJECT_GET_DEPENDENCIES,
@@ -267,20 +267,24 @@ export namespace CopilotHelper {
      * @returns Array of context items for project dependencies, or empty array if no workspace folders
      */
     export async function resolveAndConvertProjectDependencies(
-        workspaceFolders: readonly { uri: Uri }[] | undefined,
+        activeEditor: { document: { uri: Uri; languageId: string } } | undefined,
         copilotCancel: CancellationToken,
         checkCancellation: (token: CancellationToken) => void
     ): Promise<{ name: string; value: string; importance: number }[]> {
         const items: any[] = [];
         // Check if workspace folders exist
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            sendContextOperationTelemetry("resolveProjectDependencies", "ContextEmpty", sendInfo, EmptyReason.NoWorkspace);
+        if (!activeEditor) {
+            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NoActiveEditor);
             return items;
         }
-        const projectUri = workspaceFolders[0];
+        if (activeEditor.document.languageId !== 'java') {
+            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NotJavaFile);
+            return items;
+        }
+        const documentUri = activeEditor.document.uri;
 
         // Resolve project dependencies
-        const projectDependenciesResult = await resolveProjectDependenciesWithReason(projectUri.uri, copilotCancel);
+        const projectDependenciesResult = await resolveProjectDependenciesWithReason(documentUri, copilotCancel);
 
         // Check for cancellation after dependency resolution
         checkCancellation(copilotCancel);

@@ -41,7 +41,6 @@ export async function registerCopilotContextProviders(
         }
         sendInfo("", {
             "action": "registerCopilotContextProvider",
-            "extension": 'vscjava.vscode-java-dependency',
             "status": "succeeded",
             "installCount": installCount
         });
@@ -99,7 +98,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         // Resolve project dependencies and convert to context items
         const projectDependencyItems = await CopilotHelper.resolveAndConvertProjectDependencies(
-            vscode.workspace.workspaceFolders,
+            vscode.window.activeTextEditor,
             copilotCancel,
             JavaContextProviderUtils.checkCancellation
         );
