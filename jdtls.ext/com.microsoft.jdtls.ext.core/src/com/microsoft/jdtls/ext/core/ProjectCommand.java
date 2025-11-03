@@ -506,7 +506,7 @@ public final class ProjectCommand {
     /**
      * Get project dependencies information including JDK version.
      * 
-     * @param arguments List containing the project URI as the first element
+     * @param arguments List containing the file URI as the first element
      * @param monitor Progress monitor for cancellation support
      * @return List of DependencyInfo containing key-value pairs of project information
      */
@@ -515,8 +515,8 @@ public final class ProjectCommand {
             return new ArrayList<>();
         }
 
-        String projectUri = (String) arguments.get(0);
-        List<ProjectResolver.DependencyInfo> resolverResult = ProjectResolver.resolveProjectDependencies(projectUri, monitor);
+        String fileUri = (String) arguments.get(0);
+        List<ProjectResolver.DependencyInfo> resolverResult = ProjectResolver.resolveProjectDependencies(fileUri, monitor);
         
         // Convert ProjectResolver.DependencyInfo to ProjectCommand.DependencyInfo
         List<DependencyInfo> result = new ArrayList<>();
