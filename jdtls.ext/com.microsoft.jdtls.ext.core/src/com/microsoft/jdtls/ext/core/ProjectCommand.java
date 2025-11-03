@@ -647,10 +647,9 @@ public final class ProjectCommand {
     /**
      * Get project dependencies information including JDK version.
      * 
-     * @param arguments List containing the project URI as the first element
-     * @param monitor   Progress monitor for cancellation support
-     * @return List of DependencyInfo containing key-value pairs of project
-     *         information
+     * @param arguments List containing the file URI as the first element
+     * @param monitor Progress monitor for cancellation support
+     * @return List of DependencyInfo containing key-value pairs of project information
      */
     public static ProjectDependenciesResult getProjectDependenciesWithResult(List<Object> arguments,
             IProgressMonitor monitor) {
