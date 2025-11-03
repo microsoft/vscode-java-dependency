@@ -258,7 +258,7 @@ public class ProjectResolver {
             }
             
             // Generate cache key based on project location
-            String cacheKey = projectPath.toOSString();
+            String cacheKey = project.getLocation().toOSString();
             
             // Calculate current classpath hash for validation
             long currentClasspathHash = calculateClasspathHash(javaProject);
