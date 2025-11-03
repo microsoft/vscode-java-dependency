@@ -103,18 +103,18 @@ public final class ProjectCommand {
      */
     public enum ImportClassContentErrorReason {
         NULL_ARGUMENTS("NullArgs"),
-        INVALID_URI("InvalidUri"),
-        URI_PARSE_FAILED("UriParseFail"),
-        FILE_NOT_FOUND("FileNotFound"),
-        FILE_NOT_EXISTS("FileNotExists"),
-        NOT_JAVA_PROJECT("NotJavaProject"),
-        PROJECT_NOT_EXISTS("ProjectNotExists"),
-        NOT_COMPILATION_UNIT("NotCompilationUnit"),
+        INVALID_URI("InvalidURI"),
+        URI_PARSE_FAILED("ParseFail"),
+        FILE_NOT_FOUND("NotFound"),
+        FILE_NOT_EXISTS("NotExists"),
+        NOT_JAVA_PROJECT("NotJava"),
+        PROJECT_NOT_EXISTS("ProjNotExists"),
+        NOT_COMPILATION_UNIT("NotCU"),
         NO_IMPORTS("NoImports"),
         OPERATION_CANCELLED("Cancelled"),
         TIME_LIMIT_EXCEEDED("Timeout"),
         NO_RESULTS("NoResults"),
-        PROCESSING_EXCEPTION("ProcessingError");
+        PROCESSING_EXCEPTION("Error");
 
         private final String message;
 
@@ -132,13 +132,13 @@ public final class ProjectCommand {
      */
     public enum ProjectDependenciesErrorReason {
         NULL_ARGUMENTS("NullArgs"),
-        INVALID_URI("InvalidUri"),
-        URI_PARSE_FAILED("UriParseFail"),
-        MALFORMED_URI("MalformedUri"),
+        INVALID_URI("InvalidURI"),
+        URI_PARSE_FAILED("ParseFail"),
+        MALFORMED_URI("MalformedURI"),
         OPERATION_CANCELLED("Cancelled"),
         RESOLVER_NULL_RESULT("ResolverNull"),
-        NO_DEPENDENCIES("NoDependencies"),
-        PROCESSING_EXCEPTION("ProcessingError");
+        NO_DEPENDENCIES("NoDeps"),
+        PROCESSING_EXCEPTION("Error");
 
         private final String message;
 
@@ -152,23 +152,48 @@ public final class ProjectCommand {
     }
 
     /**
+     * Error context information for ImportClassContent operations
+     */
+    public static class ErrorContext {
+        public final String uri;           // Original URI from arguments
+        public final String parsedPath;    // Parsed file path (if successful)
+        public final String projectName;   // Project name (if found)
+
+        public ErrorContext(String uri, String parsedPath, String projectName) {
+            this.uri = uri;
+            this.parsedPath = parsedPath;
+            this.projectName = projectName;
+        }
+    }
+
+    /**
      * Result wrapper for getImportClassContent method
      */
     public static class ImportClassContentResult {
         public List<ImportClassInfo> classInfoList;
         public String emptyReason; // Reason why the result is empty
         public boolean isEmpty;
+        public ErrorContext errorContext; // Error context (only set when isEmpty = true)
 
         public ImportClassContentResult(List<ImportClassInfo> classInfoList) {
             this.classInfoList = classInfoList;
             this.emptyReason = null;
             this.isEmpty = false;
+            this.errorContext = null;
         }
 
         public ImportClassContentResult(ImportClassContentErrorReason errorReason) {
             this.classInfoList = Collections.emptyList();
             this.emptyReason = errorReason.getMessage(); // Use enum message
             this.isEmpty = true;
+            this.errorContext = null;
+        }
+
+        public ImportClassContentResult(ImportClassContentErrorReason errorReason, String uri, String parsedPath, String projectName) {
+            this.classInfoList = Collections.emptyList();
+            this.emptyReason = errorReason.getMessage();
+            this.isEmpty = true;
+            this.errorContext = new ErrorContext(uri, parsedPath, projectName);
         }
     }
 
@@ -179,17 +204,27 @@ public final class ProjectCommand {
         public List<DependencyInfo> dependencyInfoList;
         public String emptyReason; // Reason why the result is empty
         public boolean isEmpty;
+        public ErrorContext errorContext; // Error context (only set when isEmpty = true)
 
         public ProjectDependenciesResult(List<DependencyInfo> dependencyInfoList) {
             this.dependencyInfoList = dependencyInfoList;
             this.emptyReason = null;
             this.isEmpty = false;
+            this.errorContext = null;
         }
 
         public ProjectDependenciesResult(ProjectDependenciesErrorReason errorReason) {
             this.dependencyInfoList = new ArrayList<>();
             this.emptyReason = errorReason.getMessage(); // Use enum message
             this.isEmpty = true;
+            this.errorContext = null;
+        }
+
+        public ProjectDependenciesResult(ProjectDependenciesErrorReason errorReason, String uri, String parsedPath, String projectName) {
+            this.dependencyInfoList = new ArrayList<>();
+            this.emptyReason = errorReason.getMessage();
+            this.isEmpty = true;
+            this.errorContext = new ErrorContext(uri, parsedPath, projectName);
         }
     }
 
@@ -476,24 +511,19 @@ public final class ProjectCommand {
     public static ImportClassContentResult getImportClassContentWithResult(List<Object> arguments,
             IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
-            return new ImportClassContentResult(ImportClassContentErrorReason.NULL_ARGUMENTS);
+            return new ImportClassContentResult(ImportClassContentErrorReason.NULL_ARGUMENTS, null, null, null);
         }
-
-        // Time control: total budget 80ms, early return at 75ms
-        long startTime = System.currentTimeMillis();
-        final long TIME_BUDGET_MS = 80;
-        final long EARLY_RETURN_MS = 75;
 
         try {
             String fileUri = (String) arguments.get(0);
             if (fileUri == null || fileUri.trim().isEmpty()) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.INVALID_URI);
+                return new ImportClassContentResult(ImportClassContentErrorReason.INVALID_URI, fileUri, null, null);
             }
             // Parse URI manually to avoid restricted API
             java.net.URI uri = new java.net.URI(fileUri);
             String filePath = uri.getPath();
             if (filePath == null) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.URI_PARSE_FAILED);
+                return new ImportClassContentResult(ImportClassContentErrorReason.URI_PARSE_FAILED, fileUri, null, null);
             }
 
             IPath path = new Path(filePath);
@@ -502,25 +532,27 @@ public final class ProjectCommand {
             IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
             IFile file = root.getFileForLocation(path);
             if (file == null || !file.exists()) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_FOUND);
+                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_FOUND, fileUri, filePath, null);
             }
             if (!file.exists()) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_EXISTS);
+                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_EXISTS, fileUri, filePath, null);
             }
 
             // Get the Java project
             IJavaProject javaProject = JavaCore.create(file.getProject());
             if (javaProject == null) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_JAVA_PROJECT);
+                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_JAVA_PROJECT, fileUri, filePath, null);
             }
             if (!javaProject.exists()) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.PROJECT_NOT_EXISTS);
+                String projectName = javaProject.getProject().getName();
+                return new ImportClassContentResult(ImportClassContentErrorReason.PROJECT_NOT_EXISTS, fileUri, filePath, projectName);
             }
 
             // Find the compilation unit
             IJavaElement javaElement = JavaCore.create(file);
             if (!(javaElement instanceof org.eclipse.jdt.core.ICompilationUnit)) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_COMPILATION_UNIT);
+                String projectName = javaProject.getProject().getName();
+                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_COMPILATION_UNIT, fileUri, filePath, projectName);
             }
 
             org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
@@ -534,18 +566,16 @@ public final class ProjectCommand {
 
             // Check if file has no imports
             if (imports == null || imports.length == 0) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.NO_IMPORTS);
+                String projectName = javaProject.getProject().getName();
+                return new ImportClassContentResult(ImportClassContentErrorReason.NO_IMPORTS, fileUri, filePath, projectName);
             }
 
             // Phase 1: Priority - Resolve project source classes (internal)
+            String projectName = javaProject.getProject().getName();
             for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
-                // Check time budget before each operation
-                long elapsed = System.currentTimeMillis() - startTime;
+                // Check cancellation before each operation
                 if (monitor.isCanceled()) {
-                    return new ImportClassContentResult(ImportClassContentErrorReason.OPERATION_CANCELLED);
-                }
-                if (elapsed >= EARLY_RETURN_MS) {
-                    return new ImportClassContentResult(ImportClassContentErrorReason.TIME_LIMIT_EXCEEDED);
+                    return new ImportClassContentResult(ImportClassContentErrorReason.OPERATION_CANCELLED, fileUri, filePath, projectName);
                 }
 
                 String importName = importDecl.getElementName();
@@ -566,51 +596,52 @@ public final class ProjectCommand {
                 }
             }
 
-            // Phase 2: If time permits, resolve external dependencies
-            long elapsedAfterInternal = System.currentTimeMillis() - startTime;
-            if (elapsedAfterInternal < EARLY_RETURN_MS && !monitor.isCanceled()) {
-                // Calculate remaining time budget for external classes
-                long remainingTime = TIME_BUDGET_MS - elapsedAfterInternal;
+            // Phase 2: Resolve external dependencies if not cancelled
+            if (!monitor.isCanceled()) {
+                List<ImportClassInfo> externalClasses = new ArrayList<>();
 
-                // Only proceed with external if we have reasonable time left (at least 15ms)
-                if (remainingTime >= 15) {
-                    List<ImportClassInfo> externalClasses = new ArrayList<>();
-
-                    for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
-                        // Check time before each external resolution
-                        long currentElapsed = System.currentTimeMillis() - startTime;
-                        if (monitor.isCanceled() || currentElapsed >= EARLY_RETURN_MS) {
-                            break;
-                        }
-
-                        String importName = importDecl.getElementName();
-                        boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
-
-                        // Skip package imports (*.* ) - too broad for external dependencies
-                        if (importName.endsWith(".*")) {
-                            continue;
-                        }
-
-                        // Resolve external (binary) types with simplified content
-                        if (!isStatic) {
-                            ContextResolver.resolveBinaryType(javaProject, importName, externalClasses,
-                                    processedTypes, Integer.MAX_VALUE, monitor);
-                        }
+                for (org.eclipse.jdt.core.IImportDeclaration importDecl : imports) {
+                    // Check cancellation before each external resolution
+                    if (monitor.isCanceled()) {
+                        break;
                     }
 
-                    // Append external classes after project sources
-                    classInfoList.addAll(externalClasses);
+                    String importName = importDecl.getElementName();
+                    boolean isStatic = (importDecl.getFlags() & org.eclipse.jdt.core.Flags.AccStatic) != 0;
+
+                    // Skip package imports (*.* ) - too broad for external dependencies
+                    if (importName.endsWith(".*")) {
+                        continue;
+                    }
+
+                    // Resolve external (binary) types with simplified content
+                    if (!isStatic) {
+                        ContextResolver.resolveBinaryType(javaProject, importName, externalClasses,
+                                processedTypes, Integer.MAX_VALUE, monitor);
+                    }
                 }
+
+                // Append external classes after project sources
+                classInfoList.addAll(externalClasses);
             }
             // Success case - return the resolved class information
             if (classInfoList.isEmpty()) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.NO_RESULTS);
+                return new ImportClassContentResult(ImportClassContentErrorReason.NO_RESULTS, fileUri, filePath, projectName);
             }
             return new ImportClassContentResult(classInfoList);
 
         } catch (Exception e) {
             JdtlsExtActivator.logException("Error in getImportClassContent", e);
-            return new ImportClassContentResult(ImportClassContentErrorReason.PROCESSING_EXCEPTION);
+            // Try to get context from arguments if available
+            String errorUri = null;
+            try {
+                if (arguments != null && !arguments.isEmpty()) {
+                    errorUri = (String) arguments.get(0);
+                }
+            } catch (Exception ignored) {
+                // Ignore any further exceptions when trying to get context
+            }
+            return new ImportClassContentResult(ImportClassContentErrorReason.PROCESSING_EXCEPTION, errorUri, null, null);
         }
     }
 
@@ -654,35 +685,37 @@ public final class ProjectCommand {
     public static ProjectDependenciesResult getProjectDependenciesWithResult(List<Object> arguments,
             IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
-            return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NULL_ARGUMENTS);
+            return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NULL_ARGUMENTS, null, null, null);
         }
 
         try {
             String projectUri = (String) arguments.get(0);
             if (projectUri == null || projectUri.trim().isEmpty()) {
-                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.INVALID_URI);
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.INVALID_URI, projectUri, null, null);
             }
 
             // Validate URI format
+            String parsedPath = null;
             try {
                 java.net.URI uri = new java.net.URI(projectUri);
-                if (uri.getPath() == null) {
-                    return new ProjectDependenciesResult(ProjectDependenciesErrorReason.URI_PARSE_FAILED);
+                parsedPath = uri.getPath();
+                if (parsedPath == null) {
+                    return new ProjectDependenciesResult(ProjectDependenciesErrorReason.URI_PARSE_FAILED, projectUri, null, null);
                 }
             } catch (java.net.URISyntaxException e) {
-                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.MALFORMED_URI);
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.MALFORMED_URI, projectUri, null, null);
             }
 
             // Check if monitor is cancelled before processing
             if (monitor.isCanceled()) {
-                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.OPERATION_CANCELLED);
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.OPERATION_CANCELLED, projectUri, parsedPath, null);
             }
             List<ProjectResolver.DependencyInfo> resolverResult = ProjectResolver.resolveProjectDependencies(projectUri,
                     monitor);
             // Check if resolver returned null (should not happen, but defensive
             // programming)
             if (resolverResult == null) {
-                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.RESOLVER_NULL_RESULT);
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.RESOLVER_NULL_RESULT, projectUri, parsedPath, null);
             }
             // Convert ProjectResolver.DependencyInfo to ProjectCommand.DependencyInfo
             List<DependencyInfo> result = new ArrayList<>();
@@ -694,13 +727,22 @@ public final class ProjectCommand {
 
             // Check if no dependencies were resolved
             if (result.isEmpty()) {
-                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NO_DEPENDENCIES);
+                return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NO_DEPENDENCIES, projectUri, parsedPath, null);
             }
 
             return new ProjectDependenciesResult(result);
         } catch (Exception e) {
             JdtlsExtActivator.logException("Error in getProjectDependenciesWithReason", e);
-            return new ProjectDependenciesResult(ProjectDependenciesErrorReason.PROCESSING_EXCEPTION);
+            // Try to get context from arguments if available
+            String errorUri = null;
+            try {
+                if (arguments != null && !arguments.isEmpty()) {
+                    errorUri = (String) arguments.get(0);
+                }
+            } catch (Exception ignored) {
+                // Ignore any further exceptions when trying to get context
+            }
+            return new ProjectDependenciesResult(ProjectDependenciesErrorReason.PROCESSING_EXCEPTION, errorUri, null, null);
         }
     }
 
