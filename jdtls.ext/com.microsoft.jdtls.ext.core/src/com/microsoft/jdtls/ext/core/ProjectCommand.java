@@ -481,24 +481,6 @@ public final class ProjectCommand {
     }
 
     /**
-     * Get import class content for Copilot integration (backward compatibility
-     * wrapper).
-     * This method maintains compatibility with the original return type.
-     * 
-     * @param arguments List containing the file URI as the first element
-     * @param monitor   Progress monitor for cancellation support
-     * @return List of ImportClassInfo containing class information and JavaDoc
-     */
-    public static List<ImportClassInfo> getImportClassContent(List<Object> arguments, IProgressMonitor monitor) {
-        ImportClassContentResult result = getImportClassContentWithResult(arguments, monitor);
-        if (result.isEmpty) {
-            // Log the error reason for debugging
-            JdtlsExtActivator.logError("getImportClassContent failed: " + result.emptyReason);
-        }
-        return result.classInfoList;
-    }
-
-    /**
      * Get import class content for Copilot integration.
      * This method extracts information about imported classes from a Java file.
      * Uses a time-controlled strategy: prioritizes internal classes, adds external
@@ -508,7 +490,7 @@ public final class ProjectCommand {
      * @param monitor   Progress monitor for cancellation support
      * @return List of ImportClassInfo containing class information and JavaDoc
      */
-    public static ImportClassContentResult getImportClassContentWithResult(List<Object> arguments,
+    public static ImportClassContentResult getImportClassContent(List<Object> arguments,
             IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
             return new ImportClassContentResult(ImportClassContentErrorReason.NULL_ARGUMENTS, null, null, null);
@@ -670,11 +652,6 @@ public final class ProjectCommand {
         }
     }
 
-    public static List<DependencyInfo> getProjectDependencies(List<Object> arguments, IProgressMonitor monitor) {
-        ProjectDependenciesResult result = getProjectDependenciesWithResult(arguments, monitor);
-        return result == null ? Collections.emptyList() : result.dependencyInfoList;
-    }
-
     /**
      * Get project dependencies information including JDK version.
      * 
@@ -682,7 +659,7 @@ public final class ProjectCommand {
      * @param monitor Progress monitor for cancellation support
      * @return List of DependencyInfo containing key-value pairs of project information
      */
-    public static ProjectDependenciesResult getProjectDependenciesWithResult(List<Object> arguments,
+    public static ProjectDependenciesResult getProjectDependencies(List<Object> arguments,
             IProgressMonitor monitor) {
         if (arguments == null || arguments.isEmpty()) {
             return new ProjectDependenciesResult(ProjectDependenciesErrorReason.NULL_ARGUMENTS, null, null, null);
