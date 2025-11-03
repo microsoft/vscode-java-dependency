@@ -235,7 +235,7 @@ public class ProjectResolver {
      * @param monitor Progress monitor for cancellation support
      * @return List of DependencyInfo containing key-value pairs of project information
      */
-    public static List<DependencyInfo> resolveProjectDependencies(String projectUri, IProgressMonitor monitor) {
+    public static List<DependencyInfo> resolveProjectDependencies(String fileUri, IProgressMonitor monitor) {
         // Ensure listeners are registered for cache invalidation
         ensureListenersRegistered();
 
