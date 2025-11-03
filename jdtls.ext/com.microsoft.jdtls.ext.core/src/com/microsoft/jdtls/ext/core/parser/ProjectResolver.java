@@ -2,10 +2,13 @@ package com.microsoft.jdtls.ext.core.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -44,26 +47,28 @@ public class ProjectResolver {
     
     /**
      * Resolve project dependencies information including JDK version.
+     * Supports both single projects and multi-module aggregator projects.
      * 
-     * @param projectUri The project URI
+     * @param fileUri The file URI
      * @param monitor Progress monitor for cancellation support
      * @return List of DependencyInfo containing key-value pairs of project information
      */
-    public static List<DependencyInfo> resolveProjectDependencies(String projectUri, IProgressMonitor monitor) {
+    public static List<DependencyInfo> resolveProjectDependencies(String fileUri, IProgressMonitor monitor) {
         List<DependencyInfo> result = new ArrayList<>();
         
         try {
-            IPath projectPath = ResourceUtils.canonicalFilePathFromURI(projectUri);
+            IPath fileIPath = ResourceUtils.canonicalFilePathFromURI(fileUri);
             
             // Find the project
             IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-            IProject project = findProjectByPath(root, projectPath);
+            IProject project = findProjectByPath(root, fileIPath);
             
             if (project == null || !project.isAccessible()) {
                 return result;
             }
             
             IJavaProject javaProject = JavaCore.create(project);
+            // Check if this is a Java project
             if (javaProject == null || !javaProject.exists()) {
                 return result;
             }
@@ -86,14 +91,31 @@ public class ProjectResolver {
     
     /**
      * Find project by path from all projects in workspace.
+     * The path can be either a project root path or a file/folder path within a project.
+     * This method will find the project that contains the given path.
+     * 
+     * @param root The workspace root
+     * @param filePath The path to search for (can be project root or file within project)
+     * @return The project that contains the path, or null if not found
      */
-    private static IProject findProjectByPath(IWorkspaceRoot root, IPath projectPath) {
+    private static IProject findProjectByPath(IWorkspaceRoot root, IPath filePath) {
         IProject[] allProjects = root.getProjects();
+        
+        // First pass: check for exact project location match (most efficient)
         for (IProject p : allProjects) {
-            if (p.getLocation() != null && p.getLocation().equals(projectPath)) {
+            if (p.getLocation() != null && p.getLocation().equals(filePath)) {
                 return p;
             }
         }
+        
+        // Second pass: check if the file path is within any project directory
+        // This handles cases where filePath points to a file or folder inside a project
+        for (IProject p : allProjects) {
+            if (p.getLocation() != null && p.getLocation().isPrefixOf(filePath)) {
+                return p;
+            }
+        }
+        
         return null;
     }
     
@@ -158,17 +180,19 @@ public class ProjectResolver {
     
     /**
      * Process a library classpath entry.
+     * Only returns the library file name without full path to reduce data size.
      */
     private static void processLibraryEntry(List<DependencyInfo> result, IClasspathEntry entry, int libCount) {
         IPath libPath = entry.getPath();
         if (libPath != null) {
-            result.add(new DependencyInfo("library_" + libCount, 
-                libPath.lastSegment() + " (" + libPath.toOSString() + ")"));
+            // Only keep the file name, remove the full path
+            result.add(new DependencyInfo("library_" + libCount, libPath.lastSegment()));
         }
     }
     
     /**
      * Process a project reference classpath entry.
+     * Simplified to only extract essential information.
      */
     private static void processProjectEntry(List<DependencyInfo> result, IClasspathEntry entry, int projectRefCount) {
         IPath projectRefPath = entry.getPath();
@@ -185,12 +209,21 @@ public class ProjectResolver {
         String containerPath = entry.getPath().toString();
         
         if (containerPath.contains("JRE_CONTAINER")) {
-            result.add(new DependencyInfo(KEY_JRE_CONTAINER_PATH, containerPath));
+            // Only extract the JRE version, not the full container path
             try {
                 String vmInstallName = JavaRuntime.getVMInstallName(entry.getPath());
                 addIfNotNull(result, KEY_JRE_CONTAINER, vmInstallName);
             } catch (Exception e) {
-                // Ignore if unable to get VM install name
+                // Fallback: try to extract version from path
+                if (containerPath.contains("JavaSE-")) {
+                    int startIdx = containerPath.lastIndexOf("JavaSE-");
+                    String version = containerPath.substring(startIdx);
+                    // Clean up any trailing characters
+                    if (version.contains("/")) {
+                        version = version.substring(0, version.indexOf("/"));
+                    }
+                    result.add(new DependencyInfo(KEY_JRE_CONTAINER, version));
+                }
             }
         } else if (containerPath.contains("MAVEN")) {
             result.add(new DependencyInfo(KEY_BUILD_TOOL, "Maven"));
