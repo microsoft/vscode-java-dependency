@@ -4,6 +4,12 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.26.3
+
+- Enhancement - Register Context Provider to Copilot in https://github.com/microsoft/vscode-java-dependency/pull/924
+- Enhancement - Adjust format to getProjectInfo method in https://github.com/microsoft/vscode-java-dependency/pull/927
+- Enhancement - Add cache to getProjectInfo in https://github.com/microsoft/vscode-java-dependency/pull/925 
+
 ## 0.26.2
 
 - Enhancement - Add getProjectInfo method to collect project info in https://github.com/microsoft/vscode-java-dependency/pull/919
