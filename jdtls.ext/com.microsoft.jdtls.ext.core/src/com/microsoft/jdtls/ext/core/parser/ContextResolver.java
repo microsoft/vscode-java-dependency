@@ -71,11 +71,11 @@ public class ContextResolver {
      */
     public static class ImportClassInfo {
         public String uri;           // File URI (required)
-        public String className;     // Human-readable class description with JavaDoc appended (required)
+        public String value;     // Human-readable class description with JavaDoc appended (required)
 
         public ImportClassInfo(String uri, String value) {
             this.uri = uri;
-            this.className = value;
+            this.value = value;
         }
     }
 
