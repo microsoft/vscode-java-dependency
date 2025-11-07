@@ -33,7 +33,7 @@ export function buildNotificationMessage(issue: UpgradeIssue, hasExtension: bool
     const upgradeWord = hasExtension ? "upgrade" : `install ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and upgrade`;
 
     if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
-        return `This project is using an older Java runtime (${currentVersion}). Would you like to ${upgradeWord} it to ${suggestedVersionName} (latest LTS)?`;
+        return `This project is using an older Java runtime (${currentVersion}). Would you like to ${upgradeWord} it to ${suggestedVersionName} (LTS)?`;
     }
 
     switch (reason) {
@@ -57,7 +57,7 @@ export function buildFixPrompt(issue: UpgradeIssue): string {
     switch (reason) {
         case UpgradeReason.JRE_TOO_OLD: {
             const { suggestedVersion: { name: suggestedVersionName } } = issue;
-            return `upgrade java runtime to the latest LTS version ${suggestedVersionName} using java upgrade tools`;
+            return `upgrade java runtime to the LTS version ${suggestedVersionName} using java upgrade tools`;
         }
         case UpgradeReason.END_OF_LIFE:
         case UpgradeReason.DEPRECATED: {
