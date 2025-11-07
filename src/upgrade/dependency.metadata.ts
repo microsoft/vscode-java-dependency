@@ -4,14 +4,14 @@
 import { Upgrade } from "../constants";
 import { UpgradeReason, type DependencyCheckMetadata } from "./type";
 
-const MATURE_JAVA_LTS_VESRION = 21;
+const MATURE_JAVA_LTS_VERSION = 21;
 
 export const DEPENDENCY_JAVA_RUNTIME = {
     "name": "Java Runtime",
     "reason": UpgradeReason.JRE_TOO_OLD,
-    "supportedVersion": `>=${MATURE_JAVA_LTS_VESRION}`,
+    "supportedVersion": `>=${MATURE_JAVA_LTS_VERSION}`,
     "suggestedVersion": {
-        "name": `Java ${MATURE_JAVA_LTS_VESRION}`,
+        "name": `Java ${MATURE_JAVA_LTS_VERSION}`,
         "description": "LTS version",
     },
 } as const;
