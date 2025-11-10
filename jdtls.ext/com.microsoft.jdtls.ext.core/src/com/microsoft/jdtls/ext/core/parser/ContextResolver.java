@@ -231,16 +231,14 @@ public class ContextResolver {
             return false;
         }
         
-        // Extract package name from fully qualified type name
         int lastDotIndex = typeName.lastIndexOf('.');
         if (lastDotIndex == -1) {
-            return false; // No package (default package)
+            return false;
         }
         
         String packageName = typeName.substring(0, lastDotIndex);
         
-        // Check if package matches any common JDK package
-        // This includes both exact matches and sub-packages
+        // Check exact match or sub-package match
         return SKIP_COMMON_JDK_PACKAGES.contains(packageName) || 
                SKIP_COMMON_JDK_PACKAGES.stream().anyMatch(pkg -> packageName.startsWith(pkg + "."));
     }
@@ -958,7 +956,7 @@ public class ContextResolver {
      * Returns the first paragraph of descriptive text, limited to reasonable length.
      */
     private static String extractClassDescription(String cleanedJavadoc) {
-        if (!isNotEmpty(cleanedJavadoc)) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
             return "";
         }
         
@@ -973,25 +971,10 @@ public class ContextResolver {
         
         // Limit to first 2-3 sentences or ~200 characters
         if (description.length() > 200) {
-            // Try to find a good break point (., !, ?)
-            int[] boundaries = {
-                description.indexOf(". ", 100),
-                description.indexOf(".\n", 100),
-                description.indexOf("! ", 100),
-                description.indexOf("? ", 100)
-            };
-            
-            int breakPoint = -1;
-            for (int boundary : boundaries) {
-                if (boundary != -1 && boundary < 250 && (breakPoint == -1 || boundary < breakPoint)) {
-                    breakPoint = boundary;
-                }
-            }
-            
+            int breakPoint = findBestBreakpoint(description, 100, 250);
             if (breakPoint != -1) {
                 description = description.substring(0, breakPoint + 1).trim();
             } else {
-                // No good break point, just truncate with ellipsis
                 int lastSpace = description.lastIndexOf(' ', 200);
                 description = description.substring(0, lastSpace > 100 ? lastSpace : 200).trim() + "...";
             }
@@ -1004,10 +987,7 @@ public class ContextResolver {
      * Check if the JavaDoc contains @deprecated tag.
      */
     private static boolean isDeprecated(String cleanedJavadoc) {
-        if (!isNotEmpty(cleanedJavadoc)) {
-            return false;
-        }
-        return cleanedJavadoc.contains("@deprecated");
+        return cleanedJavadoc != null && cleanedJavadoc.contains("@deprecated");
     }
 
     /**
@@ -1057,17 +1037,15 @@ public class ContextResolver {
         if (text == null || text.isEmpty()) {
             return text;
         }
-        String result = text;
-        result = result.replace("&nbsp;", " ");
-        result = result.replace("&lt;", "<");
-        result = result.replace("&gt;", ">");
-        result = result.replace("&amp;", "&");
-        result = result.replace("&quot;", "\"");
-        result = result.replace("&#39;", "'");
-        result = result.replace("&apos;", "'");
-        result = result.replace("&mdash;", "-");
-        result = result.replace("&ndash;", "-");
-        return result;
+        return text.replace("&nbsp;", " ")
+                   .replace("&lt;", "<")
+                   .replace("&gt;", ">")
+                   .replace("&amp;", "&")
+                   .replace("&quot;", "\"")
+                   .replace("&#39;", "'")
+                   .replace("&apos;", "'")
+                   .replace("&mdash;", "-")
+                   .replace("&ndash;", "-");
     }
 
     /**
@@ -1129,16 +1107,11 @@ public class ContextResolver {
             }
             if (!throwsTags.isEmpty()) {
                 result.append(" | Throws: ");
-                for (int i = 0; i < throwsTags.size() && i < 2; i++) { // Limit to 2 exceptions
+                for (int i = 0; i < Math.min(throwsTags.size(), 2); i++) {
                     if (i > 0) result.append(", ");
-                    // Extract just the exception class name (first word)
                     String exceptionInfo = throwsTags.get(i);
                     int spaceIndex = exceptionInfo.indexOf(' ');
-                    if (spaceIndex != -1) {
-                        result.append(exceptionInfo.substring(0, spaceIndex));
-                    } else {
-                        result.append(exceptionInfo);
-                    }
+                    result.append(spaceIndex != -1 ? exceptionInfo.substring(0, spaceIndex) : exceptionInfo);
                 }
                 if (throwsTags.size() > 2) {
                     result.append("...");
@@ -1168,7 +1141,7 @@ public class ContextResolver {
     private static List<String> extractJavadocTag(String cleanedJavadoc, String tagName) {
         List<String> results = new ArrayList<>();
         
-        if (!isNotEmpty(cleanedJavadoc)) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
             return results;
         }
         
@@ -1251,13 +1224,7 @@ public class ContextResolver {
         }
         
         // Find first sentence boundary (., !, ?)
-        int[] boundaries = {text.indexOf(". "), text.indexOf(".\n"), text.indexOf("! "), text.indexOf("? ")};
-        int firstSentenceEnd = -1;
-        for (int boundary : boundaries) {
-            if (boundary != -1 && (firstSentenceEnd == -1 || boundary < firstSentenceEnd)) {
-                firstSentenceEnd = boundary;
-            }
-        }
+        int firstSentenceEnd = findFirstSentenceBoundary(text);
         
         // Return first sentence if within reasonable length
         if (firstSentenceEnd != -1 && firstSentenceEnd < maxLength) {
@@ -1272,6 +1239,40 @@ public class ContextResolver {
         }
         
         return text.trim();
+    }
+    
+    /**
+     * Find the first sentence boundary in text
+     */
+    private static int findFirstSentenceBoundary(String text) {
+        int[] boundaries = {text.indexOf(". "), text.indexOf(".\n"), text.indexOf("! "), text.indexOf("? ")};
+        int result = -1;
+        for (int boundary : boundaries) {
+            if (boundary != -1 && (result == -1 || boundary < result)) {
+                result = boundary;
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Find the best breakpoint for truncating text within a range
+     */
+    private static int findBestBreakpoint(String text, int minPos, int maxPos) {
+        int[] boundaries = {
+            text.indexOf(". ", minPos),
+            text.indexOf(".\n", minPos),
+            text.indexOf("! ", minPos),
+            text.indexOf("? ", minPos)
+        };
+        
+        int result = -1;
+        for (int boundary : boundaries) {
+            if (boundary != -1 && boundary < maxPos && (result == -1 || boundary < result)) {
+                result = boundary;
+            }
+        }
+        return result;
     }
 
     /**
