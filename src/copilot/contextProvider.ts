@@ -44,7 +44,6 @@ export async function registerCopilotContextProviders(
             "status": "succeeded",
             "installCount": installCount
         });
-        console.log(`Registered Java Copilot context provider on ${installCount} API(s).`);
     }
     catch (error) {
         const errorMessage = (error as Error).message || "unknown_error";
@@ -114,7 +113,6 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             copilotCancel,
             JavaContextProviderUtils.checkCancellation
         );
-        console.dir(localImportItems)
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         items.push(...localImportItems);
     } catch (error: any) {
