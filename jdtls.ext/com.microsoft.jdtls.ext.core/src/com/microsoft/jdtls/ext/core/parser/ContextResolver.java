@@ -1049,8 +1049,8 @@ public class ContextResolver {
     }
 
     /**
-     * Extract detailed JavaDoc summary from method including @param, @return, and @throws tags.
-     * Returns a formatted string with the method description and parameter/return information.
+     * Extract method JavaDoc content directly for LLM consumption.
+     * Returns cleaned JavaDoc without artificial truncation - let LLM understand the full context.
      */
     private static String extractMethodJavaDocSummary(IMethod method) {
         try {
@@ -1066,122 +1066,15 @@ public class ContextResolver {
                 return "";
             }
             
+            // Just clean and return - let LLM understand the full context
             String cleaned = cleanJavadocComment(rawJavadoc);
-            StringBuilder result = new StringBuilder();
-            
-            // Extract main description (first sentence)
-            String description = extractJavadocDescription(cleaned);
-            String firstSentence = getFirstSentenceOrLimit(description, 120);
-            if (isNotEmpty(firstSentence)) {
-                result.append(firstSentence);
-            }
-            
-            // === Medium Priority: Parse @param tags ===
-            List<String> params = extractJavadocTag(cleaned, "@param");
-            if (!params.isEmpty()) {
-                result.append(" | Params: ");
-                for (int i = 0; i < params.size() && i < 3; i++) { // Limit to 3 params
-                    if (i > 0) result.append(", ");
-                    result.append(params.get(i));
-                }
-                if (params.size() > 3) {
-                    result.append("...");
-                }
-            }
-            
-            // === Medium Priority: Parse @return tag ===
-            List<String> returns = extractJavadocTag(cleaned, "@return");
-            if (!returns.isEmpty()) {
-                String returnDesc = returns.get(0);
-                // Limit return description to 60 chars
-                if (returnDesc.length() > 60) {
-                    returnDesc = returnDesc.substring(0, 57) + "...";
-                }
-                result.append(" | Returns: ").append(returnDesc);
-            }
-            
-            // === Medium Priority: Parse @throws tags ===
-            List<String> throwsTags = extractJavadocTag(cleaned, "@throws");
-            if (throwsTags.isEmpty()) {
-                throwsTags = extractJavadocTag(cleaned, "@exception");
-            }
-            if (!throwsTags.isEmpty()) {
-                result.append(" | Throws: ");
-                for (int i = 0; i < Math.min(throwsTags.size(), 2); i++) {
-                    if (i > 0) result.append(", ");
-                    String exceptionInfo = throwsTags.get(i);
-                    int spaceIndex = exceptionInfo.indexOf(' ');
-                    result.append(spaceIndex != -1 ? exceptionInfo.substring(0, spaceIndex) : exceptionInfo);
-                }
-                if (throwsTags.size() > 2) {
-                    result.append("...");
-                }
-            }
-            
-            // === High Priority: Mark deprecated methods ===
-            if (cleaned.contains("@deprecated")) {
-                result.append(result.length() > 0 ? " " : "").append("[DEPRECATED]");
-            }
-            
-            return result.toString();
+            return convertHtmlEntities(cleaned);
             
         } catch (Exception e) {
             return "";
         }
     }
     
-    /**
-     * Extract JavaDoc tags of a specific type (e.g., @param, @return, @throws).
-     * Returns a list of tag values (without the tag name itself).
-     * 
-     * @param cleanedJavadoc Cleaned JavaDoc text
-     * @param tagName Tag name to search for (e.g., "@param")
-     * @return List of tag values
-     */
-    private static List<String> extractJavadocTag(String cleanedJavadoc, String tagName) {
-        List<String> results = new ArrayList<>();
-        
-        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
-            return results;
-        }
-        
-        String[] lines = cleanedJavadoc.split("\\n");
-        StringBuilder currentTag = null;
-        
-        for (String line : lines) {
-            String trimmed = line.trim();
-            
-            // Check if this line starts with the target tag
-            if (trimmed.startsWith(tagName + " ")) {
-                // Save previous tag if exists
-                if (currentTag != null) {
-                    results.add(currentTag.toString().trim());
-                }
-                // Start new tag (remove tag name)
-                currentTag = new StringBuilder(trimmed.substring(tagName.length() + 1).trim());
-            }
-            // Check if this line starts with any other tag
-            else if (trimmed.startsWith("@")) {
-                // Save previous tag if exists
-                if (currentTag != null) {
-                    results.add(currentTag.toString().trim());
-                    currentTag = null;
-                }
-            }
-            // Continuation of current tag
-            else if (currentTag != null && isNotEmpty(trimmed)) {
-                currentTag.append(" ").append(trimmed);
-            }
-        }
-        
-        // Don't forget the last tag
-        if (currentTag != null) {
-            results.add(currentTag.toString().trim());
-        }
-        
-        return results;
-    }
-
     /**
      * Extract the main description part from JavaDoc (before @tags)
      */
@@ -1276,7 +1169,8 @@ public class ContextResolver {
     }
 
     /**
-     * Extract summary description from field JavaDoc, including @deprecated marking.
+     * Extract field JavaDoc content directly for LLM consumption.
+     * Returns cleaned JavaDoc without artificial truncation - let LLM understand the full context.
      */
     private static String extractFieldJavaDocSummary(org.eclipse.jdt.core.IField field) {
         try {
@@ -1292,16 +1186,10 @@ public class ContextResolver {
                 return "";
             }
             
+            // Just clean and return - let LLM understand the full context
             String cleaned = cleanJavadocComment(rawJavadoc);
-            String description = extractJavadocDescription(cleaned);
-            String summary = getFirstSentenceOrLimit(description, 120);
+            return convertHtmlEntities(cleaned);
             
-            // === High Priority: Mark deprecated fields ===
-            if (cleaned.contains("@deprecated")) {
-                summary = summary.isEmpty() ? "[DEPRECATED]" : summary + " [DEPRECATED]";  
-            }
-            
-            return summary;
         } catch (Exception e) {
             return "";
         }
@@ -1320,8 +1208,6 @@ public class ContextResolver {
     public static String generateFieldSignature(org.eclipse.jdt.core.IField field) {
         return generateFieldSignatureInternal(field, false);
     }
-
-
 
     /**
      * Convert JDT type signature to human-readable format
