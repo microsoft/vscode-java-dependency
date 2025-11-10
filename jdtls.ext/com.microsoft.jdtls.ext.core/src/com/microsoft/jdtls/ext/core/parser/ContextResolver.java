@@ -907,11 +907,6 @@ public class ContextResolver {
             if (isNotEmpty(description)) {
                 result.append("Description:\n").append(description).append("\n\n");
             }
-            
-            // === High Priority: Check for @deprecated tag ===
-            if (isDeprecated(cleanedJavadoc)) {
-                result.append("⚠️ DEPRECATED: This class is deprecated and should not be used in new code.\n\n");
-            }
 
             // === Extract code snippets ===
             // 1. Extract markdown code blocks (```...```)
@@ -981,13 +976,6 @@ public class ContextResolver {
         }
         
         return description.trim();
-    }
-    
-    /**
-     * Check if the JavaDoc contains @deprecated tag.
-     */
-    private static boolean isDeprecated(String cleanedJavadoc) {
-        return cleanedJavadoc != null && cleanedJavadoc.contains("@deprecated");
     }
 
     /**
