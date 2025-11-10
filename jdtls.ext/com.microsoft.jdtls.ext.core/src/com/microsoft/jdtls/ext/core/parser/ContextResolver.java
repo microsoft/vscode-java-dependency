@@ -919,7 +919,7 @@ public class ContextResolver {
             while (markdownMatcher.find()) {
                 String code = markdownMatcher.group(1).trim();
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    result.append("Example:\n```java\n").append(code).append("\n```\n\n");
+                    result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
 
@@ -929,7 +929,7 @@ public class ContextResolver {
             while (preMatcher.find()) {
                 String code = preMatcher.group(1).replaceAll("(?i)<code[^>]*>", "").replaceAll("(?i)</code>", "").trim();
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    result.append("Example:\n```java\n").append(code).append("\n```\n\n");
+                    result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
 
@@ -939,7 +939,7 @@ public class ContextResolver {
                 String code = codeMatcher.group(1).trim();
                 // Use HashSet for O(1) duplicate checking
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    result.append("Example:\n```java\n").append(code).append("\n```\n\n");
+                    result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
 
@@ -969,14 +969,14 @@ public class ContextResolver {
         // Extract description before @tags
         String description = extractJavadocDescription(textOnly);
         
-        // Limit to first 2-3 sentences or ~200 characters
-        if (description.length() > 200) {
-            int breakPoint = findBestBreakpoint(description, 100, 250);
+        // Limit to ~2000 characters
+        if (description.length() > 2000) {
+            int breakPoint = findBestBreakpoint(description, 1500, 2100);
             if (breakPoint != -1) {
                 description = description.substring(0, breakPoint + 1).trim();
             } else {
-                int lastSpace = description.lastIndexOf(' ', 200);
-                description = description.substring(0, lastSpace > 100 ? lastSpace : 200).trim() + "...";
+                int lastSpace = description.lastIndexOf(' ', 2000);
+                description = description.substring(0, lastSpace > 1500 ? lastSpace : 2000).trim() + "...";
             }
         }
         
