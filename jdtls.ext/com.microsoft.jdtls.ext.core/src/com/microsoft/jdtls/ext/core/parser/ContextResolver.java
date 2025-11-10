@@ -900,6 +900,7 @@ public class ContextResolver {
             
             // Clean Javadoc comment for processing
             String cleanedJavadoc = cleanJavadocComment(rawJavadoc);
+            cleanedJavadoc = removeHtmlTags(cleanedJavadoc);
             cleanedJavadoc = convertHtmlEntities(cleanedJavadoc);
 
             // === High Priority: Extract class description text (first paragraph) ===
@@ -1037,6 +1038,29 @@ public class ContextResolver {
     }
 
     /**
+     * Remove all HTML tags from text, keeping only plain text content.
+     * Preserves line breaks for block-level tags like <p>, <br>, <div>.
+     */
+    private static String removeHtmlTags(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        
+        // Replace block-level tags with line breaks
+        text = text.replaceAll("(?i)</(p|div|li)>|<br\\s*/?>|<p[^>]*>", "\n");
+        
+        // Remove all remaining HTML tags
+        text = text.replaceAll("<[^>]+>", "");
+        
+        // Clean up whitespace: collapse spaces, trim lines, limit line breaks
+        text = text.replaceAll("[ \\t]+", " ")
+                   .replaceAll(" *\\n *", "\n")
+                   .replaceAll("\\n{3,}", "\n\n");
+        
+        return text.trim();
+    }
+
+    /**
      * Extract method JavaDoc content directly for LLM consumption.
      * Returns cleaned JavaDoc without artificial truncation - let LLM understand the full context.
      */
@@ -1056,6 +1080,7 @@ public class ContextResolver {
             
             // Just clean and return - let LLM understand the full context
             String cleaned = cleanJavadocComment(rawJavadoc);
+            cleaned = removeHtmlTags(cleaned);
             return convertHtmlEntities(cleaned);
             
         } catch (Exception e) {
@@ -1176,6 +1201,7 @@ public class ContextResolver {
             
             // Just clean and return - let LLM understand the full context
             String cleaned = cleanJavadocComment(rawJavadoc);
+            cleaned = removeHtmlTags(cleaned);
             return convertHtmlEntities(cleaned);
             
         } catch (Exception e) {
