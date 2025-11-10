@@ -1120,7 +1120,7 @@ public class ContextResolver {
             
             // === High Priority: Mark deprecated methods ===
             if (cleaned.contains("@deprecated")) {
-                result.append(" [DEPRECATED]");
+                result.append(result.length() > 0 ? " " : "").append("[DEPRECATED]");
             }
             
             return result.toString();
@@ -1298,7 +1298,7 @@ public class ContextResolver {
             
             // === High Priority: Mark deprecated fields ===
             if (cleaned.contains("@deprecated")) {
-                summary += " [DEPRECATED]";
+                summary = summary.isEmpty() ? "[DEPRECATED]" : summary + " [DEPRECATED]";  
             }
             
             return summary;
