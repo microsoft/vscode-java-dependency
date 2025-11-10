@@ -63,6 +63,57 @@ public class ContextResolver {
         SKIP_COMMON_JDK_PACKAGES.add("java.text");           // DateFormat, SimpleDateFormat, etc.
         SKIP_COMMON_JDK_PACKAGES.add("java.sql");            // Connection, ResultSet, etc.
         SKIP_COMMON_JDK_PACKAGES.add("javax.sql");           // DataSource, etc.
+        
+        // Java EE / Jakarta EE - Well-known enterprise packages
+        SKIP_COMMON_JDK_PACKAGES.add("javax.servlet");       // Servlet API
+        SKIP_COMMON_JDK_PACKAGES.add("javax.annotation");    // @PostConstruct, @PreDestroy, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("javax.persistence");   // JPA annotations
+        SKIP_COMMON_JDK_PACKAGES.add("javax.inject");        // @Inject
+        SKIP_COMMON_JDK_PACKAGES.add("javax.validation");    // Bean Validation
+        SKIP_COMMON_JDK_PACKAGES.add("jakarta.servlet");     // Jakarta Servlet
+        SKIP_COMMON_JDK_PACKAGES.add("jakarta.persistence"); // Jakarta JPA
+        
+        // Spring Framework - Extremely common and well-documented
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.stereotype");    // @Component, @Service, @Repository, @Controller
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.beans");         // @Autowired, BeanFactory
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.context");       // ApplicationContext, @Configuration
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.web.bind");      // @RequestMapping, @PathVariable, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.boot");          // SpringApplication, @SpringBootApplication
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.data.jpa");      // JpaRepository
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.data.repository"); // CrudRepository
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.transaction");   // @Transactional
+        SKIP_COMMON_JDK_PACKAGES.add("org.springframework.security");      // Spring Security annotations
+        
+        // Testing frameworks - Very common and well-documented
+        SKIP_COMMON_JDK_PACKAGES.add("org.junit");           // JUnit 4/5 - @Test, assertions
+        SKIP_COMMON_JDK_PACKAGES.add("org.junit.jupiter");   // JUnit 5 specific
+        SKIP_COMMON_JDK_PACKAGES.add("org.testng");          // TestNG
+        SKIP_COMMON_JDK_PACKAGES.add("org.mockito");         // Mockito - mock(), when(), verify()
+        SKIP_COMMON_JDK_PACKAGES.add("org.assertj");         // AssertJ fluent assertions
+        SKIP_COMMON_JDK_PACKAGES.add("org.hamcrest");        // Hamcrest matchers
+        
+        // Lombok - Code generation library (Copilot understands these annotations very well)
+        SKIP_COMMON_JDK_PACKAGES.add("lombok");              // @Data, @Getter, @Setter, @Builder, etc.
+        
+        // Logging frameworks - Very standard APIs
+        SKIP_COMMON_JDK_PACKAGES.add("org.slf4j");           // SLF4J - Logger, LoggerFactory
+        SKIP_COMMON_JDK_PACKAGES.add("org.apache.logging.log4j"); // Log4j 2
+        SKIP_COMMON_JDK_PACKAGES.add("org.apache.log4j");    // Log4j 1.x
+        SKIP_COMMON_JDK_PACKAGES.add("java.util.logging");   // JUL - java.util.logging
+        
+        // Jackson - JSON processing (very common)
+        SKIP_COMMON_JDK_PACKAGES.add("com.fasterxml.jackson.annotation"); // @JsonProperty, @JsonIgnore
+        SKIP_COMMON_JDK_PACKAGES.add("com.fasterxml.jackson.core");       // JsonParser, JsonGenerator
+        SKIP_COMMON_JDK_PACKAGES.add("com.fasterxml.jackson.databind");   // ObjectMapper
+        
+        // Google Guava - Well-known utility library
+        SKIP_COMMON_JDK_PACKAGES.add("com.google.common.collect"); // ImmutableList, ImmutableMap, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("com.google.common.base");    // Preconditions, Strings, etc.
+        
+        // Apache Commons - Well-known utility libraries
+        SKIP_COMMON_JDK_PACKAGES.add("org.apache.commons.lang3");  // StringUtils, etc.
+        SKIP_COMMON_JDK_PACKAGES.add("org.apache.commons.collections4"); // CollectionUtils
+        SKIP_COMMON_JDK_PACKAGES.add("org.apache.commons.io");     // IOUtils, FileUtils
     }
 
     /**
@@ -821,20 +872,25 @@ public class ContextResolver {
      */
     private static String extractRelevantJavaDocContent(org.eclipse.jdt.core.IType type, IProgressMonitor monitor) {
         try {
-            String rawJavadoc;
-            boolean isHtml;
-
+            // Performance optimization: Skip JavaDoc extraction for binary types
+            // getAttachedJavadoc() is EXTREMELY expensive for binary types:
+            // - Requires reading from JAR files (I/O overhead)
+            // - May trigger Maven artifact download from remote repositories (network)
+            // - Involves HTML parsing and DOM manipulation (CPU intensive)
+            // Binary types from JARs are typically well-known libraries that Copilot already understands
             if (type.isBinary()) {
-                rawJavadoc = type.getAttachedJavadoc(monitor);
-                isHtml = true;
-            } else {
-                org.eclipse.jdt.core.ISourceRange javadocRange = type.getJavadocRange();
-                if (javadocRange == null) {
-                    return "";
-                }
-                rawJavadoc = type.getCompilationUnit().getSource().substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
-                isHtml = false; // Javadoc comment from source is not HTML
+                return ""; // Skip expensive JavaDoc extraction for external dependencies
             }
+            
+            String rawJavadoc;
+            boolean isHtml = false;
+
+            // Extract JavaDoc from source code (fast - no I/O, no network, no HTML parsing)
+            org.eclipse.jdt.core.ISourceRange javadocRange = type.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            rawJavadoc = type.getCompilationUnit().getSource().substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
 
             if (!isNotEmpty(rawJavadoc)) {
                 return "";
