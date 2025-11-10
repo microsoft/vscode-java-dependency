@@ -104,7 +104,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
         items.push(...projectDependencyItems);
-        
+
         JavaContextProviderUtils.checkCancellation(copilotCancel);
 
         // Resolve local imports and convert to context items
