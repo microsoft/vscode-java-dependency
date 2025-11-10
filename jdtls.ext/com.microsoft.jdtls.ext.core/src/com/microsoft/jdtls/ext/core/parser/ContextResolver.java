@@ -862,13 +862,15 @@ public class ContextResolver {
     // ================ JavaDoc Extraction Methods ================
 
     /**
-     * Extracts relevant code snippets from Javadoc.
-     * This method is optimized to extract code from `<code>` tags and markdown code fences,
-     * and formats them in an LLM-readable format.
+     * Extracts relevant JavaDoc content including description text and code snippets.
+     * This method extracts:
+     * 1. Class description (first paragraph of text)
+     * 2. Code snippets from <code>, <pre>, and ``` blocks
+     * 3. @deprecated tag if present
      *
      * @param type the type to extract Javadoc from.
      * @param monitor the progress monitor.
-     * @return A string containing all found code snippets, formatted as markdown code blocks.
+     * @return A string containing description and code snippets in LLM-readable format.
      */
     private static String extractRelevantJavaDocContent(org.eclipse.jdt.core.IType type, IProgressMonitor monitor) {
         try {
@@ -883,7 +885,6 @@ public class ContextResolver {
             }
             
             String rawJavadoc;
-            boolean isHtml = false;
 
             // Extract JavaDoc from source code (fast - no I/O, no network, no HTML parsing)
             org.eclipse.jdt.core.ISourceRange javadocRange = type.getJavadocRange();
@@ -896,48 +897,117 @@ public class ContextResolver {
                 return "";
             }
 
-            StringBuilder allCodeSnippets = new StringBuilder();
+            StringBuilder result = new StringBuilder();
             Set<String> seenCodeSnippets = new HashSet<>();
+            
+            // Clean Javadoc comment for processing
+            String cleanedJavadoc = cleanJavadocComment(rawJavadoc);
+            cleanedJavadoc = convertHtmlEntities(cleanedJavadoc);
 
+            // === High Priority: Extract class description text (first paragraph) ===
+            String description = extractClassDescription(cleanedJavadoc);
+            if (isNotEmpty(description)) {
+                result.append("Description:\n").append(description).append("\n\n");
+            }
+            
+            // === High Priority: Check for @deprecated tag ===
+            if (isDeprecated(cleanedJavadoc)) {
+                result.append("⚠️ DEPRECATED: This class is deprecated and should not be used in new code.\n\n");
+            }
+
+            // === Extract code snippets ===
             // 1. Extract markdown code blocks (```...```)
             Matcher markdownMatcher = MARKDOWN_CODE_PATTERN.matcher(rawJavadoc);
             while (markdownMatcher.find()) {
                 String code = markdownMatcher.group(1).trim();
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
+                    result.append("Example:\n```java\n").append(code).append("\n```\n\n");
                 }
             }
 
             // 2. Extract HTML <pre> and <code> blocks
-            // Clean Javadoc comment for HTML extraction
-            String cleanedForHtml = isHtml ? rawJavadoc : cleanJavadocComment(rawJavadoc);
-            cleanedForHtml = convertHtmlEntities(cleanedForHtml);
-
             // Priority 1: <pre> blocks (often contain well-formatted code)
-            Matcher preMatcher = HTML_PRE_PATTERN.matcher(cleanedForHtml);
+            Matcher preMatcher = HTML_PRE_PATTERN.matcher(cleanedJavadoc);
             while (preMatcher.find()) {
                 String code = preMatcher.group(1).replaceAll("(?i)<code[^>]*>", "").replaceAll("(?i)</code>", "").trim();
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
+                    result.append("Example:\n```java\n").append(code).append("\n```\n\n");
                 }
             }
 
             // Priority 2: <code> blocks (for inline snippets)
-            Matcher codeMatcher = HTML_CODE_PATTERN.matcher(cleanedForHtml);
+            Matcher codeMatcher = HTML_CODE_PATTERN.matcher(cleanedJavadoc);
             while (codeMatcher.find()) {
                 String code = codeMatcher.group(1).trim();
                 // Use HashSet for O(1) duplicate checking
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
+                    result.append("Example:\n```java\n").append(code).append("\n```\n\n");
                 }
             }
 
-            return allCodeSnippets.toString().trim();
+            return result.toString().trim();
 
         } catch (Exception e) {
             JdtlsExtActivator.logException("Error extracting relevant JavaDoc content for: " + type.getElementName(), e);
             return "";
         }
+    }
+    
+    /**
+     * Extract the main description paragraph from class JavaDoc (before @tags and code blocks).
+     * Returns the first paragraph of descriptive text, limited to reasonable length.
+     */
+    private static String extractClassDescription(String cleanedJavadoc) {
+        if (!isNotEmpty(cleanedJavadoc)) {
+            return "";
+        }
+        
+        // Remove code blocks first to get pure text
+        String textOnly = cleanedJavadoc;
+        textOnly = MARKDOWN_CODE_PATTERN.matcher(textOnly).replaceAll("");
+        textOnly = HTML_PRE_PATTERN.matcher(textOnly).replaceAll("");
+        textOnly = HTML_CODE_PATTERN.matcher(textOnly).replaceAll("");
+        
+        // Extract description before @tags
+        String description = extractJavadocDescription(textOnly);
+        
+        // Limit to first 2-3 sentences or ~200 characters
+        if (description.length() > 200) {
+            // Try to find a good break point (., !, ?)
+            int[] boundaries = {
+                description.indexOf(". ", 100),
+                description.indexOf(".\n", 100),
+                description.indexOf("! ", 100),
+                description.indexOf("? ", 100)
+            };
+            
+            int breakPoint = -1;
+            for (int boundary : boundaries) {
+                if (boundary != -1 && boundary < 250 && (breakPoint == -1 || boundary < breakPoint)) {
+                    breakPoint = boundary;
+                }
+            }
+            
+            if (breakPoint != -1) {
+                description = description.substring(0, breakPoint + 1).trim();
+            } else {
+                // No good break point, just truncate with ellipsis
+                int lastSpace = description.lastIndexOf(' ', 200);
+                description = description.substring(0, lastSpace > 100 ? lastSpace : 200).trim() + "...";
+            }
+        }
+        
+        return description.trim();
+    }
+    
+    /**
+     * Check if the JavaDoc contains @deprecated tag.
+     */
+    private static boolean isDeprecated(String cleanedJavadoc) {
+        if (!isNotEmpty(cleanedJavadoc)) {
+            return false;
+        }
+        return cleanedJavadoc.contains("@deprecated");
     }
 
     /**
@@ -1001,11 +1071,142 @@ public class ContextResolver {
     }
 
     /**
-     * Extract summary description from method JavaDoc
-     * Returns the first sentence or paragraph of the JavaDoc as a brief description
+     * Extract detailed JavaDoc summary from method including @param, @return, and @throws tags.
+     * Returns a formatted string with the method description and parameter/return information.
      */
     private static String extractMethodJavaDocSummary(IMethod method) {
-        return extractJavaDocSummaryFromElement(method);
+        try {
+            org.eclipse.jdt.core.ISourceRange javadocRange = method.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = method.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (!isNotEmpty(rawJavadoc)) {
+                return "";
+            }
+            
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            StringBuilder result = new StringBuilder();
+            
+            // Extract main description (first sentence)
+            String description = extractJavadocDescription(cleaned);
+            String firstSentence = getFirstSentenceOrLimit(description, 120);
+            if (isNotEmpty(firstSentence)) {
+                result.append(firstSentence);
+            }
+            
+            // === Medium Priority: Parse @param tags ===
+            List<String> params = extractJavadocTag(cleaned, "@param");
+            if (!params.isEmpty()) {
+                result.append(" | Params: ");
+                for (int i = 0; i < params.size() && i < 3; i++) { // Limit to 3 params
+                    if (i > 0) result.append(", ");
+                    result.append(params.get(i));
+                }
+                if (params.size() > 3) {
+                    result.append("...");
+                }
+            }
+            
+            // === Medium Priority: Parse @return tag ===
+            List<String> returns = extractJavadocTag(cleaned, "@return");
+            if (!returns.isEmpty()) {
+                String returnDesc = returns.get(0);
+                // Limit return description to 60 chars
+                if (returnDesc.length() > 60) {
+                    returnDesc = returnDesc.substring(0, 57) + "...";
+                }
+                result.append(" | Returns: ").append(returnDesc);
+            }
+            
+            // === Medium Priority: Parse @throws tags ===
+            List<String> throwsTags = extractJavadocTag(cleaned, "@throws");
+            if (throwsTags.isEmpty()) {
+                throwsTags = extractJavadocTag(cleaned, "@exception");
+            }
+            if (!throwsTags.isEmpty()) {
+                result.append(" | Throws: ");
+                for (int i = 0; i < throwsTags.size() && i < 2; i++) { // Limit to 2 exceptions
+                    if (i > 0) result.append(", ");
+                    // Extract just the exception class name (first word)
+                    String exceptionInfo = throwsTags.get(i);
+                    int spaceIndex = exceptionInfo.indexOf(' ');
+                    if (spaceIndex != -1) {
+                        result.append(exceptionInfo.substring(0, spaceIndex));
+                    } else {
+                        result.append(exceptionInfo);
+                    }
+                }
+                if (throwsTags.size() > 2) {
+                    result.append("...");
+                }
+            }
+            
+            // === High Priority: Mark deprecated methods ===
+            if (cleaned.contains("@deprecated")) {
+                result.append(" [DEPRECATED]");
+            }
+            
+            return result.toString();
+            
+        } catch (Exception e) {
+            return "";
+        }
+    }
+    
+    /**
+     * Extract JavaDoc tags of a specific type (e.g., @param, @return, @throws).
+     * Returns a list of tag values (without the tag name itself).
+     * 
+     * @param cleanedJavadoc Cleaned JavaDoc text
+     * @param tagName Tag name to search for (e.g., "@param")
+     * @return List of tag values
+     */
+    private static List<String> extractJavadocTag(String cleanedJavadoc, String tagName) {
+        List<String> results = new ArrayList<>();
+        
+        if (!isNotEmpty(cleanedJavadoc)) {
+            return results;
+        }
+        
+        String[] lines = cleanedJavadoc.split("\\n");
+        StringBuilder currentTag = null;
+        
+        for (String line : lines) {
+            String trimmed = line.trim();
+            
+            // Check if this line starts with the target tag
+            if (trimmed.startsWith(tagName + " ")) {
+                // Save previous tag if exists
+                if (currentTag != null) {
+                    results.add(currentTag.toString().trim());
+                }
+                // Start new tag (remove tag name)
+                currentTag = new StringBuilder(trimmed.substring(tagName.length() + 1).trim());
+            }
+            // Check if this line starts with any other tag
+            else if (trimmed.startsWith("@")) {
+                // Save previous tag if exists
+                if (currentTag != null) {
+                    results.add(currentTag.toString().trim());
+                    currentTag = null;
+                }
+            }
+            // Continuation of current tag
+            else if (currentTag != null && isNotEmpty(trimmed)) {
+                currentTag.append(" ").append(trimmed);
+            }
+        }
+        
+        // Don't forget the last tag
+        if (currentTag != null) {
+            results.add(currentTag.toString().trim());
+        }
+        
+        return results;
     }
 
     /**
@@ -1074,10 +1275,35 @@ public class ContextResolver {
     }
 
     /**
-     * Extract summary description from field JavaDoc
+     * Extract summary description from field JavaDoc, including @deprecated marking.
      */
     private static String extractFieldJavaDocSummary(org.eclipse.jdt.core.IField field) {
-        return extractJavaDocSummaryFromElement(field);
+        try {
+            org.eclipse.jdt.core.ISourceRange javadocRange = field.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = field.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (!isNotEmpty(rawJavadoc)) {
+                return "";
+            }
+            
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            String description = extractJavadocDescription(cleaned);
+            String summary = getFirstSentenceOrLimit(description, 120);
+            
+            // === High Priority: Mark deprecated fields ===
+            if (cleaned.contains("@deprecated")) {
+                summary += " [DEPRECATED]";
+            }
+            
+            return summary;
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     /**
@@ -1228,30 +1454,7 @@ public class ContextResolver {
         return lastDot == -1 ? qualifiedName : qualifiedName.substring(lastDot + 1);
     }
 
-    /**
-     * Unified JavaDoc summary extractor for methods and fields
-     */
-    private static String extractJavaDocSummaryFromElement(org.eclipse.jdt.core.IMember element) {
-        try {
-            org.eclipse.jdt.core.ISourceRange javadocRange = element.getJavadocRange();
-            if (javadocRange == null) {
-                return "";
-            }
-            
-            String rawJavadoc = element.getCompilationUnit().getSource()
-                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
-            
-            if (rawJavadoc == null || rawJavadoc.isEmpty()) {
-                return "";
-            }
-            
-            String cleaned = cleanJavadocComment(rawJavadoc);
-            String description = extractJavadocDescription(cleaned);
-            return getFirstSentenceOrLimit(description, 120);
-        } catch (Exception e) {
-            return "";
-        }
-    }
+
 
     /**
      * Unified method signature generator (handles both source and binary types)
