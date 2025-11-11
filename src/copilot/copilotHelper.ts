@@ -2,8 +2,7 @@
 // Licensed under the MIT license.
 
 import { commands, Uri, CancellationToken } from "vscode";
-import { sendError } from "vscode-extension-telemetry-wrapper";
-import { GetImportClassContentError, GetProjectDependenciesError, JavaContextProviderUtils } from "./utils";
+import { JavaContextProviderUtils } from "./utils";
 import { Commands } from '../commands';
 
 /**
@@ -136,7 +135,6 @@ export namespace CopilotHelper {
                 };
             }
             const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
-            sendError(new GetImportClassContentError(errorMessage));
             return {
                 classInfoList: [],
                 emptyReason: errorMessage,
@@ -239,7 +237,6 @@ export namespace CopilotHelper {
                 };
             }
             const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
-            sendError(new GetProjectDependenciesError(errorMessage));
             return {
                 dependencyInfoList: [],
                 emptyReason: errorMessage,
