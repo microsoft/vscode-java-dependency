@@ -52,17 +52,6 @@ export interface IProjectDependenciesResult {
  */
 export namespace CopilotHelper {
     /**
-     * Resolves all local project types imported by the given file (backward compatibility version)
-     * @param fileUri The URI of the Java file to analyze
-     * @param cancellationToken Optional cancellation token to abort the operation
-     * @returns Array of import class information
-     */
-    export async function resolveLocalImports(fileUri: Uri, cancellationToken?: CancellationToken): Promise<INodeImportClass[]> {
-        const result = await resolveLocalImportsWithReason(fileUri, cancellationToken);
-        return result.classInfoList;
-    }
-
-    /**
      * Resolves all local project types imported by the given file with detailed error reporting
      * @param fileUri The URI of the Java file to analyze
      * @param cancellationToken Optional cancellation token to abort the operation
@@ -141,24 +130,6 @@ export namespace CopilotHelper {
                 isEmpty: true
             };
         }
-    }
-
-    /**
-     * Resolves project dependencies for the given project URI (backward compatibility version)
-     * @param projectUri The URI of the Java project to analyze
-     * @param cancellationToken Optional cancellation token to abort the operation
-     * @returns Object containing project dependencies as key-value pairs
-     */
-    export async function resolveProjectDependencies(projectUri: Uri, cancellationToken?: CancellationToken): Promise<IProjectDependency> {
-        const result = await resolveProjectDependenciesWithReason(projectUri, cancellationToken);
-
-        // Convert to legacy format
-        const dependencies: IProjectDependency = {};
-        for (const dep of result.dependencyInfoList) {
-            dependencies[dep.key] = dep.value;
-        }
-
-        return dependencies;
     }
 
     /**
