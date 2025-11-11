@@ -7,6 +7,7 @@ import {
     SupportedContextItem,
     type ContextProvider,
 } from '@github/copilot-language-server';
+import { sendInfo } from "vscode-extension-telemetry-wrapper";
 /**
  * Error classes for Copilot context provider cancellation handling
  */
@@ -229,7 +230,6 @@ export function sendContextResolutionTelemetry(
     start: number,
     items: SupportedContextItem[],
     status: string,
-    sendInfo: (eventName: string, properties?: any) => void,
     error?: string,
     dependenciesEmptyReason?: string,
     importsEmptyReason?: string,
