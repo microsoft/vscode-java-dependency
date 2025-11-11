@@ -85,46 +85,41 @@ export namespace CopilotHelper {
                 Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT,
                 normalizedUri
             ) as Promise<IImportClassContentResult>;
+            
+            // Build promises array for race condition
+            // Note: Client-side timeout is NECESSARY even if backend has timeout because:
+            // 1. Network delays may prevent backend response from arriving
+            // 2. Process hangs won't trigger backend timeout
+            // 3. Command dispatch failures need to be caught
+            const promises: Promise<IImportClassContentResult>[] = [
+                commandPromise,
+                new Promise<IImportClassContentResult>((_, reject) => {
+                    setTimeout(() => {
+                        reject(new Error(ErrorMessage.OperationTimedOut));
+                    }, 80); // 80ms client-side timeout (independent of backend timeout)
+                })
+            ];
+            
+            // Add cancellation promise if token provided
             if (cancellationToken) {
-                const result = await Promise.race([
-                    commandPromise,
+                promises.push(
                     new Promise<IImportClassContentResult>((_, reject) => {
                         cancellationToken.onCancellationRequested(() => {
                             reject(new Error(ErrorMessage.OperationCancelled));
                         });
-                    }),
-                    new Promise<IImportClassContentResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 80); // 80ms timeout
                     })
-                ]);
-                if (!result) {
-                    return {
-                        classInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
-            } else {
-                const result = await Promise.race([
-                    commandPromise,
-                    new Promise<IImportClassContentResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 80); // 80ms timeout
-                    })
-                ]);
-                if (!result) {
-                    return {
-                        classInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
+                );
             }
+            
+            const result = await Promise.race(promises);
+            if (!result) {
+                return {
+                    classInfoList: [],
+                    emptyReason: EmptyReason.CommandNullResult,
+                    isEmpty: true
+                };
+            }
+            return result;
         } catch (error: any) {
             if (error.message === ErrorMessage.OperationCancelled) {
                 return {
@@ -194,46 +189,40 @@ export namespace CopilotHelper {
                 normalizedUri
             ) as Promise<IProjectDependenciesResult>;
 
+            // Build promises array for race condition
+            // Note: Client-side timeout is NECESSARY even if backend has timeout because:
+            // 1. Network delays may prevent backend response from arriving
+            // 2. Process hangs won't trigger backend timeout
+            // 3. Command dispatch failures need to be caught
+            const promises: Promise<IProjectDependenciesResult>[] = [
+                commandPromise,
+                new Promise<IProjectDependenciesResult>((_, reject) => {
+                    setTimeout(() => {
+                        reject(new Error(ErrorMessage.OperationTimedOut));
+                    }, 40); // 40ms client-side timeout (independent of backend timeout)
+                })
+            ];
+            
+            // Add cancellation promise if token provided
             if (cancellationToken) {
-                const result = await Promise.race([
-                    commandPromise,
+                promises.push(
                     new Promise<IProjectDependenciesResult>((_, reject) => {
                         cancellationToken.onCancellationRequested(() => {
                             reject(new Error(ErrorMessage.OperationCancelled));
                         });
-                    }),
-                    new Promise<IProjectDependenciesResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 40); // 40ms timeout
                     })
-                ]);
-                if (!result) {
-                    return {
-                        dependencyInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
-            } else {
-                const result = await Promise.race([
-                    commandPromise,
-                    new Promise<IProjectDependenciesResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 40); // 40ms timeout
-                    })
-                ]);
-                if (!result) {
-                    return {
-                        dependencyInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
+                );
             }
+            
+            const result = await Promise.race(promises);
+            if (!result) {
+                return {
+                    dependencyInfoList: [],
+                    emptyReason: EmptyReason.CommandNullResult,
+                    isEmpty: true
+                };
+            }
+            return result;
         } catch (error: any) {
             if (error.message === ErrorMessage.OperationCancelled) {
                 return {
