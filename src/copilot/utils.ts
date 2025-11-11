@@ -248,7 +248,7 @@ export function sendContextResolutionTelemetry(
         "dependenciesCount": dependenciesCount ?? 0,
         "importsCount": importsCount ?? 0
     };
-    
+
     // Add empty reasons if present
     if (dependenciesEmptyReason) {
         telemetryData.dependenciesEmptyReason = dependenciesEmptyReason;
@@ -259,6 +259,6 @@ export function sendContextResolutionTelemetry(
     if (error) {
         telemetryData.error = error;
     }
-    
+
     sendInfo("", telemetryData);
 }

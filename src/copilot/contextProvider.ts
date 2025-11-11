@@ -74,14 +74,14 @@ function createJavaContextResolver(): ContextResolverFunction {
 async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode.CancellationToken): Promise<SupportedContextItem[]> {
     const items: SupportedContextItem[] = [];
     const start = performance.now();
-    
+
     let dependenciesResult: CopilotHelper.IResolveResult | undefined;
     let importsResult: CopilotHelper.IResolveResult | undefined;
-    
+
     try {
         // Check for cancellation before starting
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-        
+
         // Resolve project dependencies and convert to context items
         dependenciesResult = await CopilotHelper.resolveAndConvertProjectDependencies(
             vscode.window.activeTextEditor,
@@ -104,9 +104,9 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
     } catch (error: any) {
         if (error instanceof CopilotCancellationError) {
             sendContextResolutionTelemetry(
-                request, 
-                start, 
-                items, 
+                request,
+                start,
+                items,
                 "cancelled_by_copilot",
                 undefined,
                 dependenciesResult?.emptyReason,
@@ -118,9 +118,9 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         }
         if (error instanceof vscode.CancellationError || error.message === CancellationError.CANCELED) {
             sendContextResolutionTelemetry(
-                request, 
-                start, 
-                items, 
+                request,
+                start,
+                items,
                 "cancelled_internally",
                 undefined,
                 dependenciesResult?.emptyReason,
@@ -133,9 +133,9 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
 
         // Send telemetry for general errors (but continue with partial results)
         sendContextResolutionTelemetry(
-            request, 
-            start, 
-            items, 
+            request,
+            start,
+            items,
             "error_partial_results",
             error.message || "unknown_error",
             dependenciesResult?.emptyReason,
@@ -150,9 +150,9 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
 
     // Send telemetry data once at the end for success case
     sendContextResolutionTelemetry(
-        request, 
-        start, 
-        items, 
+        request,
+        start,
+        items,
         "succeeded",
         undefined,
         dependenciesResult?.emptyReason,

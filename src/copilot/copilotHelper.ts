@@ -73,7 +73,7 @@ export namespace CopilotHelper {
                 Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT,
                 normalizedUri
             ) as Promise<IImportClassContentResult>;
-            
+
             // Build promises array for race condition
             // Note: Client-side timeout is NECESSARY even if backend has timeout because:
             // 1. Network delays may prevent backend response from arriving
@@ -87,7 +87,7 @@ export namespace CopilotHelper {
                     }, 80); // 80ms client-side timeout (independent of backend timeout)
                 })
             ];
-            
+
             // Add cancellation promise if token provided
             if (cancellationToken) {
                 promises.push(
@@ -98,7 +98,7 @@ export namespace CopilotHelper {
                     })
                 );
             }
-            
+
             const result = await Promise.race(promises);
             if (!result) {
                 return {
@@ -171,7 +171,7 @@ export namespace CopilotHelper {
                     }, 40); // 40ms client-side timeout (independent of backend timeout)
                 })
             ];
-            
+
             // Add cancellation promise if token provided
             if (cancellationToken) {
                 promises.push(
@@ -182,7 +182,7 @@ export namespace CopilotHelper {
                     })
                 );
             }
-            
+
             const result = await Promise.race(promises);
             if (!result) {
                 return {
@@ -238,7 +238,7 @@ export namespace CopilotHelper {
         checkCancellation: (token: CancellationToken) => void
     ): Promise<IResolveResult> {
         const items: any[] = [];
-        
+
         // Check if active editor exists
         if (!activeEditor) {
             return { items: [], emptyReason: EmptyReason.NoActiveEditor, itemCount: 0 };
@@ -287,7 +287,7 @@ export namespace CopilotHelper {
         checkCancellation: (token: CancellationToken) => void
     ): Promise<IResolveResult> {
         const items: any[] = [];
-        
+
         // Check if there's an active editor with a Java document
         if (!activeEditor) {
             return { items: [], emptyReason: EmptyReason.NoActiveEditor, itemCount: 0 };
@@ -310,7 +310,7 @@ export namespace CopilotHelper {
         if (importClassResult.isEmpty && importClassResult.emptyReason) {
             return { items: [], emptyReason: importClassResult.emptyReason, itemCount: 0 };
         }
-        
+
         // Check for cancellation before processing results
         checkCancellation(copilotCancel);
         if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
