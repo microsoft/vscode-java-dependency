@@ -38,7 +38,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         }
     });
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
-    await registerCopilotContextProviders(context);
+    registerCopilotContextProviders(context);
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
