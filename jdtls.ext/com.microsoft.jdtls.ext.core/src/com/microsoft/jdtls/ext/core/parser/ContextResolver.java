@@ -231,16 +231,14 @@ public class ContextResolver {
             return false;
         }
         
-        // Extract package name from fully qualified type name
         int lastDotIndex = typeName.lastIndexOf('.');
         if (lastDotIndex == -1) {
-            return false; // No package (default package)
+            return false;
         }
         
         String packageName = typeName.substring(0, lastDotIndex);
         
-        // Check if package matches any common JDK package
-        // This includes both exact matches and sub-packages
+        // Check exact match or sub-package match
         return SKIP_COMMON_JDK_PACKAGES.contains(packageName) || 
                SKIP_COMMON_JDK_PACKAGES.stream().anyMatch(pkg -> packageName.startsWith(pkg + "."));
     }
@@ -862,13 +860,15 @@ public class ContextResolver {
     // ================ JavaDoc Extraction Methods ================
 
     /**
-     * Extracts relevant code snippets from Javadoc.
-     * This method is optimized to extract code from `<code>` tags and markdown code fences,
-     * and formats them in an LLM-readable format.
+     * Extracts relevant JavaDoc content including description text and code snippets.
+     * This method extracts:
+     * 1. Class description (first paragraph of text)
+     * 2. Code snippets from <code>, <pre>, and ``` blocks
+     * 3. @deprecated tag if present
      *
      * @param type the type to extract Javadoc from.
      * @param monitor the progress monitor.
-     * @return A string containing all found code snippets, formatted as markdown code blocks.
+     * @return A string containing description and code snippets in LLM-readable format.
      */
     private static String extractRelevantJavaDocContent(org.eclipse.jdt.core.IType type, IProgressMonitor monitor) {
         try {
@@ -883,7 +883,6 @@ public class ContextResolver {
             }
             
             String rawJavadoc;
-            boolean isHtml = false;
 
             // Extract JavaDoc from source code (fast - no I/O, no network, no HTML parsing)
             org.eclipse.jdt.core.ISourceRange javadocRange = type.getJavadocRange();
@@ -896,48 +895,88 @@ public class ContextResolver {
                 return "";
             }
 
-            StringBuilder allCodeSnippets = new StringBuilder();
+            StringBuilder result = new StringBuilder();
             Set<String> seenCodeSnippets = new HashSet<>();
+            
+            // Clean Javadoc comment for processing
+            String cleanedJavadoc = cleanJavadocComment(rawJavadoc);
+            cleanedJavadoc = removeHtmlTags(cleanedJavadoc);
+            cleanedJavadoc = convertHtmlEntities(cleanedJavadoc);
 
+            // === High Priority: Extract class description text (first paragraph) ===
+            String description = extractClassDescription(cleanedJavadoc);
+            if (isNotEmpty(description)) {
+                result.append("Description:\n").append(description).append("\n\n");
+            }
+
+            // === Extract code snippets ===
             // 1. Extract markdown code blocks (```...```)
             Matcher markdownMatcher = MARKDOWN_CODE_PATTERN.matcher(rawJavadoc);
             while (markdownMatcher.find()) {
                 String code = markdownMatcher.group(1).trim();
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
+                    result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
 
             // 2. Extract HTML <pre> and <code> blocks
-            // Clean Javadoc comment for HTML extraction
-            String cleanedForHtml = isHtml ? rawJavadoc : cleanJavadocComment(rawJavadoc);
-            cleanedForHtml = convertHtmlEntities(cleanedForHtml);
-
             // Priority 1: <pre> blocks (often contain well-formatted code)
-            Matcher preMatcher = HTML_PRE_PATTERN.matcher(cleanedForHtml);
+            Matcher preMatcher = HTML_PRE_PATTERN.matcher(cleanedJavadoc);
             while (preMatcher.find()) {
                 String code = preMatcher.group(1).replaceAll("(?i)<code[^>]*>", "").replaceAll("(?i)</code>", "").trim();
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
+                    result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
 
             // Priority 2: <code> blocks (for inline snippets)
-            Matcher codeMatcher = HTML_CODE_PATTERN.matcher(cleanedForHtml);
+            Matcher codeMatcher = HTML_CODE_PATTERN.matcher(cleanedJavadoc);
             while (codeMatcher.find()) {
                 String code = codeMatcher.group(1).trim();
                 // Use HashSet for O(1) duplicate checking
                 if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
-                    allCodeSnippets.append("```java\n").append(code).append("\n```\n\n");
+                    result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
 
-            return allCodeSnippets.toString().trim();
+            return result.toString().trim();
 
         } catch (Exception e) {
             JdtlsExtActivator.logException("Error extracting relevant JavaDoc content for: " + type.getElementName(), e);
             return "";
         }
+    }
+    
+    /**
+     * Extract the main description paragraph from class JavaDoc (before @tags and code blocks).
+     * Returns the first paragraph of descriptive text, limited to reasonable length.
+     */
+    private static String extractClassDescription(String cleanedJavadoc) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
+            return "";
+        }
+        
+        // Remove code blocks first to get pure text
+        String textOnly = cleanedJavadoc;
+        textOnly = MARKDOWN_CODE_PATTERN.matcher(textOnly).replaceAll("");
+        textOnly = HTML_PRE_PATTERN.matcher(textOnly).replaceAll("");
+        textOnly = HTML_CODE_PATTERN.matcher(textOnly).replaceAll("");
+        
+        // Extract description before @tags
+        String description = extractJavadocDescription(textOnly);
+        
+        // Limit to ~2000 characters
+        if (description.length() > 2000) {
+            int breakPoint = findBestBreakpoint(description, 1500, 2100);
+            if (breakPoint != -1) {
+                description = description.substring(0, breakPoint + 1).trim();
+            } else {
+                int lastSpace = description.lastIndexOf(' ', 2000);
+                description = description.substring(0, lastSpace > 1500 ? lastSpace : 2000).trim() + "...";
+            }
+        }
+        
+        return description.trim();
     }
 
     /**
@@ -987,27 +1026,68 @@ public class ContextResolver {
         if (text == null || text.isEmpty()) {
             return text;
         }
-        String result = text;
-        result = result.replace("&nbsp;", " ");
-        result = result.replace("&lt;", "<");
-        result = result.replace("&gt;", ">");
-        result = result.replace("&amp;", "&");
-        result = result.replace("&quot;", "\"");
-        result = result.replace("&#39;", "'");
-        result = result.replace("&apos;", "'");
-        result = result.replace("&mdash;", "-");
-        result = result.replace("&ndash;", "-");
-        return result;
+        return text.replace("&nbsp;", " ")
+                   .replace("&lt;", "<")
+                   .replace("&gt;", ">")
+                   .replace("&amp;", "&")
+                   .replace("&quot;", "\"")
+                   .replace("&#39;", "'")
+                   .replace("&apos;", "'")
+                   .replace("&mdash;", "-")
+                   .replace("&ndash;", "-");
     }
 
     /**
-     * Extract summary description from method JavaDoc
-     * Returns the first sentence or paragraph of the JavaDoc as a brief description
+     * Remove all HTML tags from text, keeping only plain text content.
+     * Preserves line breaks for block-level tags like <p>, <br>, <div>.
      */
-    private static String extractMethodJavaDocSummary(IMethod method) {
-        return extractJavaDocSummaryFromElement(method);
+    private static String removeHtmlTags(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        
+        // Replace block-level tags with line breaks
+        text = text.replaceAll("(?i)</(p|div|li)>|<br\\s*/?>|<p[^>]*>", "\n");
+        
+        // Remove all remaining HTML tags
+        text = text.replaceAll("<[^>]+>", "");
+        
+        // Clean up whitespace: collapse spaces, trim lines, limit line breaks
+        text = text.replaceAll("[ \\t]+", " ")
+                   .replaceAll(" *\\n *", "\n")
+                   .replaceAll("\\n{3,}", "\n\n");
+        
+        return text.trim();
     }
 
+    /**
+     * Extract method JavaDoc content directly for LLM consumption.
+     * Returns cleaned JavaDoc without artificial truncation - let LLM understand the full context.
+     */
+    private static String extractMethodJavaDocSummary(IMethod method) {
+        try {
+            org.eclipse.jdt.core.ISourceRange javadocRange = method.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = method.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (!isNotEmpty(rawJavadoc)) {
+                return "";
+            }
+            
+            // Just clean and return - let LLM understand the full context
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            cleaned = removeHtmlTags(cleaned);
+            return convertHtmlEntities(cleaned);
+            
+        } catch (Exception e) {
+            return "";
+        }
+    }
+    
     /**
      * Extract the main description part from JavaDoc (before @tags)
      */
@@ -1050,13 +1130,7 @@ public class ContextResolver {
         }
         
         // Find first sentence boundary (., !, ?)
-        int[] boundaries = {text.indexOf(". "), text.indexOf(".\n"), text.indexOf("! "), text.indexOf("? ")};
-        int firstSentenceEnd = -1;
-        for (int boundary : boundaries) {
-            if (boundary != -1 && (firstSentenceEnd == -1 || boundary < firstSentenceEnd)) {
-                firstSentenceEnd = boundary;
-            }
-        }
+        int firstSentenceEnd = findFirstSentenceBoundary(text);
         
         // Return first sentence if within reasonable length
         if (firstSentenceEnd != -1 && firstSentenceEnd < maxLength) {
@@ -1072,12 +1146,67 @@ public class ContextResolver {
         
         return text.trim();
     }
+    
+    /**
+     * Find the first sentence boundary in text
+     */
+    private static int findFirstSentenceBoundary(String text) {
+        int[] boundaries = {text.indexOf(". "), text.indexOf(".\n"), text.indexOf("! "), text.indexOf("? ")};
+        int result = -1;
+        for (int boundary : boundaries) {
+            if (boundary != -1 && (result == -1 || boundary < result)) {
+                result = boundary;
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Find the best breakpoint for truncating text within a range
+     */
+    private static int findBestBreakpoint(String text, int minPos, int maxPos) {
+        int[] boundaries = {
+            text.indexOf(". ", minPos),
+            text.indexOf(".\n", minPos),
+            text.indexOf("! ", minPos),
+            text.indexOf("? ", minPos)
+        };
+        
+        int result = -1;
+        for (int boundary : boundaries) {
+            if (boundary != -1 && boundary < maxPos && (result == -1 || boundary < result)) {
+                result = boundary;
+            }
+        }
+        return result;
+    }
 
     /**
-     * Extract summary description from field JavaDoc
+     * Extract field JavaDoc content directly for LLM consumption.
+     * Returns cleaned JavaDoc without artificial truncation - let LLM understand the full context.
      */
     private static String extractFieldJavaDocSummary(org.eclipse.jdt.core.IField field) {
-        return extractJavaDocSummaryFromElement(field);
+        try {
+            org.eclipse.jdt.core.ISourceRange javadocRange = field.getJavadocRange();
+            if (javadocRange == null) {
+                return "";
+            }
+            
+            String rawJavadoc = field.getCompilationUnit().getSource()
+                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
+            
+            if (!isNotEmpty(rawJavadoc)) {
+                return "";
+            }
+            
+            // Just clean and return - let LLM understand the full context
+            String cleaned = cleanJavadocComment(rawJavadoc);
+            cleaned = removeHtmlTags(cleaned);
+            return convertHtmlEntities(cleaned);
+            
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     /**
@@ -1093,8 +1222,6 @@ public class ContextResolver {
     public static String generateFieldSignature(org.eclipse.jdt.core.IField field) {
         return generateFieldSignatureInternal(field, false);
     }
-
-
 
     /**
      * Convert JDT type signature to human-readable format
@@ -1228,30 +1355,7 @@ public class ContextResolver {
         return lastDot == -1 ? qualifiedName : qualifiedName.substring(lastDot + 1);
     }
 
-    /**
-     * Unified JavaDoc summary extractor for methods and fields
-     */
-    private static String extractJavaDocSummaryFromElement(org.eclipse.jdt.core.IMember element) {
-        try {
-            org.eclipse.jdt.core.ISourceRange javadocRange = element.getJavadocRange();
-            if (javadocRange == null) {
-                return "";
-            }
-            
-            String rawJavadoc = element.getCompilationUnit().getSource()
-                .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
-            
-            if (rawJavadoc == null || rawJavadoc.isEmpty()) {
-                return "";
-            }
-            
-            String cleaned = cleanJavadocComment(rawJavadoc);
-            String description = extractJavadocDescription(cleaned);
-            return getFirstSentenceOrLimit(description, 120);
-        } catch (Exception e) {
-            return "";
-        }
-    }
+
 
     /**
      * Unified method signature generator (handles both source and binary types)
