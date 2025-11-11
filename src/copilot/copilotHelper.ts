@@ -282,7 +282,7 @@ export namespace CopilotHelper {
     ): Promise<IResolveResult> {
         const items: any[] = [];
         
-        // Check if workspace folders exist
+        // Check if active editor exists
         if (!activeEditor) {
             return { items: [], emptyReason: EmptyReason.NoActiveEditor, itemCount: 0 };
         }
@@ -302,7 +302,7 @@ export namespace CopilotHelper {
             return { items: [], emptyReason: projectDependenciesResult.emptyReason, itemCount: 0 };
         }
 
-        // Check for cancellation after telemetry
+        // Check for cancellation after dependency resolution
         checkCancellation(copilotCancel);
 
         // Convert project dependencies to context items
