@@ -2,8 +2,7 @@
 // Licensed under the MIT license.
 
 import { commands, Uri, CancellationToken } from "vscode";
-import { sendError, sendInfo } from "vscode-extension-telemetry-wrapper";
-import { GetImportClassContentError, GetProjectDependenciesError, sendContextOperationTelemetry, JavaContextProviderUtils } from "./utils";
+import { JavaContextProviderUtils } from "./utils";
 import { Commands } from '../commands';
 
 /**
@@ -53,17 +52,6 @@ export interface IProjectDependenciesResult {
  */
 export namespace CopilotHelper {
     /**
-     * Resolves all local project types imported by the given file (backward compatibility version)
-     * @param fileUri The URI of the Java file to analyze
-     * @param cancellationToken Optional cancellation token to abort the operation
-     * @returns Array of import class information
-     */
-    export async function resolveLocalImports(fileUri: Uri, cancellationToken?: CancellationToken): Promise<INodeImportClass[]> {
-        const result = await resolveLocalImportsWithReason(fileUri, cancellationToken);
-        return result.classInfoList;
-    }
-
-    /**
      * Resolves all local project types imported by the given file with detailed error reporting
      * @param fileUri The URI of the Java file to analyze
      * @param cancellationToken Optional cancellation token to abort the operation
@@ -85,46 +73,41 @@ export namespace CopilotHelper {
                 Commands.JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT,
                 normalizedUri
             ) as Promise<IImportClassContentResult>;
+
+            // Build promises array for race condition
+            // Note: Client-side timeout is NECESSARY even if backend has timeout because:
+            // 1. Network delays may prevent backend response from arriving
+            // 2. Process hangs won't trigger backend timeout
+            // 3. Command dispatch failures need to be caught
+            const promises: Promise<IImportClassContentResult>[] = [
+                commandPromise,
+                new Promise<IImportClassContentResult>((_, reject) => {
+                    setTimeout(() => {
+                        reject(new Error(ErrorMessage.OperationTimedOut));
+                    }, 80); // 80ms client-side timeout (independent of backend timeout)
+                })
+            ];
+
+            // Add cancellation promise if token provided
             if (cancellationToken) {
-                const result = await Promise.race([
-                    commandPromise,
+                promises.push(
                     new Promise<IImportClassContentResult>((_, reject) => {
                         cancellationToken.onCancellationRequested(() => {
                             reject(new Error(ErrorMessage.OperationCancelled));
                         });
-                    }),
-                    new Promise<IImportClassContentResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 80); // 80ms timeout
                     })
-                ]);
-                if (!result) {
-                    return {
-                        classInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
-            } else {
-                const result = await Promise.race([
-                    commandPromise,
-                    new Promise<IImportClassContentResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 80); // 80ms timeout
-                    })
-                ]);
-                if (!result) {
-                    return {
-                        classInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
+                );
             }
+
+            const result = await Promise.race(promises);
+            if (!result) {
+                return {
+                    classInfoList: [],
+                    emptyReason: EmptyReason.CommandNullResult,
+                    isEmpty: true
+                };
+            }
+            return result;
         } catch (error: any) {
             if (error.message === ErrorMessage.OperationCancelled) {
                 return {
@@ -141,31 +124,12 @@ export namespace CopilotHelper {
                 };
             }
             const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
-            sendError(new GetImportClassContentError(errorMessage));
             return {
                 classInfoList: [],
                 emptyReason: errorMessage,
                 isEmpty: true
             };
         }
-    }
-
-    /**
-     * Resolves project dependencies for the given project URI (backward compatibility version)
-     * @param projectUri The URI of the Java project to analyze
-     * @param cancellationToken Optional cancellation token to abort the operation
-     * @returns Object containing project dependencies as key-value pairs
-     */
-    export async function resolveProjectDependencies(projectUri: Uri, cancellationToken?: CancellationToken): Promise<IProjectDependency> {
-        const result = await resolveProjectDependenciesWithReason(projectUri, cancellationToken);
-
-        // Convert to legacy format
-        const dependencies: IProjectDependency = {};
-        for (const dep of result.dependencyInfoList) {
-            dependencies[dep.key] = dep.value;
-        }
-
-        return dependencies;
     }
 
     /**
@@ -194,46 +158,40 @@ export namespace CopilotHelper {
                 normalizedUri
             ) as Promise<IProjectDependenciesResult>;
 
+            // Build promises array for race condition
+            // Note: Client-side timeout is NECESSARY even if backend has timeout because:
+            // 1. Network delays may prevent backend response from arriving
+            // 2. Process hangs won't trigger backend timeout
+            // 3. Command dispatch failures need to be caught
+            const promises: Promise<IProjectDependenciesResult>[] = [
+                commandPromise,
+                new Promise<IProjectDependenciesResult>((_, reject) => {
+                    setTimeout(() => {
+                        reject(new Error(ErrorMessage.OperationTimedOut));
+                    }, 40); // 40ms client-side timeout (independent of backend timeout)
+                })
+            ];
+
+            // Add cancellation promise if token provided
             if (cancellationToken) {
-                const result = await Promise.race([
-                    commandPromise,
+                promises.push(
                     new Promise<IProjectDependenciesResult>((_, reject) => {
                         cancellationToken.onCancellationRequested(() => {
                             reject(new Error(ErrorMessage.OperationCancelled));
                         });
-                    }),
-                    new Promise<IProjectDependenciesResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 40); // 40ms timeout
                     })
-                ]);
-                if (!result) {
-                    return {
-                        dependencyInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
-            } else {
-                const result = await Promise.race([
-                    commandPromise,
-                    new Promise<IProjectDependenciesResult>((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error(ErrorMessage.OperationTimedOut));
-                        }, 40); // 40ms timeout
-                    })
-                ]);
-                if (!result) {
-                    return {
-                        dependencyInfoList: [],
-                        emptyReason: EmptyReason.CommandNullResult,
-                        isEmpty: true
-                    };
-                }
-                return result;
+                );
             }
+
+            const result = await Promise.race(promises);
+            if (!result) {
+                return {
+                    dependencyInfoList: [],
+                    emptyReason: EmptyReason.CommandNullResult,
+                    isEmpty: true
+                };
+            }
+            return result;
         } catch (error: any) {
             if (error.message === ErrorMessage.OperationCancelled) {
                 return {
@@ -250,7 +208,6 @@ export namespace CopilotHelper {
                 };
             }
             const errorMessage = 'TsException_' + ((error as Error).message || "unknown");
-            sendError(new GetProjectDependenciesError(errorMessage));
             return {
                 dependencyInfoList: [],
                 emptyReason: errorMessage,
@@ -260,26 +217,34 @@ export namespace CopilotHelper {
     }
 
     /**
+     * Result interface for dependency resolution with diagnostic information
+     */
+    export interface IResolveResult {
+        items: any[];
+        emptyReason?: string;
+        itemCount: number;
+    }
+
+    /**
      * Resolves project dependencies and converts them to context items with cancellation support
-     * @param workspaceFolders The workspace folders, or undefined if none
+     * @param activeEditor The active text editor, or undefined if none
      * @param copilotCancel Cancellation token from Copilot
      * @param checkCancellation Function to check for cancellation
-     * @returns Array of context items for project dependencies, or empty array if no workspace folders
+     * @returns Result object containing context items and diagnostic information
      */
     export async function resolveAndConvertProjectDependencies(
         activeEditor: { document: { uri: Uri; languageId: string } } | undefined,
         copilotCancel: CancellationToken,
         checkCancellation: (token: CancellationToken) => void
-    ): Promise<{ name: string; value: string; importance: number }[]> {
+    ): Promise<IResolveResult> {
         const items: any[] = [];
-        // Check if workspace folders exist
+
+        // Check if active editor exists
         if (!activeEditor) {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NoActiveEditor);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NoActiveEditor, itemCount: 0 };
         }
         if (activeEditor.document.languageId !== 'java') {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NotJavaFile);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NotJavaFile, itemCount: 0 };
         }
         const documentUri = activeEditor.document.uri;
 
@@ -289,12 +254,12 @@ export namespace CopilotHelper {
         // Check for cancellation after dependency resolution
         checkCancellation(copilotCancel);
 
-        // Send telemetry if result is empty
+        // Return empty result with reason if no dependencies found
         if (projectDependenciesResult.isEmpty && projectDependenciesResult.emptyReason) {
-            sendContextOperationTelemetry("resolveProjectDependencies", "ContextEmpty", sendInfo, projectDependenciesResult.emptyReason);
+            return { items: [], emptyReason: projectDependenciesResult.emptyReason, itemCount: 0 };
         }
 
-        // Check for cancellation after telemetry
+        // Check for cancellation after dependency resolution
         checkCancellation(copilotCancel);
 
         // Convert project dependencies to context items
@@ -306,7 +271,7 @@ export namespace CopilotHelper {
             items.push(...contextItems);
         }
 
-        return items;
+        return { items, itemCount: items.length };
     }
 
     /**
@@ -314,23 +279,21 @@ export namespace CopilotHelper {
      * @param activeEditor The active text editor, or undefined if none
      * @param copilotCancel Cancellation token from Copilot
      * @param checkCancellation Function to check for cancellation
-     * @param createContextItems Function to create context items from imports
-     * @returns Array of context items for local imports, or empty array if no valid editor
+     * @returns Result object containing context items and diagnostic information
      */
     export async function resolveAndConvertLocalImports(
         activeEditor: { document: { uri: Uri; languageId: string } } | undefined,
         copilotCancel: CancellationToken,
         checkCancellation: (token: CancellationToken) => void
-    ): Promise<any[]> {
+    ): Promise<IResolveResult> {
         const items: any[] = [];
+
         // Check if there's an active editor with a Java document
         if (!activeEditor) {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NoActiveEditor);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NoActiveEditor, itemCount: 0 };
         }
         if (activeEditor.document.languageId !== 'java') {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NotJavaFile);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NotJavaFile, itemCount: 0 };
         }
 
         const documentUri = activeEditor.document.uri;
@@ -343,10 +306,11 @@ export namespace CopilotHelper {
         // Check for cancellation after resolution
         checkCancellation(copilotCancel);
 
-        // Send telemetry if result is empty
+        // Return empty result with reason if no imports found
         if (importClassResult.isEmpty && importClassResult.emptyReason) {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, importClassResult.emptyReason);
+            return { items: [], emptyReason: importClassResult.emptyReason, itemCount: 0 };
         }
+
         // Check for cancellation before processing results
         checkCancellation(copilotCancel);
         if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
@@ -357,6 +321,6 @@ export namespace CopilotHelper {
             items.push(...contextItems);
         }
 
-        return items;
+        return { items, itemCount: items.length };
     }
 }
