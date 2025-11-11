@@ -213,7 +213,7 @@ export class ContextProviderResolverError extends Error {
 /**
  * Send consolidated telemetry data for Java context resolution
  * This is the centralized function for sending context resolution telemetry
- * 
+ *
  * @param request The resolve request from Copilot
  * @param start Performance timestamp when resolution started
  * @param items The resolved context items
