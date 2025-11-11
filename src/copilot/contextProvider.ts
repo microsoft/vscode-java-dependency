@@ -18,7 +18,8 @@ import {
     ContextResolverFunction,
     CopilotApi,
     ContextProviderRegistrationError,
-    ContextProviderResolverError
+    ContextProviderResolverError,
+    sendContextResolutionTelemetry
 } from './utils';
 
 export async function registerCopilotContextProviders(
@@ -70,70 +71,99 @@ function createJavaContextResolver(): ContextResolverFunction {
     };
 }
 
-/**
- * Send telemetry data for Java context resolution
- */
-function sendContextTelemetry(request: ResolveRequest, start: number, items: SupportedContextItem[], status: string, error?: string) {
-    const duration = Math.round(performance.now() - start);
-    const tokenCount = JavaContextProviderUtils.calculateTokenCount(items);
-    const telemetryData: any = {
-        "action": "resolveJavaContext",
-        "completionId": request.completionId,
-        "duration": duration,
-        "itemCount": items.length,
-        "tokenCount": tokenCount,
-        "status": status
-    };
-    if (error) {
-        telemetryData.error = error;
-    }
-    sendInfo("", telemetryData);
-}
-
 async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode.CancellationToken): Promise<SupportedContextItem[]> {
     const items: SupportedContextItem[] = [];
     const start = performance.now();
+    
+    let dependenciesResult: CopilotHelper.IResolveResult | undefined;
+    let importsResult: CopilotHelper.IResolveResult | undefined;
+    
     try {
         // Check for cancellation before starting
         JavaContextProviderUtils.checkCancellation(copilotCancel);
+        
         // Resolve project dependencies and convert to context items
-        const projectDependencyItems = await CopilotHelper.resolveAndConvertProjectDependencies(
+        dependenciesResult = await CopilotHelper.resolveAndConvertProjectDependencies(
             vscode.window.activeTextEditor,
             copilotCancel,
             JavaContextProviderUtils.checkCancellation
         );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-        items.push(...projectDependencyItems);
+        items.push(...dependenciesResult.items);
 
         JavaContextProviderUtils.checkCancellation(copilotCancel);
 
         // Resolve local imports and convert to context items
-        const localImportItems = await CopilotHelper.resolveAndConvertLocalImports(
+        importsResult = await CopilotHelper.resolveAndConvertLocalImports(
             vscode.window.activeTextEditor,
             copilotCancel,
             JavaContextProviderUtils.checkCancellation
         );
         JavaContextProviderUtils.checkCancellation(copilotCancel);
-        items.push(...localImportItems);
+        items.push(...importsResult.items);
     } catch (error: any) {
         if (error instanceof CopilotCancellationError) {
-            sendContextTelemetry(request, start, items, "cancelled_by_copilot");
+            sendContextResolutionTelemetry(
+                request, 
+                start, 
+                items, 
+                "cancelled_by_copilot",
+                sendInfo,
+                undefined,
+                dependenciesResult?.emptyReason,
+                importsResult?.emptyReason,
+                dependenciesResult?.itemCount,
+                importsResult?.itemCount
+            );
             throw error;
         }
         if (error instanceof vscode.CancellationError || error.message === CancellationError.CANCELED) {
-            sendContextTelemetry(request, start, items, "cancelled_internally");
+            sendContextResolutionTelemetry(
+                request, 
+                start, 
+                items, 
+                "cancelled_internally",
+                sendInfo,
+                undefined,
+                dependenciesResult?.emptyReason,
+                importsResult?.emptyReason,
+                dependenciesResult?.itemCount,
+                importsResult?.itemCount
+            );
             throw new InternalCancellationError();
         }
 
         // Send telemetry for general errors (but continue with partial results)
-        sendContextTelemetry(request, start, items, "error_partial_results", error.message || "unknown_error");
+        sendContextResolutionTelemetry(
+            request, 
+            start, 
+            items, 
+            "error_partial_results",
+            sendInfo,
+            error.message || "unknown_error",
+            dependenciesResult?.emptyReason,
+            importsResult?.emptyReason,
+            dependenciesResult?.itemCount,
+            importsResult?.itemCount
+        );
 
         // Return partial results and log completion for error case
         return items;
     }
 
     // Send telemetry data once at the end for success case
-    sendContextTelemetry(request, start, items, "succeeded");
+    sendContextResolutionTelemetry(
+        request, 
+        start, 
+        items, 
+        "succeeded",
+        sendInfo,
+        undefined,
+        dependenciesResult?.emptyReason,
+        importsResult?.emptyReason,
+        dependenciesResult?.itemCount,
+        importsResult?.itemCount
+    );
 
     return items;
 }

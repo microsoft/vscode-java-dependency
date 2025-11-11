@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 import { commands, Uri, CancellationToken } from "vscode";
-import { sendError, sendInfo } from "vscode-extension-telemetry-wrapper";
-import { GetImportClassContentError, GetProjectDependenciesError, sendContextOperationTelemetry, JavaContextProviderUtils } from "./utils";
+import { sendError } from "vscode-extension-telemetry-wrapper";
+import { GetImportClassContentError, GetProjectDependenciesError, JavaContextProviderUtils } from "./utils";
 import { Commands } from '../commands';
 
 /**
@@ -260,26 +260,34 @@ export namespace CopilotHelper {
     }
 
     /**
+     * Result interface for dependency resolution with diagnostic information
+     */
+    export interface IResolveResult {
+        items: any[];
+        emptyReason?: string;
+        itemCount: number;
+    }
+
+    /**
      * Resolves project dependencies and converts them to context items with cancellation support
-     * @param workspaceFolders The workspace folders, or undefined if none
+     * @param activeEditor The active text editor, or undefined if none
      * @param copilotCancel Cancellation token from Copilot
      * @param checkCancellation Function to check for cancellation
-     * @returns Array of context items for project dependencies, or empty array if no workspace folders
+     * @returns Result object containing context items and diagnostic information
      */
     export async function resolveAndConvertProjectDependencies(
         activeEditor: { document: { uri: Uri; languageId: string } } | undefined,
         copilotCancel: CancellationToken,
         checkCancellation: (token: CancellationToken) => void
-    ): Promise<{ name: string; value: string; importance: number }[]> {
+    ): Promise<IResolveResult> {
         const items: any[] = [];
+        
         // Check if workspace folders exist
         if (!activeEditor) {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NoActiveEditor);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NoActiveEditor, itemCount: 0 };
         }
         if (activeEditor.document.languageId !== 'java') {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NotJavaFile);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NotJavaFile, itemCount: 0 };
         }
         const documentUri = activeEditor.document.uri;
 
@@ -289,9 +297,9 @@ export namespace CopilotHelper {
         // Check for cancellation after dependency resolution
         checkCancellation(copilotCancel);
 
-        // Send telemetry if result is empty
+        // Return empty result with reason if no dependencies found
         if (projectDependenciesResult.isEmpty && projectDependenciesResult.emptyReason) {
-            sendContextOperationTelemetry("resolveProjectDependencies", "ContextEmpty", sendInfo, projectDependenciesResult.emptyReason);
+            return { items: [], emptyReason: projectDependenciesResult.emptyReason, itemCount: 0 };
         }
 
         // Check for cancellation after telemetry
@@ -306,7 +314,7 @@ export namespace CopilotHelper {
             items.push(...contextItems);
         }
 
-        return items;
+        return { items, itemCount: items.length };
     }
 
     /**
@@ -314,23 +322,21 @@ export namespace CopilotHelper {
      * @param activeEditor The active text editor, or undefined if none
      * @param copilotCancel Cancellation token from Copilot
      * @param checkCancellation Function to check for cancellation
-     * @param createContextItems Function to create context items from imports
-     * @returns Array of context items for local imports, or empty array if no valid editor
+     * @returns Result object containing context items and diagnostic information
      */
     export async function resolveAndConvertLocalImports(
         activeEditor: { document: { uri: Uri; languageId: string } } | undefined,
         copilotCancel: CancellationToken,
         checkCancellation: (token: CancellationToken) => void
-    ): Promise<any[]> {
+    ): Promise<IResolveResult> {
         const items: any[] = [];
+        
         // Check if there's an active editor with a Java document
         if (!activeEditor) {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NoActiveEditor);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NoActiveEditor, itemCount: 0 };
         }
         if (activeEditor.document.languageId !== 'java') {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, EmptyReason.NotJavaFile);
-            return items;
+            return { items: [], emptyReason: EmptyReason.NotJavaFile, itemCount: 0 };
         }
 
         const documentUri = activeEditor.document.uri;
@@ -343,10 +349,11 @@ export namespace CopilotHelper {
         // Check for cancellation after resolution
         checkCancellation(copilotCancel);
 
-        // Send telemetry if result is empty
+        // Return empty result with reason if no imports found
         if (importClassResult.isEmpty && importClassResult.emptyReason) {
-            sendContextOperationTelemetry("resolveLocalImports", "ContextEmpty", sendInfo, importClassResult.emptyReason);
+            return { items: [], emptyReason: importClassResult.emptyReason, itemCount: 0 };
         }
+        
         // Check for cancellation before processing results
         checkCancellation(copilotCancel);
         if (importClassResult.classInfoList && importClassResult.classInfoList.length > 0) {
@@ -357,6 +364,6 @@ export namespace CopilotHelper {
             items.push(...contextItems);
         }
 
-        return items;
+        return { items, itemCount: items.length };
     }
 }

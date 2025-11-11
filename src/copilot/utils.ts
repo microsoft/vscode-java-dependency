@@ -210,24 +210,55 @@ export class ContextProviderResolverError extends Error {
 }
 
 /**
- * Send telemetry data for context operations (like resolveProjectDependencies, resolveLocalImports)
- * @param action The action being performed
- * @param status The status of the action (e.g., "ContextEmpty", "succeeded")
- * @param reason Optional reason for empty context
+ * Send consolidated telemetry data for Java context resolution
+ * This is the centralized function for sending context resolution telemetry
+ * 
+ * @param request The resolve request from Copilot
+ * @param start Performance timestamp when resolution started
+ * @param items The resolved context items
+ * @param status Status of the resolution ("succeeded", "cancelled_by_copilot", "cancelled_internally", "error_partial_results")
  * @param sendInfo The sendInfo function from vscode-extension-telemetry-wrapper
+ * @param error Optional error message
+ * @param dependenciesEmptyReason Optional reason why dependencies were empty
+ * @param importsEmptyReason Optional reason why imports were empty
+ * @param dependenciesCount Number of dependency items resolved
+ * @param importsCount Number of import items resolved
  */
-export function sendContextOperationTelemetry(
-    action: string,
+export function sendContextResolutionTelemetry(
+    request: ResolveRequest,
+    start: number,
+    items: SupportedContextItem[],
     status: string,
     sendInfo: (eventName: string, properties?: any) => void,
-    reason?: string
+    error?: string,
+    dependenciesEmptyReason?: string,
+    importsEmptyReason?: string,
+    dependenciesCount?: number,
+    importsCount?: number
 ): void {
+    const duration = Math.round(performance.now() - start);
+    const tokenCount = JavaContextProviderUtils.calculateTokenCount(items);
     const telemetryData: any = {
-        "action": action,
-        "status": status
+        "action": "resolveJavaContext",
+        "completionId": request.completionId,
+        "duration": duration,
+        "itemCount": items.length,
+        "tokenCount": tokenCount,
+        "status": status,
+        "dependenciesCount": dependenciesCount ?? 0,
+        "importsCount": importsCount ?? 0
     };
-    if (reason) {
-        telemetryData.ContextEmptyReason = reason;
+    
+    // Add empty reasons if present
+    if (dependenciesEmptyReason) {
+        telemetryData.dependenciesEmptyReason = dependenciesEmptyReason;
     }
+    if (importsEmptyReason) {
+        telemetryData.importsEmptyReason = importsEmptyReason;
+    }
+    if (error) {
+        telemetryData.error = error;
+    }
+    
     sendInfo("", telemetryData);
 }
