@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Fix - Update wording for Java 21 in https://github.com/microsoft/vscode-java-dependency/pull/930
 - Enhancement - throttling telemetry event in context provider https://github.com/microsoft/vscode-java-dependency/pull/936
-- Enhancement - optimized the javadoc from binary and filter common 3rd lib https://github.com/microsoft/vscode-java-dependency/pull/931
-- Fix - unblock activate extension while register copilot context provider https://github.com/microsoft/vscode-java-dependency/pull/937
+- Enhancement - optimizing javadoc from binary and filter common 3rd lib https://github.com/microsoft/vscode-java-dependency/pull/931
+- Fix - unblocking activation of extension while registering copilot context provider https://github.com/microsoft/vscode-java-dependency/pull/937
 
 ## 0.26.3
 
