@@ -22,6 +22,7 @@ import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionPr
 import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
 import { registerCopilotContextProviders } from "./copilot/contextProvider";
+import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -38,7 +39,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
         }
     });
     contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
-    registerCopilotContextProviders(context);
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
@@ -85,6 +85,13 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         }
     ));
     setContextForDeprecatedTasks();
+    
+    // Register Copilot context providers after Java Language Server is ready
+    languageServerApiManager.ready().then((isReady) => {
+        if (isReady) {
+            registerCopilotContextProviders(context);
+        }
+    });
 }
 
 // this method is called when your extension is deactivated
