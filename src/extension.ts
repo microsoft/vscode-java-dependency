@@ -85,7 +85,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
         }
     ));
     setContextForDeprecatedTasks();
-    
+
     // Register Copilot context providers after Java Language Server is ready
     languageServerApiManager.ready().then((isReady) => {
         if (isReady) {
