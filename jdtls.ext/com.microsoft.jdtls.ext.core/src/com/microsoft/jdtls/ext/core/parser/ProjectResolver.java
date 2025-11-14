@@ -170,10 +170,9 @@ public class ProjectResolver {
             return;
         }
         
-        String projectPath = project.getLocation() != null ? 
-            project.getLocation().toOSString() : project.getName();
+        String projectUri = JDTUtils.getFileURI(project);
         
-        if (dependencyCache.remove(projectPath) != null) {
+        if (dependencyCache.remove(projectUri) != null) {
             JdtlsExtActivator.logInfo("Cache invalidated for project: " + project.getName());
         }
     }
@@ -260,8 +259,8 @@ public class ProjectResolver {
                 return result;
             }
             
-            // Generate cache key based on project location
-            String cacheKey = project.getLocation().toOSString();
+            // Generate cache key based on project URI
+            String cacheKey = JDTUtils.getFileURI(project);
             
             // Calculate current classpath hash for validation
             long currentClasspathHash = calculateClasspathHash(javaProject);
@@ -298,8 +297,7 @@ public class ProjectResolver {
     private static void addBasicProjectInfo(List<DependencyInfo> result, IProject project, IJavaProject javaProject) {
         result.add(new DependencyInfo(KEY_PROJECT_NAME, project.getName()));
         
-        addIfNotNull(result, KEY_PROJECT_LOCATION, 
-            project.getLocation() != null ? project.getLocation().toOSString() : null);
+        addIfNotNull(result, KEY_PROJECT_LOCATION, JDTUtils.getFileURI(project));
         
         addIfNotNull(result, KEY_JAVA_VERSION, 
             javaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true));
