@@ -44,7 +44,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IModuleDescription;
@@ -58,6 +57,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
 import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.ResourceUtils;
@@ -501,42 +501,21 @@ public final class ProjectCommand {
             if (fileUri == null || fileUri.trim().isEmpty()) {
                 return new ImportClassContentResult(ImportClassContentErrorReason.INVALID_URI, fileUri);
             }
-            // Parse URI manually to avoid restricted API
-            java.net.URI uri = new java.net.URI(fileUri);
-            String filePath = uri.getPath();
-            if (filePath == null) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.URI_PARSE_FAILED, filePath);
+
+            // Directly resolve compilation unit from URI using JDTUtils
+            java.net.URI uri = JDTUtils.toURI(fileUri);
+            org.eclipse.jdt.core.ICompilationUnit compilationUnit = JDTUtils.resolveCompilationUnit(uri);
+            
+            if (compilationUnit == null || !compilationUnit.exists()) {
+                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_FOUND, fileUri);
             }
 
-            IPath path = new Path(filePath);
-
-            // Get the file resource
-            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-            IFile file = root.getFileForLocation(path);
-            if (file == null || !file.exists()) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_FOUND, filePath);
-            }
-            if (!file.exists()) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.FILE_NOT_EXISTS, filePath);
-            }
-
-            // Get the Java project
-            IJavaProject javaProject = JavaCore.create(file.getProject());
-            if (javaProject == null) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_JAVA_PROJECT, filePath);
-            }
-            if (!javaProject.exists()) {
-                String projectName = javaProject.getProject().getName();
+            // Get the Java project from the compilation unit
+            IJavaProject javaProject = compilationUnit.getJavaProject();
+            if (javaProject == null || !javaProject.exists()) {
+                String projectName = javaProject != null ? javaProject.getProject().getName() : "unknown";
                 return new ImportClassContentResult(ImportClassContentErrorReason.PROJECT_NOT_EXISTS, projectName);
             }
-
-            // Find the compilation unit
-            IJavaElement javaElement = JavaCore.create(file);
-            if (!(javaElement instanceof org.eclipse.jdt.core.ICompilationUnit)) {
-                return new ImportClassContentResult(ImportClassContentErrorReason.NOT_COMPILATION_UNIT, filePath);
-            }
-
-            org.eclipse.jdt.core.ICompilationUnit compilationUnit = (org.eclipse.jdt.core.ICompilationUnit) javaElement;
 
             // Parse imports and resolve local project files
             List<ImportClassInfo> classInfoList = new ArrayList<>();
