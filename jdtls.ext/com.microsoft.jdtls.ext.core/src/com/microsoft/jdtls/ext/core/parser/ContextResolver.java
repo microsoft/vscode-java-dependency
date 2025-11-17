@@ -959,7 +959,7 @@ public class ContextResolver {
      * Returns the first paragraph of descriptive text, limited to reasonable length.
      */
     private static String extractClassDescription(String cleanedJavadoc) {
-        if (StringUtils.isBlank(cleanedJavadoc)) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
             return "";
         }
         
@@ -990,7 +990,7 @@ public class ContextResolver {
      * Clean up raw JavaDoc comment by removing comment markers and asterisks
      */
     private static String cleanJavadocComment(String rawJavadoc) {
-        if (StringUtils.isBlank(rawJavadoc)) {
+        if (rawJavadoc == null || rawJavadoc.isEmpty()) {
             return "";
         }
         
@@ -1030,7 +1030,7 @@ public class ContextResolver {
      * Convert HTML entities to their plain text equivalents
      */
     private static String convertHtmlEntities(String text) {
-        if (StringUtils.isBlank(text)) {
+        if (text == null || text.isEmpty()) {
             return text;
         }
         return text.replace("&nbsp;", " ")
@@ -1049,7 +1049,7 @@ public class ContextResolver {
      * Preserves line breaks for block-level tags like <p>, <br>, <div>.
      */
     private static String removeHtmlTags(String text) {
-        if (StringUtils.isBlank(text)) {
+        if (text == null || text.isEmpty()) {
             return text;
         }
         
@@ -1099,7 +1099,7 @@ public class ContextResolver {
      * Extract the main description part from JavaDoc (before @tags)
      */
     private static String extractJavadocDescription(String cleanedJavadoc) {
-        if (StringUtils.isBlank(cleanedJavadoc)) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
             return "";
         }
         
@@ -1132,7 +1132,7 @@ public class ContextResolver {
      * Get the first sentence or limit the text to maxLength characters
      */
     private static String getFirstSentenceOrLimit(String text, int maxLength) {
-        if (StringUtils.isBlank(text)) {
+        if (text == null || text.isEmpty()) {
             return "";
         }
         
