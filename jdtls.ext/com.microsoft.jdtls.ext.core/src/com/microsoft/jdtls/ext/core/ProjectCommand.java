@@ -672,15 +672,13 @@ public final class ProjectCommand {
                 return new ProjectDependenciesResult(ProjectDependenciesErrorReason.INVALID_URI, fileUri);
             }
 
-            // Validate URI format
-            String parsedPath = null;
+            // Validate URI format using JDTUtils
             try {
-                java.net.URI uri = new java.net.URI(fileUri);
-                parsedPath = uri.getPath();
-                if (parsedPath == null) {
-                    return new ProjectDependenciesResult(ProjectDependenciesErrorReason.URI_PARSE_FAILED, parsedPath);
+                java.net.URI uri = JDTUtils.toURI(fileUri);
+                if (uri == null) {
+                    return new ProjectDependenciesResult(ProjectDependenciesErrorReason.URI_PARSE_FAILED, fileUri);
                 }
-            } catch (java.net.URISyntaxException e) {
+            } catch (Exception e) {
                 return new ProjectDependenciesResult(ProjectDependenciesErrorReason.MALFORMED_URI, fileUri);
             }
 
