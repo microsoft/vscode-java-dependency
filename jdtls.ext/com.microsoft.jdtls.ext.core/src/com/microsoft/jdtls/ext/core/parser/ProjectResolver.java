@@ -11,7 +11,6 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
-import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -25,7 +24,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.launching.JavaRuntime;
-import org.eclipse.jdt.ls.core.internal.ResourceUtils;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
 
 import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
 
@@ -171,10 +170,9 @@ public class ProjectResolver {
             return;
         }
         
-        String projectPath = project.getLocation() != null ? 
-            project.getLocation().toOSString() : project.getName();
+        String projectUri = JDTUtils.getFileURI(project);
         
-        if (dependencyCache.remove(projectPath) != null) {
+        if (dependencyCache.remove(projectUri) != null) {
             JdtlsExtActivator.logInfo("Cache invalidated for project: " + project.getName());
         }
     }
@@ -214,7 +212,6 @@ public class ProjectResolver {
     private static final String KEY_MODULE_NAME = "moduleName";
     private static final String KEY_TOTAL_LIBRARIES = "totalLibraries";
     private static final String KEY_TOTAL_PROJECT_REFS = "totalProjectReferences";
-    private static final String KEY_JRE_CONTAINER_PATH = "jreContainerPath";
     private static final String KEY_JRE_CONTAINER = "jreContainer";
     
     public static class DependencyInfo {
@@ -242,12 +239,16 @@ public class ProjectResolver {
         List<DependencyInfo> result = new ArrayList<>();
         
         try {
-            IPath fileIPath = ResourceUtils.canonicalFilePathFromURI(fileUri);
+            // Use JDTUtils to convert URI and find the resource
+            java.net.URI uri = JDTUtils.toURI(fileUri);
+            IResource resource = JDTUtils.findResource(uri, 
+                ResourcesPlugin.getWorkspace().getRoot()::findFilesForLocationURI);
             
-            // Find the project
-            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-            IProject project = findProjectByPath(root, fileIPath);
+            if (resource == null) {
+                return result;
+            }
             
+            IProject project = resource.getProject();
             if (project == null || !project.isAccessible()) {
                 return result;
             }
@@ -258,8 +259,8 @@ public class ProjectResolver {
                 return result;
             }
             
-            // Generate cache key based on project location
-            String cacheKey = project.getLocation().toOSString();
+            // Generate cache key based on project URI
+            String cacheKey = JDTUtils.getFileURI(project);
             
             // Calculate current classpath hash for validation
             long currentClasspathHash = calculateClasspathHash(javaProject);
@@ -291,43 +292,12 @@ public class ProjectResolver {
     }
     
     /**
-     * Find project by path from all projects in workspace.
-     * The path can be either a project root path or a file/folder path within a project.
-     * This method will find the project that contains the given path.
-     * 
-     * @param root The workspace root
-     * @param filePath The path to search for (can be project root or file within project)
-     * @return The project that contains the path, or null if not found
-     */
-    private static IProject findProjectByPath(IWorkspaceRoot root, IPath filePath) {
-        IProject[] allProjects = root.getProjects();
-        
-        // First pass: check for exact project location match (most efficient)
-        for (IProject p : allProjects) {
-            if (p.getLocation() != null && p.getLocation().equals(filePath)) {
-                return p;
-            }
-        }
-        
-        // Second pass: check if the file path is within any project directory
-        // This handles cases where filePath points to a file or folder inside a project
-        for (IProject p : allProjects) {
-            if (p.getLocation() != null && p.getLocation().isPrefixOf(filePath)) {
-                return p;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
      * Add basic project information including name, location, and Java version settings.
      */
     private static void addBasicProjectInfo(List<DependencyInfo> result, IProject project, IJavaProject javaProject) {
         result.add(new DependencyInfo(KEY_PROJECT_NAME, project.getName()));
         
-        addIfNotNull(result, KEY_PROJECT_LOCATION, 
-            project.getLocation() != null ? project.getLocation().toOSString() : null);
+        addIfNotNull(result, KEY_PROJECT_LOCATION, JDTUtils.getFileURI(project));
         
         addIfNotNull(result, KEY_JAVA_VERSION, 
             javaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true));

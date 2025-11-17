@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
 
 import com.microsoft.jdtls.ext.core.JdtlsExtActivator;
 
@@ -184,15 +185,19 @@ public class ContextResolver {
                     if (packageFragment != null && packageFragment.exists()) {
                         // Look for compilation unit with matching name
                         org.eclipse.jdt.core.ICompilationUnit cu = packageFragment.getCompilationUnit(simpleName + ".java");
-                        if (cu != null && cu.exists() && cu.getResource() != null && cu.getResource().exists()) {
-                            // Get primary type from compilation unit
-                            org.eclipse.jdt.core.IType primaryType = cu.findPrimaryType();
-                            if (primaryType != null && primaryType.exists() && 
-                                typeName.equals(primaryType.getFullyQualifiedName())) {
-                                // Found local project source type via fallback method
-                                processedTypes.add(typeName);
-                                extractTypeInfo(primaryType, classInfoList, monitor);
-                                return;
+                        if (cu != null && cu.exists()) {
+                            // Use JDTUtils to check if the compilation unit is accessible
+                            String cuUri = JDTUtils.toUri(cu);
+                            if (cuUri != null) {
+                                // Get primary type from compilation unit
+                                org.eclipse.jdt.core.IType primaryType = cu.findPrimaryType();
+                                if (primaryType != null && primaryType.exists() && 
+                                    typeName.equals(primaryType.getFullyQualifiedName())) {
+                                    // Found local project source type via fallback method
+                                    processedTypes.add(typeName);
+                                    extractTypeInfo(primaryType, classInfoList, monitor);
+                                    return;
+                                }
                             }
                             
                             // Also check for inner types in the compilation unit
@@ -685,18 +690,19 @@ public class ContextResolver {
             // Get the compilation unit that contains this type
             org.eclipse.jdt.core.ICompilationUnit compilationUnit = type.getCompilationUnit();
             if (compilationUnit != null) {
-                // Get the underlying resource (file)
-                org.eclipse.core.resources.IResource resource = compilationUnit.getUnderlyingResource();
-                if (resource != null && resource instanceof org.eclipse.core.resources.IFile) {
-                    org.eclipse.core.resources.IFile file = (org.eclipse.core.resources.IFile) resource;
-                    // Get the file location as a file URI
-                    java.net.URI fileUri = file.getLocationURI();
-                    if (fileUri != null) {
-                        return fileUri.toString();
-                    }
-                    
-                    // Fallback: use workspace-relative path as URI
-                    return file.getFullPath().toString();
+                // Use JDTUtils to get URI (consistent with other parts of the codebase)
+                String uri = JDTUtils.toUri(compilationUnit);
+                if (uri != null) {
+                    return uri;
+                }
+            }
+            
+            // For class files (binary types), try to get URI from class file
+            org.eclipse.jdt.core.IClassFile classFile = type.getClassFile();
+            if (classFile != null) {
+                String uri = JDTUtils.toUri(classFile);
+                if (uri != null) {
+                    return uri;
                 }
             }
             
