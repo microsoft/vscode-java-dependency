@@ -279,7 +279,6 @@ async function _sendContextResolutionTelemetry(
         sendInfo("", telemetryData);
     } catch (telemetryError) {
         // Silently ignore telemetry errors to not affect main functionality
-        console.error('Failed to send Java context resolution telemetry:', telemetryError);
     }
 }
 
