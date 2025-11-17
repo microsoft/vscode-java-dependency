@@ -1,4 +1,4 @@
-/*******************************************************************************
+﻿/*******************************************************************************
  * Copyright (c) 2018 Microsoft Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -18,7 +18,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -226,18 +225,6 @@ public class ContextResolver {
     }
 
     /**
-     * Helper method to check if a string is not empty (null or zero-length).
-     * Note: This does NOT trim or check for whitespace-only strings.
-     * Use this instead of StringUtils.isNotBlank() when you want to preserve whitespace.
-     * 
-     * @param str the string to check
-     * @return true if the string is not null and not empty
-     */
-    private static boolean isNotEmpty(String str) {
-        return str != null && !str.isEmpty();
-    }
-
-    /**
      * Check if a type belongs to a common JDK package that should be skipped.
      * Uses package-level matching for efficient filtering.
      * 
@@ -245,7 +232,7 @@ public class ContextResolver {
      * @return true if the type is from a common JDK package
      */
     private static boolean isCommonJdkType(String typeName) {
-        if (StringUtils.isBlank(typeName)) {
+        if (typeName == null || typeName.isEmpty()) {
             return false;
         }
         
@@ -672,7 +659,7 @@ public class ContextResolver {
         
         try {
             String javadoc = type.getAttachedJavadoc(null);
-            if (!isNotEmpty(javadoc)) {
+            if (javadoc == null || javadoc.isEmpty()) {
                 return null;
             }
             return getFirstSentenceOrLimit(javadoc, 120);
@@ -802,7 +789,7 @@ public class ContextResolver {
             description.append("Signature: ").append(signature).append("\n\n");
             
             // === 2. JavaDoc (inserted after signature) ===
-            if (StringUtils.isNotBlank(javadoc)) {
+            if (isNotEmpty(javadoc)) {
                 description.append("JavaDoc:\n").append(javadoc).append("\n\n");
             }
             
@@ -924,7 +911,7 @@ public class ContextResolver {
 
             // === High Priority: Extract class description text (first paragraph) ===
             String description = extractClassDescription(cleanedJavadoc);
-            if (StringUtils.isNotBlank(description)) {
+            if (isNotEmpty(description)) {
                 result.append("Description:\n").append(description).append("\n\n");
             }
 
@@ -933,7 +920,7 @@ public class ContextResolver {
             Matcher markdownMatcher = MARKDOWN_CODE_PATTERN.matcher(rawJavadoc);
             while (markdownMatcher.find()) {
                 String code = markdownMatcher.group(1).trim();
-                if (StringUtils.isNotBlank(code) && seenCodeSnippets.add(code)) {
+                if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
                     result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
@@ -943,7 +930,7 @@ public class ContextResolver {
             Matcher preMatcher = HTML_PRE_PATTERN.matcher(cleanedJavadoc);
             while (preMatcher.find()) {
                 String code = preMatcher.group(1).replaceAll("(?i)<code[^>]*>", "").replaceAll("(?i)</code>", "").trim();
-                if (StringUtils.isNotBlank(code) && seenCodeSnippets.add(code)) {
+                if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
                     result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
@@ -953,7 +940,7 @@ public class ContextResolver {
             while (codeMatcher.find()) {
                 String code = codeMatcher.group(1).trim();
                 // Use HashSet for O(1) duplicate checking
-                if (StringUtils.isNotBlank(code) && seenCodeSnippets.add(code)) {
+                if (isNotEmpty(code) && seenCodeSnippets.add(code)) {
                     result.append("```java\n").append(code).append("\n```\n\n");
                 }
             }
@@ -971,7 +958,7 @@ public class ContextResolver {
      * Returns the first paragraph of descriptive text, limited to reasonable length.
      */
     private static String extractClassDescription(String cleanedJavadoc) {
-        if (!isNotEmpty(cleanedJavadoc)) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
             return "";
         }
         
@@ -1002,7 +989,7 @@ public class ContextResolver {
      * Clean up raw JavaDoc comment by removing comment markers and asterisks
      */
     private static String cleanJavadocComment(String rawJavadoc) {
-        if (!isNotEmpty(rawJavadoc)) {
+        if (rawJavadoc == null || rawJavadoc.isEmpty()) {
             return "";
         }
         
@@ -1042,7 +1029,7 @@ public class ContextResolver {
      * Convert HTML entities to their plain text equivalents
      */
     private static String convertHtmlEntities(String text) {
-        if (!isNotEmpty(text)) {
+        if (text == null || text.isEmpty()) {
             return text;
         }
         return text.replace("&nbsp;", " ")
@@ -1061,7 +1048,7 @@ public class ContextResolver {
      * Preserves line breaks for block-level tags like <p>, <br>, <div>.
      */
     private static String removeHtmlTags(String text) {
-        if (!isNotEmpty(text)) {
+        if (text == null || text.isEmpty()) {
             return text;
         }
         
@@ -1111,7 +1098,7 @@ public class ContextResolver {
      * Extract the main description part from JavaDoc (before @tags)
      */
     private static String extractJavadocDescription(String cleanedJavadoc) {
-        if (!isNotEmpty(cleanedJavadoc)) {
+        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
             return "";
         }
         
@@ -1144,7 +1131,7 @@ public class ContextResolver {
      * Get the first sentence or limit the text to maxLength characters
      */
     private static String getFirstSentenceOrLimit(String text, int maxLength) {
-        if (!isNotEmpty(text)) {
+        if (text == null || text.isEmpty()) {
             return "";
         }
         
@@ -1246,7 +1233,7 @@ public class ContextResolver {
      * Convert JDT type signature to human-readable format
      */
     public static String convertTypeSignature(String jdtSignature) {
-        if (!isNotEmpty(jdtSignature)) {
+        if (jdtSignature == null || jdtSignature.isEmpty()) {
             return "void";
         }
 
@@ -1452,7 +1439,7 @@ public class ContextResolver {
             // Add JavaDoc if requested
             if (includeJavadoc) {
                 String javadocSummary = extractMethodJavaDocSummary(method);
-                if (StringUtils.isNotBlank(javadocSummary)) {
+                if (javadocSummary != null && !javadocSummary.isEmpty()) {
                     return "// " + javadocSummary + "\n      " + sb.toString();
                 }
             }
@@ -1507,7 +1494,7 @@ public class ContextResolver {
             // Add JavaDoc if not simplified
             if (!simplified) {
                 String javadocSummary = extractFieldJavaDocSummary(field);
-                if (StringUtils.isNotBlank(javadocSummary)) {
+                if (javadocSummary != null && !javadocSummary.isEmpty()) {
                     return "// " + javadocSummary + "\n      " + sb.toString();
                 }
             }
@@ -1518,4 +1505,10 @@ public class ContextResolver {
         }
     }
 
+    /**
+     * Utility method to check if a string is not empty or null
+     */
+    private static boolean isNotEmpty(String value) {
+        return value != null && !value.isEmpty();
+    }
 }
