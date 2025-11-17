@@ -8,6 +8,31 @@ import {
     type ContextProvider,
 } from '@github/copilot-language-server';
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
+
+/**
+ * TelemetryQueue - Asynchronous telemetry queue to avoid blocking main thread
+ * Based on the PromiseQueue pattern from copilot-client
+ */
+class TelemetryQueue {
+    private promises = new Set<Promise<unknown>>();
+
+    register(promise: Promise<unknown>): void {
+        this.promises.add(promise);
+        // Use void to avoid blocking - the key pattern from PromiseQueue
+        void promise.finally(() => this.promises.delete(promise));
+    }
+
+    async flush(): Promise<void> {
+        await Promise.allSettled(this.promises);
+    }
+
+    get size(): number {
+        return this.promises.size;
+    }
+}
+
+// Global telemetry queue instance
+const globalTelemetryQueue = new TelemetryQueue();
 /**
  * Error classes for Copilot context provider cancellation handling
  */
@@ -211,14 +236,61 @@ export class ContextProviderResolverError extends Error {
 }
 
 /**
- * Send consolidated telemetry data for Java context resolution
- * This is the centralized function for sending context resolution telemetry
+ * Asynchronously send telemetry data preparation and sending
+ * This function prepares telemetry data and handles the actual sending asynchronously
+ */
+async function _sendContextResolutionTelemetry(
+    request: ResolveRequest,
+    start: number,
+    items: SupportedContextItem[],
+    status: string,
+    error?: string,
+    dependenciesEmptyReason?: string,
+    importsEmptyReason?: string,
+    dependenciesCount?: number,
+    importsCount?: number
+): Promise<void> {
+    try {
+        const duration = Math.round(performance.now() - start);
+        const tokenCount = JavaContextProviderUtils.calculateTokenCount(items);
+        const telemetryData: any = {
+            "action": "resolveJavaContext",
+            "completionId": request.completionId,
+            "duration": duration,
+            "itemCount": items.length,
+            "tokenCount": tokenCount,
+            "status": status,
+            "dependenciesCount": dependenciesCount ?? 0,
+            "importsCount": importsCount ?? 0
+        };
+
+        // Add empty reasons if present
+        if (dependenciesEmptyReason) {
+            telemetryData.dependenciesEmptyReason = dependenciesEmptyReason;
+        }
+        if (importsEmptyReason) {
+            telemetryData.importsEmptyReason = importsEmptyReason;
+        }
+        if (error) {
+            telemetryData.error = error;
+        }
+
+        // Actual telemetry sending - this is synchronous but network is async
+        sendInfo("", telemetryData);
+    } catch (telemetryError) {
+        // Silently ignore telemetry errors to not affect main functionality
+        console.error('Failed to send Java context resolution telemetry:', telemetryError);
+    }
+}
+
+/**
+ * Send consolidated telemetry data for Java context resolution asynchronously
+ * This function immediately returns and sends telemetry in the background without blocking
  *
  * @param request The resolve request from Copilot
  * @param start Performance timestamp when resolution started
  * @param items The resolved context items
  * @param status Status of the resolution ("succeeded", "cancelled_by_copilot", "cancelled_internally", "error_partial_results")
- * @param sendInfo The sendInfo function from vscode-extension-telemetry-wrapper
  * @param error Optional error message
  * @param dependenciesEmptyReason Optional reason why dependencies were empty
  * @param importsEmptyReason Optional reason why imports were empty
@@ -236,29 +308,26 @@ export function sendContextResolutionTelemetry(
     dependenciesCount?: number,
     importsCount?: number
 ): void {
-    const duration = Math.round(performance.now() - start);
-    const tokenCount = JavaContextProviderUtils.calculateTokenCount(items);
-    const telemetryData: any = {
-        "action": "resolveJavaContext",
-        "completionId": request.completionId,
-        "duration": duration,
-        "itemCount": items.length,
-        "tokenCount": tokenCount,
-        "status": status,
-        "dependenciesCount": dependenciesCount ?? 0,
-        "importsCount": importsCount ?? 0
-    };
+    // Register the telemetry promise for non-blocking execution
+    // This follows the PromiseQueue pattern from copilot-client
+    globalTelemetryQueue.register(
+        _sendContextResolutionTelemetry(
+            request,
+            start,
+            items,
+            status,
+            error,
+            dependenciesEmptyReason,
+            importsEmptyReason,
+            dependenciesCount,
+            importsCount
+        )
+    );
+}
 
-    // Add empty reasons if present
-    if (dependenciesEmptyReason) {
-        telemetryData.dependenciesEmptyReason = dependenciesEmptyReason;
-    }
-    if (importsEmptyReason) {
-        telemetryData.importsEmptyReason = importsEmptyReason;
-    }
-    if (error) {
-        telemetryData.error = error;
-    }
-
-    sendInfo("", telemetryData);
+/**
+ * Get the global telemetry queue instance (useful for testing and monitoring)
+ */
+export function getTelemetryQueue(): TelemetryQueue {
+    return globalTelemetryQueue;
 }
