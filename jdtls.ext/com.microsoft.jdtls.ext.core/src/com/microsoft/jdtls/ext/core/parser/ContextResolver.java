@@ -226,6 +226,18 @@ public class ContextResolver {
     }
 
     /**
+     * Helper method to check if a string is not empty (null or zero-length).
+     * Note: This does NOT trim or check for whitespace-only strings.
+     * Use this instead of StringUtils.isNotBlank() when you want to preserve whitespace.
+     * 
+     * @param str the string to check
+     * @return true if the string is not null and not empty
+     */
+    private static boolean isNotEmpty(String str) {
+        return str != null && !str.isEmpty();
+    }
+
+    /**
      * Check if a type belongs to a common JDK package that should be skipped.
      * Uses package-level matching for efficient filtering.
      * 
@@ -660,7 +672,7 @@ public class ContextResolver {
         
         try {
             String javadoc = type.getAttachedJavadoc(null);
-            if (javadoc == null || javadoc.isEmpty()) {
+            if (!isNotEmpty(javadoc)) {
                 return null;
             }
             return getFirstSentenceOrLimit(javadoc, 120);
@@ -898,7 +910,7 @@ public class ContextResolver {
             }
             rawJavadoc = type.getCompilationUnit().getSource().substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
 
-            if (StringUtils.isBlank(rawJavadoc)) {
+            if (!isNotEmpty(rawJavadoc)) {
                 return "";
             }
 
@@ -959,7 +971,7 @@ public class ContextResolver {
      * Returns the first paragraph of descriptive text, limited to reasonable length.
      */
     private static String extractClassDescription(String cleanedJavadoc) {
-        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
+        if (!isNotEmpty(cleanedJavadoc)) {
             return "";
         }
         
@@ -990,7 +1002,7 @@ public class ContextResolver {
      * Clean up raw JavaDoc comment by removing comment markers and asterisks
      */
     private static String cleanJavadocComment(String rawJavadoc) {
-        if (rawJavadoc == null || rawJavadoc.isEmpty()) {
+        if (!isNotEmpty(rawJavadoc)) {
             return "";
         }
         
@@ -1030,7 +1042,7 @@ public class ContextResolver {
      * Convert HTML entities to their plain text equivalents
      */
     private static String convertHtmlEntities(String text) {
-        if (text == null || text.isEmpty()) {
+        if (!isNotEmpty(text)) {
             return text;
         }
         return text.replace("&nbsp;", " ")
@@ -1049,7 +1061,7 @@ public class ContextResolver {
      * Preserves line breaks for block-level tags like <p>, <br>, <div>.
      */
     private static String removeHtmlTags(String text) {
-        if (text == null || text.isEmpty()) {
+        if (!isNotEmpty(text)) {
             return text;
         }
         
@@ -1081,7 +1093,7 @@ public class ContextResolver {
             String rawJavadoc = method.getCompilationUnit().getSource()
                 .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
             
-            if (StringUtils.isBlank(rawJavadoc)) {
+            if (!isNotEmpty(rawJavadoc)) {
                 return "";
             }
             
@@ -1099,7 +1111,7 @@ public class ContextResolver {
      * Extract the main description part from JavaDoc (before @tags)
      */
     private static String extractJavadocDescription(String cleanedJavadoc) {
-        if (cleanedJavadoc == null || cleanedJavadoc.isEmpty()) {
+        if (!isNotEmpty(cleanedJavadoc)) {
             return "";
         }
         
@@ -1132,7 +1144,7 @@ public class ContextResolver {
      * Get the first sentence or limit the text to maxLength characters
      */
     private static String getFirstSentenceOrLimit(String text, int maxLength) {
-        if (text == null || text.isEmpty()) {
+        if (!isNotEmpty(text)) {
             return "";
         }
         
@@ -1202,7 +1214,7 @@ public class ContextResolver {
             String rawJavadoc = field.getCompilationUnit().getSource()
                 .substring(javadocRange.getOffset(), javadocRange.getOffset() + javadocRange.getLength());
             
-            if (StringUtils.isBlank(rawJavadoc)) {
+            if (!isNotEmpty(rawJavadoc)) {
                 return "";
             }
             
@@ -1234,7 +1246,7 @@ public class ContextResolver {
      * Convert JDT type signature to human-readable format
      */
     public static String convertTypeSignature(String jdtSignature) {
-        if (jdtSignature == null || jdtSignature.isEmpty()) {
+        if (!isNotEmpty(jdtSignature)) {
             return "void";
         }
 
