@@ -103,9 +103,10 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         items.push(...importsResult.items);
     } catch (error: any) {
         if (error instanceof CopilotCancellationError) {
+            const duration = Math.round(performance.now() - start);
             sendContextResolutionTelemetry(
                 request,
-                start,
+                duration,
                 items,
                 "cancelled_by_copilot",
                 undefined,
@@ -117,9 +118,10 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             throw error;
         }
         if (error instanceof vscode.CancellationError || error.message === CancellationError.CANCELED) {
+            const duration = Math.round(performance.now() - start);
             sendContextResolutionTelemetry(
                 request,
-                start,
+                duration,
                 items,
                 "cancelled_internally",
                 undefined,
@@ -132,9 +134,10 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         }
 
         // Send telemetry for general errors (but continue with partial results)
+        const duration = Math.round(performance.now() - start);
         sendContextResolutionTelemetry(
             request,
-            start,
+            duration,
             items,
             "error_partial_results",
             error.message || "unknown_error",
@@ -149,9 +152,10 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
     }
 
     // Send telemetry data once at the end for success case
+    const duration = Math.round(performance.now() - start);
     sendContextResolutionTelemetry(
         request,
-        start,
+        duration,
         items,
         "succeeded",
         undefined,

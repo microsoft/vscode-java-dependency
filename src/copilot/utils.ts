@@ -241,7 +241,7 @@ export class ContextProviderResolverError extends Error {
  */
 async function _sendContextResolutionTelemetry(
     request: ResolveRequest,
-    start: number,
+    duration: number,
     items: SupportedContextItem[],
     status: string,
     error?: string,
@@ -251,7 +251,6 @@ async function _sendContextResolutionTelemetry(
     importsCount?: number
 ): Promise<void> {
     try {
-        const duration = Math.round(performance.now() - start);
         const tokenCount = JavaContextProviderUtils.calculateTokenCount(items);
         const telemetryData: any = {
             "action": "resolveJavaContext",
@@ -287,7 +286,7 @@ async function _sendContextResolutionTelemetry(
  * This function immediately returns and sends telemetry in the background without blocking
  *
  * @param request The resolve request from Copilot
- * @param start Performance timestamp when resolution started
+ * @param duration Duration of the resolution in milliseconds
  * @param items The resolved context items
  * @param status Status of the resolution ("succeeded", "cancelled_by_copilot", "cancelled_internally", "error_partial_results")
  * @param error Optional error message
@@ -298,7 +297,7 @@ async function _sendContextResolutionTelemetry(
  */
 export function sendContextResolutionTelemetry(
     request: ResolveRequest,
-    start: number,
+    duration: number,
     items: SupportedContextItem[],
     status: string,
     error?: string,
@@ -312,7 +311,7 @@ export function sendContextResolutionTelemetry(
     globalTelemetryQueue.register(
         _sendContextResolutionTelemetry(
             request,
-            start,
+            duration,
             items,
             status,
             error,
