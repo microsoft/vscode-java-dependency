@@ -74,6 +74,7 @@ function createJavaContextResolver(): ContextResolverFunction {
 async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode.CancellationToken): Promise<SupportedContextItem[]> {
     const items: SupportedContextItem[] = [];
     const start = performance.now();
+    let duration: number;
 
     let dependenciesResult: CopilotHelper.IResolveResult | undefined;
     let importsResult: CopilotHelper.IResolveResult | undefined;
@@ -103,7 +104,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         items.push(...importsResult.items);
     } catch (error: any) {
         if (error instanceof CopilotCancellationError) {
-            const duration = Math.round(performance.now() - start);
+            duration = Math.round(performance.now() - start);
             sendContextResolutionTelemetry(
                 request,
                 duration,
@@ -118,7 +119,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
             throw error;
         }
         if (error instanceof vscode.CancellationError || error.message === CancellationError.CANCELED) {
-            const duration = Math.round(performance.now() - start);
+            duration = Math.round(performance.now() - start);
             sendContextResolutionTelemetry(
                 request,
                 duration,
@@ -134,7 +135,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
         }
 
         // Send telemetry for general errors (but continue with partial results)
-        const duration = Math.round(performance.now() - start);
+        duration = Math.round(performance.now() - start);
         sendContextResolutionTelemetry(
             request,
             duration,
@@ -152,7 +153,7 @@ async function resolveJavaContext(request: ResolveRequest, copilotCancel: vscode
     }
 
     // Send telemetry data once at the end for success case
-    const duration = Math.round(performance.now() - start);
+    duration = Math.round(performance.now() - start);
     sendContextResolutionTelemetry(
         request,
         duration,
