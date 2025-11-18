@@ -184,7 +184,6 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             const hasJavaError: boolean = await Jdtls.checkImportStatus();
             if (hasJavaError) {
                 contextManager.setContextValue(Context.IMPORT_FAILED, true);
-                return [];
             }
 
             const rootItems: ExplorerNode[] = [];
