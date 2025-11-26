@@ -244,6 +244,12 @@ public class ProjectResolver {
             IResource resource = JDTUtils.findResource(uri, 
                 ResourcesPlugin.getWorkspace().getRoot()::findFilesForLocationURI);
             
+            // If resource is null, try to find by container (directory)
+            if (resource == null) {
+                resource = JDTUtils.findResource(uri, 
+                    ResourcesPlugin.getWorkspace().getRoot()::findContainersForLocationURI);
+            }
+            
             if (resource == null) {
                 return result;
             }

@@ -3,7 +3,7 @@
 
 import * as path from "path";
 import { commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
-    Range, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
+    Range, tasks, TextDocument, TextEditor, Uri, window, workspace, lm } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
@@ -23,6 +23,8 @@ import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
 import { registerCopilotContextProviders } from "./copilot/contextProvider";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
+import { ProjectInfoTool } from "./copilot/projectInfoTool";
+import { RebuildProjectTool } from "./copilot/rebuildProjectTool";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -90,6 +92,14 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     languageServerApiManager.ready().then((isReady) => {
         if (isReady) {
             registerCopilotContextProviders(context);
+            
+            // Register language model tool for project information
+            const projectInfoTool = lm.registerTool(ProjectInfoTool.toolName, new ProjectInfoTool());
+            context.subscriptions.push(projectInfoTool);
+            
+            // Register language model tool for rebuilding projects
+            const rebuildProjectTool = lm.registerTool(RebuildProjectTool.toolName, new RebuildProjectTool());
+            context.subscriptions.push(rebuildProjectTool);
         }
     });
 }

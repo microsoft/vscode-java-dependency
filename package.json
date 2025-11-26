@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.83.1"
+    "vscode": "^1.95.0"
   },
   "repository": {
     "type": "git",
@@ -28,6 +28,8 @@
   },
   "activationEvents": [
     "onLanguage:java",
+    "onLanguageModelTool:java_project_get_info",
+    "onLanguageModelTool:java_project_rebuild",
     "workspaceContains:pom.xml",
     "workspaceContains:*/pom.xml",
     "workspaceContains:build.gradle",
@@ -928,6 +930,44 @@
         "when": "java:importFailed"
       }
     ],
+    "languageModelTools": [
+      {
+        "name": "java_project_get_info",
+        "displayName": "Java Project Information",
+        "modelDescription": "Retrieves detailed information about Java projects in the workspace, including project name, path, build tool type (Maven/Gradle), and versions. Use this tool when you need to understand the structure, configuration, or build tools of Java projects. This tool can retrieve information for all projects in the workspace or for a specific project containing a given file. Returns project name, absolute path, project type (Maven/Gradle/Plain Java), build tool version, and Java compliance version.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "java-project-info",
+        "icon": "$(project)",
+        "userDescription": "Get Java project information including name, path, and build tool versions",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "resourcePath": {
+              "type": "string",
+              "description": "Optional file path or URI to determine which project to analyze. If not provided, returns all projects in workspace. Can be an absolute file path or URI string."
+            }
+          }
+        }
+      },
+      {
+        "name": "java_project_rebuild",
+        "displayName": "Rebuild Java Project",
+        "modelDescription": "Rebuilds Java projects to recompile all source files and resolve dependencies. Use this tool when you need to rebuild a project after making changes to source code, configuration files (pom.xml, build.gradle), or when fixing compilation errors. This tool can rebuild all projects in the workspace or a specific project containing a given file. Triggers a full clean rebuild to ensure all changes are properly compiled.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "java-project-rebuild",
+        "icon": "$(tools)",
+        "userDescription": "Rebuild Java project to recompile all source files",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "resourcePath": {
+              "type": "string",
+              "description": "Optional file path or URI to determine which project to rebuild. If not provided, rebuilds all projects in workspace. Can be an absolute file path or URI string."
+            }
+          }
+        }
+      }
+    ],
     "taskDefinitions": [
       {
         "type": "java (buildArtifact)",
@@ -1097,7 +1137,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "20.x",
     "@types/semver": "^7.3.13",
-    "@types/vscode": "1.83.1",
+    "@types/vscode": "^1.95.0",
     "@vscode/test-electron": "^2.4.1",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",
