@@ -10,6 +10,7 @@ import { Upgrade } from '../constants';
 import { buildPackageId } from './utility';
 import metadataManager from './metadataManager';
 import { sendInfo } from 'vscode-extension-telemetry-wrapper';
+import { batchGetCVEs } from './cve';
 
 function packageNodeToDescription(node: INodeData): PackageDescription | null {
     const version = node.metaData?.["maven.version"];
@@ -122,50 +123,32 @@ function getDependencyIssue(pkg: PackageDescription): UpgradeIssue | null {
 }
 
 async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-    const projectStructureData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
-    const packageContainerIssues = await Promise.allSettled(
-        projectStructureData
-            .filter(x => x.kind === NodeKind.Container)
-            .map(async (packageContainer) => {
-                const packageNodes = await Jdtls.getPackageData({
-                    kind: NodeKind.Container,
-                    projectUri: projectNode.uri,
-                    path: packageContainer.path,
-                });
-                const packages = packageNodes.map(packageNodeToDescription).filter((x): x is PackageDescription => Boolean(x));
+    const packages = await getAllDependencies(projectNode);
 
-                const issues = packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
-                const versionRangeByGroupId = collectVersionRange(packages.filter(getPackageUpgradeMetadata));
-                if (Object.keys(versionRangeByGroupId).length > 0) {
-                    sendInfo("", {
-                        operationName: "java.dependency.assessmentManager.getDependencyVersionRange",
-                        versionRangeByGroupId: JSON.stringify(versionRangeByGroupId),
-                    });
-                }
+    const issues = packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
+    const versionRangeByGroupId = collectVersionRange(packages.filter(pkg => getPackageUpgradeMetadata(pkg)));
+    if (Object.keys(versionRangeByGroupId).length > 0) {
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getDependencyVersionRange",
+            versionRangeByGroupId: JSON.stringify(versionRangeByGroupId),
+        });
+    }
 
-                return issues;
-            })
-    );
-
-    return packageContainerIssues
-        .map(x => {
-            if (x.status === "fulfilled") {
-                return x.value;
-            }
-
-            sendInfo("", {
-                operationName: "java.dependency.assessmentManager.getDependencyIssues.packageDataFailure",
-            });
-            return [];
-        })
-        .reduce((a, b) => [...a, ...b]);
+    return issues;
 }
 
 async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-    const issues: UpgradeIssue[] = [];
-    issues.push(...getJavaIssues(projectNode));
-    issues.push(...(await getDependencyIssues(projectNode)));
-    return issues;
+    const cveIssues = await getCVEIssues(projectNode);
+    if (cveIssues.length > 0) {
+        return cveIssues;
+    }
+    const javaIssues = getJavaIssues(projectNode);
+    if (javaIssues.length > 0) {
+        return javaIssues;
+    }
+    const dependencyIssues = await getDependencyIssues(projectNode);
+    return dependencyIssues;
+
 }
 
 async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIssue[]> {
@@ -184,9 +167,49 @@ async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIs
             operationName: "java.dependency.assessmentManager.getWorkspaceIssues",
         });
         return [];
-    }).reduce((a, b) => [...a, ...b]);
+    }).flat();
 
     return workspaceIssues;
+}
+
+async function getAllDependencies(projectNode: INodeData): Promise<PackageDescription[]> {
+    const projectStructureData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
+    const packageContainers = projectStructureData.filter(x => x.kind === NodeKind.Container);
+
+    const allPackages = await Promise.allSettled(
+        packageContainers.map(async (packageContainer) => {
+            const packageNodes = await Jdtls.getPackageData({
+                kind: NodeKind.Container,
+                projectUri: projectNode.uri,
+                path: packageContainer.path,
+            });
+            return packageNodes.map(packageNodeToDescription).filter((x): x is PackageDescription => Boolean(x));
+        })
+    );
+
+    return allPackages
+        .map(x => {
+            if (x.status === "fulfilled") {
+                return x.value;
+            }
+            sendInfo("", {
+                operationName: "java.dependency.assessmentManager.getAllDependencies.packageDataFailure",
+            });
+            return [];
+        })
+        .flat();
+}
+
+async function getCVEIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
+
+    // 1. Getting all dependencies from the project
+    const dependencies = await getAllDependencies(projectNode);
+    // 2. Convert to GAV (groupId:artifactId:version) format
+    const gavCoordinates = dependencies.map(pkg => `${pkg.groupId}:${pkg.artifactId}:${pkg.version}`);
+    // 3. Checking them against a CVE database to find known vulnerabilities
+    const cveResults = await batchGetCVEs(gavCoordinates);
+
+    return cveResults;
 }
 
 export default {

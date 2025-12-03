@@ -10,7 +10,8 @@ export type DependencyCheckItemEol = DependencyCheckItemBase & {
 };
 export type DependencyCheckItemJreTooOld = DependencyCheckItemBase & { reason: UpgradeReason.JRE_TOO_OLD };
 export type DependencyCheckItemDeprecated = DependencyCheckItemBase & { reason: UpgradeReason.DEPRECATED };
-export type DependencyCheckItem = (DependencyCheckItemEol | DependencyCheckItemJreTooOld | DependencyCheckItemDeprecated);
+export type DependencyCheckItemCve = DependencyCheckItemBase & { reason: UpgradeReason.CVE, severity: string, description: string, link: string };
+export type DependencyCheckItem = (DependencyCheckItemEol | DependencyCheckItemJreTooOld | DependencyCheckItemDeprecated | DependencyCheckItemCve);
 export type DependencyCheckMetadata = Record<string, DependencyCheckItem>;
 
 export enum UpgradeReason {

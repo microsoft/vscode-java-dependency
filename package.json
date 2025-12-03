@@ -1111,6 +1111,7 @@
   },
   "dependencies": {
     "@github/copilot-language-server": "^1.388.0",
+    "@octokit/rest": "^21.1.1",
     "await-lock": "^2.2.2",
     "fmtr": "^1.1.4",
     "fs-extra": "^10.1.0",
