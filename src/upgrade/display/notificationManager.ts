@@ -8,7 +8,7 @@ import { Commands } from "../../commands";
 import { Settings } from "../../settings";
 import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { ExtensionName } from "../../constants";
-import { CveUpgradeIssue, Severity, severityOrder } from "../cve";
+import { CveUpgradeIssue } from "../cve";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
 const NEXT_SHOW_TS_KEY = `${KEY_PREFIX}.nextShowTs`;
@@ -62,13 +62,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                     cveIssues = issues.filter(
                         (i): i is CveUpgradeIssue => i.reason === UpgradeReason.CVE
                     );
-                    // Sort by severity (critical first, then high, etc.)
-                    cveIssues.sort((a, b) => {
-                        const severityA = (a.severity?.toLowerCase().trim() || 'unknown') as Severity;
-                        const severityB = (b.severity?.toLowerCase().trim() || 'unknown') as Severity;
-                        return (severityOrder[severityB] ?? 0) - (severityOrder[severityA] ?? 0);
-                    });
-                    notificationMessage = buildCVENotificationMessage(cveIssues);
+                    notificationMessage = buildCVENotificationMessage(cveIssues, hasExtension);
                 } else {
                     notificationMessage = buildNotificationMessage(issue, hasExtension);
                 }

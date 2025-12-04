@@ -10,7 +10,7 @@ import { Upgrade } from '../constants';
 import { buildPackageId } from './utility';
 import metadataManager from './metadataManager';
 import { sendInfo } from 'vscode-extension-telemetry-wrapper';
-import { batchGetCVEs } from './cve';
+import { batchGetCVEIssues } from './cve';
 
 function packageNodeToDescription(node: INodeData): PackageDescription | null {
     const version = node.metaData?.["maven.version"];
@@ -122,11 +122,10 @@ function getDependencyIssue(pkg: PackageDescription): UpgradeIssue | null {
     return getUpgradeForDependency(version, supportedVersionDefinition, packageId);
 }
 
-async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-    const packages = await getAllDependencies(projectNode);
+async function getDependencyIssues(dependencies: PackageDescription[]): Promise<UpgradeIssue[]> {
 
-    const issues = packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
-    const versionRangeByGroupId = collectVersionRange(packages.filter(pkg => getPackageUpgradeMetadata(pkg)));
+    const issues = dependencies.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
+    const versionRangeByGroupId = collectVersionRange(dependencies.filter(pkg => getPackageUpgradeMetadata(pkg)));
     if (Object.keys(versionRangeByGroupId).length > 0) {
         sendInfo("", {
             operationName: "java.dependency.assessmentManager.getDependencyVersionRange",
@@ -138,16 +137,13 @@ async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue
 }
 
 async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-    const cveIssues = await getCVEIssues(projectNode);
-    if (cveIssues.length > 0) {
-        return cveIssues;
-    }
-    const javaIssues = getJavaIssues(projectNode);
-    if (javaIssues.length > 0) {
-        return javaIssues;
-    }
-    const dependencyIssues = await getDependencyIssues(projectNode);
-    return dependencyIssues;
+    const issues: UpgradeIssue[] = [];
+    const dependencies = await getAllDependencies(projectNode);
+    issues.push(...await getCVEIssues(dependencies));
+    issues.push(...getJavaIssues(projectNode));
+    issues.push(...await getDependencyIssues(dependencies));
+
+    return issues;
 
 }
 
@@ -200,16 +196,9 @@ async function getAllDependencies(projectNode: INodeData): Promise<PackageDescri
         .flat();
 }
 
-async function getCVEIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-
-    // 1. Getting all dependencies from the project
-    const dependencies = await getAllDependencies(projectNode);
-    // 2. Convert to GAV (groupId:artifactId:version) format
+async function getCVEIssues(dependencies: PackageDescription[]): Promise<UpgradeIssue[]> {
     const gavCoordinates = dependencies.map(pkg => `${pkg.groupId}:${pkg.artifactId}:${pkg.version}`);
-    // 3. Checking them against a CVE database to find known vulnerabilities
-    const cveResults = await batchGetCVEs(gavCoordinates);
-
-    return cveResults;
+    return batchGetCVEIssues(gavCoordinates);
 }
 
 export default {
