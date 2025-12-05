@@ -16,7 +16,7 @@ const NEXT_SHOW_TS_KEY = `${KEY_PREFIX}.nextShowTs`;
 const BUTTON_TEXT_UPGRADE = "Upgrade Now";
 const BUTTON_TEXT_FIX_CVE = "Fix CVE Issues";
 const BUTTON_TEXT_INSTALL_AND_UPGRADE = "Install Extension and Upgrade";
-const BUTTON_TEXT_INSTALL_AND_FIX_CVE = "Install Extension and Fix CVE Issues";
+const BUTTON_TEXT_INSTALL_AND_FIX_CVE = "Install Extension and Fix";
 const BUTTON_TEXT_NOT_NOW = "Not Now";
 
 const SECONDS_IN_A_DAY = 24 * 60 * 60;
