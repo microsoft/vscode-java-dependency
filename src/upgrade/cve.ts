@@ -55,74 +55,59 @@ export async function batchGetCVEIssues(
 async function getCveUpgradeIssues(
   coordinates: string[]
 ): Promise<CveUpgradeIssue[]> {
+  if (coordinates.length === 0) {
+    return [];
+  }
   const deps = coordinates
     .map((d) => d.split(":", 3))
     .map((p) => ({ name: `${p[0]}:${p[1]}`, version: p[2] }))
     .filter((d) => d.version);
 
   const depsCves = await fetchCves(deps);
-  return mapCvesToUpgradeIssues(depsCves, deps);
+  return mapCvesToUpgradeIssues(depsCves);
 }
 
 async function fetchCves(deps: { name: string; version: string }[]) {
-  const allCves: CVE[] = await retrieveVulnerabilityData(deps);
+  if (deps.length === 0) {
+    return [];
+  }
+  try {
+    const allCves: CVE[] = await retrieveVulnerabilityData(deps);
 
-  // group the cves by coordinate
-  const depsCves: { dep: string; cves: CVE[]; minVersion?: string | null }[] =
-    [];
+    if (allCves.length === 0) {
+      return [];
+    }
+    // group the cves by coordinate
+    const depsCves: { dep: string; version: string; cves: CVE[] }[] = [];
 
-  for (const dep of deps) {
-    const depCves: CVE[] = allCves.filter((cve) =>
-      cve.affectedDeps.some((d) => d.name === dep.name)
-    );
+    for (const dep of deps) {
+      const depCves: CVE[] = allCves.filter((cve) =>
+        isCveAffectingDep(cve, dep.name, dep.version)
+      );
 
-    if (depCves.length < 1) {
-      continue;
+      if (depCves.length < 1) {
+        continue;
+      }
+
+      depsCves.push({
+        dep: dep.name,
+        version: dep.version,
+        cves: depCves,
+      });
     }
 
-    // find the min patched version for each coordinate
-    const maxPatchedVersion = calculateMaxPatchedVersion(depCves, dep);
-
-    depsCves.push({
-      dep: dep.name,
-      cves: depCves,
-      minVersion: maxPatchedVersion,
-    });
+    return depsCves;
+  } catch (error) {
+    return [];
   }
-
-  return depsCves;
-}
-
-function calculateMaxPatchedVersion(
-  depCves: CVE[],
-  dep: { name: string; version: string }
-) {
-  let maxPatchedVersion: string | undefined | null;
-
-  for (const cve of depCves) {
-    const patchedVersion = cve.affectedDeps.find(
-      (d) => d.name === dep.name && d.patchedVersion
-    )?.patchedVersion;
-
-    const coercedPatchedVersion = semver.coerce(patchedVersion);
-    const coercedMaxPatchedVersion = semver.coerce(maxPatchedVersion);
-
-    if (
-      !maxPatchedVersion ||
-      (coercedPatchedVersion &&
-        coercedMaxPatchedVersion &&
-        semver.gt(coercedPatchedVersion, coercedMaxPatchedVersion))
-    ) {
-      maxPatchedVersion = patchedVersion;
-    }
-  }
-
-  return maxPatchedVersion;
 }
 
 async function retrieveVulnerabilityData(
   deps: { name: string; version: string }[]
 ) {
+  if (deps.length === 0) {
+    return [];
+  }
   const octokit = new Octokit();
 
   const response = await octokit.securityAdvisories.listGlobalAdvisories({
@@ -156,26 +141,24 @@ async function retrieveVulnerabilityData(
 }
 
 function mapCvesToUpgradeIssues(
-  depsCves: { dep: string; cves: CVE[]; minVersion?: string | null }[],
-  deps: { name: string; version: string }[]
+  depsCves: { dep: string; version: string; cves: CVE[] }[]
 ) {
+  if (depsCves.length === 0) {
+    return [];
+  }
   const upgradeIssues = depsCves.map((depCve) => {
-    const currentDep = deps.find((d) => d.name === depCve.dep);
-    const mostCriticalCve = [...depCve.cves].sort(
-      (a, b) => Severity[b.severity] - Severity[a.severity]
-    )[0];
+    const mostCriticalCve = [...depCve.cves]
+      .filter((cve) => isCveAffectingDep(cve, depCve.dep, depCve.version))
+      .sort((a, b) => Severity[b.severity] - Severity[a.severity])[0];
     return {
       packageId: depCve.dep,
       packageDisplayName: depCve.dep,
-      currentVersion: currentDep?.version || "unknown",
+      currentVersion: depCve.version || "unknown",
       name: `${mostCriticalCve.id || "CVE"}`,
       reason: UpgradeReason.CVE as const,
       suggestedVersion: {
-        name: depCve.minVersion || "unknown",
-        description:
-          mostCriticalCve.description ||
-          mostCriticalCve.summary ||
-          "Security vulnerability detected",
+        name: "",
+        description: "",
       },
       severity: mostCriticalCve.severity,
       description:
@@ -186,4 +169,23 @@ function mapCvesToUpgradeIssues(
     };
   });
   return upgradeIssues;
+}
+
+function isCveAffectingDep(
+  cve: CVE,
+  depName: string,
+  depVersion: string
+): boolean {
+  if (!cve.affectedDeps || cve.affectedDeps.length === 0) {
+    return false;
+  }
+  return cve.affectedDeps.some((d) => {
+    if (d.name !== depName) {
+      return false;
+    }
+    if (!d.vulVersions || !d.patchedVersion) {
+      return false;
+    }
+    return semver.satisfies(depVersion || "0.0.0", d.vulVersions);
+  });
 }
