@@ -180,12 +180,10 @@ function isCveAffectingDep(
     return false;
   }
   return cve.affectedDeps.some((d) => {
-    if (d.name !== depName) {
+    if (d.name !== depName || !d.vulVersions) {
       return false;
     }
-    if (!d.vulVersions || !d.patchedVersion) {
-      return false;
-    }
+
     return semver.satisfies(depVersion || "0.0.0", d.vulVersions);
   });
 }
