@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.27.0
 
-- feat  - Add CVE checking to nodify users to fix the critical/high-severity CVE issues in https://github.com/microsoft/vscode-java-dependency/pull/948
+- feat  - Add CVE checking to notify users to fix the critical/high-severity CVE issues in https://github.com/microsoft/vscode-java-dependency/pull/948
 
 ## 0.26.5
 

@@ -148,7 +148,6 @@ function mapCvesToUpgradeIssues(
   }
   const upgradeIssues = depsCves.map((depCve) => {
     const mostCriticalCve = [...depCve.cves]
-      .filter((cve) => isCveAffectingDep(cve, depCve.dep, depCve.version))
       .sort((a, b) => Severity[b.severity] - Severity[a.severity])[0];
     return {
       packageId: depCve.dep,
