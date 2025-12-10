@@ -183,17 +183,15 @@ async function getAllDependencies(projectNode: INodeData): Promise<PackageDescri
         })
     );
 
-    return allPackages
-        .map(x => {
-            if (x.status === "fulfilled") {
-                return x.value;
-            }
-            sendInfo("", {
-                operationName: "java.dependency.assessmentManager.getAllDependencies.packageDataFailure",
-            });
-            return [];
-        })
-        .flat();
+    const fulfilled = allPackages.filter((x): x is PromiseFulfilledResult<PackageDescription[]> => x.status === "fulfilled");
+    const failedPackageCount = allPackages.length - fulfilled.length;
+    if (failedPackageCount > 0) {
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getAllDependencies.rejected",
+            failedPackageCount: String(failedPackageCount),
+        });
+    }
+    return fulfilled.map(x => x.value).flat();
 }
 
 async function getCVEIssues(dependencies: PackageDescription[]): Promise<UpgradeIssue[]> {
