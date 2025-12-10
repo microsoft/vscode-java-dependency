@@ -5,7 +5,8 @@ import { commands, extensions, Uri, window } from "vscode";
 import * as semver from "semver";
 import { UpgradeReason, type UpgradeIssue } from "./type";
 import { ExtensionName, Upgrade } from "../constants";
-import { instrumentOperation } from "vscode-extension-telemetry-wrapper";
+import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
+import { CveUpgradeIssue } from "./cve";
 
 
 function findEolDate(currentVersion: string, eolDate: Record<string, string>): string | null {
@@ -50,7 +51,44 @@ export function buildNotificationMessage(issue: UpgradeIssue, hasExtension: bool
     }
 }
 
+export function buildCVENotificationMessage(issues: CveUpgradeIssue[], hasExtension: boolean): string {
 
+    if (issues.length === 0) {
+        return "No CVE issues found.";
+    }
+    const severityCount: Record<string, number> = issues.reduce<Record<string, number>>((acc, { reason, severity }) => {
+        if (reason === UpgradeReason.CVE && (severity === 'critical' || severity === 'high')) {
+            acc[severity] = (acc[severity] ?? 0) + 1;
+        }
+        return acc;
+    }, {});
+
+    const criticalCount = severityCount.critical || 0;
+    const highCount = severityCount.high || 0;
+
+    const parts: string[] = [];
+    if (criticalCount > 0) {
+        parts.push(`${criticalCount} critical`);
+    }
+    if (highCount > 0) {
+        parts.push(`${highCount} high-severity`);
+    }
+
+    const severityText = parts.join(" and ");
+
+    sendInfo("", {
+      operationName: "java.dependency.upgrade.getCVESeverityDistribution",
+      CVESeverityDistribution: severityText,
+    });
+
+    const fixWord = hasExtension ? "fix" : `install ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and fix`;
+
+    if (issues.length === 1) {
+      return `${severityText} CVE vulnerability is detected in this project. Would you like to ${fixWord} it now?`;
+    }
+
+    return `${severityText} CVE vulnerabilities are detected in this project. Would you like to ${fixWord} them now?`;
+}
 export function buildFixPrompt(issue: UpgradeIssue): string {
     const { packageDisplayName, reason } = issue;
 
@@ -63,6 +101,9 @@ export function buildFixPrompt(issue: UpgradeIssue): string {
         case UpgradeReason.DEPRECATED: {
             const { suggestedVersion: { name: suggestedVersionName } } = issue;
             return `upgrade ${packageDisplayName} to ${suggestedVersionName} using java upgrade tools`;
+        }
+        case UpgradeReason.CVE: {
+            return `fix all critical and high-severity CVE vulnerabilities in this project`;
         }
     }
 }

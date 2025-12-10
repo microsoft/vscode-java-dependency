@@ -10,6 +10,7 @@ import { Upgrade } from '../constants';
 import { buildPackageId } from './utility';
 import metadataManager from './metadataManager';
 import { sendInfo } from 'vscode-extension-telemetry-wrapper';
+import { batchGetCVEIssues } from './cve';
 
 function packageNodeToDescription(node: INodeData): PackageDescription | null {
     const version = node.metaData?.["maven.version"];
@@ -121,51 +122,29 @@ function getDependencyIssue(pkg: PackageDescription): UpgradeIssue | null {
     return getUpgradeForDependency(version, supportedVersionDefinition, packageId);
 }
 
-async function getDependencyIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
-    const projectStructureData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
-    const packageContainerIssues = await Promise.allSettled(
-        projectStructureData
-            .filter(x => x.kind === NodeKind.Container)
-            .map(async (packageContainer) => {
-                const packageNodes = await Jdtls.getPackageData({
-                    kind: NodeKind.Container,
-                    projectUri: projectNode.uri,
-                    path: packageContainer.path,
-                });
-                const packages = packageNodes.map(packageNodeToDescription).filter((x): x is PackageDescription => Boolean(x));
+async function getDependencyIssues(dependencies: PackageDescription[]): Promise<UpgradeIssue[]> {
 
-                const issues = packages.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
-                const versionRangeByGroupId = collectVersionRange(packages.filter(getPackageUpgradeMetadata));
-                if (Object.keys(versionRangeByGroupId).length > 0) {
-                    sendInfo("", {
-                        operationName: "java.dependency.assessmentManager.getDependencyVersionRange",
-                        versionRangeByGroupId: JSON.stringify(versionRangeByGroupId),
-                    });
-                }
+    const issues = dependencies.map(getDependencyIssue).filter((x): x is UpgradeIssue => Boolean(x));
+    const versionRangeByGroupId = collectVersionRange(dependencies.filter(pkg => getPackageUpgradeMetadata(pkg)));
+    if (Object.keys(versionRangeByGroupId).length > 0) {
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getDependencyVersionRange",
+            versionRangeByGroupId: JSON.stringify(versionRangeByGroupId),
+        });
+    }
 
-                return issues;
-            })
-    );
-
-    return packageContainerIssues
-        .map(x => {
-            if (x.status === "fulfilled") {
-                return x.value;
-            }
-
-            sendInfo("", {
-                operationName: "java.dependency.assessmentManager.getDependencyIssues.packageDataFailure",
-            });
-            return [];
-        })
-        .reduce((a, b) => [...a, ...b]);
+    return issues;
 }
 
 async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
     const issues: UpgradeIssue[] = [];
+    const dependencies = await getAllDependencies(projectNode);
+    issues.push(...await getCVEIssues(dependencies));
     issues.push(...getJavaIssues(projectNode));
-    issues.push(...(await getDependencyIssues(projectNode)));
+    issues.push(...await getDependencyIssues(dependencies));
+
     return issues;
+
 }
 
 async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIssue[]> {
@@ -184,9 +163,40 @@ async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIs
             operationName: "java.dependency.assessmentManager.getWorkspaceIssues",
         });
         return [];
-    }).reduce((a, b) => [...a, ...b]);
+    }).flat();
 
     return workspaceIssues;
+}
+
+async function getAllDependencies(projectNode: INodeData): Promise<PackageDescription[]> {
+    const projectStructureData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
+    const packageContainers = projectStructureData.filter(x => x.kind === NodeKind.Container);
+
+    const allPackages = await Promise.allSettled(
+        packageContainers.map(async (packageContainer) => {
+            const packageNodes = await Jdtls.getPackageData({
+                kind: NodeKind.Container,
+                projectUri: projectNode.uri,
+                path: packageContainer.path,
+            });
+            return packageNodes.map(packageNodeToDescription).filter((x): x is PackageDescription => Boolean(x));
+        })
+    );
+
+    const fulfilled = allPackages.filter((x): x is PromiseFulfilledResult<PackageDescription[]> => x.status === "fulfilled");
+    const failedPackageCount = allPackages.length - fulfilled.length;
+    if (failedPackageCount > 0) {
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getAllDependencies.rejected",
+            failedPackageCount: String(failedPackageCount),
+        });
+    }
+    return fulfilled.map(x => x.value).flat();
+}
+
+async function getCVEIssues(dependencies: PackageDescription[]): Promise<UpgradeIssue[]> {
+    const gavCoordinates = dependencies.map(pkg => `${pkg.groupId}:${pkg.artifactId}:${pkg.version}`);
+    return batchGetCVEIssues(gavCoordinates);
 }
 
 export default {

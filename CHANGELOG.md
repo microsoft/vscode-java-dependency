@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.27.0
+
+- feat  - Add CVE checking to notify users to fix the critical/high-severity CVE issues in https://github.com/microsoft/vscode-java-dependency/pull/948
+
 ## 0.26.5
 
 - Enhancement - Register Context Provider after Java LS ready in https://github.com/microsoft/vscode-java-dependency/pull/939
