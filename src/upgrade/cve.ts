@@ -110,15 +110,19 @@ async function retrieveVulnerabilityData(
   }
   const octokit = new Octokit();
 
-  const response = await octokit.securityAdvisories.listGlobalAdvisories({
-    ecosystem: "maven",
-    affects: deps.map((p) => `${p.name}@${p.version}`),
-    direction: "asc",
-    sort: "published",
-    per_page: 100,
-  });
+  // Use paginate to fetch all pages of results
+  const allAdvisories = await octokit.paginate(
+    octokit.securityAdvisories.listGlobalAdvisories,
+    {
+      ecosystem: "maven",
+      affects: deps.map((p) => `${p.name}@${p.version}`),
+      direction: "asc",
+      sort: "published",
+      per_page: 100,
+    }
+  );
 
-  const allCves: CVE[] = response.data
+  const allCves: CVE[] = allAdvisories
     .filter(
       (c) =>
         !c.withdrawn_at?.trim() &&
