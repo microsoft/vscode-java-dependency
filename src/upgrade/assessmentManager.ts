@@ -24,7 +24,14 @@ function packageNodeToDescription(node: INodeData): PackageDescription | null {
 }
 
 function getVersionRange(versions: Set<string>) : string {
-    const versionList = [...versions].sort((a, b) => semver.compare(a, b));
+    const versionList = [...versions].sort((a, b) => {
+        const semverA = semver.coerce(a);
+        const semverB = semver.coerce(b);
+        if (!semverA || !semverB) {
+            return a.localeCompare(b);
+        }
+        return semver.compare(semverA, semverB);
+    });
     if (versionList.length === 1) {
         return versionList[0];
     }
