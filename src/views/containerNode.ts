@@ -83,7 +83,7 @@ export enum ContainerType {
     Unknown = "",
 }
 
-const enum ContainerPath {
+export const enum ContainerPath {
     JRE = "org.eclipse.jdt.launching.JRE_CONTAINER",
     Maven = "org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER",
     Gradle = "org.eclipse.buildship.core.gradleclasspathcontainer",
