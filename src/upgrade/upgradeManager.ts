@@ -66,7 +66,8 @@ class UpgradeManager {
                   projectUri: folder.uri.toString(),
                 });
                 const isMavenGradleProject = projectData.some(
-                  (dep) => dep.kind === NodeKind.Container && (dep.path?.startsWith(ContainerPath.Maven) || dep.path?.startsWith(ContainerPath.Gradle))
+                  (dep) => dep.kind === NodeKind.Container &&
+                    (dep.path?.startsWith(ContainerPath.Maven) || dep.path?.startsWith(ContainerPath.Gradle))
                 );
                 if (!isMavenGradleProject) {
                   sendInfo(_operationId, { "skipReason": "notMavenGradleProject" });
