@@ -2,8 +2,11 @@
 // Licensed under the MIT license.
 
 import * as fs from 'fs';
-import * as path from 'path';
 import * as semver from 'semver';
+import * as glob from 'glob';
+import { promisify } from 'util';
+
+const globAsync = promisify(glob);
 import { Uri } from 'vscode';
 import { Jdtls } from "../java/jdtls";
 import { NodeKind, type INodeData } from "../java/nodeData";
@@ -182,10 +185,25 @@ const MAVEN_CONTAINER_PATH = "org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER";
 const GRADLE_CONTAINER_PATH = "org.eclipse.buildship.core.gradleclasspathcontainer";
 
 /**
- * Parse direct dependencies from pom.xml file.
- * Also checks parent pom.xml for multi-module projects.
+ * Find all pom.xml files in a directory using glob
  */
-function parseDirectDependenciesFromPom(pomPath: string): Set<string> {
+async function findAllPomFiles(dir: string): Promise<string[]> {
+    try {
+        return await globAsync('**/pom.xml', {
+            cwd: dir,
+            absolute: true,
+            nodir: true,
+            ignore: ['**/node_modules/**', '**/target/**', '**/.git/**', '**/.idea/**', '**/.vscode/**']
+        });
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Parse dependencies from a single pom.xml file
+ */
+function parseDependenciesFromSinglePom(pomPath: string): Set<string> {
     const directDeps = new Set<string>();
     try {
         const pomContent = fs.readFileSync(pomPath, 'utf-8');
@@ -205,13 +223,6 @@ function parseDirectDependenciesFromPom(pomPath: string): Set<string> {
                 directDeps.add(`${groupId}:${artifactId}`);
             }
         }
-
-        // Check for parent pom in multi-module projects
-        const parentPomPath = path.join(path.dirname(pomPath), '..', 'pom.xml');
-        if (fs.existsSync(parentPomPath)) {
-            const parentDeps = parseDirectDependenciesFromPom(parentPomPath);
-            parentDeps.forEach(dep => directDeps.add(dep));
-        }
     } catch {
         // If we can't read the pom, return empty set
     }
@@ -219,9 +230,44 @@ function parseDirectDependenciesFromPom(pomPath: string): Set<string> {
 }
 
 /**
- * Parse direct dependencies from build.gradle or build.gradle.kts file
+ * Parse direct dependencies from all pom.xml files in the project.
+ * Finds all pom.xml files starting from the project root and parses them to collect dependencies.
  */
-function parseDirectDependenciesFromGradle(gradlePath: string): Set<string> {
+async function parseDirectDependenciesFromPom(projectPath: string): Promise<Set<string>> {
+    const directDeps = new Set<string>();
+    
+    // Find all pom.xml files in the project starting from the project root
+    const allPomFiles = await findAllPomFiles(projectPath);
+    
+    // Parse each pom.xml and collect dependencies
+    for (const pom of allPomFiles) {
+        const deps = parseDependenciesFromSinglePom(pom);
+        deps.forEach(dep => directDeps.add(dep));
+    }
+    
+    return directDeps;
+}
+
+/**
+ * Find all Gradle build files in a directory using glob
+ */
+async function findAllGradleFiles(dir: string): Promise<string[]> {
+    try {
+        return await globAsync('**/{build.gradle,build.gradle.kts}', {
+            cwd: dir,
+            absolute: true,
+            nodir: true,
+            ignore: ['**/node_modules/**', '**/build/**', '**/.git/**', '**/.idea/**', '**/.vscode/**', '**/.gradle/**']
+        });
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Parse dependencies from a single Gradle build file
+ */
+function parseDependenciesFromSingleGradle(gradlePath: string): Set<string> {
     const directDeps = new Set<string>();
     try {
         const gradleContent = fs.readFileSync(gradlePath, 'utf-8');
@@ -257,47 +303,22 @@ function parseDirectDependenciesFromGradle(gradlePath: string): Set<string> {
 }
 
 /**
- * Find the build file (pom.xml or build.gradle) for a project
+ * Parse direct dependencies from all Gradle build files in the project.
+ * Finds all build.gradle and build.gradle.kts files and parses them to collect dependencies.
  */
-function findBuildFile(projectUri: string | undefined): { path: string; type: 'maven' | 'gradle' } | null {
-    if (!projectUri) {
-        return null;
+async function parseDirectDependenciesFromGradle(projectPath: string): Promise<Set<string>> {
+    const directDeps = new Set<string>();
+    
+    // Find all Gradle build files in the project
+    const allGradleFiles = await findAllGradleFiles(projectPath);
+    
+    // Parse each gradle file and collect dependencies
+    for (const gradleFile of allGradleFiles) {
+        const deps = parseDependenciesFromSingleGradle(gradleFile);
+        deps.forEach(dep => directDeps.add(dep));
     }
-    try {
-        const projectPath = Uri.parse(projectUri).fsPath;
-        
-        // Check for Maven
-        const pomPath = path.join(projectPath, 'pom.xml');
-        if (fs.existsSync(pomPath)) {
-            return { path: pomPath, type: 'maven' };
-        }
-        
-        // Check for Gradle Kotlin DSL
-        const gradleKtsPath = path.join(projectPath, 'build.gradle.kts');
-        if (fs.existsSync(gradleKtsPath)) {
-            return { path: gradleKtsPath, type: 'gradle' };
-        }
-        
-        // Check for Gradle Groovy DSL
-        const gradlePath = path.join(projectPath, 'build.gradle');
-        if (fs.existsSync(gradlePath)) {
-            return { path: gradlePath, type: 'gradle' };
-        }
-    } catch {
-        // Ignore errors
-    }
-    return null;
-}
-
-/**
- * Parse direct dependencies from build file (Maven or Gradle)
- */
-function parseDirectDependencies(buildFile: { path: string; type: 'maven' | 'gradle' }): Set<string> {
-    if (buildFile.type === 'maven') {
-        return parseDirectDependenciesFromPom(buildFile.path);
-    } else {
-        return parseDirectDependenciesFromGradle(buildFile.path);
-    }
+    
+    return directDeps;
 }
 
 async function getDirectDependencies(projectNode: INodeData): Promise<PackageDescription[]> {
@@ -308,9 +329,12 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
         (x.path?.startsWith(MAVEN_CONTAINER_PATH) || x.path?.startsWith(GRADLE_CONTAINER_PATH))
     );
 
-    // Get direct dependency identifiers from build file
-    const buildFile = findBuildFile(projectNode.uri);
-    const directDependencyIds = buildFile ? parseDirectDependencies(buildFile) : null;
+    if (dependencyContainers.length === 0) {
+        return [];
+    }
+    // Determine build type from dependency containers
+    const isMaven = dependencyContainers.some(x => x.path?.startsWith(MAVEN_CONTAINER_PATH));
+    
 
     const allPackages = await Promise.allSettled(
         dependencyContainers.map(async (packageContainer) => {
@@ -336,10 +360,39 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
 
     let dependencies = fulfilled.map(x => x.value).flat();
 
+    if (!dependencies) {
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getDirectDependencies.noDependencyInfo",
+            buildType: isMaven ? "maven" : "gradle",
+        });
+        return [];
+    }
+    // Get direct dependency identifiers from build files
+    let directDependencyIds: Set<string> | null = null;
+    if (projectNode.uri && dependencyContainers.length > 0) {
+        try {
+            const projectPath = Uri.parse(projectNode.uri).fsPath;
+            if (isMaven) {
+                directDependencyIds = await parseDirectDependenciesFromPom(projectPath);
+            } else {
+                directDependencyIds = await parseDirectDependenciesFromGradle(projectPath);
+            }
+        } catch {
+            // Ignore errors
+        }
+    }
+
+    if (!directDependencyIds) {
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getDirectDependencies.noDirectDependencyInfo",
+            buildType: isMaven ? "maven" : "gradle",
+        });
+        return [];
+    }
     // Filter to only direct dependencies if we have build file info
     if (directDependencyIds && directDependencyIds.size > 0) {
         dependencies = dependencies.filter(pkg => 
-            directDependencyIds.has(`${pkg.groupId}:${pkg.artifactId}`)
+            directDependencyIds!.has(`${pkg.groupId}:${pkg.artifactId}`)
         );
     }
 
