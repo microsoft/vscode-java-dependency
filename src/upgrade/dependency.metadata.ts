@@ -60,7 +60,7 @@ const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
             "4.3.x": "2020-12",
         },
         "suggestedVersion": {
-            "name": "3.5",
+            "name": "6.2",
             "description": "latest stable release",
         },
     },
