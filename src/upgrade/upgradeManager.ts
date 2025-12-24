@@ -61,18 +61,6 @@ class UpgradeManager {
                   sendInfo(_operationId, { "skipReason": "languageServerNotReady" });
                   return;
                 }
-                const projectData = await Jdtls.getPackageData({
-                  kind: NodeKind.Project,
-                  projectUri: folder.uri.toString(),
-                });
-                const isMavenGradleProject = projectData.some(
-                  (dep) => dep.kind === NodeKind.Container &&
-                    (dep.path?.startsWith(ContainerPath.Maven) || dep.path?.startsWith(ContainerPath.Gradle))
-                );
-                if (!isMavenGradleProject) {
-                  sendInfo(_operationId, { "skipReason": "notMavenGradleProject" });
-                  return;
-                }
 
                 const hasJavaError: boolean = await Jdtls.checkImportStatus();
                 if (hasJavaError) {

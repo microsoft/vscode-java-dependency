@@ -17,6 +17,7 @@ import { buildPackageId } from './utility';
 import metadataManager from './metadataManager';
 import { sendInfo } from 'vscode-extension-telemetry-wrapper';
 import { batchGetCVEIssues } from './cve';
+import { ContainerPath } from '../views/containerNode';
 
 function packageNodeToDescription(node: INodeData): PackageDescription | null {
     const version = node.metaData?.["maven.version"];
@@ -152,12 +153,17 @@ async function getDependencyIssues(dependencies: PackageDescription[]): Promise<
 async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
     const issues: UpgradeIssue[] = [];
     const dependencies = await getDirectDependencies(projectNode);
+    if (dependencies.length === 0) {
+        sendInfo("", {
+            operationName: "java.dependency.assessmentManager.getProjectIssues.noDirectDependencies"
+        });
+        return issues;
+    }
     issues.push(...await getCVEIssues(dependencies));
     issues.push(...getJavaIssues(projectNode));
     issues.push(...await getDependencyIssues(dependencies));
 
     return issues;
-
 }
 
 async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIssue[]> {
@@ -180,9 +186,6 @@ async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIs
 
     return workspaceIssues;
 }
-
-const MAVEN_CONTAINER_PATH = "org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER";
-const GRADLE_CONTAINER_PATH = "org.eclipse.buildship.core.gradleclasspathcontainer";
 
 /**
  * Find all pom.xml files in a directory using glob
@@ -207,21 +210,22 @@ function parseDependenciesFromSinglePom(pomPath: string): Set<string> {
     const directDeps = new Set<string>();
     try {
         const pomContent = fs.readFileSync(pomPath, 'utf-8');
-        
+
         // Extract dependencies from <dependencies> section (not inside <dependencyManagement>)
         // First, remove dependencyManagement sections to avoid including managed deps
         const withoutDepMgmt = pomContent.replace(/<dependencyManagement>[\s\S]*?<\/dependencyManagement>/g, '');
-        
+
         // Match <dependency> blocks and extract groupId and artifactId
         const dependencyRegex = /<dependency>\s*<groupId>([^<]+)<\/groupId>\s*<artifactId>([^<]+)<\/artifactId>/g;
-        let match;
-        while ((match = dependencyRegex.exec(withoutDepMgmt)) !== null) {
+        let match = dependencyRegex.exec(withoutDepMgmt);
+        while (match !== null) {
             const groupId = match[1].trim();
             const artifactId = match[2].trim();
             // Skip property references like ${project.groupId}
             if (!groupId.includes('${') && !artifactId.includes('${')) {
                 directDeps.add(`${groupId}:${artifactId}`);
             }
+            match = dependencyRegex.exec(withoutDepMgmt);
         }
     } catch {
         // If we can't read the pom, return empty set
@@ -235,16 +239,16 @@ function parseDependenciesFromSinglePom(pomPath: string): Set<string> {
  */
 async function parseDirectDependenciesFromPom(projectPath: string): Promise<Set<string>> {
     const directDeps = new Set<string>();
-    
+
     // Find all pom.xml files in the project starting from the project root
     const allPomFiles = await findAllPomFiles(projectPath);
-    
+
     // Parse each pom.xml and collect dependencies
     for (const pom of allPomFiles) {
         const deps = parseDependenciesFromSinglePom(pom);
         deps.forEach(dep => directDeps.add(dep));
     }
-    
+
     return directDeps;
 }
 
@@ -271,30 +275,33 @@ function parseDependenciesFromSingleGradle(gradlePath: string): Set<string> {
     const directDeps = new Set<string>();
     try {
         const gradleContent = fs.readFileSync(gradlePath, 'utf-8');
-        
+
         // Match common dependency configurations:
         // implementation 'group:artifact:version'
         // implementation "group:artifact:version"
         // api 'group:artifact:version'
         // compileOnly, runtimeOnly, testImplementation, etc.
         const shortFormRegex = /(?:implementation|api|compile|compileOnly|runtimeOnly|testImplementation|testCompileOnly|testRuntimeOnly)\s*\(?['"]([^:'"]+):([^:'"]+)(?::[^'"]*)?['"]\)?/g;
-        let match;
-        while ((match = shortFormRegex.exec(gradleContent)) !== null) {
+        let match = shortFormRegex.exec(gradleContent);
+        while (match !== null) {
             const groupId = match[1].trim();
             const artifactId = match[2].trim();
             if (!groupId.includes('$') && !artifactId.includes('$')) {
                 directDeps.add(`${groupId}:${artifactId}`);
             }
+            match = shortFormRegex.exec(gradleContent);
         }
 
         // Match map notation: implementation group: 'x', name: 'y', version: 'z'
         const mapFormRegex = /(?:implementation|api|compile|compileOnly|runtimeOnly|testImplementation|testCompileOnly|testRuntimeOnly)\s*\(?group:\s*['"]([^'"]+)['"]\s*,\s*name:\s*['"]([^'"]+)['"]/g;
-        while ((match = mapFormRegex.exec(gradleContent)) !== null) {
+        match = mapFormRegex.exec(gradleContent);
+        while (match !== null) {
             const groupId = match[1].trim();
             const artifactId = match[2].trim();
             if (!groupId.includes('$') && !artifactId.includes('$')) {
                 directDeps.add(`${groupId}:${artifactId}`);
             }
+            match = mapFormRegex.exec(gradleContent);
         }
     } catch {
         // If we can't read the gradle file, return empty set
@@ -308,16 +315,16 @@ function parseDependenciesFromSingleGradle(gradlePath: string): Set<string> {
  */
 async function parseDirectDependenciesFromGradle(projectPath: string): Promise<Set<string>> {
     const directDeps = new Set<string>();
-    
+
     // Find all Gradle build files in the project
     const allGradleFiles = await findAllGradleFiles(projectPath);
-    
+
     // Parse each gradle file and collect dependencies
     for (const gradleFile of allGradleFiles) {
         const deps = parseDependenciesFromSingleGradle(gradleFile);
         deps.forEach(dep => directDeps.add(dep));
     }
-    
+
     return directDeps;
 }
 
@@ -326,15 +333,14 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
     // Only include Maven or Gradle containers (not JRE or other containers)
     const dependencyContainers = projectStructureData.filter(x =>
         x.kind === NodeKind.Container &&
-        (x.path?.startsWith(MAVEN_CONTAINER_PATH) || x.path?.startsWith(GRADLE_CONTAINER_PATH))
+        (x.path?.startsWith(ContainerPath.Maven) || x.path?.startsWith(ContainerPath.Gradle))
     );
 
     if (dependencyContainers.length === 0) {
         return [];
     }
     // Determine build type from dependency containers
-    const isMaven = dependencyContainers.some(x => x.path?.startsWith(MAVEN_CONTAINER_PATH));
-    
+    const isMaven = dependencyContainers.some(x => x.path?.startsWith(ContainerPath.Maven));
 
     const allPackages = await Promise.allSettled(
         dependencyContainers.map(async (packageContainer) => {
@@ -391,7 +397,7 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
     }
     // Filter to only direct dependencies if we have build file info
     if (directDependencyIds && directDependencyIds.size > 0) {
-        dependencies = dependencies.filter(pkg => 
+        dependencies = dependencies.filter(pkg =>
             directDependencyIds!.has(`${pkg.groupId}:${pkg.artifactId}`)
         );
     }
