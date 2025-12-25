@@ -150,41 +150,17 @@ async function getDependencyIssues(dependencies: PackageDescription[]): Promise<
     return issues;
 }
 
-async function getProjectIssues(projectNode: INodeData): Promise<UpgradeIssue[]> {
+async function getWorkspaceIssues(projectDeps:{projectNode: INodeData, dependencies: PackageDescription[]}[]): Promise<UpgradeIssue[]> {
+
     const issues: UpgradeIssue[] = [];
-    const dependencies = await getDirectDependencies(projectNode);
-    if (dependencies.length === 0) {
-        sendInfo("", {
-            operationName: "java.dependency.assessmentManager.getProjectIssues.noDirectDependencies"
-        });
-        return issues;
+    const dependenciesSet: Set<PackageDescription> = new Set();
+    for (const { projectNode, dependencies } of projectDeps) {
+        issues.push(...getJavaIssues(projectNode));
+        dependencies.forEach(dep => dependenciesSet.add(dep));
     }
-    issues.push(...await getCVEIssues(dependencies));
-    issues.push(...getJavaIssues(projectNode));
-    issues.push(...await getDependencyIssues(dependencies));
-
+    issues.push(...await getCVEIssues(Array.from(dependenciesSet)));
+    issues.push(...await getDependencyIssues(Array.from(dependenciesSet)));
     return issues;
-}
-
-async function getWorkspaceIssues(workspaceFolderUri: string): Promise<UpgradeIssue[]> {
-    const projects = await Jdtls.getProjects(workspaceFolderUri);
-    const projectsIssues = await Promise.allSettled(projects.map(async (projectNode) => {
-        const issues = await getProjectIssues(projectNode);
-        return issues;
-    }));
-
-    const workspaceIssues = projectsIssues.map(x => {
-        if (x.status === "fulfilled") {
-            return x.value;
-        }
-
-        sendInfo("", {
-            operationName: "java.dependency.assessmentManager.getWorkspaceIssues",
-        });
-        return [];
-    }).flat();
-
-    return workspaceIssues;
 }
 
 /**
@@ -328,7 +304,7 @@ async function parseDirectDependenciesFromGradle(projectPath: string): Promise<S
     return directDeps;
 }
 
-async function getDirectDependencies(projectNode: INodeData): Promise<PackageDescription[]> {
+export async function getDirectDependencies(projectNode: INodeData): Promise<PackageDescription[]> {
     const projectStructureData = await Jdtls.getPackageData({ kind: NodeKind.Project, projectUri: projectNode.uri });
     // Only include Maven or Gradle containers (not JRE or other containers)
     const dependencyContainers = projectStructureData.filter(x =>
@@ -339,8 +315,6 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
     if (dependencyContainers.length === 0) {
         return [];
     }
-    // Determine build type from dependency containers
-    const isMaven = dependencyContainers.some(x => x.path?.startsWith(ContainerPath.Maven));
 
     const allPackages = await Promise.allSettled(
         dependencyContainers.map(async (packageContainer) => {
@@ -368,11 +342,13 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
 
     if (!dependencies) {
         sendInfo("", {
-            operationName: "java.dependency.assessmentManager.getDirectDependencies.noDependencyInfo",
-            buildType: isMaven ? "maven" : "gradle",
+            operationName: "java.dependency.assessmentManager.getDirectDependencies.noDependencyInfo"
         });
         return [];
     }
+
+    // Determine build type from dependency containers
+    const isMaven = dependencyContainers.some(x => x.path?.startsWith(ContainerPath.Maven));
     // Get direct dependency identifiers from build files
     let directDependencyIds: Set<string> | null = null;
     if (projectNode.uri && dependencyContainers.length > 0) {
@@ -390,10 +366,10 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
 
     if (!directDependencyIds) {
         sendInfo("", {
-            operationName: "java.dependency.assessmentManager.getDirectDependencies.noDirectDependencyInfo",
-            buildType: isMaven ? "maven" : "gradle",
+            operationName: "java.dependency.assessmentManager.getDirectDependencies.noDirectDependencyInfo"
         });
-        return [];
+        //TODO: fallback to return all dependencies if we cannot parse direct dependencies or just return empty?
+        return dependencies;
     }
     // Filter to only direct dependencies if we have build file info
     if (directDependencyIds && directDependencyIds.size > 0) {
@@ -402,16 +378,7 @@ async function getDirectDependencies(projectNode: INodeData): Promise<PackageDes
         );
     }
 
-    // Deduplicate by GAV coordinates
-    const seen = new Set<string>();
-    return dependencies.filter(pkg => {
-        const key = `${pkg.groupId}:${pkg.artifactId}:${pkg.version}`;
-        if (seen.has(key)) {
-            return false;
-        }
-        seen.add(key);
-        return true;
-    });
+    return dependencies;
 }
 
 async function getCVEIssues(dependencies: PackageDescription[]): Promise<UpgradeIssue[]> {
