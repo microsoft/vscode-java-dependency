@@ -3,10 +3,8 @@
 
 import * as fs from 'fs';
 import * as semver from 'semver';
-import * as glob from 'glob';
-import { promisify } from 'util';
+import {globby} from 'globby';
 
-const globAsync = promisify(glob);
 import { Uri } from 'vscode';
 import { Jdtls } from "../java/jdtls";
 import { NodeKind, type INodeData } from "../java/nodeData";
@@ -153,13 +151,19 @@ async function getDependencyIssues(dependencies: PackageDescription[]): Promise<
 async function getWorkspaceIssues(projectDeps:{projectNode: INodeData, dependencies: PackageDescription[]}[]): Promise<UpgradeIssue[]> {
 
     const issues: UpgradeIssue[] = [];
-    const dependenciesSet: Set<PackageDescription> = new Set();
+    const dependencyMap: Map<string, PackageDescription> = new Map();
     for (const { projectNode, dependencies } of projectDeps) {
         issues.push(...getJavaIssues(projectNode));
-        dependencies.forEach(dep => dependenciesSet.add(dep));
+        for (const dep of dependencies) {
+            const key = `${dep.groupId}:${dep.artifactId}:${dep.version ?? ""}`;
+            if (!dependencyMap.has(key)) {
+                dependencyMap.set(key, dep);
+            }
+        }
     }
-    issues.push(...await getCVEIssues(Array.from(dependenciesSet)));
-    issues.push(...await getDependencyIssues(Array.from(dependenciesSet)));
+    const uniqueDependencies = Array.from(dependencyMap.values());
+    issues.push(...await getCVEIssues(uniqueDependencies));
+    issues.push(...await getDependencyIssues(uniqueDependencies));
     return issues;
 }
 
@@ -168,10 +172,9 @@ async function getWorkspaceIssues(projectDeps:{projectNode: INodeData, dependenc
  */
 async function findAllPomFiles(dir: string): Promise<string[]> {
     try {
-        return await globAsync('**/pom.xml', {
+        return await globby('**/pom.xml', {
             cwd: dir,
             absolute: true,
-            nodir: true,
             ignore: ['**/node_modules/**', '**/target/**', '**/.git/**', '**/.idea/**', '**/.vscode/**']
         });
     } catch {
@@ -183,6 +186,7 @@ async function findAllPomFiles(dir: string): Promise<string[]> {
  * Parse dependencies from a single pom.xml file
  */
 function parseDependenciesFromSinglePom(pomPath: string): Set<string> {
+    //TODO : Use a proper XML parser if needed
     const directDeps = new Set<string>();
     try {
         const pomContent = fs.readFileSync(pomPath, 'utf-8');
@@ -233,10 +237,9 @@ async function parseDirectDependenciesFromPom(projectPath: string): Promise<Set<
  */
 async function findAllGradleFiles(dir: string): Promise<string[]> {
     try {
-        return await globAsync('**/{build.gradle,build.gradle.kts}', {
+        return await globby('**/{build.gradle,build.gradle.kts}', {
             cwd: dir,
             absolute: true,
-            nodir: true,
             ignore: ['**/node_modules/**', '**/build/**', '**/.git/**', '**/.idea/**', '**/.vscode/**', '**/.gradle/**']
         });
     } catch {
@@ -340,7 +343,7 @@ export async function getDirectDependencies(projectNode: INodeData): Promise<Pac
 
     let dependencies = fulfilled.map(x => x.value).flat();
 
-    if (!dependencies) {
+    if (!dependencies || dependencies.length === 0) {
         sendInfo("", {
             operationName: "java.dependency.assessmentManager.getDirectDependencies.noDependencyInfo"
         });
@@ -364,7 +367,7 @@ export async function getDirectDependencies(projectNode: INodeData): Promise<Pac
         }
     }
 
-    if (!directDependencyIds) {
+    if (!directDependencyIds || directDependencyIds.size === 0) {
         sendInfo("", {
             operationName: "java.dependency.assessmentManager.getDirectDependencies.noDirectDependencyInfo"
         });
@@ -372,11 +375,9 @@ export async function getDirectDependencies(projectNode: INodeData): Promise<Pac
         return dependencies;
     }
     // Filter to only direct dependencies if we have build file info
-    if (directDependencyIds && directDependencyIds.size > 0) {
-        dependencies = dependencies.filter(pkg =>
-            directDependencyIds!.has(`${pkg.groupId}:${pkg.artifactId}`)
-        );
-    }
+    dependencies = dependencies.filter(pkg =>
+        directDependencyIds!.has(`${pkg.groupId}:${pkg.artifactId}`)
+    );
 
     return dependencies;
 }
