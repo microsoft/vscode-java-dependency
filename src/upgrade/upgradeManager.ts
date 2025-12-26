@@ -40,7 +40,8 @@ class UpgradeManager {
             await commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
 
-        UpgradeManager.scan();
+        // Defer the expensive scan operation to not block extension activation
+        setImmediate(() => UpgradeManager.scan());
     }
 
     public static scan() {
