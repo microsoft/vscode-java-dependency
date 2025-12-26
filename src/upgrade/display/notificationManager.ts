@@ -65,7 +65,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 const prompt = buildFixPrompt(issue);
 
                 let notificationMessage = "";
-                
+
                 if (hasCVEIssue) {
                     notificationMessage = buildCVENotificationMessage(cveIssues, hasExtension);
                 } else {

@@ -3,7 +3,7 @@
 
 import * as fs from 'fs';
 import * as semver from 'semver';
-import {globby} from 'globby';
+import { globby } from 'globby';
 
 import { Uri } from 'vscode';
 import { Jdtls } from "../java/jdtls";
@@ -148,7 +148,7 @@ async function getDependencyIssues(dependencies: PackageDescription[]): Promise<
     return issues;
 }
 
-async function getWorkspaceIssues(projectDeps:{projectNode: INodeData, dependencies: PackageDescription[]}[]): Promise<UpgradeIssue[]> {
+async function getWorkspaceIssues(projectDeps: {projectNode: INodeData, dependencies: PackageDescription[]}[]): Promise<UpgradeIssue[]> {
 
     const issues: UpgradeIssue[] = [];
     const dependencyMap: Map<string, PackageDescription> = new Map();
@@ -186,7 +186,7 @@ async function findAllPomFiles(dir: string): Promise<string[]> {
  * Parse dependencies from a single pom.xml file
  */
 function parseDependenciesFromSinglePom(pomPath: string): Set<string> {
-    //TODO : Use a proper XML parser if needed
+    // TODO : Use a proper XML parser if needed
     const directDeps = new Set<string>();
     try {
         const pomContent = fs.readFileSync(pomPath, 'utf-8');
@@ -371,7 +371,7 @@ export async function getDirectDependencies(projectNode: INodeData): Promise<Pac
         sendInfo("", {
             operationName: "java.dependency.assessmentManager.getDirectDependencies.noDirectDependencyInfo"
         });
-        //TODO: fallback to return all dependencies if we cannot parse direct dependencies or just return empty?
+        // TODO: fallback to return all dependencies if we cannot parse direct dependencies or just return empty?
         return dependencies;
     }
     // Filter to only direct dependencies if we have build file info

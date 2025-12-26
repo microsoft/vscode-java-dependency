@@ -74,11 +74,9 @@ class UpgradeManager {
                 }))
             );
 
-            const allProjectDirectDeps = projectDirectDepsResults
-                .filter((result): result is PromiseFulfilledResult<{ projectNode: typeof projects[0]; dependencies: Awaited<ReturnType<typeof getDirectDependencies>> }> =>
-                    result.status === "fulfilled"
-                )
-                .map((result) => result.value);
+            const allProjectDirectDeps = projectDirectDepsResults.flatMap(result =>
+                result.status === "fulfilled" ? [result.value] : []
+            );
 
             if (allProjectDirectDeps.every((x) => x.dependencies.length === 0)) {
                 sendInfo(_operationId, { skipReason: "notMavenGradleProject" });
