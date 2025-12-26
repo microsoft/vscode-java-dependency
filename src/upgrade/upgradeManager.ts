@@ -10,10 +10,8 @@ import { instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } fro
 import { Commands } from "../commands";
 import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
-import assessmentManager from "./assessmentManager";
+import assessmentManager, { getDirectDependencies } from "./assessmentManager";
 import { checkOrInstallAppModExtensionForUpgrade, checkOrPopupToInstallAppModExtensionForModernization } from "./utility";
-import { NodeKind } from "../../extension.bundle";
-import { ContainerPath } from "../views/containerNode";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
@@ -42,7 +40,8 @@ class UpgradeManager {
             await commands.executeCommand("workbench.view.extension.azureJavaMigrationExplorer");
         }));
 
-        UpgradeManager.scan();
+        // Defer the expensive scan operation to not block extension activation
+        setImmediate(() => UpgradeManager.scan());
     }
 
     public static scan() {
@@ -55,40 +54,40 @@ class UpgradeManager {
     }
 
     private static async runDependencyCheckup(folder: WorkspaceFolder) {
-        return (instrumentOperation("java.dependency.runDependencyCheckup",
-            async (_operationId: string) => {
-                if (!(await languageServerApiManager.ready())) {
-                  sendInfo(_operationId, { "skipReason": "languageServerNotReady" });
-                  return;
-                }
-                const projectData = await Jdtls.getPackageData({
-                  kind: NodeKind.Project,
-                  projectUri: folder.uri.toString(),
-                });
-                const isMavenGradleProject = projectData.some(
-                  (dep) => dep.kind === NodeKind.Container &&
-                    (dep.path?.startsWith(ContainerPath.Maven) || dep.path?.startsWith(ContainerPath.Gradle))
-                );
-                if (!isMavenGradleProject) {
-                  sendInfo(_operationId, { "skipReason": "notMavenGradleProject" });
-                  return;
-                }
-
-                const hasJavaError: boolean = await Jdtls.checkImportStatus();
-                if (hasJavaError) {
-                  sendInfo(_operationId, { "skipReason": "hasJavaError" });
-                  return;
-                }
-
-                const uri = folder.uri.toString();
-                const workspaceIssues = await assessmentManager.getWorkspaceIssues(uri);
-
-                if (workspaceIssues.length > 0) {
-                    // only show one issue in notifications
-                    notificationManager.render(workspaceIssues);
-                }
+        return instrumentOperation("java.dependency.runDependencyCheckup", async (_operationId: string) => {
+            if (!(await languageServerApiManager.ready())) {
+                sendInfo(_operationId, { skipReason: "languageServerNotReady" });
+                return;
             }
-        ))();
+
+            const hasJavaError: boolean = await Jdtls.checkImportStatus();
+            if (hasJavaError) {
+                sendInfo(_operationId, { skipReason: "hasJavaError" });
+                return;
+            }
+
+            const projects = await Jdtls.getProjects(folder.uri.toString());
+            const projectDirectDepsResults = await Promise.allSettled(
+                projects.map(async (projectNode) => ({
+                    projectNode,
+                    dependencies: await getDirectDependencies(projectNode),
+                }))
+            );
+
+            const allProjectDirectDeps = projectDirectDepsResults.flatMap(result =>
+                result.status === "fulfilled" ? [result.value] : []
+            );
+
+            if (allProjectDirectDeps.every((x) => x.dependencies.length === 0)) {
+                sendInfo(_operationId, { skipReason: "notMavenGradleProject" });
+                return;
+            }
+
+            const workspaceIssues = await assessmentManager.getWorkspaceIssues(allProjectDirectDeps);
+            if (workspaceIssues.length > 0) {
+                notificationManager.render(workspaceIssues);
+            }
+        })();
     }
 }
 

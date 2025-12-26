@@ -41,7 +41,16 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 if (issues.length === 0) {
                     return;
                 }
-                const issue = issues[0];
+
+                // Filter to only CVE issues and cast to CveUpgradeIssue[]
+                const cveIssues = issues.filter(
+                        (i): i is CveUpgradeIssue => i.reason === UpgradeReason.CVE
+                    );
+                const nonCVEIssues = issues.filter(
+                        (i) => i.reason !== UpgradeReason.CVE
+                    );
+                const hasCVEIssue = cveIssues.length > 0;
+                const issue = hasCVEIssue ? cveIssues[0] : nonCVEIssues[0];
 
                 if (!this.shouldShow()) {
                     return;
@@ -56,12 +65,8 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 const prompt = buildFixPrompt(issue);
 
                 let notificationMessage = "";
-                let cveIssues: CveUpgradeIssue[] = [];
-                if (issue.reason === UpgradeReason.CVE) {
-                    // Filter to only CVE issues and cast to CveUpgradeIssue[]
-                    cveIssues = issues.filter(
-                        (i): i is CveUpgradeIssue => i.reason === UpgradeReason.CVE
-                    );
+
+                if (hasCVEIssue) {
                     notificationMessage = buildCVENotificationMessage(cveIssues, hasExtension);
                 } else {
                     notificationMessage = buildNotificationMessage(issue, hasExtension);
@@ -72,7 +77,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                     operationName: "java.dependency.upgradeNotification.show",
                 });
 
-                const buttons = issue.reason === UpgradeReason.CVE
+                const buttons = hasCVEIssue
                     ? [fixCVEButtonText, BUTTON_TEXT_NOT_NOW]
                     : [upgradeButtonText, BUTTON_TEXT_NOT_NOW];
 
