@@ -70,6 +70,7 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 | `java.dependency.autoRefresh` | Specify whether to automatically sync the change from editor to the Java Projects explorer. | `true` |
 | `java.dependency.refreshDelay` | The delay time (ms) the auto refresh is invoked when changes are detected. | `2000ms` |
 | `java.dependency.packagePresentation` | Specify how to display the package. Supported values are: `flat`, `hierarchical`.| `flat` |
+| `java.dependency.enableDependencyCheckup` | Show reminders when your Java runtimes or dependencies need an upgrade. | `true` |
 | `java.project.exportJar.targetPath` | The output path of export jar. When this setting is **empty** , a file explorer will pop up to let the user select the output location.| `${workspaceFolder}/${workspaceFolderBasename}.jar` |
 | `java.project.explorer.showNonJavaResources` | When enabled, the explorer shows non-Java resources. | `true` |
 
