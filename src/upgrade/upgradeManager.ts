@@ -74,7 +74,7 @@ class UpgradeManager {
                 sendInfo(_operationId, { skipReason: "hasJavaError" });
                 return;
             }
-            
+
             if (UpgradeManager.scanned) {
                 return;
             }
