@@ -45,16 +45,11 @@ class UpgradeManager {
     }
 
     public static scan() {
-        if (!shouldRunCheckup()) {
-            return;
-        }
-        workspace.workspaceFolders?.forEach((folder) =>
-            UpgradeManager.runDependencyCheckup(folder)
-        );
-    }
+        return instrumentOperation("java.dependency.scan", async (_operationId: string) => {
+            if (!shouldRunCheckup()) {
+                return;
+            }
 
-    private static async runDependencyCheckup(folder: WorkspaceFolder) {
-        return instrumentOperation("java.dependency.runDependencyCheckup", async (_operationId: string) => {
             if (!(await languageServerApiManager.ready())) {
                 sendInfo(_operationId, { skipReason: "languageServerNotReady" });
                 return;
@@ -66,6 +61,14 @@ class UpgradeManager {
                 return;
             }
 
+            workspace.workspaceFolders?.forEach((folder) =>
+                UpgradeManager.runDependencyCheckup(folder)
+            );
+        });
+    }
+
+    private static async runDependencyCheckup(folder: WorkspaceFolder) {
+        return instrumentOperation("java.dependency.runDependencyCheckup", async (_operationId: string) => {
             const projects = await Jdtls.getProjects(folder.uri.toString());
             const projectDirectDepsResults = await Promise.allSettled(
                 projects.map(async (projectNode) => ({
