@@ -99,6 +99,10 @@ class LanguageServerApiManager {
     public isReady(timeout: number): Promise<boolean> {
         return Promise.race([this.ready(), new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeout))]);
     }
+
+    public getExtensionApi() {
+        return this.extensionApi;
+    }
 }
 
 export const languageServerApiManager: LanguageServerApiManager = new LanguageServerApiManager();
