@@ -24,6 +24,7 @@ function shouldRunCheckup() {
 
 class UpgradeManager {
     private static watcherSetup = false;
+    private static scanned = false;
 
     public static initialize(context: ExtensionContext) {
         notificationManager.initialize(context);
@@ -45,13 +46,17 @@ class UpgradeManager {
         }));
 
         // Defer the expensive scan operation to not block extension activation
-        setImmediate(() => UpgradeManager.scan());
+        setImmediate(() => UpgradeManager.scan(false));
     }
 
-    public static scan() {
+    public static scan(forceRescan: boolean) {
         return instrumentOperation("java.dependency.scan", async (_operationId: string) => {
             if (!shouldRunCheckup()) {
                 return;
+            }
+
+            if (forceRescan) {
+                UpgradeManager.scanned = false;
             }
 
             if (!(await languageServerApiManager.ready())) {
@@ -66,6 +71,11 @@ class UpgradeManager {
                 sendInfo(_operationId, { skipReason: "hasJavaError" });
                 return;
             }
+
+            if (UpgradeManager.scanned) {
+                return;
+            }
+            UpgradeManager.scanned = true;
 
             workspace.workspaceFolders?.forEach((folder) =>
                 UpgradeManager.runDependencyCheckup(folder)
@@ -109,7 +119,7 @@ class UpgradeManager {
             const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
             contextManager.context.subscriptions.push(onDidServerModeChange((mode: LanguageServerMode) => {
                 if (mode !== LanguageServerMode.LightWeight) {
-                    UpgradeManager.scan();
+                    UpgradeManager.scan(false);
                 }
             }));
             UpgradeManager.watcherSetup = true;
