@@ -47,7 +47,7 @@ class SyncHandler implements Disposable {
 
         this.disposables.push(workspace.onDidChangeWorkspaceFolders(() => {
             this.refresh();
-            setImmediate(() => upgradeManager.scan(true));  // Deferred
+            setImmediate(() => upgradeManager.scan("workspaceFoldersChange", true));  // Deferred
         }));
 
         try {

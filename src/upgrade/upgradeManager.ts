@@ -46,11 +46,13 @@ class UpgradeManager {
         }));
 
         // Defer the expensive scan operation to not block extension activation
-        setImmediate(() => UpgradeManager.scan(false));
+        setImmediate(() => UpgradeManager.scan("initialization", false));
     }
 
-    public static scan(forceRescan: boolean) {
+    public static scan(triggerReason: string, forceRescan: boolean) {
         return instrumentOperation("java.dependency.scan", async (_operationId: string) => {
+            sendInfo(_operationId, { triggerReason });
+
             if (!shouldRunCheckup()) {
                 return;
             }
@@ -120,7 +122,7 @@ class UpgradeManager {
             const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
             contextManager.context.subscriptions.push(onDidServerModeChange((mode: LanguageServerMode) => {
                 if (mode !== LanguageServerMode.LightWeight) {
-                    UpgradeManager.scan(false);
+                    UpgradeManager.scan(`languageServerModeChangeTo${mode}`, false);
                 }
             }));
             UpgradeManager.watcherSetup = true;
