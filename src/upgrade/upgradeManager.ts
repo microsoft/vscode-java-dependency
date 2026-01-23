@@ -83,7 +83,7 @@ class UpgradeManager {
             workspace.workspaceFolders?.forEach((folder) =>
                 UpgradeManager.runDependencyCheckup(folder)
             );
-        });
+        })();
     }
 
     private static async runDependencyCheckup(folder: WorkspaceFolder) {
