@@ -59,19 +59,20 @@ class UpgradeManager {
                 UpgradeManager.scanned = false;
             }
 
-            if (!(await languageServerApiManager.ready())) {
+            const readyResult = await languageServerApiManager.ready();
+            this.setupWatcherForServerModeChange();
+
+            if (!readyResult) {
                 sendInfo(_operationId, { skipReason: "languageServerNotReady" });
                 return;
             }
-
-            UpgradeManager.setupWatcherForServerModeChange();
 
             const hasJavaError: boolean = await Jdtls.checkImportStatus();
             if (hasJavaError) {
                 sendInfo(_operationId, { skipReason: "hasJavaError" });
                 return;
             }
-
+            
             if (UpgradeManager.scanned) {
                 return;
             }
