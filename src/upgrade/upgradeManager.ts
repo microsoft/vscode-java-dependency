@@ -122,7 +122,7 @@ class UpgradeManager {
             const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
             contextManager.context.subscriptions.push(onDidServerModeChange((mode: LanguageServerMode) => {
                 if (mode !== LanguageServerMode.LightWeight) {
-                    UpgradeManager.scan(`languageServerModeChangeTo${mode}`, false);
+                    setImmediate(() => UpgradeManager.scan(`languageServerModeChangeTo${mode}`, false));
                 }
             }));
             UpgradeManager.watcherSetup = true;
