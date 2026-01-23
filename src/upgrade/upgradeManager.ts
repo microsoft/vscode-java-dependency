@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, type ExtensionContext, workspace, type WorkspaceFolder } from "vscode";
+import { commands, type ExtensionContext, type Event, workspace, type WorkspaceFolder } from "vscode";
 
 import { Jdtls } from "../java/jdtls";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
@@ -12,6 +12,8 @@ import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
 import assessmentManager, { getDirectDependencies } from "./assessmentManager";
 import { checkOrInstallAppModExtensionForUpgrade, checkOrPopupToInstallAppModExtensionForModernization } from "./utility";
+import { contextManager } from "../contextManager";
+import { LanguageServerMode } from "../languageServerApi/LanguageServerMode";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
@@ -21,6 +23,8 @@ function shouldRunCheckup() {
 }
 
 class UpgradeManager {
+    private static watcherSetup = false;
+
     public static initialize(context: ExtensionContext) {
         notificationManager.initialize(context);
 
@@ -54,6 +58,8 @@ class UpgradeManager {
                 sendInfo(_operationId, { skipReason: "languageServerNotReady" });
                 return;
             }
+
+            UpgradeManager.setupWatcherForServerModeChange();
 
             const hasJavaError: boolean = await Jdtls.checkImportStatus();
             if (hasJavaError) {
@@ -91,6 +97,23 @@ class UpgradeManager {
                 notificationManager.render(workspaceIssues);
             }
         })();
+    }
+
+    private static setupWatcherForServerModeChange() {
+        if (UpgradeManager.watcherSetup) {
+            return;
+        }
+
+        const extensionApi = languageServerApiManager.getExtensionApi();
+        if (extensionApi.onDidServerModeChange) {
+            const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
+            contextManager.context.subscriptions.push(onDidServerModeChange((mode: LanguageServerMode) => {
+                if (mode !== LanguageServerMode.LightWeight) {
+                    UpgradeManager.scan();
+                }
+            }));
+            UpgradeManager.watcherSetup = true;
+        }
     }
 }
 
