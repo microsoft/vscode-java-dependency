@@ -1117,7 +1117,7 @@
     "fs-extra": "^10.1.0",
     "globby": "^13.1.3",
     "lodash": "^4.17.23",
-    "minimatch": "^5.1.6",
+    "minimatch": "^5.1.7",
     "semver": "^7.3.8",
     "vscode-extension-telemetry-wrapper": "^0.15.0",
     "vscode-tas-client": "^0.1.75"
