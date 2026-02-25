@@ -17,7 +17,7 @@ extends:
     pool:
       name: VSEngSS-MicroBuild2022-1ES
     settings:
-      networkIsolationPolicy: Permissive
+      networkIsolationPolicy: Okay,GitHub
     stages:
       - stage: Build
         jobs:
