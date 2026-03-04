@@ -22,6 +22,7 @@ import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionPr
 import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
 import { registerCopilotContextProviders } from "./copilot/contextProvider";
+import { registerJavaContextTools } from "./copilot/tools/javaContextTools";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 
 export async function activate(context: ExtensionContext): Promise<void> {
@@ -90,6 +91,7 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     languageServerApiManager.ready().then((isReady) => {
         if (isReady) {
             registerCopilotContextProviders(context);
+            registerJavaContextTools(context);
         }
     });
 }

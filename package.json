@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.83.1"
+    "vscode": "^1.95.0"
   },
   "repository": {
     "type": "git",
@@ -47,6 +47,162 @@
   "contributes": {
     "javaExtensions": [
       "./server/com.microsoft.jdtls.ext.core-0.24.1.jar"
+    ],
+    "languageModelTools": [
+      {
+        "name": "java_getFileStructure",
+        "tags": ["java", "structure", "outline"],
+        "toolReferenceName": "javaFileStructure",
+        "modelDescription": "Get the structure (classes, methods, fields, inner classes) of a Java file. Returns a hierarchical outline with symbol kinds and line ranges. Use this first when you need to understand a Java file's layout before reading specific sections.",
+        "displayName": "Java: Get File Structure",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(symbol-class)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "The path of the Java file. Accepts workspace-relative path (e.g. 'src/main/java/MyClass.java') or full file URI."
+            }
+          },
+          "required": ["uri"]
+        }
+      },
+      {
+        "name": "java_findSymbol",
+        "tags": ["java", "search", "symbol"],
+        "toolReferenceName": "javaFindSymbol",
+        "modelDescription": "Search for Java symbols (classes, interfaces, methods, fields) across the entire workspace by name. Supports partial/fuzzy matching. Use this when you need to find where a class or method is defined.",
+        "displayName": "Java: Find Symbol",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "The symbol name or pattern to search for, e.g. 'UserService' or 'handleRequest'"
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum results to return (default: 20, max: 50)"
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "java_getFileImports",
+        "tags": ["java", "imports", "dependencies"],
+        "toolReferenceName": "javaFileImports",
+        "modelDescription": "Get all import statements from a Java file, classified by source (jdk/project/external). Includes both regular and static imports. Use this to understand which libraries and project classes a file depends on.",
+        "displayName": "Java: Get File Imports",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(references)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "The path of the Java file. Accepts workspace-relative path (e.g. 'src/main/java/MyClass.java') or full file URI."
+            }
+          },
+          "required": ["uri"]
+        }
+      },
+      {
+        "name": "java_getTypeAtPosition",
+        "tags": ["java", "type", "hover"],
+        "toolReferenceName": "javaTypeAtPosition",
+        "modelDescription": "Get the resolved type signature of a symbol at a specific position in a Java file. Returns the fully qualified type, method signature, or field declaration. Use this to check the exact type of a variable, parameter, or expression. Tip: Use java_getFileStructure first to get the line ranges of your target symbol.",
+        "displayName": "Java: Get Type at Position",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(symbol-field)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "The path of the Java file. Accepts workspace-relative path (e.g. 'src/main/java/MyClass.java') or full file URI."
+            },
+            "line": {
+              "type": "number",
+              "description": "Zero-based line number"
+            },
+            "character": {
+              "type": "number",
+              "description": "Zero-based character offset"
+            }
+          },
+          "required": ["uri", "line", "character"]
+        }
+      },
+      {
+        "name": "java_getCallHierarchy",
+        "tags": ["java", "calls", "hierarchy"],
+        "toolReferenceName": "javaCallHierarchy",
+        "modelDescription": "Get incoming callers or outgoing callees of a method at a specific position. Use 'incoming' to find all methods that call this method, or 'outgoing' to find all methods this method calls. Essential for understanding control flow and impact analysis. Tip: Use java_getFileStructure first to get the line ranges of your target method.",
+        "displayName": "Java: Get Call Hierarchy",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(call-incoming)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "The path of the Java file. Accepts workspace-relative path (e.g. 'src/main/java/MyClass.java') or full file URI."
+            },
+            "line": {
+              "type": "number",
+              "description": "Zero-based line number of the method"
+            },
+            "character": {
+              "type": "number",
+              "description": "Zero-based character offset within the method name"
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["incoming", "outgoing"],
+              "default": "incoming",
+              "description": "Direction: 'incoming' for callers, 'outgoing' for callees"
+            }
+          },
+          "required": ["uri", "line", "character", "direction"]
+        }
+      },
+      {
+        "name": "java_getTypeHierarchy",
+        "tags": ["java", "inheritance", "hierarchy"],
+        "toolReferenceName": "javaTypeHierarchy",
+        "modelDescription": "Get supertypes (parent class and interfaces) or subtypes (subclasses and implementors) of a type at a specific position. Use this to understand inheritance relationships, find implementations of an interface, or check what a class extends. Tip: Use java_getFileStructure first to get the line ranges of your target type.",
+        "displayName": "Java: Get Type Hierarchy",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(type-hierarchy)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "The path of the Java file. Accepts workspace-relative path (e.g. 'src/main/java/MyClass.java') or full file URI."
+            },
+            "line": {
+              "type": "number",
+              "description": "Zero-based line number of the type"
+            },
+            "character": {
+              "type": "number",
+              "description": "Zero-based character offset within the type name"
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["supertypes", "subtypes"],
+              "default": "supertypes",
+              "description": "Direction: 'supertypes' for parents, 'subtypes' for children"
+            }
+          },
+          "required": ["uri", "line", "character", "direction"]
+        }
+      }
     ],
     "commands": [
       {
@@ -1078,6 +1234,11 @@
           }
         }
       }
+    ],
+    "chatSkills": [
+      {
+        "path": "./resources/skills/java-context-tools/SKILL.md"
+      }
     ]
   },
   "scripts": {
@@ -1097,7 +1258,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "20.x",
     "@types/semver": "^7.3.13",
-    "@types/vscode": "1.83.1",
+    "@types/vscode": "1.95.0",
     "@vscode/test-electron": "^2.4.1",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",
