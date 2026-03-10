@@ -1,35 +1,48 @@
 ---
 name: java-context-tools
-description: Compiler-accurate Java code intelligence tools powered by the Java Language Server.
+description: Compiler-accurate Java code intelligence tools powered by the Java Language Server. ALWAYS load this skill when the workspace contains Java, Maven (pom.xml), or Gradle (build.gradle) projects. Use these tools to find symbol definitions, get type/call hierarchies, resolve types, inspect file outlines, and check imports in Java source files. Prefer over grep_search or read_file for any Java code navigation, understanding, debugging, or refactoring task.
 ---
 
 # Java Context Tools
 
 Compiler-accurate Java code intelligence via the Java Language Server (jdtls). These 6 tools provide structured, low-token answers that are more precise than `grep_search` or `read_file` for Java code.
 
-## Activation (Required on First Use)
+## Activation
 
-These tools are **deferred** and must be discovered before first use. Run:
-```
-tool_search_tool_regex("java_get|java_find")
-```
-This activates all 6 tools in one call. You only need to do this **once per session** — after that, the tools are available directly.
+These tools are **deferred** and must be discovered before first use. Activate all 6 tools at once with `tool_search_tool_regex` using pattern:
 
-## Tool Priority (Java Projects)
+`java_findSymbol|java_getFileStructure|java_getCallHierarchy|java_getTypeHierarchy|java_getTypeAtPosition|java_getFileImports`
+
+You only need to do this **once per session**.
+
+## When to Replace grep_search
 
 For Java source files, **always prefer these tools over generic alternatives**:
 
-| Instead of | Use | Why |
+| You're doing... | Use instead | Why |
 |---|---|---|
-| `grep_search` (symbol lookup) | `java_findSymbol` | Returns only definitions, not comments/strings/imports |
-| `grep_search` (find usages) | `java_getCallHierarchy` | Returns actual call sites with context |
-| Guessing types | `java_getTypeAtPosition` | Compiler-accurate for `var`, lambdas, generics |
+| Find where a class/method is defined | `java_findSymbol` | ~60 tokens vs ~500 for grep (no comment/import noise) |
+| Find all callers of a method | `java_getCallHierarchy("incoming")` | ~80 tokens vs ~3000 for grep (precise call sites only) |
+| Find all implementations of an interface | `java_getTypeHierarchy("subtypes")` | ~60 tokens vs ~1000 for grep |
+| Check a `var`/lambda/generic type | `java_getTypeAtPosition` | ~20 tokens vs guessing wrong |
+| Search in non-Java files (xml, yaml, gradle) | Keep using `grep_search` | java_* tools only work on Java source |
+| Search for string literals or comments | Keep using `grep_search` | java_* tools return symbol definitions only |
 
-**Do NOT use when:**
-- File path is unknown — use `java_findSymbol` first to get the correct path
-- Working on non-Java files (pom.xml, build.gradle, yaml — use `read_file`/`grep_search`)
-- File is small (< 100 lines — just `read_file`)
-- Type is obvious (`String`, `int`, `java.util.List`)
+**Rule of thumb**: If you're searching for a Java symbol name in `.java` files, there is almost always a `java_*` tool that returns more precise results with fewer tokens than `grep_search`.
+
+## Anti-patterns (Avoid these)
+
+❌ **Don't**: Use `grep_search("decodeLbs")` to find who calls `decodeLbs()`
+   - Returns 8+ matches including declaration, comments, imports → ~3000 output tokens
+
+✅ **Do**: Use `java_getCallHierarchy(uri, line, char, "incoming")`
+   - Returns only actual call sites → ~80 output tokens
+
+❌ **Don't**: Use `grep_search("class.*extends BaseDecoder")` to find subclasses
+✅ **Do**: Use `java_getTypeHierarchy(uri, line, char, "subtypes")`
+
+❌ **Don't**: Read entire 1000+ line file to understand its structure
+✅ **Do**: Use `java_getFileStructure(uri)` first, then `read_file` on specific line ranges
 
 ## Tools
 
@@ -63,12 +76,13 @@ Input: `{ uri, line, character, direction }` (0-based, direction: `"supertypes"`
 
 Most tasks follow the pattern: **findSymbol → getFileStructure → targeted tool**.
 
-| Scenario | Workflow |
-|---|---|
-| Debug a bug | `findSymbol` → `getFileStructure` → `read_file` (specific lines) |
-| Analyze impact | `findSymbol` → `getFileStructure` → `getCallHierarchy("incoming")` |
-| Understand inheritance | `findSymbol` → `getTypeHierarchy("subtypes")` |
-| Check dependencies | `getFileImports` → `findSymbol` (dependency) → `getFileStructure` |
+| Scenario | Workflow | Trigger |
+|---|---|---|
+| Debug a bug | `findSymbol` → `getFileStructure` → `read_file` (buggy method) → **`getCallHierarchy("incoming")`** → `read_file` (caller context) | When you found the buggy method and need to know ALL callers |
+| Analyze impact | `findSymbol` → `getFileStructure` → `getCallHierarchy("incoming")` | Before editing a method, check who depends on it |
+| Understand inheritance | `findSymbol` → `getTypeHierarchy("subtypes")` | When you see a base class and need all implementations |
+| Check dependencies | `getFileImports` → `findSymbol` (dependency) → `getFileStructure` | When understanding external library usage |
+| Resolve type ambiguity | `getFileStructure` → `getTypeAtPosition` | When you see `var`, generics, or lambda and need exact type |
 
 ## Fallback
 
