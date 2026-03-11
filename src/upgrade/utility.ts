@@ -95,15 +95,15 @@ export function buildFixPrompt(issue: UpgradeIssue): string {
     switch (reason) {
         case UpgradeReason.JRE_TOO_OLD: {
             const { suggestedVersion: { name: suggestedVersionName } } = issue;
-            return `upgrade java runtime to the LTS version ${suggestedVersionName} using java upgrade tools by invoking #generate_upgrade_plan`;
+            return `upgrade java runtime to the LTS version ${suggestedVersionName}`;
         }
         case UpgradeReason.END_OF_LIFE:
         case UpgradeReason.DEPRECATED: {
             const { suggestedVersion: { name: suggestedVersionName } } = issue;
-            return `upgrade ${packageDisplayName} to ${suggestedVersionName} using java upgrade tools by invoking #generate_upgrade_plan`;
+            return `upgrade ${packageDisplayName} to ${suggestedVersionName}`;
         }
         case UpgradeReason.CVE: {
-            return `fix all critical and high-severity CVE vulnerabilities in this project by invoking #validate_cves_for_java`;
+            return `fix all critical and high-severity CVE vulnerabilities in this project by invoking #appmod-validate-cves-for-java`;
         }
     }
 }

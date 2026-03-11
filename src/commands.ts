@@ -167,7 +167,7 @@ export namespace Commands {
     /**
      * Commands from Java Upgrade Tool
      */
-    export const GOTO_AGENT_MODE = "javaupgrade.gotoAgentMode";
+    export const GOTO_AGENT_MODE = "appmod.javaUpgrade.gotoAgentMode";
 
     /**
      * Get the project settings
