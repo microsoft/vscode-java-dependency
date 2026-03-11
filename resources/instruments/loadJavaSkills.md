@@ -1,6 +1,5 @@
 ---
 description: Guidelines for using Java LSP tools when working with Java codebases
-applyTo: '**/*.java'
 ---
 
 MANDATORY: For ANY Java code task (bug fixing, code analysis, refactoring):
