@@ -7,12 +7,12 @@
  * Java Context Tools — First Batch (Zero-Blocking)
  *
  * These 6 tools are all non-blocking after jdtls is ready:
- *   1. java_getFileStructure  — LSP documentSymbol
- *   2. java_findSymbol        — LSP workspaceSymbol
- *   3. java_getFileImports    — jdtls AST-only command (no type resolution)
- *   4. java_getTypeAtPosition — LSP hover (post-processed)
- *   5. java_getCallHierarchy  — LSP call hierarchy
- *   6. java_getTypeHierarchy  — LSP type hierarchy
+ *   1. lsp_java_getFileStructure  — LSP documentSymbol
+ *   2. lsp_java_findSymbol        — LSP workspaceSymbol
+ *   3. lsp_java_getFileImports    — jdtls AST-only command (no type resolution)
+ *   4. lsp_java_getTypeAtPosition — LSP hover (post-processed)
+ *   5. lsp_java_getCallHierarchy  — LSP call hierarchy
+ *   6. lsp_java_getTypeHierarchy  — LSP type hierarchy
  *
  * Design principles:
  *   - Each tool returns < 200 tokens
@@ -73,7 +73,7 @@ function resolveFileUri(input: string): vscode.Uri {
 }
 
 // ============================================================
-// Tool 1: java_getFileStructure (LSP — Document Symbol)
+// Tool 1: lsp_java_getFileStructure (LSP — Document Symbol)
 // ============================================================
 
 interface FileStructureInput {
@@ -108,7 +108,7 @@ function formatSymbols(symbols: vscode.DocumentSymbol[], indent: number): string
 }
 
 // ============================================================
-// Tool 2: java_findSymbol (LSP — Workspace Symbol)
+// Tool 2: lsp_java_findSymbol (LSP — Workspace Symbol)
 // ============================================================
 
 interface FindSymbolInput {
@@ -135,7 +135,7 @@ const findSymbolTool: LanguageModelTool<FindSymbolInput> = {
 };
 
 // ============================================================
-// Tool 3: java_getFileImports (jdtls — AST-only, non-blocking)
+// Tool 3: lsp_java_getFileImports (jdtls — AST-only, non-blocking)
 // ============================================================
 
 interface FileImportsInput {
@@ -158,7 +158,7 @@ const fileImportsTool: LanguageModelTool<FileImportsInput> = {
 };
 
 // ============================================================
-// Tool 4: java_getTypeAtPosition (LSP — Hover post-processed)
+// Tool 4: lsp_java_getTypeAtPosition (LSP — Hover post-processed)
 // ============================================================
 
 interface TypeAtPositionInput {
@@ -202,7 +202,7 @@ function extractTypeSignature(hovers: vscode.Hover[] | undefined): object {
 }
 
 // ============================================================
-// Tool 5: java_getCallHierarchy (LSP — Call Hierarchy)
+// Tool 5: lsp_java_getCallHierarchy (LSP — Call Hierarchy)
 // ============================================================
 
 interface CallHierarchyInput {
@@ -257,7 +257,7 @@ const callHierarchyTool: LanguageModelTool<CallHierarchyInput> = {
 };
 
 // ============================================================
-// Tool 6: java_getTypeHierarchy (LSP — Type Hierarchy)
+// Tool 6: lsp_java_getTypeHierarchy (LSP — Type Hierarchy)
 // ============================================================
 
 interface TypeHierarchyInput {
@@ -320,11 +320,11 @@ export function registerJavaContextTools(context: vscode.ExtensionContext): void
     }
 
     context.subscriptions.push(
-        lmApi.registerTool("java_getFileStructure", fileStructureTool),
-        lmApi.registerTool("java_findSymbol", findSymbolTool),
-        lmApi.registerTool("java_getFileImports", fileImportsTool),
-        lmApi.registerTool("java_getTypeAtPosition", typeAtPositionTool),
-        lmApi.registerTool("java_getCallHierarchy", callHierarchyTool),
-        lmApi.registerTool("java_getTypeHierarchy", typeHierarchyTool),
+        lmApi.registerTool("lsp_java_getFileStructure", fileStructureTool),
+        lmApi.registerTool("lsp_java_findSymbol", findSymbolTool),
+        lmApi.registerTool("lsp_java_getFileImports", fileImportsTool),
+        lmApi.registerTool("lsp_java_getTypeAtPosition", typeAtPositionTool),
+        lmApi.registerTool("lsp_java_getCallHierarchy", callHierarchyTool),
+        lmApi.registerTool("lsp_java_getTypeHierarchy", typeHierarchyTool),
     );
 }

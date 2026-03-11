@@ -695,7 +695,7 @@ class TypeQueryTool implements vscode.LanguageModelTool<{ uri: string; line: num
         }
       },
       {
-        "name": "java_findSymbol",
+        "name": "lsp_java_findSymbol",
         "displayName": "Find Symbol in Workspace",
         "modelDescription": "Search for a class, interface, method or field by name across the entire workspace. Returns exact matches with kind (Class/Interface/Method) and file location. More precise than grep - no noise from comments or imports.",
         "inputSchema": {

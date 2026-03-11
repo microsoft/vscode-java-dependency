@@ -18,7 +18,7 @@
       }
     },
     {
-      "name": "java_getFileImports",
+      "name": "lsp_java_getFileImports",
       "tags": ["java", "imports", "file"],
       "modelDescription": "Get the classified import list of a Java file. Each import is tagged with its kind (class/interface/enum/annotation) and source (project/external/jdk). Returns ~80 tokens. Use this to understand what a file depends on WITHOUT reading the full source. Follow up with java_getClassDetail only for the 1-2 classes you actually need to understand — do NOT expand every import.",
       "displayName": "Java: Get File Imports",
@@ -74,7 +74,7 @@
       }
     },
     {
-      "name": "java_getFileStructure",
+      "name": "lsp_java_getFileStructure",
       "tags": ["java", "structure", "symbols", "outline"],
       "modelDescription": "Get the structural outline of a Java file: classes, methods, fields, and their line ranges — WITHOUT reading the file content. Returns ~100 tokens. Use this BEFORE read_file to understand what's in a large file, then read_file on specific line ranges. Much more efficient than reading the entire file.",
       "displayName": "Java: Get File Structure",
@@ -90,7 +90,7 @@
       }
     },
     {
-      "name": "java_findSymbol",
+      "name": "lsp_java_findSymbol",
       "tags": ["java", "search", "symbol", "workspace"],
       "modelDescription": "Search for classes, interfaces, methods, or fields by name across the entire Java workspace. Returns precise symbol definitions only (no comments, no string literals, no import statements). More accurate than grep_search for finding Java symbol definitions. Supports partial names and camelCase matching.",
       "displayName": "Java: Find Symbol",
@@ -106,7 +106,7 @@
       }
     },
     {
-      "name": "java_getTypeAtPosition",
+      "name": "lsp_java_getTypeAtPosition",
       "tags": ["java", "type", "inference", "hover"],
       "modelDescription": "Get the compiler-resolved type of any expression at a specific source position. Returns the EXACT type (~20 tokens), using the Java compiler's own type inference. Use this for: var declarations, lambda parameters, generic type arguments, chained method call return types. Do NOT use for obvious types like String literals or explicit type declarations.",
       "displayName": "Java: Get Type at Position",
@@ -130,7 +130,7 @@
       }
     },
     {
-      "name": "java_getCallHierarchy",
+      "name": "lsp_java_getCallHierarchy",
       "tags": ["java", "calls", "hierarchy", "impact"],
       "modelDescription": "Find all callers of a method (incoming) or all methods it calls (outgoing). More precise than list_code_usages — returns only actual method CALLS, not imports, declarations, or comments. Use 'incoming' before modifying a method signature to find all callers. Use 'outgoing' to understand what a method depends on.",
       "displayName": "Java: Get Call Hierarchy",
@@ -159,7 +159,7 @@
       }
     },
     {
-      "name": "java_getTypeHierarchy",
+      "name": "lsp_java_getTypeHierarchy",
       "tags": ["java", "inheritance", "hierarchy", "interface"],
       "modelDescription": "Find all supertypes or subtypes of a class/interface. Catches things grep misses: indirect implementations, anonymous classes, lambda implementations of functional interfaces. Use 'subtypes' when modifying an interface to find ALL implementations. Use 'supertypes' to understand the inheritance chain.",
       "displayName": "Java: Get Type Hierarchy",

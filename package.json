@@ -50,7 +50,7 @@
     ],
     "languageModelTools": [
       {
-        "name": "java_getFileStructure",
+        "name": "lsp_java_getFileStructure",
         "toolReferenceName": "javaFileStructure",
         "modelDescription": "Get the structure (classes, methods, fields, inner classes) of a Java file. Returns a hierarchical outline with symbol kinds and line ranges. Use this first when you need to understand a file's layout before reading specific sections.",
         "displayName": "Java: Get File Structure",
@@ -68,7 +68,7 @@
         }
       },
       {
-        "name": "java_findSymbol",
+        "name": "lsp_java_findSymbol",
         "toolReferenceName": "javaFindSymbol",
         "modelDescription": "Search for Java symbols (classes, interfaces, methods, fields) across the workspace by name. Supports partial/fuzzy matching. Use this to find where a class or method is defined.",
         "displayName": "Java: Find Symbol",
@@ -90,7 +90,7 @@
         }
       },
       {
-        "name": "java_getFileImports",
+        "name": "lsp_java_getFileImports",
         "toolReferenceName": "javaFileImports",
         "modelDescription": "Get all import statements from a Java file, classified by source (jdk/project/external).",
         "displayName": "Java: Get File Imports",
@@ -108,7 +108,7 @@
         }
       },
       {
-        "name": "java_getTypeAtPosition",
+        "name": "lsp_java_getTypeAtPosition",
         "toolReferenceName": "javaTypeAtPosition",
         "modelDescription": "Get the compiler-resolved type signature at a specific position. Returns fully qualified type, method signature, or field declaration. Use this when you see var, lambdas, or generics and need the exact type.",
         "displayName": "Java: Get Type at Position",
@@ -134,7 +134,7 @@
         }
       },
       {
-        "name": "java_getCallHierarchy",
+        "name": "lsp_java_getCallHierarchy",
         "toolReferenceName": "javaCallHierarchy",
         "modelDescription": "Get incoming callers or outgoing callees of a method. PREFER THIS over grep_search when you need to find which methods call a specific method — returns precise call sites without noise from comments, imports, or string matches. Use 'incoming' for callers, 'outgoing' for callees.",
         "displayName": "Java: Get Call Hierarchy",
@@ -166,7 +166,7 @@
         }
       },
       {
-        "name": "java_getTypeHierarchy",
+        "name": "lsp_java_getTypeHierarchy",
         "toolReferenceName": "javaTypeHierarchy",
         "modelDescription": "Get supertypes or subtypes/implementors of a type. PREFER THIS over grep_search('extends|implements') — returns only actual inheritance relationships. Use 'supertypes' for parents, 'subtypes' for children.",
         "displayName": "Java: Get Type Hierarchy",
@@ -1231,7 +1231,13 @@
     ],
     "chatSkills": [
       {
-        "path": "./resources/skills/java-context-tools/SKILL.md"
+        "path": "./resources/skills/java-lsp-tools/SKILL.md"
+      }
+    ],
+    "chatInstructions": [
+      {
+        "path": "./resources/instruments/loadJavaSkills.md",
+        "when": "java:projectManagerActivated"
       }
     ]
   },

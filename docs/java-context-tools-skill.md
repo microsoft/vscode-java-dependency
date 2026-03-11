@@ -22,7 +22,7 @@ You have access to 6 Java-specific tools that provide **compiler-accurate** info
 
 ## Tool Reference
 
-### `java_getFileStructure`
+### `lsp_java_getFileStructure`
 
 **Purpose:** Get the structural outline of a Java file — classes, methods, fields with line ranges.
 
@@ -41,7 +41,7 @@ You have access to 6 Java-specific tools that provide **compiler-accurate** info
 
 ---
 
-### `java_findSymbol`
+### `lsp_java_findSymbol`
 
 **Purpose:** Find classes, interfaces, methods by name across the entire workspace.
 
@@ -60,7 +60,7 @@ You have access to 6 Java-specific tools that provide **compiler-accurate** info
 
 ---
 
-### `java_getFileImports`
+### `lsp_java_getFileImports`
 
 **Purpose:** Get all import statements from a Java file, classified by source (jdk/project/external).
 
@@ -75,11 +75,11 @@ You have access to 6 Java-specific tools that provide **compiler-accurate** info
 
 **Typical output size:** ~80 tokens
 
-**Important:** This tells you WHAT is imported but not HOW it's used. For details about a specific imported class, use `read_file` to read the relevant source or `java_getTypeAtPosition` on its usage.
+**Important:** This tells you WHAT is imported but not HOW it's used. For details about a specific imported class, use `read_file` to read the relevant source or `lsp_java_getTypeAtPosition` on its usage.
 
 ---
 
-### `java_getTypeAtPosition`
+### `lsp_java_getTypeAtPosition`
 
 **Purpose:** Get the exact resolved type of any expression at a specific source position.
 
@@ -99,7 +99,7 @@ You have access to 6 Java-specific tools that provide **compiler-accurate** info
 
 ---
 
-### `java_getCallHierarchy`
+### `lsp_java_getCallHierarchy`
 
 **Purpose:** Find all callers of a method (incoming) or all methods it calls (outgoing).
 
@@ -118,7 +118,7 @@ You have access to 6 Java-specific tools that provide **compiler-accurate** info
 
 ---
 
-### `java_getTypeHierarchy`
+### `lsp_java_getTypeHierarchy`
 
 **Purpose:** Find all supertypes or subtypes of a class/interface.
 
@@ -142,10 +142,10 @@ You have access to 6 Java-specific tools that provide **compiler-accurate** info
 ### Pattern 1: "Fix a bug in a Java file"
 
 ```
-1. java_getFileStructure(file)           → Understand what's in the file (100 tokens)
+1. lsp_java_getFileStructure(file)           → Understand what's in the file (100 tokens)
 2. read_file(file, relevant_lines)       → Read the buggy method
-3. [If needed] java_getFileImports(file) → Check what types are used (80 tokens)
-4. [If needed] java_getTypeAtPosition()  → Resolve ambiguous types (20 tokens)
+3. [If needed] lsp_java_getFileImports(file) → Check what types are used (80 tokens)
+4. [If needed] lsp_java_getTypeAtPosition()  → Resolve ambiguous types (20 tokens)
 5. Edit the file
 ```
 Total tool overhead: ~200 tokens (vs ~3000+ tokens if you blindly dump all imports)
@@ -154,36 +154,36 @@ Total tool overhead: ~200 tokens (vs ~3000+ tokens if you blindly dump all impor
 
 ```
 1. read_file(pom.xml or build.gradle)    → Check build tool, Java version, deps
-2. java_findSymbol("Main")              → Find entry points (60 tokens)
-3. java_getFileStructure(main_file)     → Understand main file (100 tokens)
-4. java_getFileImports(main_file)       → See what libraries are used (80 tokens)
+2. lsp_java_findSymbol("Main")              → Find entry points (60 tokens)
+3. lsp_java_getFileStructure(main_file)     → Understand main file (100 tokens)
+4. lsp_java_getFileImports(main_file)       → See what libraries are used (80 tokens)
 ```
 Total tool overhead: ~240 tokens
 
 ### Pattern 3: "Refactor a method signature"
 
 ```
-1. java_getCallHierarchy(method, "incoming")  → Find all callers (80 tokens)
+1. lsp_java_getCallHierarchy(method, "incoming")  → Find all callers (80 tokens)
 2. For each caller file:
-   java_getFileStructure(caller_file)          → Understand caller context (100 tokens)
+   lsp_java_getFileStructure(caller_file)          → Understand caller context (100 tokens)
 3. Edit all affected files
 ```
 
 ### Pattern 4: "Find all implementations of an interface"
 
 ```
-1. java_findSymbol("MyInterface")                     → Locate the interface (60 tokens)
-2. java_getTypeHierarchy(interface_pos, "subtypes")    → Find all impls (60 tokens)
+1. lsp_java_findSymbol("MyInterface")                     → Locate the interface (60 tokens)
+2. lsp_java_getTypeHierarchy(interface_pos, "subtypes")    → Find all impls (60 tokens)
 3. For key implementations:
-   java_getFileStructure(impl_file)                     → See what they override
+   lsp_java_getFileStructure(impl_file)                     → See what they override
 ```
 
 ### Pattern 5: "Understand dependency usage in a file"
 
 ```
-1. java_getFileImports(file)             → See all imports classified (80 tokens)
+1. lsp_java_getFileImports(file)             → See all imports classified (80 tokens)
 2. [For unfamiliar external types]:
-   java_getTypeAtPosition() on usage     → See the resolved type/method signature
+   lsp_java_getTypeAtPosition() on usage     → See the resolved type/method signature
 3. [If needed] read_file(pom.xml)        → Check dependency coordinates
 ```
 
@@ -191,7 +191,7 @@ Total tool overhead: ~240 tokens
 
 ## Anti-Patterns (What NOT to Do)
 
-### ❌ Don't call java_getTypeAtPosition on obvious types
+### ❌ Don't call lsp_java_getTypeAtPosition on obvious types
 
 ```java
 String name = "hello";     // Obviously String — don't call the tool
@@ -202,11 +202,11 @@ var result = service.process(input);  // Not obvious — DO call the tool
 
 You already know `java.util.List`, `java.lang.String`, `java.io.File`. Don't waste a tool call on them.
 
-### ❌ Don't call java_getFileStructure on small files
+### ❌ Don't call lsp_java_getFileStructure on small files
 
 If a file is < 100 lines, just use `read_file` directly. File structure is most valuable for large files.
 
-### ❌ Don't call java_getCallHierarchy without reading the method first
+### ❌ Don't call lsp_java_getCallHierarchy without reading the method first
 
 Understand what the method does before tracing its callers.
 
@@ -223,6 +223,6 @@ If a Java tool returns an error or empty result:
 **For dependency/project info not covered by these tools:**
 - Read `pom.xml` or `build.gradle` directly with `read_file`
 - Use `grep_search` to find dependency declarations
-- Use `java_getFileImports` to see what external libraries a file uses
+- Use `lsp_java_getFileImports` to see what external libraries a file uses
 
 **General rule:** If a Java-specific tool fails, fall back to the universal tools (`read_file`, `grep_search`, `list_code_usages`). Don't retry more than once.

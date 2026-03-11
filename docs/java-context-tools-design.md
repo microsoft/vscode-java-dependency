@@ -28,7 +28,7 @@
 | Tool | 粒度 | 用途 | 典型 token 量 |
 |------|------|------|--------------|
 | `java_getProjectContext` | L0 | 项目级概览 | ~100 |
-| `java_getFileImports` | L0 | 文件的 import 列表 | ~80 |
+| `lsp_java_getFileImports` | L0 | 文件的 import 列表 | ~80 |
 | `java_getClassDetail` | L1 | 单个类的签名+方法列表 | ~150 |
 | `java_getDependencyDetails` | L1 | 指定依赖的 GAV+scope | ~50 |
 
@@ -36,11 +36,11 @@
 
 | 标准 LSP Tool（VS Code 内置命令封装） | 粒度 | 对应 LSP 请求 |
 |--------------------------------------|------|-------------|
-| `java_getFileStructure` | L0 | `textDocument/documentSymbol` |
-| `java_findSymbol` | L0 | `workspace/symbol` |
-| `java_getTypeAtPosition` | L1 | `textDocument/hover` (后处理) |
-| `java_getCallHierarchy` | L1 | `callHierarchy/incomingCalls` + `outgoingCalls` |
-| `java_getTypeHierarchy` | L1 | `typeHierarchy/supertypes` + `subtypes` |
+| `lsp_java_getFileStructure` | L0 | `textDocument/documentSymbol` |
+| `lsp_java_findSymbol` | L0 | `workspace/symbol` |
+| `lsp_java_getTypeAtPosition` | L1 | `textDocument/hover` (后处理) |
+| `lsp_java_getCallHierarchy` | L1 | `callHierarchy/incomingCalls` + `outgoingCalls` |
+| `lsp_java_getTypeHierarchy` | L1 | `typeHierarchy/supertypes` + `subtypes` |
 
 ---
 
@@ -97,7 +97,7 @@ java.project.getProjectContext(fileUri) → ProjectContextResult
 
 ---
 
-## Tool 2: `java_getFileImports`
+## Tool 2: `lsp_java_getFileImports`
 
 **用途**：快速了解一个 Java 文件引用了哪些类型，但不展开细节。
 
@@ -283,23 +283,23 @@ java.project.getDependencyDetails(fileUri, query?) → DependencyDetailsResult
 
 这些工具直接封装 VS Code 内置命令，不需要新的 Java 后端命令。
 
-### Tool 5: `java_getFileStructure`
+### Tool 5: `lsp_java_getFileStructure`
 
 封装 `vscode.executeDocumentSymbolProvider`，返回文件的类/方法/字段树。
 
-### Tool 6: `java_findSymbol`
+### Tool 6: `lsp_java_findSymbol`
 
 封装 `vscode.executeWorkspaceSymbolProvider`，全局模糊搜索符号。
 
-### Tool 7: `java_getTypeAtPosition`
+### Tool 7: `lsp_java_getTypeAtPosition`
 
 封装 `vscode.executeHoverProvider` + 后处理提取类型签名。
 
-### Tool 8: `java_getCallHierarchy`
+### Tool 8: `lsp_java_getCallHierarchy`
 
 封装 `vscode.prepareCallHierarchy` + `vscode.provideIncomingCalls` / `vscode.provideOutgoingCalls`。
 
-### Tool 9: `java_getTypeHierarchy`
+### Tool 9: `lsp_java_getTypeHierarchy`
 
 封装 `vscode.prepareTypeHierarchy` + `vscode.provideSupertypes` / `vscode.provideSubtypes`。
 
