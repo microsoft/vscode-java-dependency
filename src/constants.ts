@@ -9,6 +9,7 @@ export namespace Context {
     export const WORKSPACE_CONTAINS_BUILD_FILES: string = "java:workspaceContainsBuildFiles";
     export const RELOAD_PROJECT_ACTIVE: string = "java:reloadProjectActive";
     export const SHOW_DEPRECATED_TASKS: string = "java:showDeprecatedTasks";
+    export const LSP_TOOLS_READY: string = "java:lspToolsReady";
 }
 
 export namespace Explorer {

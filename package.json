@@ -1231,13 +1231,14 @@
     ],
     "chatSkills": [
       {
-        "path": "./resources/skills/java-lsp-tools/SKILL.md"
+        "path": "./resources/skills/java-lsp-tools/SKILL.md",
+        "when": "java:lspToolsReady"
       }
     ],
     "chatInstructions": [
       {
         "path": "./resources/instruments/loadJavaSkills.md",
-        "when": "java:projectManagerActivated"
+        "when": "java:lspToolsReady"
       }
     ]
   },

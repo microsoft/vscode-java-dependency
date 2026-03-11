@@ -90,8 +90,8 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     // Register Copilot context providers after Java Language Server is ready
     languageServerApiManager.ready().then((isReady) => {
         if (isReady) {
-            registerCopilotContextProviders(context);
             registerJavaContextTools(context);
+            contextManager.setContextValue(Context.LSP_TOOLS_READY, true);
         }
     });
 }
