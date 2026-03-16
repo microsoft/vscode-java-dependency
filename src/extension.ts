@@ -21,7 +21,6 @@ import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buil
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
-import { registerCopilotContextProviders } from "./copilot/contextProvider";
 import { registerJavaContextTools } from "./copilot/tools/javaContextTools";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 

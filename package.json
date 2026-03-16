@@ -2,7 +2,7 @@
   "name": "vscode-java-dependency",
   "displayName": "Project Manager for Java",
   "description": "%description%",
-  "version": "0.27.0",
+  "version": "0.27.1",
   "publisher": "vscjava",
   "preview": false,
   "aiKey": "5c642b22-e845-4400-badb-3f8509a70777",
@@ -14,6 +14,7 @@
   "engines": {
     "vscode": "^1.95.0"
   },
+  "enabledApiProposals": ["chatPromptFiles"],
   "repository": {
     "type": "git",
     "url": "https://github.com/Microsoft/vscode-java-dependency.git"
@@ -1231,14 +1232,12 @@
     ],
     "chatSkills": [
       {
-        "path": "./resources/skills/java-lsp-tools/SKILL.md",
-        "when": "java:lspToolsReady"
+        "path": "./resources/skills/java-lsp-tools/SKILL.md"
       }
     ],
     "chatInstructions": [
       {
-        "path": "./resources/instruments/loadJavaSkills.md",
-        "when": "java:lspToolsReady"
+        "path": "./resources/instruments/javaLspContext.instructions.md"
       }
     ]
   },
