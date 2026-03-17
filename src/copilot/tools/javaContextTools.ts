@@ -18,58 +18,68 @@
  *   - Each tool returns < 200 tokens
  *   - Structured JSON output
  *   - No classpath resolution, no dependency download
- *
- * Note: The LanguageModelTool API is not yet in @types/vscode 1.83.1,
- * so we use (vscode as any) casts following the same pattern as vscode-java-debug.
  */
 
 import * as vscode from "vscode";
 import { Commands } from "../../commands";
 
-// ────────────────────────────────────────────────────────────
-// Type shims for vscode.lm LanguageModelTool API
-// (not available in @types/vscode 1.83.1)
-// ────────────────────────────────────────────────────────────
+// Hard caps to keep tool responses within the < 200 token budget.
+const MAX_SYMBOL_DEPTH = 3;
+const MAX_SYMBOL_NODES = 80;
+const MAX_CALL_RESULTS = 50;
+const MAX_TYPE_RESULTS = 50;
+const MAX_IMPORTS = 50;
 
-interface LanguageModelTool<T = any> {
-    invoke(options: { input: T }, token: vscode.CancellationToken): Promise<any>;
-}
-
-// Access the lm namespace via any-cast
-const lmApi = (vscode as any).lm;
-
-function toResult(data: unknown): any {
+function toResult(data: unknown): vscode.LanguageModelToolResult {
     const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-    return new (vscode as any).LanguageModelToolResult([
-        new (vscode as any).LanguageModelTextPart(text),
+    return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(text),
     ]);
 }
 
 /**
  * Resolve a file path to a vscode.Uri.
  * Accepts:
- *   - Full URI:      "file:///home/user/project/src/Main.java"
- *   - Relative path: "src/main/java/Main.java"
- *   - Absolute path: "/home/user/project/src/Main.java" or "C:\\Users\\...\\Main.java"
+ *   - Full file URI:  "file:///home/user/project/src/Main.java"
+ *   - Relative path:  "src/main/java/Main.java"
+ *   - Absolute path:  "/home/user/project/src/Main.java" or "C:\\Users\\...\\Main.java"
  *
  * Relative paths are resolved against the first workspace folder.
+ * The resolved URI must use the file: scheme and fall under a workspace folder.
  */
 function resolveFileUri(input: string): vscode.Uri {
-    // Already a full URI (has scheme like file://, untitled:, etc.)
-    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(input) || input.startsWith("untitled:")) {
-        return vscode.Uri.parse(input);
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders || folders.length === 0) {
+        throw new Error("No workspace folder is open.");
     }
-    // Absolute path (Unix or Windows)
-    if (input.startsWith("/") || /^[a-zA-Z]:[/\\]/.test(input)) {
-        return vscode.Uri.file(input);
+
+    let uri: vscode.Uri;
+
+    // Full URI — only allow the file: scheme
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(input) || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) {
+        uri = vscode.Uri.parse(input);
+        if (uri.scheme !== "file") {
+            throw new Error(`Unsupported URI scheme "${uri.scheme}". Only file: URIs are allowed.`);
+        }
+    } else if (input.startsWith("/") || /^[a-zA-Z]:[/\\]/.test(input)) {
+        // Absolute path (Unix or Windows)
+        uri = vscode.Uri.file(input);
+    } else {
+        // Relative path — resolve against first workspace folder
+        uri = vscode.Uri.joinPath(folders[0].uri, input);
     }
-    // Relative path — resolve against workspace folder
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (workspaceFolder) {
-        return vscode.Uri.joinPath(workspaceFolder.uri, input);
+
+    // Ensure the resolved path is under a workspace folder
+    const resolvedPath = uri.fsPath.toLowerCase();
+    const isUnderWorkspace = folders.some(folder => {
+        const folderPath = folder.uri.fsPath.toLowerCase();
+        return resolvedPath === folderPath || resolvedPath.startsWith(folderPath + (process.platform === "win32" ? "\\" : "/"));
+    });
+    if (!isUnderWorkspace) {
+        throw new Error("The resolved path is outside the current workspace.");
     }
-    // Fallback: treat as file path
-    return vscode.Uri.file(input);
+
+    return uri;
 }
 
 // ============================================================
@@ -80,7 +90,7 @@ interface FileStructureInput {
     uri: string;
 }
 
-const fileStructureTool: LanguageModelTool<FileStructureInput> = {
+const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
     async invoke(options, _token) {
         const uri = resolveFileUri(options.input.uri);
         const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
@@ -89,22 +99,42 @@ const fileStructureTool: LanguageModelTool<FileStructureInput> = {
         if (!symbols || symbols.length === 0) {
             return toResult({ error: "No symbols found. The file may not be recognized by the Java language server." });
         }
-        return toResult(formatSymbols(symbols, 0));
+        const counter = { count: 0 };
+        const result = symbolsToJson(symbols, 0, counter);
+        const truncated = counter.count >= MAX_SYMBOL_NODES;
+        return toResult({ symbols: result, ...(truncated && { truncated: true }) });
     },
 };
 
-function formatSymbols(symbols: vscode.DocumentSymbol[], indent: number): string {
-    return symbols.map(s => {
-        const prefix = "  ".repeat(indent);
-        const kind = vscode.SymbolKind[s.kind];
-        const range = `[L${s.range.start.line + 1}-${s.range.end.line + 1}]`;
-        const detail = s.detail ? ` ${s.detail}` : "";
-        let line = `${prefix}${kind}: ${s.name}${detail} ${range}`;
-        if (s.children?.length) {
-            line += "\n" + formatSymbols(s.children, indent + 1);
+interface SymbolNode {
+    name: string;
+    kind: string;
+    range: string;
+    detail?: string;
+    children?: SymbolNode[];
+}
+
+function symbolsToJson(symbols: vscode.DocumentSymbol[], depth: number, counter: { count: number }): SymbolNode[] {
+    const result: SymbolNode[] = [];
+    for (const s of symbols) {
+        if (counter.count >= MAX_SYMBOL_NODES) {
+            break;
         }
-        return line;
-    }).join("\n");
+        counter.count++;
+        const node: SymbolNode = {
+            name: s.name,
+            kind: vscode.SymbolKind[s.kind],
+            range: `L${s.range.start.line + 1}-${s.range.end.line + 1}`,
+        };
+        if (s.detail) {
+            node.detail = s.detail;
+        }
+        if (s.children?.length && depth < MAX_SYMBOL_DEPTH) {
+            node.children = symbolsToJson(s.children, depth + 1, counter);
+        }
+        result.push(node);
+    }
+    return result;
 }
 
 // ============================================================
@@ -116,7 +146,7 @@ interface FindSymbolInput {
     limit?: number;
 }
 
-const findSymbolTool: LanguageModelTool<FindSymbolInput> = {
+const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
     async invoke(options, _token) {
         const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
             "vscode.executeWorkspaceSymbolProvider", options.input.query,
@@ -142,7 +172,7 @@ interface FileImportsInput {
     uri: string;
 }
 
-const fileImportsTool: LanguageModelTool<FileImportsInput> = {
+const fileImportsTool: vscode.LanguageModelTool<FileImportsInput> = {
     async invoke(options, _token) {
         const uri = resolveFileUri(options.input.uri);
         const result = await vscode.commands.executeCommand(
@@ -152,6 +182,9 @@ const fileImportsTool: LanguageModelTool<FileImportsInput> = {
         );
         if (!result) {
             return toResult({ error: "No result from Java language server. It may still be loading." });
+        }
+        if (Array.isArray(result) && result.length > MAX_IMPORTS) {
+            return toResult({ imports: result.slice(0, MAX_IMPORTS), total: result.length, truncated: true });
         }
         return toResult(result);
     },
@@ -167,7 +200,7 @@ interface TypeAtPositionInput {
     character: number;
 }
 
-const typeAtPositionTool: LanguageModelTool<TypeAtPositionInput> = {
+const typeAtPositionTool: vscode.LanguageModelTool<TypeAtPositionInput> = {
     async invoke(options, _token) {
         const uri = resolveFileUri(options.input.uri);
         const position = new vscode.Position(options.input.line, options.input.character);
@@ -192,7 +225,15 @@ function extractTypeSignature(hovers: vscode.Hover[] | undefined): object {
             if (content instanceof vscode.MarkdownString) {
                 const match = content.value.match(/```java\n([\s\S]*?)```/);
                 if (match) {
-                    const lines = match[1].trim().split("\n").filter(l => l.trim().length > 0);
+                    const lines = match[1].trim().split("\n").filter(l => {
+                        const trimmed = l.trim();
+                        if (trimmed.length === 0) return false;
+                        // Strip Javadoc and block comment lines
+                        if (trimmed.startsWith("/**") || trimmed.startsWith("*/") || trimmed.startsWith("* ") || trimmed === "*") return false;
+                        // Strip single-line comments
+                        if (trimmed.startsWith("//")) return false;
+                        return true;
+                    });
                     return { type: lines.join("\n") };
                 }
             }
@@ -212,7 +253,7 @@ interface CallHierarchyInput {
     direction: "incoming" | "outgoing";
 }
 
-const callHierarchyTool: LanguageModelTool<CallHierarchyInput> = {
+const callHierarchyTool: vscode.LanguageModelTool<CallHierarchyInput> = {
     async invoke(options, _token) {
         const uri = resolveFileUri(options.input.uri);
         const position = new vscode.Position(options.input.line, options.input.character);
@@ -239,7 +280,9 @@ const callHierarchyTool: LanguageModelTool<CallHierarchyInput> = {
             });
         }
 
-        const results = calls.map((call: any) => {
+        const truncated = calls.length > MAX_CALL_RESULTS;
+        const capped = truncated ? calls.slice(0, MAX_CALL_RESULTS) : calls;
+        const results = capped.map((call: any) => {
             const item = isIncoming ? call.from : call.to;
             return {
                 name: item.name,
@@ -252,6 +295,7 @@ const callHierarchyTool: LanguageModelTool<CallHierarchyInput> = {
             symbol: items[0].name,
             direction: options.input.direction,
             calls: results,
+            ...(truncated && { total: calls.length, truncated: true }),
         });
     },
 };
@@ -267,7 +311,7 @@ interface TypeHierarchyInput {
     direction: "supertypes" | "subtypes";
 }
 
-const typeHierarchyTool: LanguageModelTool<TypeHierarchyInput> = {
+const typeHierarchyTool: vscode.LanguageModelTool<TypeHierarchyInput> = {
     async invoke(options, _token) {
         const uri = resolveFileUri(options.input.uri);
         const position = new vscode.Position(options.input.line, options.input.character);
@@ -294,7 +338,9 @@ const typeHierarchyTool: LanguageModelTool<TypeHierarchyInput> = {
             });
         }
 
-        const results = types.map(t => ({
+        const truncated = types.length > MAX_TYPE_RESULTS;
+        const capped = truncated ? types.slice(0, MAX_TYPE_RESULTS) : types;
+        const results = capped.map(t => ({
             name: t.name,
             kind: vscode.SymbolKind[t.kind],
             detail: t.detail || undefined,
@@ -305,6 +351,7 @@ const typeHierarchyTool: LanguageModelTool<TypeHierarchyInput> = {
             symbol: items[0].name,
             direction: options.input.direction,
             types: results,
+            ...(truncated && { total: types.length, truncated: true }),
         });
     },
 };
@@ -314,17 +361,12 @@ const typeHierarchyTool: LanguageModelTool<TypeHierarchyInput> = {
 // ============================================================
 
 export function registerJavaContextTools(context: vscode.ExtensionContext): void {
-    // Guard: Language Model API may not be available in older VS Code versions
-    if (!lmApi || typeof lmApi.registerTool !== "function") {
-        return;
-    }
-
     context.subscriptions.push(
-        lmApi.registerTool("lsp_java_getFileStructure", fileStructureTool),
-        lmApi.registerTool("lsp_java_findSymbol", findSymbolTool),
-        lmApi.registerTool("lsp_java_getFileImports", fileImportsTool),
-        lmApi.registerTool("lsp_java_getTypeAtPosition", typeAtPositionTool),
-        lmApi.registerTool("lsp_java_getCallHierarchy", callHierarchyTool),
-        lmApi.registerTool("lsp_java_getTypeHierarchy", typeHierarchyTool),
+        vscode.lm.registerTool("lsp_java_getFileStructure", fileStructureTool),
+        vscode.lm.registerTool("lsp_java_findSymbol", findSymbolTool),
+        vscode.lm.registerTool("lsp_java_getFileImports", fileImportsTool),
+        vscode.lm.registerTool("lsp_java_getTypeAtPosition", typeAtPositionTool),
+        vscode.lm.registerTool("lsp_java_getCallHierarchy", callHierarchyTool),
+        vscode.lm.registerTool("lsp_java_getTypeHierarchy", typeHierarchyTool),
     );
 }

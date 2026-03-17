@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class FileImportsResult {
 
-    public String file;                  // relative file path
+    public String file;                  // project-relative file path (e.g. "src/main/java/com/example/Foo.java")
     public List<ImportEntry> imports;
     public List<StaticImportEntry> staticImports;
     public String error;                 // null if success
@@ -18,6 +18,7 @@ public class FileImportsResult {
         public String kind;             // "class" | "interface" | "enum" | "annotation" | "unknown"
         public String source;           // "project" | "external" | "jdk"
         public String artifact;         // only for "external": "spring-context", null for others
+        public boolean isOnDemand;      // true for wildcard imports (e.g. "import com.example.model.*")
 
         public ImportEntry() {}
 

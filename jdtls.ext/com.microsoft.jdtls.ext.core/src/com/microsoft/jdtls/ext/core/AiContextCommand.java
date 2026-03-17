@@ -86,9 +86,10 @@ public class AiContextCommand {
                 return result;
             }
 
-            // Get relative file path
+            // Get project-relative file path (strip the leading project segment
+            // from the Eclipse workspace-relative path, e.g. "/my-project/src/Foo.java" → "src/Foo.java")
             IJavaProject javaProject = compilationUnit.getJavaProject();
-            result.file = compilationUnit.getPath().toString();
+            result.file = compilationUnit.getPath().removeFirstSegments(1).toString();
 
             // Collect project source package names for classification
             Set<String> projectPackages = collectProjectPackages(javaProject);
@@ -117,9 +118,10 @@ public class AiContextCommand {
                 } else {
                     ImportEntry entry = new ImportEntry();
                     entry.name = name;
-                    entry.kind = isOnDemand ? "package" : "unknown"; // Would need findType to know — skip
+                    entry.kind = "unknown"; // Would need findType to know — skip
                     entry.source = classifyByPackageName(name, projectPackages);
                     entry.artifact = null; // Would need classpath attributes — skip for now
+                    entry.isOnDemand = isOnDemand;
                     result.imports.add(entry);
                 }
             }
