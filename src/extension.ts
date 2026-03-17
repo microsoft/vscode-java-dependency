@@ -88,9 +88,10 @@ async function activateExtension(_operationId: string, context: ExtensionContext
 
     // Register Copilot context providers after Java Language Server is ready
     languageServerApiManager.ready().then((isReady) => {
-        if (isReady) {
+        const config = workspace.getConfiguration("vscode-java-dependency");
+        const isSettingEnabled = config.get<boolean>("enableLspTools", true);
+        if (isReady && isSettingEnabled) {
             registerJavaContextTools(context);
-            contextManager.setContextValue(Context.LSP_TOOLS_READY, true);
         }
     });
 }

@@ -57,6 +57,7 @@
         "displayName": "Java: Get File Structure",
         "canBeReferencedInPrompt": true,
         "icon": "$(symbol-class)",
+        "when": "vscode-java-dependency.enableLspTools",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -75,6 +76,7 @@
         "displayName": "Java: Find Symbol",
         "canBeReferencedInPrompt": true,
         "icon": "$(search)",
+        "when": "vscode-java-dependency.enableLspTools",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -97,6 +99,7 @@
         "displayName": "Java: Get File Imports",
         "canBeReferencedInPrompt": true,
         "icon": "$(references)",
+        "when": "vscode-java-dependency.enableLspTools",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -115,6 +118,7 @@
         "displayName": "Java: Get Type at Position",
         "canBeReferencedInPrompt": true,
         "icon": "$(symbol-field)",
+        "when": "vscode-java-dependency.enableLspTools",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -141,6 +145,7 @@
         "displayName": "Java: Get Call Hierarchy",
         "canBeReferencedInPrompt": true,
         "icon": "$(call-incoming)",
+        "when": "vscode-java-dependency.enableLspTools",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -173,6 +178,7 @@
         "displayName": "Java: Get Type Hierarchy",
         "canBeReferencedInPrompt": true,
         "icon": "$(type-hierarchy)",
+        "when": "vscode-java-dependency.enableLspTools",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -511,6 +517,16 @@
           "type": "boolean",
           "description": "%configuration.java.project.explorer.showNonJavaResources%",
           "default": true
+        },
+        "vscode-java-dependency.enableLspTools": {
+          "type": "boolean",
+          "scope": "application",
+          "description": "%configuration.vscode-java-dependency.enableLspTools.description%",
+          "default": false,
+          "tags": ["experimental"],
+          "experiment": {
+            "mode": "startup"
+          }
         }
       }
     },
@@ -1232,12 +1248,14 @@
     ],
     "chatSkills": [
       {
-        "path": "./resources/skills/java-lsp-tools/SKILL.md"
+        "path": "./resources/skills/java-lsp-tools/SKILL.md",
+        "when": "vscode-java-dependency.enableLspTools"
       }
     ],
     "chatInstructions": [
       {
-        "path": "./resources/instruments/javaLspContext.instructions.md"
+        "path": "./resources/instruments/javaLspContext.instructions.md",
+        "when": "vscode-java-dependency.enableLspTools"
       }
     ]
   },
