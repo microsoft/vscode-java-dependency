@@ -227,11 +227,17 @@ function extractTypeSignature(hovers: vscode.Hover[] | undefined): object {
                 if (match) {
                     const lines = match[1].trim().split("\n").filter(l => {
                         const trimmed = l.trim();
-                        if (trimmed.length === 0) return false;
+                        if (trimmed.length === 0) {
+                            return false;
+                        }
                         // Strip Javadoc and block comment lines
-                        if (trimmed.startsWith("/**") || trimmed.startsWith("*/") || trimmed.startsWith("* ") || trimmed === "*") return false;
+                        if (trimmed.startsWith("/**") || trimmed.startsWith("*/") || trimmed.startsWith("* ") || trimmed === "*") {
+                            return false;
+                        }
                         // Strip single-line comments
-                        if (trimmed.startsWith("//")) return false;
+                        if (trimmed.startsWith("//")) {
+                            return false;
+                        }
                         return true;
                     });
                     return { type: lines.join("\n") };
