@@ -57,7 +57,7 @@
         "displayName": "Java: Get File Structure",
         "canBeReferencedInPrompt": true,
         "icon": "$(symbol-class)",
-        "when": "config.vscode-java-dependency.enableLspTools",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -76,7 +76,7 @@
         "displayName": "Java: Find Symbol",
         "canBeReferencedInPrompt": true,
         "icon": "$(search)",
-        "when": "config.vscode-java-dependency.enableLspTools",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -99,7 +99,7 @@
         "displayName": "Java: Get File Imports",
         "canBeReferencedInPrompt": true,
         "icon": "$(references)",
-        "when": "config.vscode-java-dependency.enableLspTools",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -118,7 +118,7 @@
         "displayName": "Java: Get Type at Position",
         "canBeReferencedInPrompt": true,
         "icon": "$(symbol-field)",
-        "when": "config.vscode-java-dependency.enableLspTools",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -145,7 +145,7 @@
         "displayName": "Java: Get Call Hierarchy",
         "canBeReferencedInPrompt": true,
         "icon": "$(call-incoming)",
-        "when": "config.vscode-java-dependency.enableLspTools",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -178,7 +178,7 @@
         "displayName": "Java: Get Type Hierarchy",
         "canBeReferencedInPrompt": true,
         "icon": "$(type-hierarchy)",
-        "when": "config.vscode-java-dependency.enableLspTools",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -1249,13 +1249,13 @@
     "chatSkills": [
       {
         "path": "./resources/skills/java-lsp-tools/SKILL.md",
-        "when": "config.vscode-java-dependency.enableLspTools"
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady"
       }
     ],
     "chatInstructions": [
       {
         "path": "./resources/instruments/javaLspContext.instructions.md",
-        "when": "config.vscode-java-dependency.enableLspTools"
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady"
       }
     ]
   },
