@@ -9,11 +9,19 @@ This workspace contains Java code. You have access to 6 compiler-accurate LSP to
 
 ## Step 1: Load Tools (REQUIRED — do this FIRST)
 
-Before ANY operation, call `tool_search_tool_regex` with:
+Before ANY operation, load all 6 tools by calling `tool_search_tool_regex` **twice** (the API returns at most 5 tools per call):
+
+**Call 1** — basic navigation tools:
 ```
-lsp_java_findSymbol|lsp_java_getFileStructure|lsp_java_getCallHierarchy|lsp_java_getTypeHierarchy|lsp_java_getTypeAtPosition|lsp_java_getFileImports
+lsp_java_findSymbol|lsp_java_getFileStructure|lsp_java_getFileImports
 ```
-All 6 tools must be returned. If any are missing, retry once. Do NOT use `grep_search`, `read_file`, `semantic_search`, `search_subagent`, or `runSubagent` on `.java` files until tools are loaded.
+
+**Call 2** — hierarchy and type tools:
+```
+lsp_java_getCallHierarchy|lsp_java_getTypeHierarchy|lsp_java_getTypeAtPosition
+```
+
+All 6 tools must be returned across the two calls. If any are missing, retry that call once. Do NOT use `grep_search`, `read_file`, `semantic_search`, `search_subagent`, or `runSubagent` on `.java` files until all tools are loaded.
 
 ## Step 2: Always Prefer LSP Tools for Java
 
