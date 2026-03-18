@@ -138,6 +138,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT = "java.project.getImportClassContent";
 
+    export const JAVA_PROJECT_GET_FILE_IMPORTS = "java.project.getFileImports";
+
     export const JAVA_UPGRADE_WITH_COPILOT = "_java.upgradeWithCopilot";
 
     /**

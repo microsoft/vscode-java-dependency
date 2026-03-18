@@ -12,6 +12,7 @@
             <command id="java.project.checkImportStatus" />
             <command id="java.project.getImportClassContent" />
             <command id="java.project.getDependencies" />
+            <command id="java.project.getFileImports" />
         </delegateCommandHandler>
     </extension>
     <extension
