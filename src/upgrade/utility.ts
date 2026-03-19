@@ -34,7 +34,7 @@ export function buildNotificationMessage(issue: UpgradeIssue, hasExtension: bool
     const upgradeWord = hasExtension ? "upgrade" : `install ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and upgrade`;
 
     if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
-        return `This project is using an older Java runtime (${currentVersion}). Would you like to ${upgradeWord} it to a newer LTS version?`;
+        return `This project is using an older Java runtime (${currentVersion}). Would you like to ${upgradeWord} it to the latest LTS version?`;
     }
 
     switch (reason) {

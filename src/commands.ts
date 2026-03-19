@@ -165,7 +165,7 @@ export namespace Commands {
     export const BUILD_PROJECT = "java.project.build";
 
     /**
-     * Commands from Java Upgrade Tool
+     * Commands from appmod (Java Upgrade Tool)
      */
     export const GOTO_AGENT_MODE = "appmod.javaUpgrade.gotoAgentMode";
 
