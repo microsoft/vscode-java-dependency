@@ -93,7 +93,7 @@ interface FileStructureInput {
 
 const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
     async invoke(options, _token) {
-        sendInfo("", { toolName: "lsp_java_getFileStructure", action: "invokeLanguageModelTool" });
+        sendInfo("", { operationName: "lmTool.getFileStructure" });
         const uri = resolveFileUri(options.input.uri);
         const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
             "vscode.executeDocumentSymbolProvider", uri,
@@ -150,7 +150,7 @@ interface FindSymbolInput {
 
 const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
     async invoke(options, _token) {
-        sendInfo("", { toolName: "lsp_java_findSymbol", action: "invokeLanguageModelTool" });
+        sendInfo("", { operationName: "lmTool.findSymbol" });
         const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
             "vscode.executeWorkspaceSymbolProvider", options.input.query,
         );
@@ -177,7 +177,7 @@ interface FileImportsInput {
 
 const fileImportsTool: vscode.LanguageModelTool<FileImportsInput> = {
     async invoke(options, _token) {
-        sendInfo("", { toolName: "lsp_java_getFileImports", action: "invokeLanguageModelTool" });
+        sendInfo("", { operationName: "lmTool.getFileImports" });
         const uri = resolveFileUri(options.input.uri);
         const result = await vscode.commands.executeCommand(
             Commands.EXECUTE_WORKSPACE_COMMAND,
@@ -206,7 +206,7 @@ interface TypeAtPositionInput {
 
 const typeAtPositionTool: vscode.LanguageModelTool<TypeAtPositionInput> = {
     async invoke(options, _token) {
-        sendInfo("", { toolName: "lsp_java_getTypeAtPosition", action: "invokeLanguageModelTool" });
+        sendInfo("", { operationName: "lmTool.getTypeAtPosition" });
         const uri = resolveFileUri(options.input.uri);
         const position = new vscode.Position(options.input.line, options.input.character);
         const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
@@ -266,7 +266,7 @@ interface CallHierarchyInput {
 
 const callHierarchyTool: vscode.LanguageModelTool<CallHierarchyInput> = {
     async invoke(options, _token) {
-        sendInfo("", { toolName: "lsp_java_getCallHierarchy", action: "invokeLanguageModelTool" });
+        sendInfo("", { operationName: "lmTool.getCallHierarchy" });
         const uri = resolveFileUri(options.input.uri);
         const position = new vscode.Position(options.input.line, options.input.character);
 
@@ -325,7 +325,7 @@ interface TypeHierarchyInput {
 
 const typeHierarchyTool: vscode.LanguageModelTool<TypeHierarchyInput> = {
     async invoke(options, _token) {
-        sendInfo("", { toolName: "lsp_java_getTypeHierarchy", action: "invokeLanguageModelTool" });
+        sendInfo("", { operationName: "lmTool.getTypeHierarchy" });
         const uri = resolveFileUri(options.input.uri);
         const position = new vscode.Position(options.input.line, options.input.character);
 
@@ -374,7 +374,7 @@ const typeHierarchyTool: vscode.LanguageModelTool<TypeHierarchyInput> = {
 // ============================================================
 
 export function registerJavaContextTools(context: vscode.ExtensionContext): void {
-    sendInfo("", { action: "registerJavaContextTools" });
+    sendInfo("", { operationName: "lmTool.register" });
     context.subscriptions.push(
         vscode.lm.registerTool("lsp_java_getFileStructure", fileStructureTool),
         vscode.lm.registerTool("lsp_java_findSymbol", findSymbolTool),
