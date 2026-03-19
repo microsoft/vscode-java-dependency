@@ -60,13 +60,6 @@ describe("Command Tests", function() {
    }
 
     async function waitForLanguageServerReady() {
-        while (true) {
-            const language = await statusBar.getCurrentLanguage();
-            if (language === 'Java') {
-                break;
-            }
-            await sleep(500);
-        }
         // Wait until the language server is no longer indexing.
         // Use a max wait to avoid infinite loops if the status UI changes between VS Code versions.
         const maxWaitMs = 3 * 60 * 1000;
