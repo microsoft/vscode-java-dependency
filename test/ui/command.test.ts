@@ -27,7 +27,7 @@ const invisibleJavaFilePath = path.join("src", "App.java");
 
 describe("Command Tests", function() {
 
-    this.timeout(2 * 60 * 1000 /*ms*/);
+    this.timeout(5 * 60 * 1000 /*ms*/);
     const mavenProjectTmpFolders: string[] = [];
     let currentProjectPath: string | undefined;
     let statusBar: StatusBar;
@@ -65,15 +65,23 @@ describe("Command Tests", function() {
             if (language === 'Java') {
                 break;
             }
+            await sleep(500);
         }
-        while (true) {
+        // Wait until the language server is no longer indexing.
+        // Use a max wait to avoid infinite loops if the status UI changes between VS Code versions.
+        const maxWaitMs = 3 * 60 * 1000;
+        const startTime = Date.now();
+        while (Date.now() - startTime < maxWaitMs) {
             try {
                 const languageStatus = await statusBar.findElement(By.xpath('//*[@id="status.languageStatus"]'));
                 await languageStatus.click();
-                await languageStatus.findElement(By.xpath(`//div[contains(@class, 'context-view')]//div[contains(@class, 'hover-language-status')]//span[contains(@class, 'codicon-thumbsup')]`));
+                // Accept either codicon-thumbsup (older VS Code) or codicon-pass (newer VS Code)
+                await languageStatus.findElement(By.xpath(
+                    `//div[contains(@class, 'context-view')]//div[contains(@class, 'hover-language-status')]//*[contains(@class, 'codicon-thumbsup') or contains(@class, 'codicon-pass')]`
+                ));
                 break;
             } catch (e) {
-                await sleep(100);
+                await sleep(1000);
             }
         }
     }
@@ -85,9 +93,14 @@ describe("Command Tests", function() {
     });
 
     after(async function() {
-        mavenProjectTmpFolders.forEach(mavenProjectTmpFolder => {
-            fse.rmSync(mavenProjectTmpFolder, {force: true, recursive: true});
-        });
+        for (const mavenProjectTmpFolder of mavenProjectTmpFolders) {
+            try {
+                fse.rmSync(mavenProjectTmpFolder, {force: true, recursive: true});
+            } catch (e) {
+                // Ignore EBUSY and other cleanup errors on Windows when VS Code still holds file locks
+                console.warn(`Warning: failed to clean up temp folder ${mavenProjectTmpFolder}: ${e}`);
+            }
+        }
     });
 
 
