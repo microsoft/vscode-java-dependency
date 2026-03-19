@@ -50,6 +50,7 @@
   "configuration.java.project.exportJar.targetPath.customization": "The output path of the exported jar. Leave it empty if you want to manually pick the output location.",
   "configuration.java.project.exportJar.targetPath.workspaceFolder": "Export the jar file into the workspace folder. Its name is the same as the folder's.",
   "configuration.java.project.exportJar.targetPath.select": "Select output location manually when exporting the jar file.",
+  "configuration.vscode-java-dependency.enableLspTools.description": "Enable LSP tools for Java projects.",
   "taskDefinitions.java.project.exportJar.label": "The label of export jar task.",
   "taskDefinitions.java.project.exportJar.elements": "The content list of the exported jar.",
   "taskDefinitions.java.project.exportJar.mainClass": "The main class in the manifest of the exported jar.",

@@ -12,7 +12,7 @@
     "explorer"
   ],
   "engines": {
-    "vscode": "^1.83.1"
+    "vscode": "^1.95.0"
   },
   "repository": {
     "type": "git",
@@ -47,6 +47,162 @@
   "contributes": {
     "javaExtensions": [
       "./server/com.microsoft.jdtls.ext.core-0.24.1.jar"
+    ],
+    "languageModelTools": [
+      {
+        "name": "lsp_java_getFileStructure",
+        "toolReferenceName": "javaFileStructure",
+        "modelDescription": "Get the structure (classes, methods, fields, inner classes) of a Java file. Returns a hierarchical outline with symbol kinds and line ranges. Use this first when you need to understand a file's layout before reading specific sections.",
+        "displayName": "Java: Get File Structure",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(symbol-class)",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "Java file path (workspace-relative or full URI)"
+            }
+          },
+          "required": ["uri"]
+        }
+      },
+      {
+        "name": "lsp_java_findSymbol",
+        "toolReferenceName": "javaFindSymbol",
+        "modelDescription": "Search for Java symbols (classes, interfaces, methods, fields) across the workspace by name. Supports partial/fuzzy matching. Use this to find where a class or method is defined.",
+        "displayName": "Java: Find Symbol",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search)",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Symbol name or pattern to search for"
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum results (default: 20, max: 50)"
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "lsp_java_getFileImports",
+        "toolReferenceName": "javaFileImports",
+        "modelDescription": "Get all import statements from a Java file, classified by source (jdk/project/external).",
+        "displayName": "Java: Get File Imports",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(references)",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "Java file path (workspace-relative or full URI)"
+            }
+          },
+          "required": ["uri"]
+        }
+      },
+      {
+        "name": "lsp_java_getTypeAtPosition",
+        "toolReferenceName": "javaTypeAtPosition",
+        "modelDescription": "Get the compiler-resolved type signature at a specific position. Returns fully qualified type, method signature, or field declaration. Use this when you see var, lambdas, or generics and need the exact type.",
+        "displayName": "Java: Get Type at Position",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(symbol-field)",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "Java file path (workspace-relative or full URI)"
+            },
+            "line": {
+              "type": "number",
+              "description": "Zero-based line number"
+            },
+            "character": {
+              "type": "number",
+              "description": "Zero-based character offset"
+            }
+          },
+          "required": ["uri", "line", "character"]
+        }
+      },
+      {
+        "name": "lsp_java_getCallHierarchy",
+        "toolReferenceName": "javaCallHierarchy",
+        "modelDescription": "Get incoming callers or outgoing callees of a method. PREFER THIS over grep_search when you need to find which methods call a specific method — returns precise call sites without noise from comments, imports, or string matches. Use 'incoming' for callers, 'outgoing' for callees.",
+        "displayName": "Java: Get Call Hierarchy",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(call-incoming)",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "Java file path (workspace-relative or full URI)"
+            },
+            "line": {
+              "type": "number",
+              "description": "Zero-based line number of the method"
+            },
+            "character": {
+              "type": "number",
+              "description": "Zero-based character offset within the method name"
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["incoming", "outgoing"],
+              "default": "incoming",
+              "description": "'incoming' for callers, 'outgoing' for callees"
+            }
+          },
+          "required": ["uri", "line", "character", "direction"]
+        }
+      },
+      {
+        "name": "lsp_java_getTypeHierarchy",
+        "toolReferenceName": "javaTypeHierarchy",
+        "modelDescription": "Get supertypes or subtypes/implementors of a type. PREFER THIS over grep_search('extends|implements') — returns only actual inheritance relationships. Use 'supertypes' for parents, 'subtypes' for children.",
+        "displayName": "Java: Get Type Hierarchy",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(type-hierarchy)",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uri": {
+              "type": "string",
+              "description": "Java file path (workspace-relative or full URI)"
+            },
+            "line": {
+              "type": "number",
+              "description": "Zero-based line number of the type"
+            },
+            "character": {
+              "type": "number",
+              "description": "Zero-based character offset within the type name"
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["supertypes", "subtypes"],
+              "default": "supertypes",
+              "description": "'supertypes' for parents, 'subtypes' for children"
+            }
+          },
+          "required": ["uri", "line", "character", "direction"]
+        }
+      }
     ],
     "commands": [
       {
@@ -360,6 +516,16 @@
           "type": "boolean",
           "description": "%configuration.java.project.explorer.showNonJavaResources%",
           "default": true
+        },
+        "vscode-java-dependency.enableLspTools": {
+          "type": "boolean",
+          "scope": "application",
+          "description": "%configuration.vscode-java-dependency.enableLspTools.description%",
+          "default": false,
+          "tags": ["experimental"],
+          "experiment": {
+            "mode": "startup"
+          }
         }
       }
     },
@@ -1078,6 +1244,18 @@
           }
         }
       }
+    ],
+    "chatSkills": [
+      {
+        "path": "./resources/skills/java-lsp-tools/SKILL.md",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady"
+      }
+    ],
+    "chatInstructions": [
+      {
+        "path": "./resources/instruments/javaLspContext.instructions.md",
+        "when": "config.vscode-java-dependency.enableLspTools && javaLSReady"
+      }
     ]
   },
   "scripts": {
@@ -1097,7 +1275,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "20.x",
     "@types/semver": "^7.3.13",
-    "@types/vscode": "1.83.1",
+    "@types/vscode": "1.95.0",
     "@vscode/test-electron": "^2.4.1",
     "copy-webpack-plugin": "^11.0.0",
     "glob": "^7.2.3",
