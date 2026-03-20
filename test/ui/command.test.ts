@@ -208,8 +208,10 @@ describe("Command Tests", function() {
             }
         }
         await sleep(5000);
+        // Use command palette to save because the editor input area may not be
+        // interactable right after the rename refactoring dialog is dismissed.
+        await new Workbench().executeCommand('workbench.action.files.save');
         const editor = new TextEditor();
-        await editor.save();
         assert.ok(await editor.getTitle() === "AppRenamed.java", `Editor's title should be "AppRenamed.java"`);
         assert.ok(await section.findItem("AppRenamed"), `Item in Java Project section should be "AppRenamed"`);
     });
@@ -243,6 +245,10 @@ describe("Command Tests", function() {
 
     it("Test change to invisible project", async function() {
         await openProject(invisibleProjectPath);
+        // Allow VS Code to finish the workspace transition before opening files
+        await sleep(3000);
+        // Dismiss any modal dialog (e.g. workspace trust) that may appear after opening a new project
+        await dismissModalDialogIfPresent();
         await openFile(invisibleJavaFilePath);
         await waitForLanguageServerReady();
         const fileSections = await new SideBarView().getContent().getSections();
@@ -292,6 +298,7 @@ describe("Command Tests", function() {
     });
 
     it("Test java.project.create", async function() {
+        await dismissModalDialogIfPresent();
         const projectFolder = createTmpProjectFolder("newProject");
         await fse.ensureDir(projectFolder);
         await new Workbench().executeCommand("java.project.create");
@@ -333,6 +340,8 @@ async function expandMainCodeInJavaProjects() {
 }
 
 async function expandInJavaProjects(label: string, ...otherLabels: string[]): Promise<[TreeItem, ViewSection]> {
+    // Dismiss any lingering modal dialog that could block sidebar clicks
+    await dismissModalDialogIfPresent();
     // Collapse file section to make sure that the AppToRename tree item fits in the current viewport.
     // .findItem will only find tree items in the current viewport.
     await collapseFileSection();
@@ -388,6 +397,28 @@ async function getActionButton(item: TreeItem, label: string) {
     // This should be filled as an issue (I haven't find one).
     // The problem is the @title='New...' which should be @aria-label='New...' for vscode 1.83.1 (and probably above).
     return item.findElement(By.xpath(`.//a[contains(@class, 'action-label') and @role='button' and contains(@aria-label, '${label}')]`));
+}
+
+async function dismissModalDialogIfPresent() {
+    try {
+        const dialog = new ModalDialog();
+        const buttons = await dialog.getButtons();
+        for (const button of buttons) {
+            const text = await button.getText();
+            if (["Yes, I trust the authors", "OK", "Yes", "Continue", "I Trust the Authors"].includes(text)) {
+                await button.click();
+                await sleep(1000);
+                return;
+            }
+        }
+        // Dismiss by clicking the first available button as a fallback
+        if (buttons.length > 0) {
+            await buttons[0].click();
+            await sleep(1000);
+        }
+    } catch (_e) {
+        // No modal dialog present — nothing to dismiss
+    }
 }
 
 async function ensureExplorerIsOpen() {
