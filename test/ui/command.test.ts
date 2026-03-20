@@ -99,8 +99,19 @@ describe("Command Tests", function() {
 
     it("Test javaProjectExplorer.focus", async function() {
         await new Workbench().executeCommand("javaProjectExplorer.focus");
-        const section = await new SideBarView().getContent().getSection("Java Projects");
-        assert.ok(section.isExpanded(), `Section "Java Projects" should be expanded`);
+        // Retry finding the section since it may take time to render after the command
+        let section: ViewSection | undefined;
+        for (let i = 0; i < 5; i++) {
+            try {
+                section = await new SideBarView().getContent().getSection("Java Projects");
+                break;
+            } catch (_e) {
+                await sleep(2000);
+                await new Workbench().executeCommand("javaProjectExplorer.focus");
+            }
+        }
+        assert.ok(section, `Section "Java Projects" should be found`);
+        assert.ok(section!.isExpanded(), `Section "Java Projects" should be expanded`);
     });
 
     (platform() === "darwin" ? it.skip : it)("Test java.view.package.linkWithFolderExplorer", async function() {
