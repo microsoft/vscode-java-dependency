@@ -4,7 +4,7 @@
 import { Upgrade } from "../constants";
 import { UpgradeReason, type DependencyCheckMetadata } from "./type";
 
-const MATURE_JAVA_LTS_VERSION = 21;
+const MATURE_JAVA_LTS_VERSION = 25;
 
 export const DEPENDENCY_JAVA_RUNTIME = {
     "name": "Java Runtime",
