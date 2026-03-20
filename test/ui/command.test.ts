@@ -277,7 +277,7 @@ describe("Command Tests", function() {
         await sleep(1000);
         referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
         await referencedItem.expand();
-        let simpleItem = await waitForTreeItem(section, "simple.jar") as TreeItem;
+        const simpleItem = await waitForTreeItem(section, "simple.jar") as TreeItem;
         assert.ok(simpleItem, `Library "simple.jar" should be found`);
         await simpleItem.click();
         await clickActionButton(simpleItem, 'Remove from Project Classpath');
@@ -431,7 +431,9 @@ async function waitForTreeItem(section: ViewSection, label: string, timeoutMs = 
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
         const item = await section.findItem(label) as TreeItem;
-        if (item) return item;
+        if (item) {
+            return item;
+        }
         await sleep(1000);
     }
     return undefined;
@@ -441,7 +443,9 @@ async function waitForTreeItemGone(section: ViewSection, label: string, timeoutM
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
         const item = await section.findItem(label) as TreeItem;
-        if (!item) return true;
+        if (!item) {
+            return true;
+        }
         await sleep(1000);
     }
     return false;
@@ -450,7 +454,9 @@ async function waitForTreeItemGone(section: ViewSection, label: string, timeoutM
 async function waitForFileExists(filePath: string, timeoutMs = 15000): Promise<boolean> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
-        if (await fse.pathExists(filePath)) return true;
+        if (await fse.pathExists(filePath)) {
+            return true;
+        }
         await sleep(1000);
     }
     return false;
@@ -459,7 +465,9 @@ async function waitForFileExists(filePath: string, timeoutMs = 15000): Promise<b
 async function waitForFileGone(filePath: string, timeoutMs = 15000): Promise<boolean> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
-        if (!await fse.pathExists(filePath)) return true;
+        if (!await fse.pathExists(filePath)) {
+            return true;
+        }
         await sleep(1000);
     }
     return false;
@@ -484,7 +492,9 @@ async function waitForEditorTitle(expectedTitle: string, timeoutMs = 15000): Pro
     while (Date.now() - start < timeoutMs) {
         try {
             const editor = new TextEditor();
-            if (await editor.getTitle() === expectedTitle) return editor;
+            if (await editor.getTitle() === expectedTitle) {
+                return editor;
+            }
         } catch (_e) {
             // Editor may not be ready yet
         }
