@@ -18,7 +18,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libxkbfile-dev pkg-config libsecret-1-dev libxss1 dbus xvfb libgtk-3-0 libgbm1
-        sudo /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        sudo /usr/bin/Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
         sleep 3
 
     - name: Set up JDK 21

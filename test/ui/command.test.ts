@@ -83,6 +83,9 @@ describe("Command Tests", function() {
         await openProject(mavenProjectPath);
         await openFile(mavenJavaFilePath);
         await waitForLanguageServerReady();
+        // Close any lingering hover popup (e.g. language status) that could overlay the sidebar
+        await VSBrowser.instance.driver.actions().sendKeys(seleniumWebdriver.Key.ESCAPE).perform();
+        await clearNotificationsIfPresent();
     });
 
     after(async function() {
@@ -175,6 +178,8 @@ describe("Command Tests", function() {
     });
 
     (platform() === "darwin" ? it.skip : it)("Test java.view.package.revealInProjectExplorer", async function() {
+        await dismissModalDialogIfPresent();
+        await clearNotificationsIfPresent();
         // Make sure App.java is not currently revealed in Java Projects
         const section = await new SideBarView().getContent().getSection("Java Projects");
         const item = await section.findItem("my-app") as TreeItem;
@@ -334,6 +339,8 @@ async function collapseFileSection() {
 }
 
 async function expandMainCodeInJavaProjects() {
+    await dismissModalDialogIfPresent();
+    await clearNotificationsIfPresent();
     const section = await new SideBarView().getContent().getSection("Java Projects");
     await section.click();
     const appNode = await section.findItem("my-app") as TreeItem;
@@ -348,6 +355,8 @@ async function expandMainCodeInJavaProjects() {
 async function expandInJavaProjects(label: string, ...otherLabels: string[]): Promise<[TreeItem, ViewSection]> {
     // Dismiss any lingering modal dialog that could block sidebar clicks
     await dismissModalDialogIfPresent();
+    // Clear notification toasts that could overlay sidebar elements
+    await clearNotificationsIfPresent();
     // Collapse file section to make sure that the AppToRename tree item fits in the current viewport.
     // .findItem will only find tree items in the current viewport.
     await collapseFileSection();
@@ -424,6 +433,16 @@ async function dismissModalDialogIfPresent() {
         }
     } catch (_e) {
         // No modal dialog present — nothing to dismiss
+    }
+}
+
+async function clearNotificationsIfPresent() {
+    try {
+        const center = await new Workbench().openNotificationsCenter();
+        await center.clearAllNotifications();
+        await center.close();
+    } catch (_e) {
+        // No notifications or center not available — nothing to clear
     }
 }
 
