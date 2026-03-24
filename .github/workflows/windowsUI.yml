@@ -75,4 +75,19 @@ jobs:
 
     - name: Print language server Log if job failed
       if: ${{ failure() }}
-      run: Get-ChildItem -Path ./test-resources/settings/User/workspaceStorage/*/redhat.java/jdt_ws/.metadata/.log | cat
+      run: |
+        $logFiles = Get-ChildItem -Path ./test-resources/settings/User/workspaceStorage -Recurse -Filter ".log" -ErrorAction SilentlyContinue |
+          Where-Object { $_.FullName -match 'redhat\.java.*jdt_ws.*\.metadata.*\.log$' }
+        if ($logFiles) {
+          $logFiles | ForEach-Object { Write-Host $_.FullName; Get-Content $_ }
+        } else {
+          Write-Host "No language server log found"
+        }
+
+    - name: Upload test screenshots
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-screenshots
+        path: screenshots/
+        if-no-files-found: ignore
