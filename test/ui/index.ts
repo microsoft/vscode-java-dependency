@@ -9,7 +9,7 @@ async function main(): Promise<void> {
     try {
         // Run UI command tests
         const testPath = path.join(__dirname, "command.test.js");
-        const exTester = new ExTester();
+        const exTester = new ExTester("./test-resources");
         await exTester.downloadCode();
         await exTester.installVsix();
         await exTester.installFromMarketplace("redhat.java");
