@@ -15,7 +15,10 @@ async function main(): Promise<void> {
         await exTester.installFromMarketplace("redhat.java");
         await exTester.downloadChromeDriver();
         await exTester.setupRequirements();
-        process.exit(await exTester.runTests(testPath, {resources: []}));
+        // Disable workspace trust via settings to prevent the trust dialog from
+        // blocking project load on Linux (equivalent to --disable-workspace-trust).
+        const testSettings = path.join(__dirname, "..", "..", "..", "test", "ui", "test-settings.json");
+        process.exit(await exTester.runTests(testPath, {resources: [], settings: testSettings}));
     } catch (err) {
         console.log(err);
         process.exit(1);

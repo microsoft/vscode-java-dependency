@@ -47,6 +47,10 @@ describe("Command Tests", function() {
         fse.copySync(projectPath, projectFolder);
         await VSBrowser.instance.openResources(projectFolder);
         currentProjectPath = projectFolder;
+        // On Linux the workspace trust dialog appears before the folder is actually loaded.
+        // Dismiss it here so subsequent steps see a fully opened workspace.
+        await sleep(2000);
+        await dismissModalDialogIfPresent();
         await ensureExplorerIsOpen();
     }
 
