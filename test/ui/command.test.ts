@@ -114,7 +114,6 @@ describe("Command Tests", function() {
             const safeName = this.currentTest.title.replace(/[^a-zA-Z0-9_-]/g, '_');
             try {
                 await VSBrowser.instance.takeScreenshot(safeName);
-                console.log(`Screenshot saved for failed test: ${safeName}`);
             } catch (e) {
                 console.warn(`Failed to take screenshot for ${safeName}: ${e}`);
             }
