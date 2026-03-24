@@ -77,13 +77,23 @@ describe("Command Tests", function() {
                 await sleep(1000);
             }
         }
+        // The check above leaves the language status hover popup open. Close it by clicking
+        // the same element again (toggle behavior) so it does not overlay sidebar tree items
+        // on Linux, where ESC alone is not always reliable.
+        try {
+            const languageStatus = await statusBar.findElement(By.xpath('//*[@id="status.languageStatus"]'));
+            await languageStatus.click();
+            await sleep(300);
+        } catch (_e) {
+            // popup may have already been dismissed — ignore
+        }
     }
 
     before(async function() {
         await openProject(mavenProjectPath);
         await openFile(mavenJavaFilePath);
         await waitForLanguageServerReady();
-        // Close any lingering hover popup (e.g. language status) that could overlay the sidebar
+        // Extra safety: send ESC in case any residual overlay is still present
         await VSBrowser.instance.driver.actions().sendKeys(seleniumWebdriver.Key.ESCAPE).perform();
         await clearNotificationsIfPresent();
     });
