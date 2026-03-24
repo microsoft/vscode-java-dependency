@@ -87,9 +87,13 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     setContextForDeprecatedTasks();
 
     // Register Copilot context providers after Java Language Server is ready
+    const isPrereleaseBuild = context.extension.packageJSON.preview === true;
     languageServerApiManager.ready().then((isReady) => {
+        if (!isPrereleaseBuild) {
+            return;
+        }
         const config = workspace.getConfiguration("vscode-java-dependency");
-        const isSettingEnabled = config.get<boolean>("enableLspTools", true);
+        const isSettingEnabled = config.get<boolean>("enableLspTools", false);
         if (isReady && isSettingEnabled) {
             registerJavaContextTools(context);
         }
