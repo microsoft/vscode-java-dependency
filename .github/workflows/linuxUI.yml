@@ -75,4 +75,16 @@ jobs:
 
     - name: Print language server Log
       if: ${{ failure() }}
-      run: find ./test-resources/settings/User/workspaceStorage/*/redhat.java/jdt_ws/.metadata/.log -print -exec cat '{}' \;;
+      run: |
+        find ./test-resources/settings/User/workspaceStorage \
+          -path "*/redhat.java/jdt_ws/.metadata/.log" \
+          -print -exec cat '{}' \; \
+          || echo "No language server log found"
+
+    - name: Upload test screenshots
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-screenshots
+        path: screenshots/
+        if-no-files-found: ignore
