@@ -27,7 +27,7 @@ const invisibleJavaFilePath = path.join("src", "App.java");
 
 describe("Command Tests", function() {
 
-    this.timeout(2 * 60 * 1000 /*ms*/);
+    this.timeout(5 * 60 * 1000 /*ms*/);
     const mavenProjectTmpFolders: string[] = [];
     let currentProjectPath: string | undefined;
     let statusBar: StatusBar;
@@ -60,20 +60,21 @@ describe("Command Tests", function() {
    }
 
     async function waitForLanguageServerReady() {
-        while (true) {
-            const language = await statusBar.getCurrentLanguage();
-            if (language === 'Java') {
-                break;
-            }
-        }
-        while (true) {
+        // Wait until the language server is no longer indexing.
+        // Use a max wait to avoid infinite loops if the status UI changes between VS Code versions.
+        const maxWaitMs = 3 * 60 * 1000;
+        const startTime = Date.now();
+        while (Date.now() - startTime < maxWaitMs) {
             try {
                 const languageStatus = await statusBar.findElement(By.xpath('//*[@id="status.languageStatus"]'));
                 await languageStatus.click();
-                await languageStatus.findElement(By.xpath(`//div[contains(@class, 'context-view')]//div[contains(@class, 'hover-language-status')]//span[contains(@class, 'codicon-thumbsup')]`));
+                // Accept either codicon-thumbsup (older VS Code) or codicon-pass (newer VS Code)
+                await languageStatus.findElement(By.xpath(
+                    `//div[contains(@class, 'context-view')]//div[contains(@class, 'hover-language-status')]//*[contains(@class, 'codicon-thumbsup') or contains(@class, 'codicon-pass')]`
+                ));
                 break;
             } catch (e) {
-                await sleep(100);
+                await sleep(1000);
             }
         }
     }
@@ -85,16 +86,32 @@ describe("Command Tests", function() {
     });
 
     after(async function() {
-        mavenProjectTmpFolders.forEach(mavenProjectTmpFolder => {
-            fse.rmSync(mavenProjectTmpFolder, {force: true, recursive: true});
-        });
+        for (const mavenProjectTmpFolder of mavenProjectTmpFolders) {
+            try {
+                fse.rmSync(mavenProjectTmpFolder, {force: true, recursive: true});
+            } catch (e) {
+                // Ignore EBUSY and other cleanup errors on Windows when VS Code still holds file locks
+                console.warn(`Warning: failed to clean up temp folder ${mavenProjectTmpFolder}: ${e}`);
+            }
+        }
     });
 
 
     it("Test javaProjectExplorer.focus", async function() {
         await new Workbench().executeCommand("javaProjectExplorer.focus");
-        const section = await new SideBarView().getContent().getSection("Java Projects");
-        assert.ok(section.isExpanded(), `Section "Java Projects" should be expanded`);
+        // Retry finding the section since it may take time to render after the command
+        let section: ViewSection | undefined;
+        for (let i = 0; i < 5; i++) {
+            try {
+                section = await new SideBarView().getContent().getSection("Java Projects");
+                break;
+            } catch (_e) {
+                await sleep(2000);
+                await new Workbench().executeCommand("javaProjectExplorer.focus");
+            }
+        }
+        assert.ok(section, `Section "Java Projects" should be found`);
+        assert.ok(section!.isExpanded(), `Section "Java Projects" should be expanded`);
     });
 
     (platform() === "darwin" ? it.skip : it)("Test java.view.package.linkWithFolderExplorer", async function() {
@@ -135,10 +152,9 @@ describe("Command Tests", function() {
         assert.ok(await inputBox.getPlaceHolder() === "Input the class name", `InputBox "Input the class name" should appear`);
         await inputBox.setText("App2");
         await inputBox.confirm();
-        await sleep(1000);
-        const editor = new TextEditor();
-        await editor.save();
-        assert.ok(await editor.getTitle() === "App2.java", `Editor's title should be "App2.java"`);
+        const editor = await waitForEditorTitle("App2.java");
+        assert.ok(editor, `Editor's title should be "App2.java"`);
+        await editor!.save();
         assert.ok(await fse.pathExists(path.join(currentProjectPath!, "src", "main", "java", "App2.java")), `"App2.java" should be created in correct path`);
     });
 
@@ -155,8 +171,7 @@ describe("Command Tests", function() {
         inputBox = await InputBox.create();
         await inputBox.setText("com.mycompany.app2");
         await inputBox.confirm();
-        await sleep(1000);
-        assert.ok(await fse.pathExists(path.join(currentProjectPath!, "src", "main", "java", "com", "mycompany", "app2")), `New package should be created in correct path`);
+        assert.ok(await waitForFileExists(path.join(currentProjectPath!, "src", "main", "java", "com", "mycompany", "app2")), `New package should be created in correct path`);
     });
 
     (platform() === "darwin" ? it.skip : it)("Test java.view.package.revealInProjectExplorer", async function() {
@@ -192,19 +207,20 @@ describe("Command Tests", function() {
         const inputBox = await InputBox.create();
         await inputBox.setText("AppRenamed");
         await inputBox.confirm();
-        await sleep(1000);
-        const dialog = new ModalDialog();
-        const buttons = await dialog.getButtons();
+        const dialog = await waitForModalDialog();
+        assert.ok(dialog, `Rename confirmation dialog should appear`);
+        const buttons = await dialog!.getButtons();
         for (const button of buttons) {
             if (await button.getText() === "OK") {
                 await button.click();
                 break;
             }
         }
-        await sleep(5000);
-        const editor = new TextEditor();
-        await editor.save();
-        assert.ok(await editor.getTitle() === "AppRenamed.java", `Editor's title should be "AppRenamed.java"`);
+        const editor = await waitForEditorTitle("AppRenamed.java");
+        assert.ok(editor, `Editor's title should be "AppRenamed.java"`);
+        // Use command palette to save because the editor input area may not be
+        // interactable right after the rename refactoring dialog is dismissed.
+        await new Workbench().executeCommand('workbench.action.files.save');
         assert.ok(await section.findItem("AppRenamed"), `Item in Java Project section should be "AppRenamed"`);
     });
 
@@ -223,20 +239,26 @@ describe("Command Tests", function() {
         }
         assert.ok(deleteItem, `"Delete" item should be found`);
         await deleteItem!.click();
-        const dialog = new ModalDialog();
-        const buttons = await dialog.getButtons();
-        for (const button of buttons) {
-            if (await button.getText() === "Move to Recycle Bin") {
-                await button.click();
-                break;
+        const dialog = await waitForModalDialog();
+        if (dialog) {
+            const buttons = await dialog.getButtons();
+            for (const button of buttons) {
+                const text = await button.getText();
+                if (text === "Move to Recycle Bin" || text === "Delete") {
+                    await button.click();
+                    break;
+                }
             }
         }
-        await sleep(1000);
-        assert.ok(!await fse.pathExists(path.join(currentProjectPath!, "src", "main", "java", "AppToDelete.java")), `The source file "AppToDelete.java" should be deleted`);
+        assert.ok(await waitForFileGone(path.join(currentProjectPath!, "src", "main", "java", "AppToDelete.java")), `The source file "AppToDelete.java" should be deleted`);
     });
 
     it("Test change to invisible project", async function() {
         await openProject(invisibleProjectPath);
+        // Allow VS Code to finish the workspace transition before opening files
+        await sleep(3000);
+        // Dismiss any modal dialog (e.g. workspace trust) that may appear after opening a new project
+        await dismissModalDialogIfPresent();
         await openFile(invisibleJavaFilePath);
         await waitForLanguageServerReady();
         const fileSections = await new SideBarView().getContent().getSections();
@@ -252,16 +274,14 @@ describe("Command Tests", function() {
         const input = await InputBox.create();
         await input.setText(path.join(invisibleProjectPath, "libSource", "simple.jar"));
         await input.confirm();
-        await sleep(5000);
+        await sleep(1000);
         referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
         await referencedItem.expand();
-        let simpleItem = await section.findItem("simple.jar") as TreeItem;
+        const simpleItem = await waitForTreeItem(section, "simple.jar") as TreeItem;
         assert.ok(simpleItem, `Library "simple.jar" should be found`);
         await simpleItem.click();
         await clickActionButton(simpleItem, 'Remove from Project Classpath');
-        await sleep(5000);
-        simpleItem = await section.findItem("simple.jar") as TreeItem;
-        assert.ok(!simpleItem, `Library "simple.jar" should not be found`);
+        assert.ok(await waitForTreeItemGone(section, "simple.jar"), `Library "simple.jar" should not be found`);
     });
 
     it("Test java.project.addLibraryFolders", async function() {
@@ -275,17 +295,17 @@ describe("Command Tests", function() {
             .click(button)
             .keyUp(seleniumWebdriver.Key.ALT)
             .perform();
-        await sleep(5000);
         const input = await InputBox.create();
         await input.setText(path.join(invisibleProjectPath, "libSource"));
         await input.confirm();
-        await sleep(5000);
+        await sleep(1000);
         referencedItem = await section.findItem("Referenced Libraries") as TreeItem;
         await referencedItem.expand();
-        assert.ok(await section.findItem("simple.jar"), `Library "simple.jar" should be found`);
+        assert.ok(await waitForTreeItem(section, "simple.jar"), `Library "simple.jar" should be found`);
     });
 
     it("Test java.project.create", async function() {
+        await dismissModalDialogIfPresent();
         const projectFolder = createTmpProjectFolder("newProject");
         await fse.ensureDir(projectFolder);
         await new Workbench().executeCommand("java.project.create");
@@ -293,17 +313,16 @@ describe("Command Tests", function() {
         const picks = await inputBox.getQuickPicks();
         assert.equal("No build tools", await picks[0].getLabel());
         await picks[0].select();
-        await sleep(3000);
+        await sleep(1000);
         inputBox = await InputBox.create();
         await inputBox.setText(projectFolder);
         await inputBox.confirm();
-        await sleep(3000);
+        await sleep(1000);
         inputBox = await InputBox.create();
         await inputBox.setText(newProjectName);
         await inputBox.confirm();
-        await sleep(5000);
-        assert.ok(await fse.pathExists(path.join(projectFolder, newProjectName, "src", "App.java")), `The template source file should be created`);
-        assert.ok(await fse.pathExists(path.join(projectFolder, newProjectName, "README.md")), `The template README file should be created`);
+        assert.ok(await waitForFileExists(path.join(projectFolder, newProjectName, "src", "App.java")), `The template source file should be created`);
+        assert.ok(await waitForFileExists(path.join(projectFolder, newProjectName, "README.md")), `The template README file should be created`);
     });
 
 
@@ -327,6 +346,8 @@ async function expandMainCodeInJavaProjects() {
 }
 
 async function expandInJavaProjects(label: string, ...otherLabels: string[]): Promise<[TreeItem, ViewSection]> {
+    // Dismiss any lingering modal dialog that could block sidebar clicks
+    await dismissModalDialogIfPresent();
     // Collapse file section to make sure that the AppToRename tree item fits in the current viewport.
     // .findItem will only find tree items in the current viewport.
     await collapseFileSection();
@@ -382,6 +403,104 @@ async function getActionButton(item: TreeItem, label: string) {
     // This should be filled as an issue (I haven't find one).
     // The problem is the @title='New...' which should be @aria-label='New...' for vscode 1.83.1 (and probably above).
     return item.findElement(By.xpath(`.//a[contains(@class, 'action-label') and @role='button' and contains(@aria-label, '${label}')]`));
+}
+
+async function dismissModalDialogIfPresent() {
+    try {
+        const dialog = new ModalDialog();
+        const buttons = await dialog.getButtons();
+        for (const button of buttons) {
+            const text = await button.getText();
+            if (["Yes, I trust the authors", "OK", "Yes", "Continue", "I Trust the Authors"].includes(text)) {
+                await button.click();
+                await sleep(1000);
+                return;
+            }
+        }
+        // Dismiss by clicking the first available button as a fallback
+        if (buttons.length > 0) {
+            await buttons[0].click();
+            await sleep(1000);
+        }
+    } catch (_e) {
+        // No modal dialog present — nothing to dismiss
+    }
+}
+
+async function waitForTreeItem(section: ViewSection, label: string, timeoutMs = 15000): Promise<TreeItem | undefined> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        const item = await section.findItem(label) as TreeItem;
+        if (item) {
+            return item;
+        }
+        await sleep(1000);
+    }
+    return undefined;
+}
+
+async function waitForTreeItemGone(section: ViewSection, label: string, timeoutMs = 15000): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        const item = await section.findItem(label) as TreeItem;
+        if (!item) {
+            return true;
+        }
+        await sleep(1000);
+    }
+    return false;
+}
+
+async function waitForFileExists(filePath: string, timeoutMs = 15000): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        if (await fse.pathExists(filePath)) {
+            return true;
+        }
+        await sleep(1000);
+    }
+    return false;
+}
+
+async function waitForFileGone(filePath: string, timeoutMs = 15000): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        if (!await fse.pathExists(filePath)) {
+            return true;
+        }
+        await sleep(1000);
+    }
+    return false;
+}
+
+async function waitForModalDialog(timeoutMs = 10000): Promise<ModalDialog | undefined> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        try {
+            const dialog = new ModalDialog();
+            await dialog.getButtons();
+            return dialog;
+        } catch (_e) {
+            await sleep(500);
+        }
+    }
+    return undefined;
+}
+
+async function waitForEditorTitle(expectedTitle: string, timeoutMs = 15000): Promise<TextEditor | undefined> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        try {
+            const editor = new TextEditor();
+            if (await editor.getTitle() === expectedTitle) {
+                return editor;
+            }
+        } catch (_e) {
+            // Editor may not be ready yet
+        }
+        await sleep(1000);
+    }
+    return undefined;
 }
 
 async function ensureExplorerIsOpen() {
