@@ -47,9 +47,12 @@ describe("Command Tests", function() {
         fse.copySync(projectPath, projectFolder);
         await VSBrowser.instance.openResources(projectFolder);
         currentProjectPath = projectFolder;
-        // On Linux the workspace trust dialog appears before the folder is actually loaded.
-        // Dismiss it here so subsequent steps see a fully opened workspace.
-        await sleep(2000);
+        // openResources() sends the CLI IPC command and returns immediately, before VS Code
+        // has actually reloaded the window with the new folder.  On Linux the IPC + reload
+        // cycle is slower; calling openFile() right after can race with or even abort the
+        // folder load.  Poll the window title until it contains the folder name so we know
+        // VS Code has finished the workspace transition before we proceed.
+        await waitForWorkspaceOpen(path.basename(projectFolder));
         await dismissModalDialogIfPresent();
         await ensureExplorerIsOpen();
     }
@@ -552,5 +555,25 @@ async function ensureExplorerIsOpen() {
         throw new Error(`Explorer control should not be null.`);
     }
     await control.openView();
+}
+
+/**
+ * Poll the VS Code window title until it contains {@link folderName}, which signals that
+ * VS Code has finished the workspace-reload triggered by openResources(). Falls back
+ * silently after {@link timeoutMs} so tests can still run and produce useful error messages.
+ */
+async function waitForWorkspaceOpen(folderName: string, timeoutMs: number = 30000): Promise<void> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        try {
+            const title = await VSBrowser.instance.driver.getTitle();
+            if (title.toLowerCase().includes(folderName.toLowerCase())) {
+                return;
+            }
+        } catch (_e) {
+            // VS Code is mid-reload; its window title is temporarily unavailable.
+        }
+        await sleep(1000);
+    }
 }
 
