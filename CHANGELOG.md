@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.27.1
 
-- feat - Update upgrade prompt after merging extension in https://github.com/microsoft/vscode-java-dependency/pull/971
+- Enhancement - Update upgrade prompt after merging extension in https://github.com/microsoft/vscode-java-dependency/pull/971
 
 ## 0.27.0
 
