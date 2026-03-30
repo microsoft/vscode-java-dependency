@@ -152,7 +152,13 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 const timeout = new Promise<void>((resolve) => setTimeout(resolve, 30_000));
                 await Promise.race([this._progressiveItemsReady, timeout]);
             }
-            return this._rootItems || [];
+            // If progressive items arrived, return them. Otherwise fall
+            // through to the normal getRootNodes() path so the tree is
+            // never left blank (e.g., when the JDTLS progressive
+            // notifications are not available yet).
+            if (this._rootItems && this._rootItems.length > 0) {
+                return this._rootItems;
+            }
         }
 
         const children = (!this._rootItems || !element) ?
