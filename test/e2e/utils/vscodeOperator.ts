@@ -201,7 +201,6 @@ export default class VscodeOperator {
             // Best effort
         }
     }
-    }
 
     /**
      * Waits for a modal dialog to appear and clicks a button by its label.
