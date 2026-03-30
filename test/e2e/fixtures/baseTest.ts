@@ -55,9 +55,18 @@ export const test = base.extend<TestFixtures>({
         const vscodeDir = path.join(projectDir, ".vscode");
         fs.ensureDirSync(vscodeDir);
         const settingsPath = path.join(vscodeDir, "settings.json");
-        const existingSettings = fs.existsSync(settingsPath)
-            ? JSON.parse(fs.readFileSync(settingsPath, "utf-8"))
-            : {};
+        let existingSettings: Record<string, unknown> = {};
+        if (fs.existsSync(settingsPath)) {
+            // settings.json may contain JS-style comments (JSONC), strip them before parsing
+            const raw = fs.readFileSync(settingsPath, "utf-8");
+            const stripped = raw.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+            try {
+                existingSettings = JSON.parse(stripped);
+            } catch {
+                // If still invalid, start fresh — our injected settings are more important
+                existingSettings = {};
+            }
+        }
         const mergedSettings = {
             ...existingSettings,
             "telemetry.telemetryLevel": "off",
