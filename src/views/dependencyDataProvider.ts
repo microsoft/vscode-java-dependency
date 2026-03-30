@@ -37,11 +37,16 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
      * `null` means no node is pending.
      */
     private pendingRefreshElement: ExplorerNode | undefined | null;
+    /** Resolved when the first batch of progressive items arrives. */
+    private _progressiveItemsReady: Promise<void> | undefined;
+    private _resolveProgressiveItems: (() => void) | undefined;
 
     constructor(public readonly context: ExtensionContext) {
         // commands that do not send back telemetry
         context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, (debounce?: boolean, element?: ExplorerNode) =>
             this.refresh(debounce, element)));
+        context.subscriptions.push(commands.registerCommand(Commands.VIEW_PACKAGE_INTERNAL_ADD_PROJECTS, (projectUris: string[]) =>
+            this.addProgressiveProjects(projectUris)));
         context.subscriptions.push(commands.registerCommand(Commands.EXPORT_JAR_REPORT, (terminalId: string, message: string) => {
             appendOutput(terminalId, message);
         }));
@@ -117,8 +122,33 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     }
 
     public async getChildren(element?: ExplorerNode): Promise<ExplorerNode[] | undefined | null> {
+        // Fast path: if root items are already populated by progressive loading
+        // (addProgressiveProjects), return them directly without querying the
+        // server, which may be blocked during long-running imports.
+        if (!element && this._rootItems && this._rootItems.length > 0) {
+            explorerNodeCache.saveNodes(this._rootItems);
+            return this._rootItems;
+        }
+
         if (!await languageServerApiManager.ready()) {
             return [];
+        }
+
+        // During progressive loading (server running but not fully ready after
+        // a clean workspace), don't enter getRootNodes() — its server queries
+        // will block for the entire import duration. Instead, keep the TreeView
+        // progress spinner visible by awaiting until the first progressive
+        // notification delivers items.
+        if (!element && !languageServerApiManager.isFullyReady()) {
+            if (!this._rootItems || this._rootItems.length === 0) {
+                if (!this._progressiveItemsReady) {
+                    this._progressiveItemsReady = new Promise<void>((resolve) => {
+                        this._resolveProgressiveItems = resolve;
+                    });
+                }
+                await this._progressiveItemsReady;
+            }
+            return this._rootItems || [];
         }
 
         const children = (!this._rootItems || !element) ?
@@ -167,10 +197,66 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     private doRefresh(element?: ExplorerNode): void {
         if (!element) {
             this._rootItems = undefined;
+            // Resolve any pending progressive await so getChildren() doesn't hang
+            if (this._resolveProgressiveItems) {
+                this._resolveProgressiveItems();
+                this._resolveProgressiveItems = undefined;
+                this._progressiveItemsReady = undefined;
+            }
         }
         explorerNodeCache.removeNodeChildren(element);
         this._onDidChangeTreeData.fire(element);
         this.pendingRefreshElement = null;
+    }
+
+    /**
+     * Add projects progressively from ProjectsImported notifications.
+     * This directly creates ProjectNode items from URIs without querying
+     * the JDTLS server, which may be blocked during long-running imports.
+     */
+    public addProgressiveProjects(projectUris: string[]): void {
+        const folders = workspace.workspaceFolders;
+        if (!folders || !folders.length) {
+            return;
+        }
+
+        if (!this._rootItems) {
+            this._rootItems = [];
+        }
+
+        const existingUris = new Set(
+            this._rootItems
+                .filter((n): n is ProjectNode => n instanceof ProjectNode)
+                .map((n) => n.uri)
+        );
+
+        let added = false;
+        for (const uriStr of projectUris) {
+            if (existingUris.has(uriStr)) {
+                continue;
+            }
+            // Extract project name from URI (last non-empty path segment)
+            const name = uriStr.replace(/\/+$/, "").split("/").pop() || "unknown";
+            const nodeData: INodeData = {
+                name,
+                uri: uriStr,
+                kind: NodeKind.Project,
+            };
+            this._rootItems.push(new ProjectNode(nodeData, undefined));
+            existingUris.add(uriStr);
+            added = true;
+        }
+
+        if (added) {
+            // Resolve the pending getChildren() promise so the TreeView
+            // spinner stops and items appear.
+            if (this._resolveProgressiveItems) {
+                this._resolveProgressiveItems();
+                this._resolveProgressiveItems = undefined;
+                this._progressiveItemsReady = undefined;
+            }
+            this._onDidChangeTreeData.fire(undefined);
+        }
     }
 
     private async getRootNodes(): Promise<ExplorerNode[]> {
