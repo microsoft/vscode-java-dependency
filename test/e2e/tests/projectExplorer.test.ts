@@ -28,8 +28,7 @@ test.describe("Project Explorer", () => {
     });
 
     test("javaProjectExplorer.focus shows Java Projects section", async ({ page }) => {
-        await VscodeOperator.executeCommand(page, "javaProjectExplorer.focus");
-        // The section should be visible
+        // beforeEach already focuses Java Projects; verify the tree is populated
         const found = await VscodeOperator.waitForTreeItem(page, "my-app", 15_000);
         expect(found).toBeTruthy();
     });

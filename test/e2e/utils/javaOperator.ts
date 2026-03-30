@@ -47,10 +47,23 @@ export default class JavaOperator {
 
     /**
      * Focuses the Java Projects view and waits for it to render.
+     *
+     * Directly clicks the "Java Projects Section" button in the Explorer
+     * sidebar rather than going through the command palette, which may
+     * fail to find the view-focus command by its ID.
      */
     static async focusJavaProjects(page: Page): Promise<void> {
-        await VscodeOperator.executeCommand(page, "javaProjectExplorer.focus");
-        // Wait a moment for the section to render
+        const sectionButton = page.getByRole(VSCode.BUTTON_ROLE, { name: /Java Projects Section/i });
+        if (await sectionButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+            // Only click to expand if the section is currently collapsed
+            const expanded = await sectionButton.getAttribute("aria-expanded");
+            if (expanded !== "true") {
+                await sectionButton.click();
+            }
+        } else {
+            // Fallback: try via command palette
+            await VscodeOperator.executeCommand(page, "Java Projects: Focus on Java Projects View");
+        }
         await page.waitForTimeout(Timeout.TREE_EXPAND);
     }
 
