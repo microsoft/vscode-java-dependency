@@ -20,6 +20,9 @@ export default defineConfig({
     },
     globalSetup: path.join(__dirname, "globalSetup.ts"),
     use: {
+        // Automatically take a screenshot when a test fails.
+        screenshot: "only-on-failure",
+        // Capture full trace on retry for deep debugging (includes screenshots, DOM snapshots, network).
         trace: "on-first-retry",
     },
     outputDir: path.join(__dirname, "..", "..", "test-results", "e2e"),
