@@ -104,14 +104,22 @@ export default class JavaOperator {
     }
 
     /**
-     * Opens a file in the editor via VS Code command.
+     * Opens a file in the editor via Quick Open (Ctrl+P).
      */
     static async openFile(page: Page, filePath: string): Promise<void> {
-        await VscodeOperator.executeCommand(page, "workbench.action.quickOpen");
-        const input = await VscodeOperator.getQuickInput(page);
+        // Use Ctrl+P directly instead of going through command palette
+        await page.keyboard.press("Control+P");
+        const input = page.locator(".quick-input-widget input.input");
+        await input.waitFor({ state: "visible", timeout: 10_000 });
         await input.fill(filePath);
         await page.waitForTimeout(Timeout.CLICK);
-        await input.press(VSCode.ENTER);
+        // Wait for file matches to appear, then select the first one
+        const firstMatch = page.locator(".quick-input-widget .quick-input-list .monaco-list-row").first();
+        if (await firstMatch.isVisible({ timeout: 3_000 }).catch(() => false)) {
+            await firstMatch.click();
+        } else {
+            await input.press(VSCode.ENTER);
+        }
         await page.waitForTimeout(Timeout.TREE_EXPAND);
     }
 

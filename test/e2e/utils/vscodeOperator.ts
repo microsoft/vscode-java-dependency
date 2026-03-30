@@ -22,12 +22,18 @@ export default class VscodeOperator {
      */
     static async executeCommand(page: Page, command: string): Promise<void> {
         await page.keyboard.press(VSCode.CMD_PALETTE_KEY);
-        await page.waitForTimeout(Timeout.CLICK);
-        const input = page.getByRole(VSCode.CMD_PALETTE_ROLE, { name: VSCode.CMD_PALETTE_INPUT_NAME });
+        // Wait for the quick-input widget to appear
+        const input = page.locator(".quick-input-widget input.input");
+        await input.waitFor({ state: "visible", timeout: 10_000 });
         await input.fill(command);
         await page.waitForTimeout(Timeout.CLICK);
-        // Press Enter on the first matching option
-        await page.getByRole(VSCode.LISTBOX_ROLE).first().press(VSCode.ENTER);
+        // Press Enter on the first matching option in the list
+        const firstOption = page.locator(".quick-input-widget .quick-input-list .monaco-list-row").first();
+        if (await firstOption.isVisible({ timeout: 3_000 }).catch(() => false)) {
+            await firstOption.click();
+        } else {
+            await input.press(VSCode.ENTER);
+        }
         await page.waitForTimeout(Timeout.CLICK);
     }
 
@@ -35,7 +41,9 @@ export default class VscodeOperator {
      * Select a quick-pick option by its visible label text.
      */
     static async selectQuickPickItem(page: Page, label: string): Promise<void> {
-        await page.getByRole(VSCode.OPTION_ROLE, { name: label }).locator(VSCode.LINK).click();
+        const option = page.locator(".quick-input-widget .quick-input-list .monaco-list-row", { hasText: label });
+        await option.first().waitFor({ state: "visible", timeout: 10_000 });
+        await option.first().click();
         await page.waitForTimeout(Timeout.CLICK);
     }
 
@@ -43,7 +51,9 @@ export default class VscodeOperator {
      * Select a quick-pick option by its zero-based index.
      */
     static async selectQuickPickIndex(page: Page, index: number): Promise<void> {
-        await page.getByRole(VSCode.OPTION_ROLE).nth(index).locator(VSCode.LINK).click();
+        const option = page.locator(".quick-input-widget .quick-input-list .monaco-list-row").nth(index);
+        await option.waitFor({ state: "visible", timeout: 10_000 });
+        await option.click();
         await page.waitForTimeout(Timeout.CLICK);
     }
 
