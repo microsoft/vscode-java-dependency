@@ -146,19 +146,9 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                         this._resolveProgressiveItems = resolve;
                     });
                 }
-                // Race with a timeout to prevent hanging indefinitely if no
-                // progressive notifications arrive (e.g., small project or
-                // server failure). After timeout, fall through to normal path.
-                const timeout = new Promise<void>((resolve) => setTimeout(resolve, 30_000));
-                await Promise.race([this._progressiveItemsReady, timeout]);
+                await this._progressiveItemsReady;
             }
-            // If progressive items arrived, return them. Otherwise fall
-            // through to the normal getRootNodes() path so the tree is
-            // never left blank (e.g., when the JDTLS progressive
-            // notifications are not available yet).
-            if (this._rootItems && this._rootItems.length > 0) {
-                return this._rootItems;
-            }
+            return this._rootItems || [];
         }
 
         const children = (!this._rootItems || !element) ?
