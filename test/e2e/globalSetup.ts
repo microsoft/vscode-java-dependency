@@ -17,13 +17,18 @@ export default async function globalSetup(): Promise<void> {
     const vscodePath = await downloadAndUnzipVSCode(vscodeVersion);
     const [cli, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodePath);
 
-    // Install the Language Support for Java extension from the Marketplace.
-    console.log("[globalSetup] Installing redhat.java extension…");
-    childProcess.execFileSync(cli, [...cliArgs, "--install-extension", "redhat.java"], {
+    // On Windows, the CLI is a .cmd batch file which requires shell: true.
+    const isWindows = process.platform === "win32";
+    const execOptions: childProcess.ExecFileSyncOptions = {
         encoding: "utf-8",
         stdio: "inherit",
         timeout: 120_000,
-    });
+        shell: isWindows,
+    };
+
+    // Install the Language Support for Java extension from the Marketplace.
+    console.log("[globalSetup] Installing redhat.java extension…");
+    childProcess.execFileSync(cli, [...cliArgs, "--install-extension", "redhat.java"], execOptions);
 
     // Install our own VSIX if one exists (built by `vsce package`).
     const vsixGlob = path.join(__dirname, "..", "..", "*.vsix");
@@ -33,8 +38,7 @@ export default async function globalSetup(): Promise<void> {
         const vsix = vsixFiles[0];
         console.log(`[globalSetup] Installing VSIX ${path.basename(vsix)}…`);
         childProcess.execFileSync(cli, [...cliArgs, "--install-extension", vsix], {
-            encoding: "utf-8",
-            stdio: "inherit",
+            ...execOptions,
             timeout: 60_000,
         });
     } else {
