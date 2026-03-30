@@ -14,6 +14,7 @@ class LanguageServerApiManager {
 
     private isServerReady: boolean = false;
     private isServerRunning: boolean = false;
+    private serverReadyWaitStarted: boolean = false;
 
     public async ready(): Promise<boolean> {
         if (this.isServerReady) {
@@ -36,15 +37,6 @@ class LanguageServerApiManager {
         if (!this.isServerRunning && this.extensionApi.serverRunning) {
             await this.extensionApi.serverRunning();
             this.isServerRunning = true;
-            // Start background wait for full server readiness (import complete).
-            // When the server finishes importing, trigger a full refresh to replace
-            // progressive placeholder items with proper data from the server.
-            if (this.extensionApi.serverReady) {
-                this.extensionApi.serverReady().then(() => {
-                    this.isServerReady = true;
-                    commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */false);
-                });
-            }
             return true;
         }
         if (this.isServerRunning) {
@@ -55,6 +47,29 @@ class LanguageServerApiManager {
         await this.extensionApi.serverReady();
         this.isServerReady = true;
         return true;
+    }
+
+    /**
+     * Start a background wait for full server readiness (import complete).
+     * When the server finishes importing, trigger a full refresh to replace
+     * progressive placeholder items with proper data from the server.
+     * Guarded so it only starts once regardless of call order.
+     */
+    private startServerReadyWait(): void {
+        if (this.serverReadyWaitStarted || this.isServerReady) {
+            return;
+        }
+        if (this.extensionApi?.serverReady) {
+            this.serverReadyWaitStarted = true;
+            this.extensionApi.serverReady()
+                .then(() => {
+                    this.isServerReady = true;
+                    commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */false);
+                })
+                .catch((error: unknown) => {
+                    console.error("Java language server failed to become ready:", error);
+                });
+        }
     }
 
     public async initializeJavaLanguageServerApis(): Promise<void> {
@@ -73,12 +88,17 @@ class LanguageServerApiManager {
             }
 
             this.extensionApi = extensionApi;
+            // Start background wait for full server readiness unconditionally.
+            // This ensures isServerReady is set and final refresh fires even
+            // if onDidProjectsImport sets isServerRunning before ready() runs.
+            this.startServerReadyWait();
+
             if (extensionApi.onDidClasspathUpdate) {
                 const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
                 contextManager.context.subscriptions.push(onDidClasspathUpdate((uri: Uri) => {
                     if (this.isServerReady) {
                         // Server is fully ready — do a normal refresh to get full project data.
-                        commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */false);
+                        commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */true);
                     } else {
                         // During import, the server is blocked and can't respond to queries.
                         // Don't clear progressive items. Try to add the project if not

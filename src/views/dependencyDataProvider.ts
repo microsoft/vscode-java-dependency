@@ -146,7 +146,11 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                         this._resolveProgressiveItems = resolve;
                     });
                 }
-                await this._progressiveItemsReady;
+                // Race with a timeout to prevent hanging indefinitely if no
+                // progressive notifications arrive (e.g., small project or
+                // server failure). After timeout, fall through to normal path.
+                const timeout = new Promise<void>((resolve) => setTimeout(resolve, 30_000));
+                await Promise.race([this._progressiveItemsReady, timeout]);
             }
             return this._rootItems || [];
         }
@@ -197,6 +201,12 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
     private doRefresh(element?: ExplorerNode): void {
         if (!element) {
             this._rootItems = undefined;
+            // Resolve any pending progressive await so getChildren() doesn't hang
+            if (this._resolveProgressiveItems) {
+                this._resolveProgressiveItems();
+                this._resolveProgressiveItems = undefined;
+                this._progressiveItemsReady = undefined;
+            }
         }
         explorerNodeCache.removeNodeChildren(element);
         this._onDidChangeTreeData.fire(element);
