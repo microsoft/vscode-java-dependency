@@ -26,6 +26,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_INTERNAL_REFRESH = "_java.view.package.internal.refresh";
 
+    export const VIEW_PACKAGE_INTERNAL_ADD_PROJECTS = "_java.view.package.internal.addProjects";
+
     export const VIEW_PACKAGE_OUTLINE = "java.view.package.outline";
 
     export const VIEW_PACKAGE_REVEAL_FILE_OS = "java.view.package.revealFileInOS";
