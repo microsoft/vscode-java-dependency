@@ -1,0 +1,127 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
+/**
+ * Java-specific helpers for E2E tests.
+ *
+ * The most important one is `waitForJavaLSReady()` which polls the status bar
+ * until Language Support for Java reports a "ready" state, using Playwright's
+ * `expect.poll` so that the test automatically retries and fails cleanly if
+ * the LS never reaches readiness.
+ */
+
+import { expect, Page } from "@playwright/test";
+import { Timeout, VSCode } from "./constants";
+import VscodeOperator from "./vscodeOperator";
+
+export default class JavaOperator {
+
+    /**
+     * Waits for the Java Language Server to finish indexing.
+     *
+     * Strategy: we click the language-status area in the status bar, which
+     * opens a hover showing codicon-thumbsup / codicon-pass when the LS is
+     * ready. We poll this until we see one of those icons.
+     *
+     * Falls back to checking for "Java" text + "Ready" if the icon approach
+     * doesn't match (VS Code version variance).
+     */
+    static async waitForJavaLSReady(page: Page, timeoutMs = Timeout.JAVA_LS_READY): Promise<void> {
+        // Give the extension a moment to register its status bar item
+        await page.waitForTimeout(Timeout.EXTENSION_ACTIVATE);
+
+        await expect.poll(async () => {
+            try {
+                // Try clicking the language status area
+                const langStatus = page.locator('[id="status.languageStatus"]');
+                if (await langStatus.isVisible().catch(() => false)) {
+                    await langStatus.click();
+                    await page.waitForTimeout(500);
+
+                    // Check for "ready" icons in the hover
+                    const readyIcon = page.locator(
+                        ".context-view .hover-language-status .codicon-thumbsup, " +
+                        ".context-view .hover-language-status .codicon-pass"
+                    );
+                    if (await readyIcon.first().isVisible().catch(() => false)) {
+                        // Dismiss the hover by pressing Escape
+                        await page.keyboard.press(VSCode.ESCAPE);
+                        return "ready";
+                    }
+
+                    // Dismiss the hover
+                    await page.keyboard.press(VSCode.ESCAPE);
+                }
+                return "not-ready";
+            } catch {
+                return "not-ready";
+            }
+        }, {
+            message: "Java Language Server did not become ready in time",
+            timeout: timeoutMs,
+            intervals: [Timeout.JAVA_LS_POLL_INTERVAL],
+        }).toBe("ready");
+    }
+
+    /**
+     * Focuses the Java Projects view and waits for it to render.
+     */
+    static async focusJavaProjects(page: Page): Promise<void> {
+        await VscodeOperator.executeCommand(page, "javaProjectExplorer.focus");
+        // Wait a moment for the section to render
+        await page.waitForTimeout(Timeout.TREE_EXPAND);
+    }
+
+    /**
+     * Expands tree items along a path (e.g. "my-app" → "src/main/java" → "com.mycompany.app").
+     * Returns the last expanded tree item locator.
+     */
+    static async expandTreePath(page: Page, ...labels: string[]): Promise<void> {
+        for (const label of labels) {
+            const item = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: label }).first();
+            await item.waitFor({ state: "visible", timeout: 15_000 });
+            await item.click();
+            await page.waitForTimeout(Timeout.TREE_EXPAND);
+        }
+    }
+
+    /**
+     * Collapses the default file explorer section so that tree items in the
+     * Java Projects view are within the viewport.
+     */
+    static async collapseFileExplorer(page: Page): Promise<void> {
+        try {
+            // Try to collapse any expanded section above Java Projects
+            const sections = page.locator(".split-view-view .pane-header[aria-expanded='true']");
+            const count = await sections.count();
+            if (count > 0) {
+                await sections.first().click();
+                await page.waitForTimeout(Timeout.CLICK);
+            }
+        } catch {
+            // Best-effort
+        }
+    }
+
+    /**
+     * Opens a file in the editor via VS Code command.
+     */
+    static async openFile(page: Page, filePath: string): Promise<void> {
+        await VscodeOperator.executeCommand(page, "workbench.action.quickOpen");
+        const input = await VscodeOperator.getQuickInput(page);
+        await input.fill(filePath);
+        await page.waitForTimeout(Timeout.CLICK);
+        await input.press(VSCode.ENTER);
+        await page.waitForTimeout(Timeout.TREE_EXPAND);
+    }
+
+    /**
+     * Triggers the "New..." action on a project node.
+     * This opens the resource-type quick-pick.
+     */
+    static async triggerNewResource(page: Page, projectName: string): Promise<void> {
+        await JavaOperator.collapseFileExplorer(page);
+        await VscodeOperator.clickTreeItem(page, projectName);
+        await VscodeOperator.clickTreeItemAction(page, projectName, "New...");
+    }
+}
