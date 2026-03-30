@@ -172,27 +172,35 @@ export default class VscodeOperator {
     static async dismissModalDialog(page: Page): Promise<void> {
         const acceptLabels = ["Yes, I trust the authors", "OK", "Yes", "Continue", "I Trust the Authors"];
         try {
+            // Handle modal dialogs
             const dialog = page.locator(".monaco-dialog-box");
-            if (!await dialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
-                return;
-            }
-            for (const label of acceptLabels) {
-                const btn = dialog.getByRole(VSCode.BUTTON_ROLE, { name: label });
-                if (await btn.isVisible().catch(() => false)) {
-                    await btn.click();
-                    await page.waitForTimeout(Timeout.CLICK);
-                    return;
+            if (await dialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
+                for (const label of acceptLabels) {
+                    const btn = dialog.getByRole(VSCode.BUTTON_ROLE, { name: label });
+                    if (await btn.isVisible().catch(() => false)) {
+                        await btn.click();
+                        await page.waitForTimeout(Timeout.CLICK);
+                        break;
+                    }
                 }
             }
-            // Fallback: click first button
-            const firstBtn = dialog.getByRole(VSCode.BUTTON_ROLE).first();
-            if (await firstBtn.isVisible().catch(() => false)) {
-                await firstBtn.click();
-                await page.waitForTimeout(Timeout.CLICK);
+        } catch {
+            // No modal dialog — nothing to dismiss
+        }
+
+        // Also dismiss notification toasts (telemetry prompts, theme suggestions, etc.)
+        try {
+            const closeButtons = page.locator(".notification-toast .codicon-close");
+            let count = await closeButtons.count().catch(() => 0);
+            while (count > 0) {
+                await closeButtons.first().click();
+                await page.waitForTimeout(500);
+                count = await closeButtons.count().catch(() => 0);
             }
         } catch {
-            // No dialog — nothing to do
+            // Best effort
         }
+    }
     }
 
     /**

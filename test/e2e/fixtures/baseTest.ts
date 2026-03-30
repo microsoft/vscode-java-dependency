@@ -51,6 +51,23 @@ export const test = base.extend<TestFixtures>({
         const projectDir = path.join(tmpDir, projectName);
         fs.copySync(path.join(TEST_DATA_ROOT, testProjectDir), projectDir);
 
+        // Write VS Code settings to suppress telemetry prompts and notification noise
+        const vscodeDir = path.join(projectDir, ".vscode");
+        fs.ensureDirSync(vscodeDir);
+        const settingsPath = path.join(vscodeDir, "settings.json");
+        const existingSettings = fs.existsSync(settingsPath)
+            ? JSON.parse(fs.readFileSync(settingsPath, "utf-8"))
+            : {};
+        const mergedSettings = {
+            ...existingSettings,
+            "telemetry.telemetryLevel": "off",
+            "redhat.telemetry.enabled": false,
+            "workbench.colorTheme": "Default Dark Modern",
+            "update.mode": "none",
+            "extensions.ignoreRecommendations": true,
+        };
+        fs.writeFileSync(settingsPath, JSON.stringify(mergedSettings, null, 4));
+
         // 2. Resolve VS Code executable.
         const vscodePath = await downloadAndUnzipVSCode(vscodeVersion);
         const [, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodePath);
@@ -67,6 +84,8 @@ export const test = base.extend<TestFixtures>({
                 "--skip-release-notes",
                 "--disable-workspace-trust",
                 "--password-store=basic",
+                // Suppress notifications that block UI interactions
+                "--disable-telemetry",
                 ...cliArgs,
                 `--extensionDevelopmentPath=${EXTENSION_ROOT}`,
                 projectDir,
@@ -74,6 +93,10 @@ export const test = base.extend<TestFixtures>({
         });
 
         const page = await electronApp.firstWindow();
+
+        // Dismiss any startup notifications/dialogs before handing off to tests
+        await page.waitForTimeout(3_000);
+        await dismissAllNotifications(page);
 
         // 4. Optional tracing
         if (testInfo.retry > 0 || !process.env.CI) {
@@ -105,3 +128,36 @@ export const test = base.extend<TestFixtures>({
         }
     },
 });
+
+/**
+ * Dismiss all VS Code notification toasts (telemetry prompts, theme suggestions, etc.).
+ * These notifications can steal focus and block Quick Open / Command Palette interactions.
+ */
+async function dismissAllNotifications(page: Page): Promise<void> {
+    try {
+        // Click "Clear All Notifications" if the notification center button is visible
+        const clearAll = page.locator(".notifications-toasts .codicon-notifications-clear-all, .notification-toast .codicon-close");
+        let count = await clearAll.count().catch(() => 0);
+        while (count > 0) {
+            await clearAll.first().click();
+            await page.waitForTimeout(500);
+            count = await clearAll.count().catch(() => 0);
+        }
+
+        // Also try the command palette approach as a fallback
+        const notificationToasts = page.locator(".notification-toast");
+        if (await notificationToasts.count().catch(() => 0) > 0) {
+            // Use keyboard shortcut to clear all notifications
+            await page.keyboard.press("Control+Shift+P");
+            const input = page.locator(".quick-input-widget input.input");
+            if (await input.isVisible({ timeout: 3_000 }).catch(() => false)) {
+                await input.fill("Notifications: Clear All Notifications");
+                await page.waitForTimeout(500);
+                await input.press("Enter");
+                await page.waitForTimeout(500);
+            }
+        }
+    } catch {
+        // Best effort
+    }
+}
