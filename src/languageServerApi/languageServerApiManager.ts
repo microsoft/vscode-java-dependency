@@ -66,8 +66,9 @@ class LanguageServerApiManager {
                     this.isServerReady = true;
                     commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */false);
                 })
-                .catch((error: unknown) => {
-                    console.error("Java language server failed to become ready:", error);
+                .catch((_error: unknown) => {
+                    // Server failed to become ready (e.g., startup failure).
+                    // Leave isServerReady as false; progressive items remain as-is.
                 });
         }
     }
