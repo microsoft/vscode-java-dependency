@@ -19,12 +19,10 @@ export default class JavaOperator {
     /**
      * Waits for the Java Language Server to finish indexing.
      *
-     * Strategy: we click the language-status area in the status bar, which
-     * opens a hover showing codicon-thumbsup / codicon-pass when the LS is
-     * ready. We poll this until we see one of those icons.
-     *
-     * Falls back to checking for "Java" text + "Ready" if the icon approach
-     * doesn't match (VS Code version variance).
+     * Strategy: poll the status bar for a button whose accessible name
+     * contains "Java: Ready" (e.g. "coffee Java: Ready, Show Java status menu").
+     * This is more reliable than clicking a hover because it doesn't depend
+     * on internal VS Code DOM IDs that vary across versions.
      */
     static async waitForJavaLSReady(page: Page, timeoutMs = Timeout.JAVA_LS_READY): Promise<void> {
         // Give the extension a moment to register its status bar item
@@ -32,25 +30,9 @@ export default class JavaOperator {
 
         await expect.poll(async () => {
             try {
-                // Try clicking the language status area
-                const langStatus = page.locator('[id="status.languageStatus"]');
-                if (await langStatus.isVisible().catch(() => false)) {
-                    await langStatus.click();
-                    await page.waitForTimeout(500);
-
-                    // Check for "ready" icons in the hover
-                    const readyIcon = page.locator(
-                        ".context-view .hover-language-status .codicon-thumbsup, " +
-                        ".context-view .hover-language-status .codicon-pass"
-                    );
-                    if (await readyIcon.first().isVisible().catch(() => false)) {
-                        // Dismiss the hover by pressing Escape
-                        await page.keyboard.press(VSCode.ESCAPE);
-                        return "ready";
-                    }
-
-                    // Dismiss the hover
-                    await page.keyboard.press(VSCode.ESCAPE);
+                const javaReadyButton = page.getByRole(VSCode.BUTTON_ROLE, { name: /Java:\s*Ready/i });
+                if (await javaReadyButton.isVisible().catch(() => false)) {
+                    return "ready";
                 }
                 return "not-ready";
             } catch {
