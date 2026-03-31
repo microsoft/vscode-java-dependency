@@ -103,6 +103,15 @@ export const test = base.extend<TestFixtures>({
 
         const page = await electronApp.firstWindow();
 
+        // Auto-dismiss Electron native dialogs (e.g. redhat.java refactoring
+        // confirmation "wants to make refactoring changes"). These dialogs are
+        // outside the renderer DOM and cannot be handled via Playwright Page API.
+        // Monkey-patch dialog.showMessageBox in the main process to auto-click OK.
+        await electronApp.evaluate(({ dialog }) => {
+            dialog.showMessageBox = async () => ({ response: 0, checkboxChecked: true });
+            dialog.showMessageBoxSync = () => 0;
+        });
+
         // Dismiss any startup notifications/dialogs before handing off to tests
         await page.waitForTimeout(3_000);
         await dismissAllNotifications(page);

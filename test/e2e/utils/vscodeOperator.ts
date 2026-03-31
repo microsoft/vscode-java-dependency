@@ -169,24 +169,22 @@ export default class VscodeOperator {
     /**
      * Right-clicks an element and selects an item from the context menu.
      *
-     * VS Code Electron context menus do not respond to Playwright's
-     * `.click()` or `.dispatchEvent()` — the menu stays open. Instead,
-     * we locate the menu item by role and use raw `page.mouse.click()`
-     * with the element's bounding-box coordinates, which sends CDP-level
-     * mouse events that Electron handles correctly.
+     * Scopes the search to `.monaco-menu-container .monaco-menu` to avoid
+     * matching menubar items. Hovers the item first to trigger VS Code's
+     * menu focus, then waits for the `.focused` CSS class before clicking.
      */
-    static async selectContextMenuItem(page: Page, target: ReturnType<Page["locator"]>, menuItemLabel: string | RegExp): Promise<void> {
+    static async selectContextMenuItem(page: Page, target: ReturnType<Page["locator"]>, menuItemName: string | RegExp): Promise<void> {
         await target.click({ button: "right" });
-        const menu = page.locator(".monaco-menu-container");
+        const menu = page.locator(".monaco-menu-container .monaco-menu");
         await menu.waitFor({ state: "visible", timeout: 5_000 });
-        const menuItem = menu.getByRole("menuitem", { name: menuItemLabel });
+        const menuItem = menu.getByRole("menuitem", { name: menuItemName });
         await menuItem.first().waitFor({ state: "visible", timeout: 5_000 });
-        // Use raw mouse click at the centre of the element's bounding box.
-        const box = await menuItem.first().boundingBox();
-        if (!box) {
-            throw new Error(`Could not get bounding box for menu item "${menuItemLabel}"`);
-        }
-        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await menuItem.first().hover();
+        await page.locator(".monaco-menu-container .action-item.focused").waitFor({
+            state: "visible",
+            timeout: 5_000,
+        });
+        await menuItem.first().click();
         await page.waitForTimeout(Timeout.CLICK);
     }
 
@@ -239,6 +237,19 @@ export default class VscodeOperator {
         const dialog = page.locator(".monaco-dialog-box");
         await dialog.waitFor({ state: "visible", timeout: timeoutMs });
         await dialog.getByRole(VSCode.BUTTON_ROLE, { name: buttonLabel }).click();
+        await page.waitForTimeout(Timeout.CLICK);
+    }
+
+    /**
+     * Clicks a button inside a notification toast (e.g. refactoring confirmations
+     * from extensions that use `window.showInformationMessage` with action buttons).
+     */
+    static async clickNotificationButton(page: Page, buttonLabel: string, timeoutMs = 10_000): Promise<void> {
+        const notification = page.locator(".notification-toast");
+        await notification.first().waitFor({ state: "visible", timeout: timeoutMs });
+        const btn = notification.getByRole(VSCode.BUTTON_ROLE, { name: buttonLabel });
+        await btn.first().waitFor({ state: "visible", timeout: timeoutMs });
+        await btn.first().click();
         await page.waitForTimeout(Timeout.CLICK);
     }
 

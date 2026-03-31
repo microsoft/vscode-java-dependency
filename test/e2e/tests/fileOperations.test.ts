@@ -69,20 +69,18 @@ test.describe("File Operations", () => {
         // Expand to AppToRename
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Select AppToRename in the tree and invoke rename via context menu.
-        // The command is hidden from the command palette (when: false)
-        // and keyboard shortcut requires focusedView which is unreliable,
-        // so context menu is the only reliable UI path.
+        // Right-click AppToRename to select it AND open the context menu.
+        // We do NOT left-click first because that opens the file in the editor
+        // and steals focus away from the tree view.
         const appToRename = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToRename" }).first();
-        await appToRename.click();
-        await page.waitForTimeout(Timeout.CLICK);
-
-        await VscodeOperator.selectContextMenuItem(page, appToRename, "Rename");
+        await VscodeOperator.selectContextMenuItem(page, appToRename, /^Rename/);
 
         // The extension shows a showInputBox (quick-input) for the new name
         await VscodeOperator.fillQuickInput(page, "AppRenamed");
 
-        // Handle confirmation dialog if it appears
+        // Handle extension's own rename confirmation dialog if it appears.
+        // The Electron native refactoring dialog from redhat.java is
+        // auto-dismissed by the showMessageBox monkey-patch in baseTest.ts.
         try {
             await VscodeOperator.clickDialogButton(page, "OK", 5_000);
         } catch {
@@ -98,11 +96,9 @@ test.describe("File Operations", () => {
         await JavaOperator.collapseFileExplorer(page);
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Select AppToDelete and invoke delete via context menu.
+        // Right-click AppToDelete directly (no left-click to avoid opening
+        // the file and losing tree focus).
         const appToDelete = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToDelete" }).first();
-        await appToDelete.click();
-        await page.waitForTimeout(Timeout.CLICK);
-
         await VscodeOperator.selectContextMenuItem(page, appToDelete, /^Delete/);
 
         // Confirm deletion in dialog
