@@ -69,13 +69,18 @@ export default class JavaOperator {
 
     /**
      * Expands tree items along a path (e.g. "my-app" → "src/main/java" → "com.mycompany.app").
-     * Returns the last expanded tree item locator.
+     *
+     * Checks `aria-expanded` before clicking so that an already-expanded node
+     * is not accidentally collapsed (VS Code auto-expands single-child trees).
      */
     static async expandTreePath(page: Page, ...labels: string[]): Promise<void> {
         for (const label of labels) {
             const item = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: label }).first();
             await item.waitFor({ state: "visible", timeout: 15_000 });
-            await item.click();
+            const expanded = await item.getAttribute("aria-expanded");
+            if (expanded !== "true") {
+                await item.click();
+            }
             await page.waitForTimeout(Timeout.TREE_EXPAND);
         }
     }

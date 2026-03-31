@@ -47,7 +47,7 @@ test.describe("Project Explorer", () => {
 
     test("unlinkWithFolderExplorer stops auto-reveal", async ({ page }) => {
         // Use command to unlink
-        await VscodeOperator.executeCommand(page, "java.view.package.unLinkWithFolderExplorer");
+        await VscodeOperator.executeCommand(page, "Java: Unlink with Editor");
         await page.waitForTimeout(Timeout.CLICK);
 
         // Open a different file — tree should NOT auto-expand
@@ -55,6 +55,6 @@ test.describe("Project Explorer", () => {
         await page.waitForTimeout(Timeout.TREE_EXPAND);
 
         // Re-link for cleanup
-        await VscodeOperator.executeCommand(page, "java.view.package.linkWithFolderExplorer");
+        await VscodeOperator.executeCommand(page, "Java: Link with Editor");
     });
 });

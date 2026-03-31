@@ -72,7 +72,7 @@ test.describe("Libraries & Project Creation", () => {
             // Create a temp folder for the new project
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "java-new-project-"));
 
-            await VscodeOperator.executeCommand(page, "java.project.create");
+            await VscodeOperator.executeCommand(page, "Java: Create Java Project");
             await page.waitForTimeout(Timeout.CLICK);
 
             // Select "No build tools"
