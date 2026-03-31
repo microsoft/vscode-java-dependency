@@ -69,18 +69,15 @@ test.describe("File Operations", () => {
         // Expand to AppToRename
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Right-click to select item AND set focusedView = javaProjectExplorer.
-        // Playwright's click() on VS Code Electron context menu items does not
-        // reliably trigger actions, so we use the keyboard shortcut instead.
+        // Select AppToRename in the tree and invoke rename via context menu.
+        // The command is hidden from the command palette (when: false)
+        // and keyboard shortcut requires focusedView which is unreliable,
+        // so context menu is the only reliable UI path.
         const appToRename = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToRename" }).first();
-        await appToRename.click({ button: "right" });
+        await appToRename.click();
         await page.waitForTimeout(Timeout.CLICK);
-        // Close context menu – focus returns to the tree with item selected
-        await page.keyboard.press(VSCode.ESCAPE);
-        await page.waitForTimeout(Timeout.CLICK);
-        // F2 triggers java.view.package.renameFile (keybinding)
-        await page.keyboard.press("F2");
-        await page.waitForTimeout(Timeout.CLICK);
+
+        await VscodeOperator.selectContextMenuItem(page, appToRename, "Rename");
 
         // The extension shows a showInputBox (quick-input) for the new name
         await VscodeOperator.fillQuickInput(page, "AppRenamed");
@@ -101,16 +98,12 @@ test.describe("File Operations", () => {
         await JavaOperator.collapseFileExplorer(page);
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Right-click to select item AND set focusedView = javaProjectExplorer.
+        // Select AppToDelete and invoke delete via context menu.
         const appToDelete = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToDelete" }).first();
-        await appToDelete.click({ button: "right" });
+        await appToDelete.click();
         await page.waitForTimeout(Timeout.CLICK);
-        // Close context menu – focus returns to the tree with item selected
-        await page.keyboard.press(VSCode.ESCAPE);
-        await page.waitForTimeout(Timeout.CLICK);
-        // Delete key triggers java.view.package.moveFileToTrash (keybinding)
-        await page.keyboard.press("Delete");
-        await page.waitForTimeout(Timeout.CLICK);
+
+        await VscodeOperator.selectContextMenuItem(page, appToDelete, /^Delete/);
 
         // Confirm deletion in dialog
         try {

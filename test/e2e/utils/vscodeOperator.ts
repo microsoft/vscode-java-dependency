@@ -168,9 +168,10 @@ export default class VscodeOperator {
 
     /**
      * Right-clicks an element and selects an item from the context menu.
-     * Clicks the `<a role="menuitem">` anchor rather than the outer
-     * `.action-item` container, because VS Code only handles click events
-     * on the anchor element.
+     *
+     * VS Code menus internally listen for `mouseup` events on menu items.
+     * Playwright's simulated `.click()` does not reliably trigger these
+     * handlers in Electron, so we use `dispatchEvent("mouseup")` instead.
      */
     static async selectContextMenuItem(page: Page, target: ReturnType<Page["locator"]>, menuItemLabel: string | RegExp): Promise<void> {
         await target.click({ button: "right" });
@@ -178,9 +179,7 @@ export default class VscodeOperator {
         await menu.waitFor({ state: "visible", timeout: 5_000 });
         const menuItem = menu.getByRole("menuitem", { name: menuItemLabel });
         await menuItem.first().waitFor({ state: "visible", timeout: 5_000 });
-        await menuItem.first().click();
-        // Wait for context menu to close, confirming the click was effective
-        await menu.waitFor({ state: "hidden", timeout: 5_000 });
+        await menuItem.first().dispatchEvent("mouseup");
         await page.waitForTimeout(Timeout.CLICK);
     }
 
