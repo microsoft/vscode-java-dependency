@@ -69,19 +69,27 @@ test.describe("File Operations", () => {
         // Expand to AppToRename
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Click AppToRename and open context menu
+        // Select AppToRename and trigger rename via F2
         const appToRename = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToRename" }).first();
         await appToRename.click();
-        await appToRename.click({ button: "right" });
+        await page.waitForTimeout(Timeout.CLICK);
+        await page.keyboard.press("F2");
         await page.waitForTimeout(Timeout.CLICK);
 
-        // Click Rename in context menu
-        const renameItem = page.locator(".context-view .action-item a.action-label", { hasText: "Rename" });
-        await renameItem.click();
-        await page.waitForTimeout(Timeout.CLICK);
+        // VS Code may show either a quick-input dialog or an inline rename editor.
+        // Try the inline rename input first (common in modern VS Code).
+        const inlineInput = page.locator(".monaco-inputbox input.rename-input");
+        const quickInput = page.locator(".quick-input-widget input.input");
 
-        // Fill in new name
-        await VscodeOperator.fillQuickInput(page, "AppRenamed");
+        if (await inlineInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
+            await inlineInput.fill("AppRenamed");
+            await inlineInput.press(VSCode.ENTER);
+        } else if (await quickInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
+            await quickInput.fill("AppRenamed");
+            await quickInput.press(VSCode.ENTER);
+        }
+
+        await page.waitForTimeout(Timeout.CLICK);
 
         // Handle confirmation dialog if it appears
         try {
@@ -93,33 +101,25 @@ test.describe("File Operations", () => {
         // Editor should open with renamed file
         const tabFound = await VscodeOperator.waitForEditorTab(page, "AppRenamed.java");
         expect(tabFound).toBeTruthy();
-
-        // Save via command to avoid focus issues
-        await VscodeOperator.saveActiveEditor(page);
     });
 
     test("delete Java file", async ({ page }) => {
         await JavaOperator.collapseFileExplorer(page);
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
+        // Select AppToDelete and press Delete key
         const appToDelete = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToDelete" }).first();
         await appToDelete.click();
-        await appToDelete.click({ button: "right" });
         await page.waitForTimeout(Timeout.CLICK);
-
-        // Click Delete or "Delete Permanently"
-        const deleteItem = page.locator(".context-view .action-item a.action-label")
-            .filter({ hasText: /^Delete/ });
-        await deleteItem.first().click();
+        await page.keyboard.press("Delete");
         await page.waitForTimeout(Timeout.CLICK);
 
         // Confirm deletion in dialog
         try {
-            // Try common button labels
             const dialog = page.locator(".monaco-dialog-box");
             await dialog.waitFor({ state: "visible", timeout: 5_000 });
             const confirmBtn = dialog.getByRole(VSCode.BUTTON_ROLE)
-                .filter({ hasText: /Move to Recycle Bin|Delete|OK/ });
+                .filter({ hasText: /Move to Trash|Move to Recycle Bin|Delete|OK/ });
             await confirmBtn.first().click();
         } catch {
             // Dialog may not appear

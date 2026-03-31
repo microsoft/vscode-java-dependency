@@ -32,26 +32,21 @@ test.describe("Libraries & Project Creation", () => {
         });
 
         test("add and remove JAR library", async ({ page }) => {
-            // Expand to Referenced Libraries
-            await JavaOperator.expandTreePath(page, "invisible", "Referenced Libraries");
-
-            // Click the add button on Referenced Libraries
-            await VscodeOperator.clickTreeItemAction(
-                page,
-                "Referenced Libraries",
-                "Add Jar Libraries to Project Classpath"
-            );
-
-            // Type the jar path in the input
+            // Use command palette to add a JAR — the "Referenced Libraries" node
+            // only appears in the tree after a library has been added.
             const testRoot = path.join(__dirname, "..", "..", "..");
             const jarPath = path.join(testRoot, "test", "invisible", "libSource", "simple.jar");
+
+            await VscodeOperator.executeCommand(page, "Java: Add Jar Libraries to Project Classpath");
+            await page.waitForTimeout(Timeout.CLICK);
             await VscodeOperator.fillQuickInput(page, jarPath);
 
             // Wait for tree to update and verify the jar appears
+            await JavaOperator.focusJavaProjects(page);
             const added = await VscodeOperator.waitForTreeItem(page, "simple.jar", 15_000);
             expect(added).toBeTruthy();
 
-            // Now remove it
+            // Now remove it via tree action
             await VscodeOperator.clickTreeItem(page, "simple.jar");
             await VscodeOperator.clickTreeItemAction(page, "simple.jar", "Remove from Project Classpath");
 
@@ -73,15 +68,14 @@ test.describe("Libraries & Project Creation", () => {
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "java-new-project-"));
 
             await VscodeOperator.executeCommand(page, "Java: Create Java Project");
-            await page.waitForTimeout(Timeout.CLICK);
+            // The build-tool quick pick may take a moment to appear
+            await page.waitForTimeout(Timeout.TREE_EXPAND);
 
             // Select "No build tools"
             await VscodeOperator.selectQuickPickItem(page, "No build tools");
 
-            // Enter the project location
-            await VscodeOperator.fillQuickInput(page, tmpDir);
-
-            // Enter the project name
+            // The project location dialog uses a native file picker on some platforms.
+            // Enter the project name when prompted.
             await VscodeOperator.fillQuickInput(page, "helloworld");
 
             // Wait for project files to be created

@@ -41,7 +41,9 @@ test.describe("Project Explorer", () => {
         const packageVisible = await VscodeOperator.waitForTreeItem(page, "com.mycompany.app", 15_000);
         expect(packageVisible).toBeTruthy();
 
-        const classVisible = await VscodeOperator.isTreeItemVisible(page, "App");
+        // Use exact match to avoid matching "app", "App.java", "AppToDelete" etc.
+        const classVisible = await page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "App", exact: true })
+            .isVisible().catch(() => false);
         expect(classVisible).toBeTruthy();
     });
 
