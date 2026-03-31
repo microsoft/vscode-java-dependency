@@ -69,16 +69,14 @@ test.describe("File Operations", () => {
         // Expand to AppToRename
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Select AppToRename in the tree (clicking opens the file in editor,
-        // which steals keyboard focus, so we use command palette for rename).
+        // Right-click AppToRename and select "Rename" from context menu.
+        // The command java.view.package.renameFile is hidden from the command
+        // palette (when: false), so context menu is the only UI path.
         const appToRename = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToRename" }).first();
         await appToRename.click();
         await page.waitForTimeout(Timeout.CLICK);
 
-        // Invoke rename via command palette (keyboard F2 requires tree focus
-        // but clicking the tree item shifts focus to the editor).
-        await VscodeOperator.executeCommand(page, "Java: Rename");
-        await page.waitForTimeout(Timeout.CLICK);
+        await VscodeOperator.selectContextMenuItem(page, appToRename, "Rename");
 
         // The extension shows a showInputBox (quick-input) for the new name
         await VscodeOperator.fillQuickInput(page, "AppRenamed");
@@ -99,14 +97,14 @@ test.describe("File Operations", () => {
         await JavaOperator.collapseFileExplorer(page);
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Select AppToDelete (clicking opens the file, shifting focus to editor)
+        // Right-click AppToDelete and select "Delete" from context menu.
+        // The command java.view.package.moveFileToTrash is hidden from the
+        // command palette (when: false), so context menu is the only UI path.
         const appToDelete = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToDelete" }).first();
         await appToDelete.click();
         await page.waitForTimeout(Timeout.CLICK);
 
-        // Invoke delete via command palette (Delete key requires tree focus)
-        await VscodeOperator.executeCommand(page, "Java: Delete");
-        await page.waitForTimeout(Timeout.CLICK);
+        await VscodeOperator.selectContextMenuItem(page, appToDelete, /^Delete/);
 
         // Confirm deletion in dialog
         try {

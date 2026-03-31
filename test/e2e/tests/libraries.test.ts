@@ -42,7 +42,11 @@ test.describe("Libraries & Project Creation", () => {
 
         test.use({ testProjectDir: "invisible" });
 
-        test("java.project.create with no build tools", async ({ page }) => {
+        test.skip("java.project.create with no build tools", async ({ page }) => {
+            // Skip: after selecting "No build tools", scaffoldSimpleProject()
+            // calls vscode.window.showOpenDialog() which opens a native OS file
+            // dialog that Playwright cannot automate. This test requires
+            // Electron dialog mocking support.
             await VscodeOperator.dismissModalDialog(page);
             await JavaOperator.openFile(page, "App.java");
             await JavaOperator.waitForJavaLSReady(page);

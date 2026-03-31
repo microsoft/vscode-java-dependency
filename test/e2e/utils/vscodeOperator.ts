@@ -163,6 +163,24 @@ export default class VscodeOperator {
     }
 
     // -----------------------------------------------------------------------
+    //  Context menus
+    // -----------------------------------------------------------------------
+
+    /**
+     * Right-clicks an element and selects an item from the context menu.
+     * Uses text matching to find the menu item.
+     */
+    static async selectContextMenuItem(page: Page, target: ReturnType<Page["locator"]>, menuItemLabel: string | RegExp): Promise<void> {
+        await target.click({ button: "right" });
+        const menu = page.locator(".monaco-menu-container");
+        await menu.waitFor({ state: "visible", timeout: 5_000 });
+        const item = menu.locator(".action-item").filter({ hasText: menuItemLabel });
+        await item.first().waitFor({ state: "visible", timeout: 5_000 });
+        await item.first().click();
+        await page.waitForTimeout(Timeout.CLICK);
+    }
+
+    // -----------------------------------------------------------------------
     //  Dialogs
     // -----------------------------------------------------------------------
 
