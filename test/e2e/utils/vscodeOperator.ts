@@ -25,7 +25,9 @@ export default class VscodeOperator {
         // Wait for the quick-input widget to appear
         const input = page.locator(".quick-input-widget input.input");
         await input.waitFor({ state: "visible", timeout: 10_000 });
-        await input.fill(command);
+        // F1 opens command palette with ">" prefix; fill() must preserve it
+        // so VS Code searches commands rather than files.
+        await input.fill(">" + command);
         await page.waitForTimeout(Timeout.CLICK);
         // Press Enter on the first matching option in the list
         const firstOption = page.locator(".quick-input-widget .quick-input-list .monaco-list-row").first();

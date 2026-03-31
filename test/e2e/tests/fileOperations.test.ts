@@ -69,27 +69,19 @@ test.describe("File Operations", () => {
         // Expand to AppToRename
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Select AppToRename and trigger rename via F2
+        // Select AppToRename in the tree (clicking opens the file in editor,
+        // which steals keyboard focus, so we use command palette for rename).
         const appToRename = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToRename" }).first();
         await appToRename.click();
         await page.waitForTimeout(Timeout.CLICK);
-        await page.keyboard.press("F2");
+
+        // Invoke rename via command palette (keyboard F2 requires tree focus
+        // but clicking the tree item shifts focus to the editor).
+        await VscodeOperator.executeCommand(page, "Java: Rename");
         await page.waitForTimeout(Timeout.CLICK);
 
-        // VS Code may show either a quick-input dialog or an inline rename editor.
-        // Try the inline rename input first (common in modern VS Code).
-        const inlineInput = page.locator(".monaco-inputbox input.rename-input");
-        const quickInput = page.locator(".quick-input-widget input.input");
-
-        if (await inlineInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
-            await inlineInput.fill("AppRenamed");
-            await inlineInput.press(VSCode.ENTER);
-        } else if (await quickInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
-            await quickInput.fill("AppRenamed");
-            await quickInput.press(VSCode.ENTER);
-        }
-
-        await page.waitForTimeout(Timeout.CLICK);
+        // The extension shows a showInputBox (quick-input) for the new name
+        await VscodeOperator.fillQuickInput(page, "AppRenamed");
 
         // Handle confirmation dialog if it appears
         try {
@@ -107,11 +99,13 @@ test.describe("File Operations", () => {
         await JavaOperator.collapseFileExplorer(page);
         await JavaOperator.expandTreePath(page, "my-app", "src/main/java", "com.mycompany.app");
 
-        // Select AppToDelete and press Delete key
+        // Select AppToDelete (clicking opens the file, shifting focus to editor)
         const appToDelete = page.getByRole(VSCode.TREE_ITEM_ROLE, { name: "AppToDelete" }).first();
         await appToDelete.click();
         await page.waitForTimeout(Timeout.CLICK);
-        await page.keyboard.press("Delete");
+
+        // Invoke delete via command palette (Delete key requires tree focus)
+        await VscodeOperator.executeCommand(page, "Java: Delete");
         await page.waitForTimeout(Timeout.CLICK);
 
         // Confirm deletion in dialog
