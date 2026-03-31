@@ -169,9 +169,11 @@ export default class VscodeOperator {
     /**
      * Right-clicks an element and selects an item from the context menu.
      *
-     * VS Code menus internally listen for `mouseup` events on menu items.
-     * Playwright's simulated `.click()` does not reliably trigger these
-     * handlers in Electron, so we use `dispatchEvent("mouseup")` instead.
+     * VS Code Electron context menus do not respond to Playwright's
+     * `.click()` or `.dispatchEvent()` — the menu stays open. Instead,
+     * we locate the menu item by role and use raw `page.mouse.click()`
+     * with the element's bounding-box coordinates, which sends CDP-level
+     * mouse events that Electron handles correctly.
      */
     static async selectContextMenuItem(page: Page, target: ReturnType<Page["locator"]>, menuItemLabel: string | RegExp): Promise<void> {
         await target.click({ button: "right" });
@@ -179,7 +181,12 @@ export default class VscodeOperator {
         await menu.waitFor({ state: "visible", timeout: 5_000 });
         const menuItem = menu.getByRole("menuitem", { name: menuItemLabel });
         await menuItem.first().waitFor({ state: "visible", timeout: 5_000 });
-        await menuItem.first().dispatchEvent("mouseup");
+        // Use raw mouse click at the centre of the element's bounding box.
+        const box = await menuItem.first().boundingBox();
+        if (!box) {
+            throw new Error(`Could not get bounding box for menu item "${menuItemLabel}"`);
+        }
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
         await page.waitForTimeout(Timeout.CLICK);
     }
 
