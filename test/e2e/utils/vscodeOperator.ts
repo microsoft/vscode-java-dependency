@@ -168,15 +168,19 @@ export default class VscodeOperator {
 
     /**
      * Right-clicks an element and selects an item from the context menu.
-     * Uses text matching to find the menu item.
+     * Clicks the `<a role="menuitem">` anchor rather than the outer
+     * `.action-item` container, because VS Code only handles click events
+     * on the anchor element.
      */
     static async selectContextMenuItem(page: Page, target: ReturnType<Page["locator"]>, menuItemLabel: string | RegExp): Promise<void> {
         await target.click({ button: "right" });
         const menu = page.locator(".monaco-menu-container");
         await menu.waitFor({ state: "visible", timeout: 5_000 });
-        const item = menu.locator(".action-item").filter({ hasText: menuItemLabel });
-        await item.first().waitFor({ state: "visible", timeout: 5_000 });
-        await item.first().click();
+        const menuItem = menu.getByRole("menuitem", { name: menuItemLabel });
+        await menuItem.first().waitFor({ state: "visible", timeout: 5_000 });
+        await menuItem.first().click();
+        // Wait for context menu to close, confirming the click was effective
+        await menu.waitFor({ state: "hidden", timeout: 5_000 });
         await page.waitForTimeout(Timeout.CLICK);
     }
 
