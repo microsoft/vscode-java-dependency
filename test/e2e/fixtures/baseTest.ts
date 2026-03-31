@@ -106,10 +106,26 @@ export const test = base.extend<TestFixtures>({
         // Auto-dismiss Electron native dialogs (e.g. redhat.java refactoring
         // confirmation "wants to make refactoring changes"). These dialogs are
         // outside the renderer DOM and cannot be handled via Playwright Page API.
-        // Monkey-patch dialog.showMessageBox in the main process to auto-click OK.
+        // Monkey-patch dialog.showMessageBox in the main process to find and
+        // click the "OK" button by label, falling back to the first button.
         await electronApp.evaluate(({ dialog }) => {
-            dialog.showMessageBox = async () => ({ response: 0, checkboxChecked: true });
-            dialog.showMessageBoxSync = () => 0;
+            const origShowMessageBox = dialog.showMessageBox;
+            dialog.showMessageBox = async (_win: any, opts: any) => {
+                // opts may be the first arg if called without a window
+                const options = opts || _win;
+                const buttons: string[] = options?.buttons || [];
+                // Find "OK" button index; fall back to first button
+                let idx = buttons.findIndex((b: string) => /^OK$/i.test(b));
+                if (idx < 0) idx = 0;
+                return { response: idx, checkboxChecked: true };
+            };
+            dialog.showMessageBoxSync = (_win: any, opts: any) => {
+                const options = opts || _win;
+                const buttons: string[] = options?.buttons || [];
+                let idx = buttons.findIndex((b: string) => /^OK$/i.test(b));
+                if (idx < 0) idx = 0;
+                return idx;
+            };
         });
 
         // Dismiss any startup notifications/dialogs before handing off to tests

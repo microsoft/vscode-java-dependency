@@ -87,6 +87,19 @@ test.describe("File Operations", () => {
             // Dialog may not appear in all cases
         }
 
+        // On Linux, if the refactoring dialog resolved to "Show Preview",
+        // VS Code shows a Refactor Preview panel with "Apply" / "Discard"
+        // buttons. Click "Apply" to complete the rename.
+        try {
+            const applyBtn = page.getByRole(VSCode.BUTTON_ROLE, { name: "Apply" });
+            if (await applyBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+                await applyBtn.click();
+                await page.waitForTimeout(Timeout.CLICK);
+            }
+        } catch {
+            // No refactor preview
+        }
+
         // Editor should open with renamed file
         const tabFound = await VscodeOperator.waitForEditorTab(page, "AppRenamed.java");
         expect(tabFound).toBeTruthy();
