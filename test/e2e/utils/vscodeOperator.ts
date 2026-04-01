@@ -4,8 +4,9 @@
 /**
  * Generic VS Code UI helpers built on Playwright Page.
  *
- * All methods use ARIA roles / labels rather than CSS classes so that they
- * survive VS Code version upgrades.
+ * These helpers prefer ARIA roles / labels over CSS classes where possible
+ * to better survive VS Code version upgrades, but some fall back to CSS
+ * selectors when needed.
  */
 
 import { Page } from "@playwright/test";

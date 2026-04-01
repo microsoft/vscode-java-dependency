@@ -16,7 +16,7 @@
  */
 
 import { _electron, test as base, type Page } from "@playwright/test";
-import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from "@vscode/test-electron";
+import { downloadAndUnzipVSCode } from "@vscode/test-electron";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
@@ -79,7 +79,12 @@ export const test = base.extend<TestFixtures>({
 
         // 2. Resolve VS Code executable.
         const vscodePath = await downloadAndUnzipVSCode(vscodeVersion);
-        const [, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodePath);
+        // resolveCliArgsFromVSCodeExecutablePath returns CLI-specific args
+        // (e.g. --ms-enable-electron-run-as-node) that are unsuitable for
+        // Electron UI launch. Extract only --extensions-dir and --user-data-dir.
+        const vscodeTestDir = path.join(EXTENSION_ROOT, ".vscode-test");
+        const extensionsDir = path.join(vscodeTestDir, "extensions");
+        const userDataDir = path.join(vscodeTestDir, "user-data");
 
         // 3. Launch VS Code as an Electron app.
         const electronApp = await _electron.launch({
@@ -95,7 +100,8 @@ export const test = base.extend<TestFixtures>({
                 "--password-store=basic",
                 // Suppress notifications that block UI interactions
                 "--disable-telemetry",
-                ...cliArgs,
+                `--extensions-dir=${extensionsDir}`,
+                `--user-data-dir=${userDataDir}`,
                 `--extensionDevelopmentPath=${EXTENSION_ROOT}`,
                 projectDir,
             ],

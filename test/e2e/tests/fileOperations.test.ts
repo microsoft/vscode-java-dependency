@@ -11,8 +11,6 @@
  *  - java.view.package.moveFileToTrash
  */
 
-import * as fs from "fs-extra";
-import * as path from "path";
 import { test, expect } from "../fixtures/baseTest";
 import { Timeout, VSCode } from "../utils/constants";
 import JavaOperator from "../utils/javaOperator";

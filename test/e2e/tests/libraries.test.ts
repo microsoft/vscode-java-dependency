@@ -10,13 +10,7 @@
  *  - java.project.create
  */
 
-import * as fs from "fs-extra";
-import * as os from "os";
-import * as path from "path";
-import { test, expect } from "../fixtures/baseTest";
-import { Timeout, VSCode } from "../utils/constants";
-import JavaOperator from "../utils/javaOperator";
-import VscodeOperator from "../utils/vscodeOperator";
+import { test } from "../fixtures/baseTest";
 
 test.describe("Libraries & Project Creation", () => {
 
@@ -24,14 +18,7 @@ test.describe("Libraries & Project Creation", () => {
 
         test.use({ testProjectDir: "invisible" });
 
-        test.beforeEach(async ({ page }) => {
-            await VscodeOperator.dismissModalDialog(page);
-            await JavaOperator.openFile(page, "App.java");
-            await JavaOperator.waitForJavaLSReady(page);
-            await JavaOperator.focusJavaProjects(page);
-        });
-
-        test.skip("add and remove JAR library", async ({ page }) => {
+        test.skip("add and remove JAR library", async () => {
             // Skip: the addLibraries command opens a native OS file dialog
             // (vscode.window.showOpenDialog) which Playwright cannot automate.
             // This test requires Electron dialog mocking support.
@@ -42,38 +29,11 @@ test.describe("Libraries & Project Creation", () => {
 
         test.use({ testProjectDir: "invisible" });
 
-        test.skip("java.project.create with no build tools", async ({ page }) => {
+        test.skip("java.project.create with no build tools", async () => {
             // Skip: after selecting "No build tools", scaffoldSimpleProject()
             // calls vscode.window.showOpenDialog() which opens a native OS file
             // dialog that Playwright cannot automate. This test requires
             // Electron dialog mocking support.
-            await VscodeOperator.dismissModalDialog(page);
-            await JavaOperator.openFile(page, "App.java");
-            await JavaOperator.waitForJavaLSReady(page);
-
-            // Create a temp folder for the new project
-            const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "java-new-project-"));
-
-            await VscodeOperator.executeCommand(page, "Java: Create Java Project");
-            // The build-tool quick pick may take a moment to appear
-            await page.waitForTimeout(Timeout.TREE_EXPAND);
-
-            // Select "No build tools"
-            await VscodeOperator.selectQuickPickItem(page, "No build tools");
-
-            // The project location dialog uses a native file picker on some platforms.
-            // Enter the project name when prompted.
-            await VscodeOperator.fillQuickInput(page, "helloworld");
-
-            // Wait for project files to be created
-            await page.waitForTimeout(Timeout.TREE_EXPAND * 2);
-
-            // Clean up
-            try {
-                fs.rmSync(tmpDir, { force: true, recursive: true });
-            } catch {
-                // Ignore cleanup errors
-            }
         });
     });
 });
