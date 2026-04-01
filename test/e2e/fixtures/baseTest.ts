@@ -136,24 +136,22 @@ export const test = base.extend<TestFixtures>({
         await page.waitForTimeout(3_000);
         await dismissAllNotifications(page);
 
-        // 4. Optional tracing
-        if (testInfo.retry > 0 || !process.env.CI) {
-            await page.context().tracing.start({ screenshots: true, snapshots: true, title: testInfo.title });
-        }
+        // 4. Start tracing — captures screenshots and DOM snapshots at every
+        //    Playwright action so failures can be replayed step-by-step.
+        await page.context().tracing.start({ screenshots: true, snapshots: true, title: testInfo.title });
 
         // ---- hand off to the test ----
         await use(page);
 
         // ---- teardown ----
-        // Save trace on failure/retry
-        if (testInfo.status !== "passed" || testInfo.retry > 0) {
-            const tracePath = testInfo.outputPath("trace.zip");
-            try {
-                await page.context().tracing.stop({ path: tracePath });
-                testInfo.attachments.push({ name: "trace", path: tracePath, contentType: "application/zip" });
-            } catch {
-                // Tracing may not have been started
-            }
+        // Always save trace — on failure it's essential for debugging,
+        // on success it's useful for verifying the interaction flow.
+        const tracePath = testInfo.outputPath("trace.zip");
+        try {
+            await page.context().tracing.stop({ path: tracePath });
+            testInfo.attachments.push({ name: "trace", path: tracePath, contentType: "application/zip" });
+        } catch {
+            // Tracing may not have been started
         }
 
         await electronApp.close();

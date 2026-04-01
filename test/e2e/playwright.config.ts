@@ -22,8 +22,10 @@ export default defineConfig({
     use: {
         // Automatically take a screenshot when a test fails.
         screenshot: "only-on-failure",
-        // Capture full trace on retry for deep debugging (includes screenshots, DOM snapshots, network).
-        trace: "on-first-retry",
+        // Capture full trace on every test run (includes screenshots, DOM
+        // snapshots, and network at each Playwright action). This makes it
+        // easy to diagnose failures — especially when reviewed by AI.
+        trace: "on",
     },
     outputDir: path.join(__dirname, "..", "..", "test-results", "e2e"),
 });
