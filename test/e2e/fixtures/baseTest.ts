@@ -136,23 +136,15 @@ export const test = base.extend<TestFixtures>({
         await page.waitForTimeout(3_000);
         await dismissAllNotifications(page);
 
-        // 4. Start tracing — captures screenshots and DOM snapshots at every
-        //    Playwright action so failures can be replayed step-by-step.
-        await page.context().tracing.start({ screenshots: true, snapshots: true, title: testInfo.title });
+        // Tracing is handled by Playwright's built-in `use.trace` config
+        // (see playwright.config.ts). No manual tracing.start/stop needed.
 
         // ---- hand off to the test ----
         await use(page);
 
         // ---- teardown ----
-        // Always save trace — on failure it's essential for debugging,
-        // on success it's useful for verifying the interaction flow.
-        const tracePath = testInfo.outputPath("trace.zip");
-        try {
-            await page.context().tracing.stop({ path: tracePath });
-            testInfo.attachments.push({ name: "trace", path: tracePath, contentType: "application/zip" });
-        } catch {
-            // Tracing may not have been started
-        }
+        // Trace saving is handled automatically by Playwright's `use.trace`
+        // config — no manual tracing.stop() needed here.
 
         await electronApp.close();
 

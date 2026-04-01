@@ -20,12 +20,10 @@ export default defineConfig({
     },
     globalSetup: path.join(__dirname, "globalSetup.ts"),
     use: {
-        // Automatically take a screenshot when a test fails.
-        screenshot: "only-on-failure",
-        // Capture full trace on every test run (includes screenshots, DOM
-        // snapshots, and network at each Playwright action). This makes it
-        // easy to diagnose failures — especially when reviewed by AI.
-        trace: "on",
+        // Capture full trace on every test run locally (includes screenshots,
+        // DOM snapshots, and network at each Playwright action). In CI,
+        // retain traces only for failing tests to limit artifact size.
+        trace: process.env.CI ? "retain-on-failure" : "on",
     },
     outputDir: path.join(__dirname, "..", "..", "test-results", "e2e"),
 });
