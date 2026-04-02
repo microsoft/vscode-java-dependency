@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 import { commands } from "vscode";
+import * as vscode from 'vscode';
+
 /**
  * Commonly used commands
  */
@@ -29,8 +31,6 @@ export namespace Commands {
     export const VIEW_PACKAGE_INTERNAL_ADD_PROJECTS = "_java.view.package.internal.addProjects";
 
     export const VIEW_PACKAGE_OUTLINE = "java.view.package.outline";
-
-    export const VIEW_PACKAGE_REVEAL_FILE_OS = "java.view.package.revealFileInOS";
 
     export const VIEW_PACKAGE_COPY_FILE_PATH = "java.view.package.copyFilePath";
 
@@ -67,6 +67,8 @@ export namespace Commands {
     export const VIEW_PACKAGE_DELETE_FILE_PERMANENTLY = "java.view.package.deleteFilePermanently";
 
     export const VIEW_PACKAGE_REVEAL_IN_PROJECT_EXPLORER = "java.view.package.revealInProjectExplorer";
+    
+    export const VIEW_PACKAGE_REVEAL_FILE_VSCODE = 'java.view.package.revealFileInVSCode';
 
     export const VIEW_PACKAGE_NEW_FILE = "java.view.package.newFile";
 
@@ -185,5 +187,14 @@ export function executeJavaLanguageServerCommand(...rest: any[]) {
 
 export async function executeJavaExtensionCommand(commandName: string, ...rest: any[]) {
     // TODO: need to handle error and trace telemetry
-    return commands.executeCommand(commandName, ...rest);
+    return commands.executeCommand(commandName, ...rest);   
 }
+
+
+
+vscode.commands.registerCommand('java.view.package.revealFileInVSCode', (uri: vscode.Uri) => {
+    if (uri) {
+        vscode.commands.executeCommand('workbench.view.explorer');
+        vscode.commands.executeCommand('revealInExplorer', uri);
+    }
+});
