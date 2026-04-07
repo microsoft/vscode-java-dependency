@@ -15,7 +15,7 @@ extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
     pool:
-      name: VSEngSS-MicroBuild2022-1ES
+      name: VSEng-MicroBuildVSStable
     settings:
       networkIsolationPolicy: Permissive
     stages:
@@ -88,6 +88,13 @@ extends:
                 displayName: Replace AI Key
                 inputs:
                   script: npx json@9.0.6 -I -f package.json -e "this.aiKey=\"%AI_KEY%\""
+              - task: PowerShell@2
+                displayName: Update package.json for stable
+                inputs:
+                  targetType: inline
+                  script: |-
+                    node ./scripts/prepare-stable-build.js
+                    Move-Item -Path "./package.stable.json" -Destination "./package.json" -Force
               - task: CmdLine@2
                 displayName: vsce package
                 inputs:

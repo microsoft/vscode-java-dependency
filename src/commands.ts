@@ -26,6 +26,8 @@ export namespace Commands {
 
     export const VIEW_PACKAGE_INTERNAL_REFRESH = "_java.view.package.internal.refresh";
 
+    export const VIEW_PACKAGE_INTERNAL_ADD_PROJECTS = "_java.view.package.internal.addProjects";
+
     export const VIEW_PACKAGE_OUTLINE = "java.view.package.outline";
 
     export const VIEW_PACKAGE_REVEAL_FILE_OS = "java.view.package.revealFileInOS";
@@ -138,6 +140,8 @@ export namespace Commands {
 
     export const JAVA_PROJECT_GET_IMPORT_CLASS_CONTENT = "java.project.getImportClassContent";
 
+    export const JAVA_PROJECT_GET_FILE_IMPORTS = "java.project.getFileImports";
+
     export const JAVA_UPGRADE_WITH_COPILOT = "_java.upgradeWithCopilot";
 
     /**
@@ -165,9 +169,9 @@ export namespace Commands {
     export const BUILD_PROJECT = "java.project.build";
 
     /**
-     * Commands from Java Upgrade Tool
+     * Commands from appmod (Java Upgrade Tool)
      */
-    export const GOTO_AGENT_MODE = "javaupgrade.gotoAgentMode";
+    export const GOTO_AGENT_MODE = "appmod.javaUpgrade.gotoAgentMode";
 
     /**
      * Get the project settings

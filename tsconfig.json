@@ -15,11 +15,13 @@
       "noImplicitReturns": true,
       "noUnusedParameters": true,
       "strictNullChecks": true,
-      "alwaysStrict": true
+      "alwaysStrict": true,
+      "skipLibCheck": true
   },
   "exclude": [
       "node_modules",
       ".vscode-test",
-      "test-resources"
+      "test-resources",
+      "test/e2e"
   ]
 }

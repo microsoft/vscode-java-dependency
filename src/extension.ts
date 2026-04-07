@@ -2,8 +2,10 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-import { commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
-    Range, tasks, TextDocument, TextEditor, Uri, window, workspace } from "vscode";
+import {
+    commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
+    Range, tasks, TextDocument, TextEditor, Uri, window, workspace
+} from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { Commands, contextManager } from "../extension.bundle";
 import { BuildTaskProvider } from "./tasks/build/buildTaskProvider";
@@ -21,7 +23,7 @@ import { setContextForDeprecatedTasks, updateExportTaskType } from "./tasks/buil
 import { CodeActionProvider } from "./tasks/buildArtifact/migration/CodeActionProvider";
 import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
-import { registerCopilotContextProviders } from "./copilot/contextProvider";
+import { registerJavaContextTools } from "./copilot/tools/javaContextTools";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
 
 export async function activate(context: ExtensionContext): Promise<void> {
@@ -87,9 +89,15 @@ async function activateExtension(_operationId: string, context: ExtensionContext
     setContextForDeprecatedTasks();
 
     // Register Copilot context providers after Java Language Server is ready
+    const isPrereleaseBuild = context.extension.packageJSON.preview === true;
+    if (!isPrereleaseBuild) {
+        return;
+    }
     languageServerApiManager.ready().then((isReady) => {
-        if (isReady) {
-            registerCopilotContextProviders(context);
+        const config = workspace.getConfiguration("vscode-java-dependency");
+        const isSettingEnabled = config.get<boolean>("enableLspTools", false);
+        if (isReady && isSettingEnabled) {
+            registerJavaContextTools(context);
         }
     });
 }
