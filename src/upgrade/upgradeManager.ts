@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, type ExtensionContext, workspace, type WorkspaceFolder } from "vscode";
+import { commands, type ExtensionContext, type Event, workspace, type WorkspaceFolder } from "vscode";
 
 import { Jdtls } from "../java/jdtls";
 import { languageServerApiManager } from "../languageServerApi/languageServerApiManager";
@@ -12,6 +12,8 @@ import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
 import assessmentManager, { getDirectDependencies } from "./assessmentManager";
 import { checkOrInstallAppModExtensionForUpgrade, checkOrPopupToInstallAppModExtensionForModernization } from "./utility";
+import { contextManager } from "../contextManager";
+import { LanguageServerMode } from "../languageServerApi/LanguageServerMode";
 
 const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
 
@@ -21,6 +23,9 @@ function shouldRunCheckup() {
 }
 
 class UpgradeManager {
+    private static watcherSetup = false;
+    private static scanned = false;
+
     public static initialize(context: ExtensionContext) {
         notificationManager.initialize(context);
 
@@ -41,21 +46,25 @@ class UpgradeManager {
         }));
 
         // Defer the expensive scan operation to not block extension activation
-        setImmediate(() => UpgradeManager.scan());
+        setImmediate(() => UpgradeManager.scan("initialization", false));
     }
 
-    public static scan() {
-        if (!shouldRunCheckup()) {
-            return;
-        }
-        workspace.workspaceFolders?.forEach((folder) =>
-            UpgradeManager.runDependencyCheckup(folder)
-        );
-    }
+    public static scan(triggerReason: string, forceRescan: boolean) {
+        return instrumentOperation("java.dependency.scan", async (_operationId: string) => {
+            sendInfo(_operationId, { triggerReason });
 
-    private static async runDependencyCheckup(folder: WorkspaceFolder) {
-        return instrumentOperation("java.dependency.runDependencyCheckup", async (_operationId: string) => {
-            if (!(await languageServerApiManager.ready())) {
+            if (!shouldRunCheckup()) {
+                return;
+            }
+
+            if (forceRescan) {
+                UpgradeManager.scanned = false;
+            }
+
+            const readyResult = await languageServerApiManager.ready();
+            this.setupWatcherForServerModeChange();
+
+            if (!readyResult) {
                 sendInfo(_operationId, { skipReason: "languageServerNotReady" });
                 return;
             }
@@ -66,6 +75,19 @@ class UpgradeManager {
                 return;
             }
 
+            if (UpgradeManager.scanned) {
+                return;
+            }
+            UpgradeManager.scanned = true;
+
+            workspace.workspaceFolders?.forEach((folder) =>
+                UpgradeManager.runDependencyCheckup(folder)
+            );
+        })();
+    }
+
+    private static async runDependencyCheckup(folder: WorkspaceFolder) {
+        return instrumentOperation("java.dependency.runDependencyCheckup", async (_operationId: string) => {
             const projects = await Jdtls.getProjects(folder.uri.toString());
             const projectDirectDepsResults = await Promise.allSettled(
                 projects.map(async (projectNode) => ({
@@ -88,6 +110,23 @@ class UpgradeManager {
                 notificationManager.render(workspaceIssues);
             }
         })();
+    }
+
+    private static setupWatcherForServerModeChange() {
+        if (UpgradeManager.watcherSetup) {
+            return;
+        }
+
+        const extensionApi = languageServerApiManager.getExtensionApi();
+        if (extensionApi.onDidServerModeChange) {
+            const onDidServerModeChange: Event<string> = extensionApi.onDidServerModeChange;
+            contextManager.context.subscriptions.push(onDidServerModeChange((mode: LanguageServerMode) => {
+                if (mode !== LanguageServerMode.LightWeight) {
+                    setImmediate(() => UpgradeManager.scan(`languageServerModeChangeTo${mode}`, false));
+                }
+            }));
+            UpgradeManager.watcherSetup = true;
+        }
     }
 }
 
