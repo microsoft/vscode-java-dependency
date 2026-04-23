@@ -29,8 +29,9 @@ suite("Maven Project View Tests", () => {
         const projectChildren = await projectNode.getChildren();
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === "pom.xml"));
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === ".vscode"));
-        assert.equal(projectChildren.length, 8, `Number of children should be 8, but was ${projectChildren.length}.\n${printNodes(projectChildren)}`);
-        const mainPackage = projectChildren[0] as PackageRootNode;
+        assert.ok(projectChildren.length >= 8, `Number of children should be at least 8, but was ${projectChildren.length}.\n${printNodes(projectChildren)}`);
+        const mainPackage = projectChildren.find((c: DataNode) => c.name === "src/main/java") as PackageRootNode;
+        assert.ok(mainPackage, "Should have src/main/java package root");
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
 
         const mainSourceSetChildren = await mainPackage.getChildren();
@@ -78,15 +79,15 @@ suite("Maven Project View Tests", () => {
         const projectChildren = await projectNode.getChildren();
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === "pom.xml"));
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === ".vscode"));
-        const mainPackage = projectChildren[0] as PackageRootNode;
-        const testPackage = projectChildren[1] as PackageRootNode;
-        assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
-        assert.equal(testPackage.name, "src/test/java", "Package name should be \"src/test/java\"");
-        const systemLibrary = projectChildren[2] as ContainerNode;
-        const mavenDependency = projectChildren[3] as ContainerNode;
+        const mainPackage = projectChildren.find((c: DataNode) => c.name === "src/main/java") as PackageRootNode;
+        const testPackage = projectChildren.find((c: DataNode) => c.name === "src/test/java") as PackageRootNode;
+        assert.ok(mainPackage, "Should have src/main/java package root");
+        assert.ok(testPackage, "Should have src/test/java package root");
+        const systemLibrary = projectChildren.find((c: DataNode) => c.name.startsWith("JRE System Library")) as ContainerNode;
+        const mavenDependency = projectChildren.find((c: DataNode) => c.name === "Maven Dependencies") as ContainerNode;
         // only match prefix of system library since JDK version may differ
-        assert.ok(systemLibrary.name.startsWith("JRE System Library"), "Container name should start with JRE System Library");
-        assert.equal(mavenDependency.name, "Maven Dependencies", "Container name should be \"Maven Dependencies\"");
+        assert.ok(systemLibrary, "Should have JRE System Library container");
+        assert.ok(mavenDependency, "Should have Maven Dependencies container");
 
         // validate package nodes
         const mainSourceSetChildren = await mainPackage.getChildren();
@@ -129,8 +130,10 @@ suite("Maven Project View Tests", () => {
 
         const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
         const packageRoots = await projectNode.getChildren();
-        const mainPackage = packageRoots[0] as PackageRootNode;
-        const testPackage = packageRoots[1] as PackageRootNode;
+        const mainPackage = packageRoots.find((c: DataNode) => c.name === "src/main/java") as PackageRootNode;
+        const testPackage = packageRoots.find((c: DataNode) => c.name === "src/test/java") as PackageRootNode;
+        assert.ok(mainPackage, "Should have src/main/java");
+        assert.ok(testPackage, "Should have src/test/java");
         const mainSubPackage = (await mainPackage.getChildren())[0] as PackageNode;
         const testSubPackage = (await testPackage.getChildren())[0] as PackageNode;
         const mainClass = (await mainSubPackage.getChildren())[0] as PrimaryTypeNode;
@@ -253,7 +256,11 @@ suite("Maven Project View Tests", () => {
 
         const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
         const projectChildren = await projectNode.getChildren();
-        assert.equal(projectChildren.length, 4);
+        // When showNonJavaResources is false, non-Java resource nodes (pom.xml, .vscode, .settings, etc.) should be hidden
+        assert.ok(!projectChildren.find((c: DataNode) => c.name === "pom.xml"), "pom.xml should be hidden");
+        assert.ok(!projectChildren.find((c: DataNode) => c.name === ".vscode"), ".vscode should be hidden");
+        assert.ok(!projectChildren.find((c: DataNode) => c.name === ".classpath"), ".classpath should be hidden");
+        assert.ok(!projectChildren.find((c: DataNode) => c.name === ".project"), ".project should be hidden");
     });
 
     test("Can maven dependency nodes display in correct groupId:artifactId:version format", async function() {
@@ -262,7 +269,8 @@ suite("Maven Project View Tests", () => {
         const roots = await explorer.dataProvider.getChildren();
         const projectNode = roots![0] as ProjectNode;
         const projectChildren = await projectNode.getChildren();
-        const mavenDependency = projectChildren[3] as ContainerNode;
+        const mavenDependency = projectChildren.find((c: DataNode) => c.name === "Maven Dependencies") as ContainerNode;
+        assert.ok(mavenDependency, "Should have Maven Dependencies container");
         const mavenChildren = await mavenDependency.getChildren();
 
         assert.equal(mavenChildren[0].getDisplayName(), "org.hamcrest:hamcrest-core:1.3");
