@@ -88,7 +88,9 @@ export function isKeyword(identifier: string): boolean {
     return keywords.has(identifier);
 }
 
-const identifierRegExp: RegExp = /^([a-zA-Z_$][a-zA-Z\d_$]*)$/;
+// Java identifier per JLS §3.8: start with a Unicode letter, underscore, or dollar sign;
+// continue with Unicode letters, digits, underscore, dollar sign, or combining marks.
+const identifierRegExp: RegExp = /^[\p{L}\p{Nl}_$][\p{L}\p{Nl}\p{Nd}\p{Mn}\p{Mc}\p{Pc}_$\u200c\u200d]*$/u;
 export function isJavaIdentifier(identifier: string): boolean {
     return identifierRegExp.test(identifier);
 }
