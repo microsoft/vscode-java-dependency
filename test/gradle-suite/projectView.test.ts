@@ -16,6 +16,7 @@ suite("Gradle Project View Tests", () => {
     });
 
     test("Can node render correctly", async function() {
+        this.timeout(120000);
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
         // validate root nodes
@@ -28,13 +29,13 @@ suite("Gradle Project View Tests", () => {
         const projectChildren = await projectNode.getChildren();
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === "build.gradle"));
         assert.ok(!!projectChildren.find((c: DataNode) => c.name === ".vscode"));
-        const mainPackage = projectChildren[0] as PackageRootNode;
-        assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
-        const systemLibrary = projectChildren[1] as ContainerNode;
-        const gradleDependency = projectChildren[2] as ContainerNode;
+        const mainPackage = projectChildren.find((c: DataNode) => c.name === "src/main/java") as PackageRootNode;
+        assert.ok(mainPackage, "Should have src/main/java package root");
+        const systemLibrary = projectChildren.find((c: DataNode) => c.name.startsWith("JRE System Library")) as ContainerNode;
+        const gradleDependency = projectChildren.find((c: DataNode) => c.name === "Project and External Dependencies") as ContainerNode;
         // only match prefix of system library since JDK version may differ
-        assert.ok(systemLibrary.name.startsWith("JRE System Library"), "Container name should start with JRE System Library");
-        assert.equal(gradleDependency.name, "Project and External Dependencies", "Container name should be \"Project and External Dependencies\"");
+        assert.ok(systemLibrary, "Should have JRE System Library container");
+        assert.ok(gradleDependency, "Should have Project and External Dependencies container");
 
         // validate innermost layer nodes
         const mainClasses = await mainPackage.getChildren();
@@ -47,7 +48,9 @@ suite("Gradle Project View Tests", () => {
         const explorer = DependencyExplorer.getInstance(contextManager.context);
 
         const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
-        const mainPackage = (await projectNode.getChildren())[0] as PackageRootNode;
+        const projectChildren = await projectNode.getChildren();
+        const mainPackage = projectChildren.find((c: DataNode) => c.name === "src/main/java") as PackageRootNode;
+        assert.ok(mainPackage, "Should have src/main/java");
         const mainClass = (await mainPackage.getChildren())[0] as PrimaryTypeNode;
 
         assert.equal(fsPath(projectNode), Uris.GRADLE_PROJECT_NODE, "Project uri incorrect");

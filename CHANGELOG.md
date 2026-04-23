@@ -4,6 +4,10 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.27.2
+
+- perf - Progressive project tree view during import in https://github.com/microsoft/vscode-java-dependency/pull/982
+
 ## 0.27.1
 
 - Enhancement - Update upgrade prompt after merging extension in https://github.com/microsoft/vscode-java-dependency/pull/971
