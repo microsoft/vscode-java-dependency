@@ -93,18 +93,34 @@ interface FileStructureInput {
 
 const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
     async invoke(options, _token) {
-        sendInfo("", { operationName: "lmTool.getFileStructure" });
-        const uri = resolveFileUri(options.input.uri);
-        const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
-            "vscode.executeDocumentSymbolProvider", uri,
-        );
-        if (!symbols || symbols.length === 0) {
-            return toResult({ error: "No symbols found. The file may not be recognized by the Java language server." });
+        const startTime = Date.now();
+        let resultCount = 0;
+        let status = "success";
+        try {
+            const uri = resolveFileUri(options.input.uri);
+            const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+                "vscode.executeDocumentSymbolProvider", uri,
+            );
+            if (!symbols || symbols.length === 0) {
+                status = "empty";
+                return toResult({ error: "No symbols found. The file may not be recognized by the Java language server." });
+            }
+            const counter = { count: 0 };
+            const result = symbolsToJson(symbols, 0, counter);
+            const truncated = counter.count >= MAX_SYMBOL_NODES;
+            resultCount = counter.count;
+            return toResult({ symbols: result, ...(truncated && { truncated: true }) });
+        } catch (e) {
+            status = "error";
+            throw e;
+        } finally {
+            sendInfo("", {
+                operationName: "lmTool.getFileStructure",
+                status,
+                resultCount: String(resultCount),
+                durationMs: String(Date.now() - startTime),
+            });
         }
-        const counter = { count: 0 };
-        const result = symbolsToJson(symbols, 0, counter);
-        const truncated = counter.count >= MAX_SYMBOL_NODES;
-        return toResult({ symbols: result, ...(truncated && { truncated: true }) });
     },
 };
 
@@ -150,20 +166,36 @@ interface FindSymbolInput {
 
 const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
     async invoke(options, _token) {
-        sendInfo("", { operationName: "lmTool.findSymbol" });
-        const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-            "vscode.executeWorkspaceSymbolProvider", options.input.query,
-        );
-        if (!symbols || symbols.length === 0) {
-            return toResult({ results: [], message: `No symbols matching '${options.input.query}' found.` });
+        const startTime = Date.now();
+        let resultCount = 0;
+        let status = "success";
+        try {
+            const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                "vscode.executeWorkspaceSymbolProvider", options.input.query,
+            );
+            if (!symbols || symbols.length === 0) {
+                status = "empty";
+                return toResult({ results: [], message: `No symbols matching '${options.input.query}' found.` });
+            }
+            const limit = Math.min(Math.max(options.input.limit || 20, 1), 50);
+            const results = symbols.slice(0, limit).map(s => ({
+                name: s.name,
+                kind: vscode.SymbolKind[s.kind],
+                location: `${vscode.workspace.asRelativePath(s.location.uri)}:${s.location.range.start.line + 1}`,
+            }));
+            resultCount = results.length;
+            return toResult({ results, total: symbols.length });
+        } catch (e) {
+            status = "error";
+            throw e;
+        } finally {
+            sendInfo("", {
+                operationName: "lmTool.findSymbol",
+                status,
+                resultCount: String(resultCount),
+                durationMs: String(Date.now() - startTime),
+            });
         }
-        const limit = Math.min(Math.max(options.input.limit || 20, 1), 50);
-        const results = symbols.slice(0, limit).map(s => ({
-            name: s.name,
-            kind: vscode.SymbolKind[s.kind],
-            location: `${vscode.workspace.asRelativePath(s.location.uri)}:${s.location.range.start.line + 1}`,
-        }));
-        return toResult({ results, total: symbols.length });
     },
 };
 
@@ -378,9 +410,5 @@ export function registerJavaContextTools(context: vscode.ExtensionContext): void
     context.subscriptions.push(
         vscode.lm.registerTool("lsp_java_getFileStructure", fileStructureTool),
         vscode.lm.registerTool("lsp_java_findSymbol", findSymbolTool),
-        vscode.lm.registerTool("lsp_java_getFileImports", fileImportsTool),
-        vscode.lm.registerTool("lsp_java_getTypeAtPosition", typeAtPositionTool),
-        vscode.lm.registerTool("lsp_java_getCallHierarchy", callHierarchyTool),
-        vscode.lm.registerTool("lsp_java_getTypeHierarchy", typeHierarchyTool),
     );
 }
