@@ -207,7 +207,7 @@ interface FileImportsInput {
     uri: string;
 }
 
-const fileImportsTool: vscode.LanguageModelTool<FileImportsInput> = {
+const _fileImportsTool: vscode.LanguageModelTool<FileImportsInput> = {
     async invoke(options, _token) {
         sendInfo("", { operationName: "lmTool.getFileImports" });
         const uri = resolveFileUri(options.input.uri);
@@ -236,7 +236,7 @@ interface TypeAtPositionInput {
     character: number;
 }
 
-const typeAtPositionTool: vscode.LanguageModelTool<TypeAtPositionInput> = {
+const _typeAtPositionTool: vscode.LanguageModelTool<TypeAtPositionInput> = {
     async invoke(options, _token) {
         sendInfo("", { operationName: "lmTool.getTypeAtPosition" });
         const uri = resolveFileUri(options.input.uri);
@@ -296,7 +296,7 @@ interface CallHierarchyInput {
     direction: "incoming" | "outgoing";
 }
 
-const callHierarchyTool: vscode.LanguageModelTool<CallHierarchyInput> = {
+const _callHierarchyTool: vscode.LanguageModelTool<CallHierarchyInput> = {
     async invoke(options, _token) {
         sendInfo("", { operationName: "lmTool.getCallHierarchy" });
         const uri = resolveFileUri(options.input.uri);
@@ -355,7 +355,7 @@ interface TypeHierarchyInput {
     direction: "supertypes" | "subtypes";
 }
 
-const typeHierarchyTool: vscode.LanguageModelTool<TypeHierarchyInput> = {
+const _typeHierarchyTool: vscode.LanguageModelTool<TypeHierarchyInput> = {
     async invoke(options, _token) {
         sendInfo("", { operationName: "lmTool.getTypeHierarchy" });
         const uri = resolveFileUri(options.input.uri);
