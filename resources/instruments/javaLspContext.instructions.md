@@ -1,5 +1,5 @@
 ---
-description: Hints that Java LSP tools are available for code navigation on Java files.
+description: REQUIRED for Java files. Provides compiler-accurate lsp_java_findSymbol and lsp_java_getFileStructure tools that replace grep_search for Java symbol navigation.
 applyTo: '**/*.java'
 ---
 
