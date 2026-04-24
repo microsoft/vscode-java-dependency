@@ -114,7 +114,7 @@ steps:
     verify: "Rename input box opened"
 
   - id: "enter-new-name"
-    action: "fillQuickInput AppRenamed"
+    action: "fillAnyInput AppRenamed"
     verify: "New name entered and confirmed"
     waitBefore: 2
 
