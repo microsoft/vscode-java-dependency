@@ -1,17 +1,18 @@
 # Test Plan: Java Dependency — Project Explorer
 #
-# Covers projectExplorer.test.ts scenarios:
+# Covers scenarios:
 #   - javaProjectExplorer.focus shows Java Projects section
 #   - linkWithFolderExplorer reveals active file in tree
 #   - unlinkWithFolderExplorer stops auto-reveal
+#   - revealInProjectExplorer reveals file from File Explorer context menu
 #
 # Usage:
 #   npx autotest run test/e2e-plans/java-dep-project-explorer.yaml --vsix <path-to-vsix>
 
 name: "Java Dependency — Project Explorer"
 description: |
-  Tests the Java Projects explorer view: focus, link/unlink with editor.
-  Replaces test/e2e/tests/projectExplorer.test.ts.
+  Tests the Java Projects explorer view: focus, link/unlink with editor,
+  reveal in project explorer.
 
 setup:
   extension: "redhat.java"
@@ -85,3 +86,25 @@ steps:
   - id: "relink-editor"
     action: "run command Java: Link with Editor"
     verify: "Editor re-linked with tree"
+
+  # ── Test 4: revealInProjectExplorer ──
+  # Collapse all tree nodes, then reveal App.java from editor
+  - id: "collapse-all"
+    action: "run command View: Collapse All"
+    verify: "Collapse tree to reset state"
+
+  - id: "open-app-file"
+    action: "open file App.java"
+    waitBefore: 2
+
+  - id: "reveal-in-project-explorer"
+    action: "run command Java: Reveal in Java Project Explorer"
+    waitBefore: 2
+
+  - id: "verify-revealed"
+    action: "wait 2 seconds"
+    verify: "App class should be revealed in Java Projects tree"
+    verifyTreeItem:
+      name: "App"
+      exact: true
+    timeout: 15

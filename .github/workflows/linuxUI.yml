@@ -64,3 +64,10 @@ jobs:
         name: e2e-results-linux
         path: test-results/
         retention-days: 7
+
+    - name: Write Job Summary
+      if: always()
+      run: |
+        if [ -f test-results/summary.md ]; then
+          cat test-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+        fi
