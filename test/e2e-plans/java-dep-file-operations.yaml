@@ -93,19 +93,14 @@ steps:
     verify: "Package directory created"
 
   # ── Test 3: rename Java file ──
+  # Open the target file first, then use link-with-editor to reveal it in the tree.
+  # This avoids tree expansion issues when package hierarchy changes after creating new packages.
+  - id: "open-rename-target"
+    action: "open file AppToRename.java"
+    waitBefore: 3
+
   - id: "focus-java-projects-3"
     action: "run command Java Projects: Focus on Java Projects View"
-
-  - id: "expand-project-3"
-    action: "expand my-app tree item"
-    waitBefore: 2
-
-  - id: "expand-src-3"
-    action: "expand src/main/java tree item"
-    waitBefore: 2
-
-  - id: "expand-package-3"
-    action: "expand com.mycompany.app tree item"
     waitBefore: 2
 
   - id: "rename-context-menu"

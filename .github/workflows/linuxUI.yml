@@ -45,10 +45,7 @@ jobs:
       run: vsce package -o vscode-java-dependency.vsix
 
     - name: Setup autotest
-      run: |
-        # Pin to main branch; consider pinning to a specific tag for stability
-        git clone --depth 1 --branch main https://github.com/wenytang-ms/javaext-autotest.git ../javaext-autotest
-        cd ../javaext-autotest && npm install && npm run build && npm link
+      run: npm install -g github:wenytang-ms/javaext-autotest
 
     - name: E2E Test (autotest)
       run: |
