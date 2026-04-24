@@ -1,0 +1,87 @@
+# Test Plan: Java Dependency — Project Explorer
+#
+# Covers projectExplorer.test.ts scenarios:
+#   - javaProjectExplorer.focus shows Java Projects section
+#   - linkWithFolderExplorer reveals active file in tree
+#   - unlinkWithFolderExplorer stops auto-reveal
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-project-explorer.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Project Explorer"
+description: |
+  Tests the Java Projects explorer view: focus, link/unlink with editor.
+  Replaces test/e2e/tests/projectExplorer.test.ts.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+
+steps:
+  # ── Wait for LS ready ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    verify: "Java Language Server is ready"
+    timeout: 180
+
+  # ── Test 1: javaProjectExplorer.focus ──
+  - id: "focus-java-projects"
+    action: "run command Java Projects: Focus on Java Projects View"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  - id: "verify-project-node"
+    action: "wait 1 seconds"
+    verify: "my-app project node is visible in the tree"
+    verifyTreeItem:
+      name: "my-app"
+    timeout: 15
+
+  # ── Test 2: linkWithFolderExplorer ──
+  - id: "expand-project"
+    action: "expand my-app tree item"
+
+  - id: "expand-src"
+    action: "expand src/main/java tree item"
+    waitBefore: 2
+
+  - id: "verify-package"
+    action: "wait 1 seconds"
+    verify: "Package com.mycompany.app is visible"
+    verifyTreeItem:
+      name: "com.mycompany.app"
+    timeout: 15
+
+  - id: "expand-package"
+    action: "expand com.mycompany.app tree item"
+    waitBefore: 2
+
+  - id: "verify-app-class"
+    action: "wait 1 seconds"
+    verify: "App class node is visible (exact match, not App.java or AppToDelete)"
+    verifyTreeItem:
+      name: "App"
+      exact: true
+    timeout: 15
+
+  # ── Test 3: unlinkWithFolderExplorer ──
+  - id: "unlink-editor"
+    action: "run command Java: Unlink with Editor"
+    verify: "Editor unlinked from tree"
+
+  - id: "open-rename-file"
+    action: "open file AppToRename.java"
+
+  - id: "wait-after-open"
+    action: "wait 3 seconds"
+    verify: "Tree should not auto-expand to AppToRename"
+
+  - id: "relink-editor"
+    action: "run command Java: Link with Editor"
+    verify: "Editor re-linked with tree"
