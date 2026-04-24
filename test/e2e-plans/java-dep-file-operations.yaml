@@ -118,10 +118,11 @@ steps:
     verify: "New name entered and confirmed"
     waitBefore: 2
 
-  # Handle optional rename confirmation dialog (Electron native or DOM)
+  # Handle optional rename confirmation dialog — may not appear on all platforms
+  # (Electron native dialog is auto-dismissed by monkey-patch)
   - id: "handle-rename-dialog"
-    action: "tryClickDialogButton OK"
-    verify: "Rename confirmation dialog handled (if present)"
+    action: "confirmDialog"
+    verify: "Rename confirmation handled (if present)"
 
   # Handle optional Refactor Preview panel
   - id: "handle-refactor-preview"
@@ -133,9 +134,9 @@ steps:
 
   - id: "verify-renamed-tab"
     action: "wait 1 seconds"
-    verify: "Editor tab AppRenamed.java should appear"
+    verify: "Editor tab AppRenamed should appear"
     verifyEditorTab:
-      title: "AppRenamed.java"
+      title: "AppRenamed"
     timeout: 15
 
   # ── Test 4: delete Java file ──
