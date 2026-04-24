@@ -93,19 +93,24 @@ steps:
     verify: "Package directory created"
 
   # ── Test 3: rename Java file ──
-  # Open the target file first, then use link-with-editor to reveal it in the tree.
-  # This avoids tree expansion issues when package hierarchy changes after creating new packages.
+  # Open the target file, let link-with-editor reveal it in the tree,
+  # then right-click to rename. Use waitBefore to ensure tree is settled.
   - id: "open-rename-target"
     action: "open file AppToRename.java"
     waitBefore: 3
 
   - id: "focus-java-projects-3"
     action: "run command Java Projects: Focus on Java Projects View"
-    waitBefore: 2
+    waitBefore: 3
 
   - id: "rename-context-menu"
     action: "contextMenu AppToRename Rename"
     verify: "Rename input box opened"
+    waitBefore: 2
+
+  - id: "wait-for-rename-input"
+    action: "wait 2 seconds"
+    verify: "Wait for rename input box to appear"
 
   - id: "enter-new-name"
     action: "fillQuickInput AppRenamed"
