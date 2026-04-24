@@ -48,8 +48,12 @@ jobs:
       run: npm install -g @vscjava/vscode-autotest
 
     - name: E2E Test (autotest)
+      env:
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
       run: |
-        autotest run-all test/e2e-plans --vsix "$((Get-Location).Path)\vscode-java-dependency.vsix" --output test-results --no-llm
+        autotest run-all test/e2e-plans --vsix "$((Get-Location).Path)\vscode-java-dependency.vsix" --output test-results
 
     - name: Upload test results
       if: ${{ always() }}

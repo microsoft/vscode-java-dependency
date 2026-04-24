@@ -94,7 +94,7 @@ steps:
 
   # ── Test 3: rename Java file ──
   # Open the target file, let link-with-editor reveal it in the tree,
-  # then right-click to rename. Use waitBefore to ensure tree is settled.
+  # then click to select it and trigger rename via context menu.
   - id: "open-rename-target"
     action: "open file AppToRename.java"
     waitBefore: 3
@@ -103,18 +103,20 @@ steps:
     action: "run command Java Projects: Focus on Java Projects View"
     waitBefore: 3
 
+  # Click the tree item first to select it
+  - id: "select-rename-target"
+    action: "click AppToRename tree item"
+    waitBefore: 2
+
+  # Use context menu to trigger extension's rename (shows showInputBox)
   - id: "rename-context-menu"
     action: "contextMenu AppToRename Rename"
     verify: "Rename input box opened"
-    waitBefore: 2
-
-  - id: "wait-for-rename-input"
-    action: "wait 2 seconds"
-    verify: "Wait for rename input box to appear"
 
   - id: "enter-new-name"
     action: "fillQuickInput AppRenamed"
     verify: "New name entered and confirmed"
+    waitBefore: 2
 
   # Handle optional rename confirmation dialog (Electron native or DOM)
   - id: "handle-rename-dialog"
