@@ -1,0 +1,167 @@
+# Test Plan: Java Dependency — File Operations
+#
+# Covers fileOperations.test.ts scenarios:
+#   - create new Java class
+#   - create new package
+#   - rename Java file
+#   - delete Java file
+#
+# Note: The workspace is auto-copied to a temp directory by autotest,
+# so rename/delete operations don't pollute the source test fixtures.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-file-operations.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — File Operations"
+description: |
+  Tests file/resource operations in the Java Projects view:
+  create class, create package, rename file, delete file.
+  Replaces test/e2e/tests/fileOperations.test.ts.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+
+steps:
+  # ── Setup: wait for LS, focus Java Projects ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    verify: "Java Language Server is ready"
+    timeout: 180
+
+  - id: "focus-java-projects"
+    action: "run command Java Projects: Focus on Java Projects View"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Test 1: create new Java class ──
+  - id: "click-project-node"
+    action: "click my-app tree item"
+
+  - id: "trigger-new-resource"
+    action: "clickTreeItemAction my-app New..."
+    verify: "New resource quick pick opened"
+
+  - id: "select-java-class"
+    action: "selectOptionByIndex 0"
+    verify: "Java Class selected"
+
+  - id: "select-source-folder"
+    action: "select src/main/java option"
+    verify: "Source folder selected"
+
+  - id: "enter-class-name"
+    action: "fillQuickInput App2"
+    verify: "Class name entered"
+
+  - id: "verify-new-class-tab"
+    action: "wait 2 seconds"
+    verify: "Editor tab App2.java should appear"
+    verifyEditorTab:
+      title: "App2.java"
+    timeout: 15
+
+  # ── Test 2: create new package ──
+  - id: "focus-java-projects-2"
+    action: "run command Java Projects: Focus on Java Projects View"
+
+  - id: "click-project-node-2"
+    action: "click my-app tree item"
+
+  - id: "trigger-new-resource-2"
+    action: "clickTreeItemAction my-app New..."
+
+  - id: "select-package"
+    action: "select Package option"
+    verify: "Package selected"
+
+  - id: "select-source-folder-2"
+    action: "select src/main/java option"
+
+  - id: "enter-package-name"
+    action: "fillQuickInput com.mycompany.newpkg"
+    verify: "Package name entered"
+
+  - id: "wait-package-creation"
+    action: "wait 3 seconds"
+    verify: "Package directory created"
+
+  # ── Test 3: rename Java file ──
+  - id: "focus-java-projects-3"
+    action: "run command Java Projects: Focus on Java Projects View"
+
+  - id: "expand-project-3"
+    action: "expand my-app tree item"
+    waitBefore: 2
+
+  - id: "expand-src-3"
+    action: "expand src/main/java tree item"
+    waitBefore: 2
+
+  - id: "expand-package-3"
+    action: "expand com.mycompany.app tree item"
+    waitBefore: 2
+
+  - id: "rename-context-menu"
+    action: "contextMenu AppToRename Rename"
+    verify: "Rename input box opened"
+
+  - id: "enter-new-name"
+    action: "fillQuickInput AppRenamed"
+    verify: "New name entered and confirmed"
+
+  # Handle optional rename confirmation dialog (Electron native or DOM)
+  - id: "handle-rename-dialog"
+    action: "tryClickDialogButton OK"
+    verify: "Rename confirmation dialog handled (if present)"
+
+  # Handle optional Refactor Preview panel
+  - id: "handle-refactor-preview"
+    action: "tryClickButton Apply"
+    verify: "Refactor preview applied (if present)"
+
+  - id: "wait-rename"
+    action: "wait 3 seconds"
+
+  - id: "verify-renamed-tab"
+    action: "wait 1 seconds"
+    verify: "Editor tab AppRenamed.java should appear"
+    verifyEditorTab:
+      title: "AppRenamed.java"
+    timeout: 15
+
+  # ── Test 4: delete Java file ──
+  # Instead of manually expanding the tree (which requires viewport space),
+  # open the file and let link-with-editor reveal it in the tree.
+  - id: "open-delete-target"
+    action: "open file AppToDelete.java"
+    waitBefore: 5
+
+  - id: "focus-java-projects-4"
+    action: "run command Java Projects: Focus on Java Projects View"
+    waitBefore: 2
+
+  - id: "delete-context-menu"
+    action: "contextMenu AppToDelete Delete"
+    verify: "Delete confirmation triggered"
+
+  # VSCode shows a platform-specific confirmation dialog for delete
+  - id: "confirm-delete"
+    action: "confirmDialog"
+
+  - id: "wait-delete"
+    action: "wait 3 seconds"
+
+  - id: "verify-deleted"
+    action: "wait 1 seconds"
+    verify: "AppToDelete tree item should disappear"
+    verifyTreeItem:
+      name: "AppToDelete"
+      visible: false
+    timeout: 15

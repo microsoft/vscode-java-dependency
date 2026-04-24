@@ -42,10 +42,20 @@ jobs:
       run: npm run build-server
 
     - name: Build VSIX file
-      run: vsce package
+      run: vsce package -o vscode-java-dependency.vsix
 
-    - name: E2E Test (Playwright)
-      run: npm run test-e2e
+    - name: Setup autotest
+      run: |
+        # Pin to main branch; consider pinning to a specific tag for stability
+        git clone --depth 1 --branch main https://github.com/wenytang-ms/javaext-autotest.git ..\javaext-autotest
+        cd ..\javaext-autotest
+        npm install
+        npm run build
+        npm link
+
+    - name: E2E Test (autotest)
+      run: |
+        autotest run-all test/e2e-plans --vsix "$((Get-Location).Path)\vscode-java-dependency.vsix" --output test-results --no-llm
 
     - name: Upload test results
       if: ${{ always() }}
