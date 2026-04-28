@@ -1075,7 +1075,7 @@
           },
           "isFullBuild": {
             "type": "boolean",
-            "default": "true",
+            "default": false,
             "description": "%taskDefinitions.java.project.build.isFullBuild%"
           }
         }
