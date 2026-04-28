@@ -60,6 +60,8 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OUTLINE, (uri, range) =>
             window.showTextDocument(Uri.parse(uri), { selection: range })));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_BUILD_WORKSPACE, () =>
+            commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE, false /*fullCompile*/)));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REBUILD_WORKSPACE, () =>
             commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE, true /*fullCompile*/)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CLEAN_WORKSPACE, () =>
             commands.executeCommand(Commands.JAVA_CLEAN_WORKSPACE)));
@@ -75,13 +77,21 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 commands.executeCommand(Commands.JAVA_PROJECT_CONFIGURATION_UPDATE, uris[0]);
             }
         }));
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REBUILD, async (node: INodeData) => {
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_BUILD_PROJECT, async (node: INodeData) => {
             if (!node.uri) {
                 sendError(new Error("Uri not available when building project"));
-                window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Rebuild Projects' from Command Palette.");
+                window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Build Project' from Command Palette.");
                 return;
             }
-            commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), true);
+            return commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), false /*isFullBuild*/);
+        }));
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REBUILD, async (node: INodeData) => {
+            if (!node.uri) {
+                sendError(new Error("Uri not available when rebuilding project"));
+                window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Rebuild Project' from Command Palette.");
+                return;
+            }
+            return commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), true /*isFullBuild*/);
         }));
 
         this.setRefreshDebounceFunc();

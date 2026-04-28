@@ -163,6 +163,16 @@
         "icon": "$(tools)"
       },
       {
+        "command": "java.project.rebuild.workspace",
+        "title": "%contributes.commands.java.project.rebuild.workspace%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "java.project.build.project",
+        "title": "%contributes.commands.java.project.build.project%",
+        "category": "Java"
+      },
+      {
         "command": "java.project.clean.workspace",
         "title": "%contributes.commands.java.project.clean.workspace%"
       },
@@ -178,7 +188,8 @@
       },
       {
         "command": "java.project.rebuild",
-        "title": "%contributes.commands.java.project.rebuild%"
+        "title": "%contributes.commands.java.project.rebuild%",
+        "category": "Java"
       },
       {
         "command": "java.view.package.revealInProjectExplorer",
@@ -733,6 +744,11 @@
           "group": "overflow_10@30"
         },
         {
+          "command": "java.project.rebuild.workspace",
+          "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects && !java:importFailed",
+          "group": "overflow_20@5"
+        },
+        {
           "command": "java.project.clean.workspace",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && !java:noJavaProjects",
           "group": "overflow_20@10"
@@ -790,7 +806,7 @@
           "group": "7_modification@20"
         },
         {
-          "command": "java.project.build.workspace",
+          "command": "java.project.build.project",
           "when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/",
           "group": "8_execution@5"
         },
@@ -1075,7 +1091,7 @@
           },
           "isFullBuild": {
             "type": "boolean",
-            "default": "true",
+            "default": false,
             "description": "%taskDefinitions.java.project.build.isFullBuild%"
           }
         }

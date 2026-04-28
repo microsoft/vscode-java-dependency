@@ -98,6 +98,10 @@ export namespace Commands {
 
     export const JAVA_PROJECT_BUILD_WORKSPACE = "java.project.build.workspace";
 
+    export const JAVA_PROJECT_REBUILD_WORKSPACE = "java.project.rebuild.workspace";
+
+    export const JAVA_PROJECT_BUILD_PROJECT = "java.project.build.project";
+
     export const JAVA_PROJECT_CLEAN_WORKSPACE = "java.project.clean.workspace";
 
     export const JAVA_PROJECT_UPDATE = "java.project.update";

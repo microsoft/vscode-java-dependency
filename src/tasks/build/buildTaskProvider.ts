@@ -28,7 +28,7 @@ export class BuildTaskProvider implements TaskProvider {
         const defaultTaskDefinition = {
             type: BuildTaskProvider.type,
             paths: [ BuildTaskProvider.workspace ],
-            isFullBuild: true,
+            isFullBuild: false,
         };
         const defaultTask = new Task(
             defaultTaskDefinition,
@@ -57,6 +57,9 @@ export class BuildTaskProvider implements TaskProvider {
                 .map(p => p.trim())
                 .filter(Boolean);
             task.definition = taskDefinition;
+        }
+        if (taskDefinition.isFullBuild === undefined) {
+            taskDefinition.isFullBuild = false;
         }
         task.execution = new CustomExecution(async (resolvedDefinition: IBuildTaskDefinition): Promise<Pseudoterminal> => {
             return new BuildTaskTerminal(resolvedDefinition, task.scope ?? TaskScope.Workspace);
