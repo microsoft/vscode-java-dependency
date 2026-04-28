@@ -60,7 +60,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_OUTLINE, (uri, range) =>
             window.showTextDocument(Uri.parse(uri), { selection: range })));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_BUILD_WORKSPACE, () =>
-            commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE, true /*fullCompile*/)));
+            commands.executeCommand(Commands.JAVA_BUILD_WORKSPACE, false /*fullCompile*/)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_CLEAN_WORKSPACE, () =>
             commands.executeCommand(Commands.JAVA_CLEAN_WORKSPACE)));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_UPDATE, async (node: INodeData) => {
@@ -78,10 +78,10 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REBUILD, async (node: INodeData) => {
             if (!node.uri) {
                 sendError(new Error("Uri not available when building project"));
-                window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Rebuild Projects' from Command Palette.");
+                window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Build Project' from Command Palette.");
                 return;
             }
-            commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), true);
+            commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), false /*isFullBuild*/);
         }));
 
         this.setRefreshDebounceFunc();

@@ -22,6 +22,7 @@ suite("Build Task Tests", () => {
                 && t.source === BuildTaskProvider.type;
         });
         assert.ok(exportJarTask !== undefined);
+        assert.strictEqual(exportJarTask.definition.isFullBuild, false);
     });
 
     test("test categorizePaths()", async function() {
