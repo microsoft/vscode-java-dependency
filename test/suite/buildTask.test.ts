@@ -25,6 +25,18 @@ suite("Build Task Tests", () => {
         assert.strictEqual(exportJarTask.definition.isFullBuild, false);
     });
 
+    test("test resolving build task defaults to incremental build", async function() {
+        const task: Task = new Task({
+            type: BuildTaskProvider.type,
+            paths: [ BuildTaskProvider.workspace ],
+        }, TaskScope.Workspace, BuildTaskProvider.defaultTaskName, BuildTaskProvider.type);
+
+        const resolvedTask: Task | undefined = await new BuildTaskProvider().resolveTask(task);
+
+        assert.ok(resolvedTask !== undefined);
+        assert.strictEqual(resolvedTask.definition.isFullBuild, false);
+    });
+
     test("test categorizePaths()", async function() {
         const [includes, excludes, invalid] = categorizePaths([
             BuildTaskProvider.workspace,

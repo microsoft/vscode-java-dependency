@@ -169,7 +169,8 @@
       },
       {
         "command": "java.project.build.project",
-        "title": "%contributes.commands.java.project.build.project%"
+        "title": "%contributes.commands.java.project.build.project%",
+        "category": "Java"
       },
       {
         "command": "java.project.clean.workspace",
@@ -187,7 +188,8 @@
       },
       {
         "command": "java.project.rebuild",
-        "title": "%contributes.commands.java.project.rebuild%"
+        "title": "%contributes.commands.java.project.rebuild%",
+        "category": "Java"
       },
       {
         "command": "java.view.package.revealInProjectExplorer",

@@ -83,7 +83,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Build Project' from Command Palette.");
                 return;
             }
-            commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), false /*isFullBuild*/);
+            return commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), false /*isFullBuild*/);
         }));
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_PROJECT_REBUILD, async (node: INodeData) => {
             if (!node.uri) {
@@ -91,7 +91,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 window.showErrorMessage("The URI of the project is not available, you can try to trigger the command 'Java: Rebuild Project' from Command Palette.");
                 return;
             }
-            commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), true /*isFullBuild*/);
+            return commands.executeCommand(Commands.BUILD_PROJECT, Uri.parse(node.uri), true /*isFullBuild*/);
         }));
 
         this.setRefreshDebounceFunc();
