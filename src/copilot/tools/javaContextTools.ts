@@ -96,6 +96,7 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
         const startTime = Date.now();
         let resultCount = 0;
         let status = "success";
+        let errorMessage = "";
         try {
             const uri = resolveFileUri(options.input.uri);
             const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
@@ -112,13 +113,15 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
             return toResult({ symbols: result, ...(truncated && { truncated: true }) });
         } catch (e) {
             status = "error";
+            errorMessage = e instanceof Error ? e.message : String(e);
             throw e;
         } finally {
             sendInfo("", {
                 operationName: "lmTool.getFileStructure",
                 status,
-                resultCount: String(resultCount),
-                durationMs: String(Date.now() - startTime),
+                ...(errorMessage && { errorMessage }),
+                resultCount,
+                durationMs: Date.now() - startTime,
             });
         }
     },
@@ -169,6 +172,7 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
         const startTime = Date.now();
         let resultCount = 0;
         let status = "success";
+        let errorMessage = "";
         try {
             const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
                 "vscode.executeWorkspaceSymbolProvider", options.input.query,
@@ -187,13 +191,15 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
             return toResult({ results, total: symbols.length });
         } catch (e) {
             status = "error";
+            errorMessage = e instanceof Error ? e.message : String(e);
             throw e;
         } finally {
             sendInfo("", {
                 operationName: "lmTool.findSymbol",
                 status,
-                resultCount: String(resultCount),
-                durationMs: String(Date.now() - startTime),
+                ...(errorMessage && { errorMessage }),
+                resultCount,
+                durationMs: Date.now() - startTime,
             });
         }
     },
