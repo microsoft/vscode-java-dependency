@@ -52,7 +52,7 @@
       {
         "name": "lsp_java_getFileStructure",
         "toolReferenceName": "javaFileStructure",
-        "modelDescription": "Get the structure (classes, methods, fields, inner classes) of a Java file. Returns a hierarchical outline with symbol kinds and line ranges in ~100 tokens.\n\nWhen to use:\n- Before reading a Java file, to understand its layout and find specific line ranges\n- Instead of read_file on the entire file — use this first, then read_file on specific lines\n- When you need to know what methods/fields a class has\n\nWhen NOT to use:\n- For non-Java files (use read_file instead)\n- To search across multiple files (use lsp_java_findSymbol instead)",
+        "modelDescription": "Get the outline (classes, methods, fields) of a Java file with symbol kinds and line ranges.\n\nUse before read_file to find specific line ranges. For searching across files, use lsp_java_findSymbol instead.\n\nOnly use file paths confirmed from prior tool results or user input. If unsure, call lsp_java_findSymbol first.",
         "displayName": "Java: Get File Structure",
         "canBeReferencedInPrompt": true,
         "icon": "$(symbol-class)",
@@ -62,7 +62,7 @@
           "properties": {
             "uri": {
               "type": "string",
-              "description": "Java file path (workspace-relative or full URI)"
+              "description": "Workspace-relative path to a Java file. Must be a known path from prior tool results or user input — do not guess."
             }
           },
           "required": [

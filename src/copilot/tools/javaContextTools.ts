@@ -20,6 +20,7 @@
  *   - No classpath resolution, no dependency download
  */
 
+import * as path from "path";
 import * as vscode from "vscode";
 import { Commands } from "../../commands";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
@@ -56,14 +57,14 @@ function resolveFileUri(input: string): vscode.Uri {
 
     let uri: vscode.Uri;
 
-    // Full URI — only allow the file: scheme
-    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(input) || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) {
+    if (input.includes("://")) {
+        // URI string (e.g. "file:///home/user/project/src/Main.java")
         uri = vscode.Uri.parse(input);
         if (uri.scheme !== "file") {
             throw new Error(`Unsupported URI scheme "${uri.scheme}". Only file: URIs are allowed.`);
         }
-    } else if (input.startsWith("/") || /^[a-zA-Z]:[/\\]/.test(input)) {
-        // Absolute path (Unix or Windows)
+    } else if (path.isAbsolute(input)) {
+        // Absolute filesystem path (Unix or Windows)
         uri = vscode.Uri.file(input);
     } else {
         // Relative path — resolve against first workspace folder
@@ -99,6 +100,13 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
         let errorMessage = "";
         try {
             const uri = resolveFileUri(options.input.uri);
+            try {
+                await vscode.workspace.fs.stat(uri);
+            } catch {
+                status = "error";
+                errorMessage = `File not found: ${vscode.workspace.asRelativePath(uri)}`;
+                return toResult({ error: errorMessage });
+            }
             const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
                 "vscode.executeDocumentSymbolProvider", uri,
             );
