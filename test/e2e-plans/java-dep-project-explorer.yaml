@@ -89,10 +89,12 @@ steps:
     timeout: 15
 
   # ── Test 3: unlinkWithFolderExplorer ──
-  # The link/unlink/reveal commands are hidden from the command palette
-  # ("when": false in package.json), so we must invoke them by command id.
+  # Click the title-bar action ("Unlink with Editor") in the JAVA PROJECTS pane.
+  # When `config.java.dependency.syncWithFolderExplorer == true` (the default),
+  # the package contributes the Unlink button to overflow_10@20 — clickViewTitleAction
+  # locates it directly or via the "Views and More Actions..." overflow menu.
   - id: "unlink-editor"
-    action: "executeVSCodeCommand java.view.package.unlinkWithFolderExplorer"
+    action: 'clickViewTitleAction "Java Projects" "Unlink with Editor"'
     verify: "Editor unlinked from tree"
 
   - id: "open-rename-file"
@@ -103,11 +105,12 @@ steps:
     verify: "Tree should not auto-expand to AppToRename"
 
   - id: "relink-editor"
-    action: "executeVSCodeCommand java.view.package.linkWithFolderExplorer"
+    action: 'clickViewTitleAction "Java Projects" "Link with Editor"'
     verify: "Editor re-linked with tree"
 
   # ── Test 4: revealInProjectExplorer ──
-  # Collapse all tree nodes, then reveal App.java from editor
+  # Collapse all tree nodes, then reveal App.java by right-clicking the editor tab
+  # → "Reveal in Java Project Explorer" (contributed to editor/title/context).
   - id: "collapse-all"
     action: "run command View: Collapse All"
     verify: "Collapse tree to reset state"
@@ -117,7 +120,7 @@ steps:
     waitBefore: 2
 
   - id: "reveal-in-project-explorer"
-    action: "executeVSCodeCommand java.view.package.revealInProjectExplorer"
+    action: 'contextMenuOnEditorTab "App.java" "Reveal in Java Project Explorer"'
     waitBefore: 2
 
   - id: "verify-revealed"
