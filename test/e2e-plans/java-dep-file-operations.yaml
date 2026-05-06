@@ -25,13 +25,31 @@ setup:
   timeout: 180
   settings:
     java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
 
 steps:
-  # ── Setup: wait for LS, focus Java Projects ──
+  # ── Setup: wait for LS, free Explorer space, focus Java Projects ──
   - id: "ls-ready"
     action: "waitForLanguageServer"
     verify: "Java Language Server is ready"
     timeout: 180
+
+  # Free horizontal space (Chat panel can take ~210px on right side)
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  # Free vertical space inside Explorer so JAVA PROJECTS gets room.
+  # Without this the Java Projects pane-header overlaps tree rows on
+  # 1024x768 CI displays and click events get intercepted by the sticky header.
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
 
   - id: "focus-java-projects"
     action: "run command Java Projects: Focus on Java Projects View"
@@ -68,11 +86,22 @@ steps:
     timeout: 15
 
   # ── Test 2: create new package ──
+  # Close the editor opened by the previous step. With link-with-editor on,
+  # an open editor causes the JAVA PROJECTS tree to auto-expand, pushing
+  # my-app right under the sticky pane-header where clicks get intercepted.
+  - id: "close-editors-before-pkg"
+    action: "run command View: Close All Editors"
+
+  - id: "collapse-workspace-root-2"
+    action: "collapseWorkspaceRoot"
+
   - id: "focus-java-projects-2"
     action: "run command Java Projects: Focus on Java Projects View"
+    waitBefore: 1
 
   - id: "click-project-node-2"
     action: "click my-app tree item"
+    waitBefore: 1
 
   - id: "trigger-new-resource-2"
     action: "clickTreeItemAction my-app New..."
@@ -98,6 +127,9 @@ steps:
   - id: "open-rename-target"
     action: "open file AppToRename.java"
     waitBefore: 3
+
+  - id: "collapse-workspace-root-3"
+    action: "collapseWorkspaceRoot"
 
   - id: "focus-java-projects-3"
     action: "run command Java Projects: Focus on Java Projects View"
@@ -145,6 +177,9 @@ steps:
   - id: "open-delete-target"
     action: "open file AppToDelete.java"
     waitBefore: 5
+
+  - id: "collapse-workspace-root-4"
+    action: "collapseWorkspaceRoot"
 
   - id: "focus-java-projects-4"
     action: "run command Java Projects: Focus on Java Projects View"

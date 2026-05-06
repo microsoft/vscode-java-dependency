@@ -21,6 +21,7 @@ setup:
   timeout: 180
   settings:
     java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
 
 steps:
   # ── Wait for LS ready ──
@@ -28,6 +29,20 @@ steps:
     action: "waitForLanguageServer"
     verify: "Java Language Server is ready"
     timeout: 180
+
+  # Free horizontal & vertical space so JAVA PROJECTS gets enough room.
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
 
   # ── Test 1: javaProjectExplorer.focus ──
   - id: "focus-java-projects"
@@ -45,11 +60,13 @@ steps:
     timeout: 15
 
   # ── Test 2: linkWithFolderExplorer ──
+  # NOTE: action resolver only matches "expandTreeItem <name>" — strings like
+  # "expand my-app tree item" silently fall back to command palette and no-op.
   - id: "expand-project"
-    action: "expand my-app tree item"
+    action: "expandTreeItem my-app"
 
   - id: "expand-src"
-    action: "expand src/main/java tree item"
+    action: "expandTreeItem src/main/java"
     waitBefore: 2
 
   - id: "verify-package"
@@ -60,7 +77,7 @@ steps:
     timeout: 15
 
   - id: "expand-package"
-    action: "expand com.mycompany.app tree item"
+    action: "expandTreeItem com.mycompany.app"
     waitBefore: 2
 
   - id: "verify-app-class"
@@ -72,8 +89,12 @@ steps:
     timeout: 15
 
   # ── Test 3: unlinkWithFolderExplorer ──
+  # Click the title-bar action ("Unlink with Editor") in the JAVA PROJECTS pane.
+  # When `config.java.dependency.syncWithFolderExplorer == true` (the default),
+  # the package contributes the Unlink button to overflow_10@20 — clickViewTitleAction
+  # locates it directly or via the "Views and More Actions..." overflow menu.
   - id: "unlink-editor"
-    action: "run command Java: Unlink with Editor"
+    action: 'clickViewTitleAction "Java Projects" "Unlink with Editor"'
     verify: "Editor unlinked from tree"
 
   - id: "open-rename-file"
@@ -84,11 +105,12 @@ steps:
     verify: "Tree should not auto-expand to AppToRename"
 
   - id: "relink-editor"
-    action: "run command Java: Link with Editor"
+    action: 'clickViewTitleAction "Java Projects" "Link with Editor"'
     verify: "Editor re-linked with tree"
 
   # ── Test 4: revealInProjectExplorer ──
-  # Collapse all tree nodes, then reveal App.java from editor
+  # Collapse all tree nodes, then reveal App.java by right-clicking the editor tab
+  # → "Reveal in Java Project Explorer" (contributed to editor/title/context).
   - id: "collapse-all"
     action: "run command View: Collapse All"
     verify: "Collapse tree to reset state"
@@ -98,7 +120,7 @@ steps:
     waitBefore: 2
 
   - id: "reveal-in-project-explorer"
-    action: "run command Java: Reveal in Java Project Explorer"
+    action: 'contextMenuOnEditorTab "App.java" "Reveal in Java Project Explorer"'
     waitBefore: 2
 
   - id: "verify-revealed"
