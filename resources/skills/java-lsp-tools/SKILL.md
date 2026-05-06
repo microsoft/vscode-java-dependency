@@ -17,7 +17,7 @@ Search for Java symbol definitions (classes, methods, fields) by name across the
 
 ### `lsp_java_getFileStructure`
 Get hierarchical outline of a Java file (classes, methods, fields) with line ranges.
-- Input: `{ uri }` — workspace-relative path or full URI
+- Input: `{ uri }` — workspace-relative path. Must be a known path from prior tool results or user input — do not guess
 - Output: symbol tree with `L start-end` ranges (~100 tokens)
 - **Use instead of** `read_file` full scan when you need to understand a file's layout
 

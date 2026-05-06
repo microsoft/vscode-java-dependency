@@ -10,5 +10,5 @@ For Java files, two compiler-accurate `lsp_java_*` tools are available and retur
 
 These are deferred tools. Load them with `tool_search_tool_regex` using pattern `lsp_java_` before first use.
 
-Prefer these over `grep_search`, `search_subagent`, `semantic_search`, `file_search`, or full-file `read_file` when navigating Java symbols. Fall back to `grep_search` if a tool returns empty or errors.
+Prefer these over `grep_search`, `search_subagent`, `semantic_search`, `file_search`, or full-file `read_file` when navigating Java symbols. Always use `findSymbol` to discover file paths before passing them to `getFileStructure` — do not guess paths. Fall back to `grep_search` if a tool returns empty or errors.
 
