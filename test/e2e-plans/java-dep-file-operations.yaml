@@ -99,6 +99,13 @@ steps:
     action: "run command Java Projects: Focus on Java Projects View"
     waitBefore: 1
 
+  # Test 1 expanded my-app → src/main/java → com.mycompany.app to reveal the
+  # newly-created App2.java. Reset the JAVA PROJECTS tree so my-app is back
+  # at row 0 and not occluded by the sticky pane-header on the next click.
+  - id: "collapse-java-projects-tree-2"
+    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
+    waitBefore: 1
+
   - id: "click-project-node-2"
     action: "click my-app tree item"
     waitBefore: 1
