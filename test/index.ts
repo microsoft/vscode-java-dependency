@@ -98,6 +98,17 @@ async function main(): Promise<void> {
             ],
         });
 
+        // Run test for non-Java Gradle project (regression test for #921)
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./non-java-gradle-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "non-java-gradle"),
+                `--user-data-dir=${userDir}`,
+            ],
+        });
+
         process.exit(0);
 
     } catch (err) {
