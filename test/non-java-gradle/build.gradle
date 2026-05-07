@@ -1,0 +1,10 @@
+// A Gradle build file used to simulate a non-Java workspace (e.g. Groovy/Grails)
+// that should NOT trigger the "Java Projects" explorer view.
+// See: https://github.com/microsoft/vscode-java-dependency/issues/921
+plugins {
+    id 'groovy'
+}
+
+repositories {
+    mavenCentral()
+}
