@@ -196,9 +196,12 @@ steps:
     action: "contextMenu AppToDelete Delete"
     verify: "Delete confirmation triggered"
 
-  # VSCode shows a platform-specific confirmation dialog for delete
+  # VSCode shows a platform-specific confirmation dialog for delete.
+  # Use the strict variant: throw if the dialog is not present, so a
+  # silently-failed delete-context-menu surfaces here rather than 30s later
+  # at verify-deleted. Requires @vscjava/vscode-autotest >= 0.6.7.
   - id: "confirm-delete"
-    action: "confirmDialog"
+    action: "expectConfirmDialog"
 
   - id: "wait-delete"
     action: "wait 3 seconds"
