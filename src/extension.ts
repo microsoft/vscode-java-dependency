@@ -3,7 +3,7 @@
 
 import * as path from "path";
 import {
-    commands, Diagnostic, Extension, ExtensionContext, extensions, languages,
+    commands, Diagnostic, Disposable, Extension, ExtensionContext, extensions, languages,
     Range, tasks, TextDocument, TextEditor, Uri, window, workspace
 } from "vscode";
 import { dispose as disposeTelemetryWrapper, initializeFromJsonFile, instrumentOperation, instrumentOperationAsVsCodeCommand, sendInfo } from "vscode-extension-telemetry-wrapper";
@@ -40,7 +40,63 @@ export async function activate(context: ExtensionContext): Promise<void> {
             contextManager.setContextValue(Context.WORKSPACE_CONTAINS_BUILD_FILES, true);
         }
     });
-    contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+    await activateJavaProjectExplorerWhenJavaContentExists(context);
+}
+
+/**
+ * The extension is activated by `workspaceContains:*.gradle*` as well, which fires for any
+ * Gradle workspace regardless of language (Groovy/Grails/Kotlin/etc.). Showing the
+ * "Java Projects" view in such workspaces is annoying for non-Java users. To avoid that,
+ * we only flip the `java:projectManagerActivated` context (which controls the view's
+ * visibility) when we are confident the workspace actually contains Java content:
+ *   1. The active editor is a Java file (typical when activated via `onLanguage:java`).
+ *   2. The workspace contains Maven/Eclipse Java metadata (`pom.xml` / `.classpath`).
+ *   3. The workspace contains at least one `*.java` source file.
+ * For Gradle-only workspaces without Java sources we install a watcher so the view will
+ * appear automatically once a Java file is added later.
+ */
+async function activateJavaProjectExplorerWhenJavaContentExists(context: ExtensionContext): Promise<void> {
+    let activated = false;
+    const setActivated = () => {
+        if (activated) {
+            return;
+        }
+        activated = true;
+        contextManager.setContextValue(Context.EXTENSION_ACTIVATED, true);
+    };
+
+    // Any already-loaded Java document (active or not) is a strong signal. This also covers
+    // the case where the extension is activated by `onLanguage:java` but `activeTextEditor`
+    // has not yet been populated.
+    if (workspace.textDocuments.some((doc) => doc.languageId === "java")
+        || window.activeTextEditor?.document.languageId === "java") {
+        setActivated();
+        return;
+    }
+
+    const [javaProjectMetadata, javaSources] = await Promise.all([
+        workspace.findFiles("{**/pom.xml,**/.classpath}", undefined, 1),
+        workspace.findFiles("**/*.java", undefined, 1),
+    ]);
+    if (javaProjectMetadata.length > 0 || javaSources.length > 0) {
+        setActivated();
+        return;
+    }
+
+    // No Java content detected yet. Listen for it to appear via any of these channels:
+    //   - A `*.java` source file being created in the workspace (FileSystemWatcher).
+    //   - A Java document being opened later (e.g. a single file from outside the workspace).
+    const javaFileWatcher = workspace.createFileSystemWatcher("**/*.java");
+    const disposables: Disposable[] = [
+        javaFileWatcher,
+        javaFileWatcher.onDidCreate(setActivated),
+        workspace.onDidOpenTextDocument((doc) => {
+            if (doc.languageId === "java") {
+                setActivated();
+            }
+        }),
+    ];
+    context.subscriptions.push(...disposables);
 }
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
