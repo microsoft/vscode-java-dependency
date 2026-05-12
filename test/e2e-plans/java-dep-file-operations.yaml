@@ -52,7 +52,7 @@ steps:
     action: "collapseWorkspaceRoot"
 
   - id: "focus-java-projects"
-    action: "run command Java Projects: Focus on Java Projects View"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
     verify: "Java Projects view is focused"
 
   - id: "wait-tree-load"
@@ -89,6 +89,14 @@ steps:
   # Close the editor opened by the previous step. With link-with-editor on,
   # an open editor causes the JAVA PROJECTS tree to auto-expand, pushing
   # my-app right under the sticky pane-header where clicks get intercepted.
+  #
+  # App2.java is opened in a dirty editor by the New Class flow (the extension
+  # writes initial class boilerplate via the buffer), so we must save first
+  # — otherwise `Close All Editors` raises a "Save changes?" modal dialog
+  # that blocks every subsequent click for the rest of the run.
+  - id: "save-all-before-close"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
   - id: "close-editors-before-pkg"
     action: "run command View: Close All Editors"
 
@@ -96,14 +104,14 @@ steps:
     action: "collapseWorkspaceRoot"
 
   - id: "focus-java-projects-2"
-    action: "run command Java Projects: Focus on Java Projects View"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
     waitBefore: 1
 
   # Test 1 expanded my-app → src/main/java → com.mycompany.app to reveal the
   # newly-created App2.java. Reset the JAVA PROJECTS tree so my-app is back
   # at row 0 and not occluded by the sticky pane-header on the next click.
   - id: "collapse-java-projects-tree-2"
-    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
     waitBefore: 1
 
   - id: "click-project-node-2"
@@ -139,7 +147,7 @@ steps:
     action: "collapseWorkspaceRoot"
 
   - id: "focus-java-projects-3"
-    action: "run command Java Projects: Focus on Java Projects View"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
     waitBefore: 3
 
   # Click the tree item first to select it
@@ -189,7 +197,7 @@ steps:
     action: "collapseWorkspaceRoot"
 
   - id: "focus-java-projects-4"
-    action: "run command Java Projects: Focus on Java Projects View"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
     waitBefore: 2
 
   - id: "delete-context-menu"

@@ -45,8 +45,11 @@ steps:
     action: "collapseWorkspaceRoot"
 
   # ── Test 1: javaProjectExplorer.focus ──
+  # The view is contributed to the Explorer container, so the palette title is
+  # "Explorer: Focus on Java Projects View". Invoking the command id directly
+  # via executeVSCodeCommand is locale-independent and slightly faster.
   - id: "focus-java-projects"
-    action: "run command Java Projects: Focus on Java Projects View"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
     verify: "Java Projects view is focused"
 
   - id: "wait-tree-load"
@@ -109,10 +112,14 @@ steps:
     verify: "Editor re-linked with tree"
 
   # ── Test 4: revealInProjectExplorer ──
-  # Collapse all tree nodes, then reveal App.java by right-clicking the editor tab
-  # → "Reveal in Java Project Explorer" (contributed to editor/title/context).
+  # Collapse all tree nodes, then reveal App.java by invoking the contributed
+  # `java.view.package.revealInProjectExplorer` command. autotest 0.7.x has no
+  # contextMenuOnEditorTab action, so we drive the command directly via
+  # executeVSCodeCommand with a Uri-shaped POJO arg (the command reads
+  # `uri.fsPath` and reconstructs a proper Uri before use, so a plain object
+  # with `fsPath` is sufficient).
   - id: "collapse-all"
-    action: "run command View: Collapse All"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
     verify: "Collapse tree to reset state"
 
   - id: "open-app-file"
@@ -120,7 +127,7 @@ steps:
     waitBefore: 2
 
   - id: "reveal-in-project-explorer"
-    action: 'contextMenuOnEditorTab "App.java" "Reveal in Java Project Explorer"'
+    action: 'executeVSCodeCommand java.view.package.revealInProjectExplorer {"fsPath":"${workspaceFolder}/src/main/java/com/mycompany/app/App.java","scheme":"file"}'
     waitBefore: 2
 
   - id: "verify-revealed"
