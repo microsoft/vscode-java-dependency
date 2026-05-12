@@ -24,3 +24,8 @@ test-resources
 # Ignore output of code sign
 server/*.md
 **/*.log
+
+# Local env / autotest artifacts
+.env
+.env.*
+test-results/**

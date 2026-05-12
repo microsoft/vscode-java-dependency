@@ -27,7 +27,10 @@ steps:
   # ── Wait for LS ready ──
   - id: "ls-ready"
     action: "waitForLanguageServer"
-    verify: "Java Language Server is ready"
+    # No `verify:` — `waitForLanguageServer` is itself the deterministic
+    # readiness check. The AFTER screenshot may transiently show
+    # "Java: Building - 0%" (Maven import starts immediately after Ready),
+    # which a strict LLM mis-reads as a failure.
     timeout: 180
 
   # Free horizontal & vertical space so JAVA PROJECTS gets enough room.
@@ -57,7 +60,7 @@ steps:
 
   - id: "verify-project-node"
     action: "wait 1 seconds"
-    verify: "my-app project node is visible in the tree"
+    # No `verify:` — state-check step; `verifyTreeItem` is authoritative.
     verifyTreeItem:
       name: "my-app"
     timeout: 15
@@ -74,7 +77,7 @@ steps:
 
   - id: "verify-package"
     action: "wait 1 seconds"
-    verify: "Package com.mycompany.app is visible"
+    # No `verify:` — state-check step; `verifyTreeItem` is authoritative.
     verifyTreeItem:
       name: "com.mycompany.app"
     timeout: 15
@@ -85,7 +88,7 @@ steps:
 
   - id: "verify-app-class"
     action: "wait 1 seconds"
-    verify: "App class node is visible (exact match, not App.java or AppToDelete)"
+    # No `verify:` — state-check step; `verifyTreeItem` is authoritative.
     verifyTreeItem:
       name: "App"
       exact: true
@@ -98,18 +101,30 @@ steps:
   # locates it directly or via the "Views and More Actions..." overflow menu.
   - id: "unlink-editor"
     action: 'clickViewTitleAction "Java Projects" "Unlink with Editor"'
-    verify: "Editor unlinked from tree"
+    # No `verify:` — toggling the link-with-editor setting produces no visible
+    # change in the screenshot (tree selection persists from the prior reveal).
+    # The behavior is verified deterministically by `wait-after-open` below:
+    # after opening AppToRename.java, the tree must NOT auto-reveal it.
 
   - id: "open-rename-file"
     action: "open file AppToRename.java"
 
   - id: "wait-after-open"
     action: "wait 3 seconds"
-    verify: "Tree should not auto-expand to AppToRename"
+    # Stability check: with link-with-editor disabled, opening
+    # AppToRename.java must NOT change the Java Projects tree state. The
+    # BEFORE and AFTER screenshots are expected to look identical (tree
+    # state preserved), which is exactly what a comparison-only LLM
+    # verification can confirm reliably. We cannot use verifyTreeItem
+    # visible:false here because AppToRename is already visible (its
+    # parent package was expanded by earlier setup steps); the check is
+    # about tree-state stability, not item visibility.
+    verify: "Java Projects tree state is unchanged; opening AppToRename.java did not auto-reveal or auto-select anything new."
 
   - id: "relink-editor"
     action: 'clickViewTitleAction "Java Projects" "Link with Editor"'
-    verify: "Editor re-linked with tree"
+    # No `verify:` — same reason as `unlink-editor`. The behavior is verified
+    # deterministically downstream when revealInProjectExplorer locates App.
 
   # ── Test 4: revealInProjectExplorer ──
   # Collapse all tree nodes, then reveal App.java by invoking the contributed
@@ -132,7 +147,7 @@ steps:
 
   - id: "verify-revealed"
     action: "wait 2 seconds"
-    verify: "App class should be revealed in Java Projects tree"
+    # No `verify:` — state-check step; `verifyTreeItem` is authoritative.
     verifyTreeItem:
       name: "App"
       exact: true

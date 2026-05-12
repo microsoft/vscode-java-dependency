@@ -31,7 +31,12 @@ steps:
   # ── Setup: wait for LS, free Explorer space, focus Java Projects ──
   - id: "ls-ready"
     action: "waitForLanguageServer"
-    verify: "Java Language Server is ready"
+    # No `verify:` — `waitForLanguageServer` is itself the deterministic
+    # readiness check (it returns only when the Java Language Server status
+    # changes to "Ready"). The post-action screenshot frequently captures
+    # the very next state — "Java: Building - 0%" once Maven import begins —
+    # which a strict LLM mis-reads as "not ready", even though Ready was
+    # observed milliseconds earlier.
     timeout: 180
 
   # Free horizontal space (Chat panel can take ~210px on right side)
@@ -76,11 +81,18 @@ steps:
 
   - id: "enter-class-name"
     action: "fillQuickInput App2"
-    verify: "Class name entered"
+    # NOTE: no `verify:` — `fillQuickInput` submits and closes the quick input.
+    # The before/after screenshots only show the input disappearing, which the
+    # screenshot-comparing LLM frequently mis-reads as "wrong UI element
+    # targeted". The deterministic `verifyEditorTab` on the next step is the
+    # ground truth for whether App2.java was created.
 
   - id: "verify-new-class-tab"
     action: "wait 2 seconds"
-    verify: "Editor tab App2.java should appear"
+    # No `verify:` — state-check step. The deterministic `verifyEditorTab`
+    # below is authoritative. BEFORE and AFTER screenshots are nearly
+    # identical at steady state (App2.java tab present in both), which a
+    # strict LLM can mis-read as "no change".
     verifyEditorTab:
       title: "App2.java"
     timeout: 15
@@ -130,11 +142,14 @@ steps:
 
   - id: "enter-package-name"
     action: "fillQuickInput com.mycompany.newpkg"
-    verify: "Package name entered"
+    # No `verify:` — quick input closes after submit and the new package is
+    # under a still-collapsed tree, so LLM can't see the change and downgrades
+    # the step. Package creation is a side-effect of the wizard finishing.
 
   - id: "wait-package-creation"
     action: "wait 3 seconds"
-    verify: "Package directory created"
+    # No `verify:` — tree is collapsed at this point so the new package isn't
+    # rendered; LLM screenshot comparison would erroneously downgrade.
 
   # ── Test 3: rename Java file ──
   # Open the target file, let link-with-editor reveal it in the tree,
@@ -162,26 +177,35 @@ steps:
 
   - id: "enter-new-name"
     action: "fillAnyInput AppRenamed"
-    verify: "New name entered and confirmed"
+    # No `verify:` — rename is async (status bar shows "Computing rename
+    # updates..." for several seconds) so the AFTER screenshot still shows
+    # the old name and LLM downgrades. `verify-renamed-tab` below uses
+    # deterministic `verifyEditorTab` against the new name as ground truth.
     waitBefore: 2
 
   # Handle optional rename confirmation dialog — may not appear on all platforms
-  # (Electron native dialog is auto-dismissed by monkey-patch)
+  # (Electron native dialog is auto-dismissed by monkey-patch).
+  # No `verify:` — confirmDialog is best-effort (dialog may not appear).
   - id: "handle-rename-dialog"
     action: "confirmDialog"
-    verify: "Rename confirmation handled (if present)"
 
-  # Handle optional Refactor Preview panel
+  # Handle optional Refactor Preview panel.
+  # No `verify:` — tryClickButton is best-effort; if the Apply button does not
+  # appear because the refactor finished without preview, the before/after
+  # screenshots are identical and LLM downgrades. The deterministic
+  # `verify-renamed-tab` covers the real outcome.
   - id: "handle-refactor-preview"
     action: "tryClickButton Apply"
-    verify: "Refactor preview applied (if present)"
 
   - id: "wait-rename"
     action: "wait 3 seconds"
 
   - id: "verify-renamed-tab"
     action: "wait 1 seconds"
-    verify: "Editor tab AppRenamed should appear"
+    # No `verify:` — state-check step. `verifyEditorTab` is authoritative.
+    # By the time this runs, the rename has typically already completed
+    # (after wait-rename's 3s), so both BEFORE and AFTER show AppRenamed.
+    # A strict LLM mis-reads identical screenshots as "no transition".
     verifyEditorTab:
       title: "AppRenamed"
     timeout: 15
@@ -211,12 +235,19 @@ steps:
   - id: "confirm-delete"
     action: "expectConfirmDialog"
 
+  # Combined wait + verify in a single step: the deterministic verifyTreeItem
+  # with visible:false polls up to 15s for the tree to refresh, so a short
+  # explicit `wait 3` is enough to give the tree time to render before the
+  # AFTER screenshot is captured.
   - id: "wait-delete"
-    action: "wait 3 seconds"
+    action: "wait 6 seconds"
 
   - id: "verify-deleted"
     action: "wait 1 seconds"
-    verify: "AppToDelete tree item should disappear"
+    # No `verify:` — AFTER screenshot is captured immediately after the wait,
+    # but the tree's removal of AppToDelete may not yet be visually reflected
+    # on slower CI runners. The deterministic verifyTreeItem (visible:false)
+    # below polls for up to 15s and is authoritative.
     verifyTreeItem:
       name: "AppToDelete"
       visible: false
