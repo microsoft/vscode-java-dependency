@@ -21,20 +21,20 @@ pipelines:
         credscan:
           lastModifiedDate: 2024-11-01
         eslint:
-          lastModifiedDate: 2024-11-01
+          lastModifiedDate: 2026-05-14
         psscriptanalyzer:
-          lastModifiedDate: 2024-11-01
+          lastModifiedDate: 2026-05-14
         armory:
-          lastModifiedDate: 2024-11-01
+          lastModifiedDate: 2026-05-14
         accessibilityinsights:
           lastModifiedDate: 2025-09-26
       binary:
         credscan:
           lastModifiedDate: 2024-11-01
         binskim:
-          lastModifiedDate: 2025-09-26
+          lastModifiedDate: 2026-05-14
         spotbugs:
-          lastModifiedDate: 2024-11-01
+          lastModifiedDate: 2026-05-14
   16479:
     retail:
       source:
