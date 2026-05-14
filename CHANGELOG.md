@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.27.3
 
+- feat - Enable Copilot LLM tools / chat skills / chat instructions in stable builds
 - perf - Narrow to Java project to show the explorer in https://github.com/microsoft/vscode-java-dependency/pull/1010
 - perf - Use incremental build by default in https://github.com/microsoft/vscode-java-dependency/pull/998
 - feat - Add `revealInProjectExplorer` command in https://github.com/microsoft/vscode-java-dependency/pull/996
