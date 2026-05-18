@@ -39,6 +39,24 @@ function toResult(data: unknown): vscode.LanguageModelToolResult {
     ]);
 }
 
+function getResponseCharCount(data: unknown): number {
+    return typeof data === "string" ? data.length : JSON.stringify(data, null, 2).length;
+}
+
+function getToolErrorCode(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("No workspace folder")) {
+        return "noWorkspaceFolder";
+    }
+    if (message.includes("Unsupported URI scheme")) {
+        return "unsupportedUriScheme";
+    }
+    if (message.includes("outside the current workspace")) {
+        return "outsideWorkspace";
+    }
+    return "unexpectedError";
+}
+
 /**
  * Resolve a file path to a vscode.Uri.
  * Accepts:
@@ -97,38 +115,49 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
         const startTime = Date.now();
         let resultCount = 0;
         let status = "success";
-        let errorMessage = "";
+        let errorCode = "";
+        let emptyReason = "";
+        let responseCharCount = 0;
         try {
             const uri = resolveFileUri(options.input.uri);
             try {
                 await vscode.workspace.fs.stat(uri);
             } catch {
                 status = "error";
-                errorMessage = `File not found: ${vscode.workspace.asRelativePath(uri)}`;
-                return toResult({ error: errorMessage });
+                errorCode = "fileNotFound";
+                const fileNotFoundPayload = { error: "File not found." };
+                responseCharCount = getResponseCharCount(fileNotFoundPayload);
+                return toResult(fileNotFoundPayload);
             }
             const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
                 "vscode.executeDocumentSymbolProvider", uri,
             );
             if (!symbols || symbols.length === 0) {
                 status = "empty";
-                return toResult({ error: "No symbols found. The file may not be recognized by the Java language server." });
+                emptyReason = "documentSymbolProviderEmpty";
+                const noSymbolsPayload = { error: "No symbols found. The file may not be recognized by the Java language server." };
+                responseCharCount = getResponseCharCount(noSymbolsPayload);
+                return toResult(noSymbolsPayload);
             }
             const counter = { count: 0 };
             const result = symbolsToJson(symbols, 0, counter);
-            const truncated = counter.count >= MAX_SYMBOL_NODES;
             resultCount = counter.count;
-            return toResult({ symbols: result, ...(truncated && { truncated: true }) });
+            const truncated = counter.count >= MAX_SYMBOL_NODES;
+            const fileStructurePayload = { symbols: result, ...(truncated && { truncated: true }) };
+            responseCharCount = getResponseCharCount(fileStructurePayload);
+            return toResult(fileStructurePayload);
         } catch (e) {
             status = "error";
-            errorMessage = e instanceof Error ? e.message : String(e);
+            errorCode = errorCode || getToolErrorCode(e);
             throw e;
         } finally {
             sendInfo("", {
                 operationName: "lmTool.getFileStructure",
                 status,
-                ...(errorMessage && { errorMessage }),
+                ...(errorCode && { errorCode }),
+                ...(emptyReason && { emptyReason }),
                 resultCount,
+                responseCharCount,
                 durationMs: Date.now() - startTime,
             });
         }
@@ -179,34 +208,47 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
     async invoke(options, _token) {
         const startTime = Date.now();
         let resultCount = 0;
+        let totalResults = 0;
+        const limit = Math.min(Math.max(options.input.limit || 20, 1), 50);
         let status = "success";
-        let errorMessage = "";
+        let errorCode = "";
+        let emptyReason = "";
+        let responseCharCount = 0;
         try {
             const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
                 "vscode.executeWorkspaceSymbolProvider", options.input.query,
             );
             if (!symbols || symbols.length === 0) {
                 status = "empty";
-                return toResult({ results: [], message: `No symbols matching '${options.input.query}' found.` });
+                emptyReason = "workspaceSymbolNoMatch";
+                const noMatchesPayload = { results: [], message: "No symbols found." };
+                responseCharCount = getResponseCharCount(noMatchesPayload);
+                return toResult(noMatchesPayload);
             }
-            const limit = Math.min(Math.max(options.input.limit || 20, 1), 50);
+            totalResults = symbols.length;
             const results = symbols.slice(0, limit).map(s => ({
                 name: s.name,
                 kind: vscode.SymbolKind[s.kind],
                 location: `${vscode.workspace.asRelativePath(s.location.uri)}:${s.location.range.start.line + 1}`,
             }));
             resultCount = results.length;
-            return toResult({ results, total: symbols.length });
+            const findSymbolPayload = { results, total: symbols.length };
+            responseCharCount = getResponseCharCount(findSymbolPayload);
+            return toResult(findSymbolPayload);
         } catch (e) {
             status = "error";
-            errorMessage = e instanceof Error ? e.message : String(e);
+            errorCode = getToolErrorCode(e);
             throw e;
         } finally {
             sendInfo("", {
                 operationName: "lmTool.findSymbol",
                 status,
-                ...(errorMessage && { errorMessage }),
+                ...(errorCode && { errorCode }),
+                ...(emptyReason && { emptyReason }),
+                limit,
                 resultCount,
+                totalResults,
+                responseCharCount,
                 durationMs: Date.now() - startTime,
             });
         }
