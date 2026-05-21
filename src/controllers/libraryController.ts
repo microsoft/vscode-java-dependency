@@ -3,7 +3,7 @@
 
 import * as fse from "fs-extra";
 import * as _ from "lodash";
-import minimatch = require("minimatch");
+import * as minimatch from "minimatch";
 import { platform } from "os";
 import * as path from "path";
 import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
@@ -13,9 +13,6 @@ import { Jdtls } from "../java/jdtls";
 import { Settings } from "../settings";
 import { Utility } from "../utility";
 import { DataNode } from "../views/dataNode";
-
-export const WORKSPACE_FOLDER_VARIABLE = "$" + "{workspaceFolder}";
-const MINIMATCH_OPTIONS: minimatch.IOptions = { nobrace: true };
 
 export class LibraryController implements Disposable {
 
@@ -51,27 +48,26 @@ export class LibraryController implements Disposable {
             return;
         }
         addLibraryGlobs(await Promise.all(results.map(async (uri: Uri) => {
-            const uriPath = toReferencedLibraryPath(uri, workspaceFolder);
+            // keep the param: `includeWorkspaceFolder` to false here
+            // since the multi-root is not supported well for invisible projects
+            const uriPath = workspace.asRelativePath(uri, false);
             const isLibraryFolder = canSelectFolders || isMac && (await fse.stat(uri.fsPath)).isDirectory();
             return isLibraryFolder ? uriPath + "/**/*.jar" : uriPath;
         })));
     }
 
     public async removeLibrary(removalFsPath: string) {
-        const workspaceFolder: WorkspaceFolder | undefined = Utility.getDefaultWorkspaceFolder();
-        const removalUri = Uri.file(removalFsPath);
         const setting = Settings.referencedLibraries();
         const removedPaths = _.remove(setting.include, (include) => {
             if (path.isAbsolute(include)) {
                 return Uri.file(include).fsPath === removalFsPath;
             } else {
-                return include === workspace.asRelativePath(removalFsPath, false)
-                    || include === toReferencedLibraryPath(removalUri, workspaceFolder);
+                return include === workspace.asRelativePath(removalFsPath, false);
             }
         });
         if (removedPaths.length === 0) {
             // No duplicated item in include array, add it into the exclude field
-            setting.exclude = updatePatternArray(setting.exclude, toReferencedLibraryExcludePath(removalUri, workspaceFolder, setting.include));
+            setting.exclude = updatePatternArray(setting.exclude, workspace.asRelativePath(removalFsPath, false));
         }
         Settings.updateReferencedLibraries(setting);
     }
@@ -91,43 +87,13 @@ export function addLibraryGlobs(libraryGlobs: string[]) {
     Settings.updateReferencedLibraries(setting);
 }
 
-export function toReferencedLibraryPath(uri: Uri, workspaceFolder: WorkspaceFolder | undefined): string {
-    if (!workspaceFolder) {
-        return uri.fsPath;
-    }
-
-    const relativePath = path.relative(workspaceFolder.uri.fsPath, uri.fsPath);
-    if (relativePath === ".." || relativePath.startsWith(".." + path.sep) || path.isAbsolute(relativePath)) {
-        return uri.fsPath;
-    }
-
-    return [WORKSPACE_FOLDER_VARIABLE, relativePath.replace(/\\/g, "/")].filter(Boolean).join("/");
-}
-
-export function toReferencedLibraryExcludePath(uri: Uri, workspaceFolder: WorkspaceFolder | undefined, includes: string[]): string {
-    const relativePath = workspace.asRelativePath(uri, false);
-    const workspaceVariablePath = toReferencedLibraryPath(uri, workspaceFolder);
-
-    for (const include of includes) {
-        if (include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(workspaceVariablePath, include, MINIMATCH_OPTIONS)) {
-            return workspaceVariablePath;
-        }
-
-        if (!path.isAbsolute(include) && !include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(relativePath, include, MINIMATCH_OPTIONS)) {
-            return relativePath;
-        }
-    }
-
-    return workspaceVariablePath;
-}
-
 /**
  * Check if the `update` patterns are already covered by `origin` patterns and return those uncovered
  */
 function dedupAlreadyCoveredPattern(origin: string[], ...update: string[]): string[] {
     return update.filter((newPattern) => {
         return !origin.some((originPattern) => {
-            return minimatch(newPattern, originPattern, MINIMATCH_OPTIONS);
+            return minimatch(newPattern, originPattern);
         });
     });
 }

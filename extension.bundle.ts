@@ -19,7 +19,6 @@ export { IMainClassInfo } from "./src/tasks/buildArtifact/ResolveMainClassExecut
 
 // project view test
 export { contextManager } from "./src/contextManager";
-export { toReferencedLibraryExcludePath, toReferencedLibraryPath, WORKSPACE_FOLDER_VARIABLE } from "./src/controllers/libraryController";
 export { DependencyExplorer } from "./src/views/dependencyExplorer";
 export { Commands } from "./src/commands";
 export { LanguageServerMode } from "./src/languageServerApi/LanguageServerMode";
