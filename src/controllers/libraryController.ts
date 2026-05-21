@@ -14,6 +14,8 @@ import { Settings } from "../settings";
 import { Utility } from "../utility";
 import { DataNode } from "../views/dataNode";
 
+export const WORKSPACE_FOLDER_VARIABLE = "$" + "{workspaceFolder}";
+
 export class LibraryController implements Disposable {
 
     private disposable: Disposable;
@@ -48,26 +50,27 @@ export class LibraryController implements Disposable {
             return;
         }
         addLibraryGlobs(await Promise.all(results.map(async (uri: Uri) => {
-            // keep the param: `includeWorkspaceFolder` to false here
-            // since the multi-root is not supported well for invisible projects
-            const uriPath = workspace.asRelativePath(uri, false);
+            const uriPath = toReferencedLibraryPath(uri, workspaceFolder);
             const isLibraryFolder = canSelectFolders || isMac && (await fse.stat(uri.fsPath)).isDirectory();
             return isLibraryFolder ? uriPath + "/**/*.jar" : uriPath;
         })));
     }
 
     public async removeLibrary(removalFsPath: string) {
+        const workspaceFolder: WorkspaceFolder | undefined = Utility.getDefaultWorkspaceFolder();
+        const removalUri = Uri.file(removalFsPath);
         const setting = Settings.referencedLibraries();
         const removedPaths = _.remove(setting.include, (include) => {
             if (path.isAbsolute(include)) {
                 return Uri.file(include).fsPath === removalFsPath;
             } else {
-                return include === workspace.asRelativePath(removalFsPath, false);
+                return include === workspace.asRelativePath(removalFsPath, false)
+                    || include === toReferencedLibraryPath(removalUri, workspaceFolder);
             }
         });
         if (removedPaths.length === 0) {
             // No duplicated item in include array, add it into the exclude field
-            setting.exclude = updatePatternArray(setting.exclude, workspace.asRelativePath(removalFsPath, false));
+            setting.exclude = updatePatternArray(setting.exclude, toReferencedLibraryPath(removalUri, workspaceFolder));
         }
         Settings.updateReferencedLibraries(setting);
     }
@@ -85,6 +88,19 @@ export function addLibraryGlobs(libraryGlobs: string[]) {
     setting.exclude = dedupAlreadyCoveredPattern(libraryGlobs, ...setting.exclude);
     setting.include = updatePatternArray(setting.include, ...libraryGlobs);
     Settings.updateReferencedLibraries(setting);
+}
+
+export function toReferencedLibraryPath(uri: Uri, workspaceFolder: WorkspaceFolder | undefined): string {
+    if (!workspaceFolder) {
+        return uri.fsPath;
+    }
+
+    const relativePath = path.relative(workspaceFolder.uri.fsPath, uri.fsPath);
+    if (relativePath === ".." || relativePath.startsWith(".." + path.sep) || path.isAbsolute(relativePath)) {
+        return uri.fsPath;
+    }
+
+    return [WORKSPACE_FOLDER_VARIABLE, relativePath.replace(/\\/g, "/")].filter(Boolean).join("/");
 }
 
 /**

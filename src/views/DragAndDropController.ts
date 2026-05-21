@@ -16,9 +16,10 @@ import { PackageRootNode } from "./packageRootNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
-import { addLibraryGlobs } from "../controllers/libraryController";
+import { addLibraryGlobs, toReferencedLibraryPath } from "../controllers/libraryController";
 import { sendError, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { DocumentSymbolNode } from "./documentSymbolNode";
+import { Utility } from "../utility";
 
 export class DragAndDropController implements TreeDragAndDropController<ExplorerNode> {
 
@@ -389,6 +390,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
      * @param uriStrings uri strings
      */
     private async addReferencedLibraries(uriStrings: string[]): Promise<void> {
+        const workspaceFolder = Utility.getDefaultWorkspaceFolder();
         const pattern = (await Promise.all(uriStrings.map(async uriString => {
             try {
                 const uri = Uri.parse(uriString, true /* strict */);
@@ -400,7 +402,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
                 if (!isDirectory && path.extname(uri.fsPath) !== ".jar") {
                     return undefined;
                 }
-                const uriPath = workspace.asRelativePath(uri, false);
+                const uriPath = toReferencedLibraryPath(uri, workspaceFolder);
                 return isDirectory ? uriPath + "/**/*.jar" : uriPath;
             } catch (e) {
                 sendError(e);
