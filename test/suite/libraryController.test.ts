@@ -4,7 +4,7 @@
 import * as assert from "assert";
 import * as path from "path";
 import { Uri, workspace } from "vscode";
-import { toReferencedLibraryExcludePath, toReferencedLibraryPath, WORKSPACE_FOLDER_VARIABLE } from "../../src/controllers/libraryController";
+import { toReferencedLibraryExcludePath, toReferencedLibraryPath, WORKSPACE_FOLDER_VARIABLE } from "../../extension.bundle";
 
 suite("Library Controller Tests", () => {
 

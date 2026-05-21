@@ -15,6 +15,7 @@ import { Utility } from "../utility";
 import { DataNode } from "../views/dataNode";
 
 export const WORKSPACE_FOLDER_VARIABLE = "$" + "{workspaceFolder}";
+const MINIMATCH_OPTIONS: minimatch.IOptions = { nobrace: true };
 
 export class LibraryController implements Disposable {
 
@@ -108,11 +109,11 @@ export function toReferencedLibraryExcludePath(uri: Uri, workspaceFolder: Worksp
     const workspaceVariablePath = toReferencedLibraryPath(uri, workspaceFolder);
 
     for (const include of includes) {
-        if (include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(workspaceVariablePath, include)) {
+        if (include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(workspaceVariablePath, include, MINIMATCH_OPTIONS)) {
             return workspaceVariablePath;
         }
 
-        if (!path.isAbsolute(include) && !include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(relativePath, include)) {
+        if (!path.isAbsolute(include) && !include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(relativePath, include, MINIMATCH_OPTIONS)) {
             return relativePath;
         }
     }
@@ -126,7 +127,7 @@ export function toReferencedLibraryExcludePath(uri: Uri, workspaceFolder: Worksp
 function dedupAlreadyCoveredPattern(origin: string[], ...update: string[]): string[] {
     return update.filter((newPattern) => {
         return !origin.some((originPattern) => {
-            return minimatch(newPattern, originPattern);
+            return minimatch(newPattern, originPattern, MINIMATCH_OPTIONS);
         });
     });
 }
