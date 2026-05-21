@@ -3,7 +3,7 @@
 
 import * as fse from "fs-extra";
 import * as _ from "lodash";
-import * as minimatch from "minimatch";
+import minimatch = require("minimatch");
 import { platform } from "os";
 import * as path from "path";
 import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
@@ -70,7 +70,7 @@ export class LibraryController implements Disposable {
         });
         if (removedPaths.length === 0) {
             // No duplicated item in include array, add it into the exclude field
-            setting.exclude = updatePatternArray(setting.exclude, toReferencedLibraryPath(removalUri, workspaceFolder));
+            setting.exclude = updatePatternArray(setting.exclude, toReferencedLibraryExcludePath(removalUri, workspaceFolder, setting.include));
         }
         Settings.updateReferencedLibraries(setting);
     }
@@ -101,6 +101,23 @@ export function toReferencedLibraryPath(uri: Uri, workspaceFolder: WorkspaceFold
     }
 
     return [WORKSPACE_FOLDER_VARIABLE, relativePath.replace(/\\/g, "/")].filter(Boolean).join("/");
+}
+
+export function toReferencedLibraryExcludePath(uri: Uri, workspaceFolder: WorkspaceFolder | undefined, includes: string[]): string {
+    const relativePath = workspace.asRelativePath(uri, false);
+    const workspaceVariablePath = toReferencedLibraryPath(uri, workspaceFolder);
+
+    for (const include of includes) {
+        if (include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(workspaceVariablePath, include)) {
+            return workspaceVariablePath;
+        }
+
+        if (!path.isAbsolute(include) && !include.startsWith(WORKSPACE_FOLDER_VARIABLE) && minimatch(relativePath, include)) {
+            return relativePath;
+        }
+    }
+
+    return workspaceVariablePath;
 }
 
 /**
