@@ -12,8 +12,9 @@ import notificationManager from "./display/notificationManager";
 import { Settings } from "../settings";
 import assessmentManager, { getDirectDependencies } from "./assessmentManager";
 import { checkOrInstallAppModExtensionForUpgrade, checkOrPopupToInstallAppModExtensionForModernization } from "./utility";
+import { UpgradeTelemetry } from "./telemetryConstants";
 
-const DEFAULT_UPGRADE_PROMPT = "Upgrade Java project dependency to latest version.";
+const DEFAULT_UPGRADE_PROMPT = "Upgrade Java runtime and frameworks to the latest stable version.";
 
 
 function shouldRunCheckup() {
@@ -25,10 +26,26 @@ class UpgradeManager {
         notificationManager.initialize(context);
 
         // Upgrade project
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string) => {
-            await checkOrInstallAppModExtensionForUpgrade(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
-            const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
-            await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse, useCustomAgent: true });
+        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string, issueType?: string, extensionState?: string) => {
+            const dimensions = {
+                issueType: issueType ?? "unknown",
+                extensionState: extensionState ?? "unknown",
+            };
+            sendInfo("", { operationName: UpgradeTelemetry.EXECUTE_START, ...dimensions });
+            try {
+                await checkOrInstallAppModExtensionForUpgrade(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
+                const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
+                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse, useCustomAgent: true });
+                sendInfo("", { operationName: UpgradeTelemetry.EXECUTE_END, ...dimensions, result: "success" });
+            } catch (e) {
+                sendInfo("", {
+                    operationName: UpgradeTelemetry.EXECUTE_END,
+                    ...dimensions,
+                    result: "failure",
+                    error: e instanceof Error ? e.message : String(e),
+                });
+                throw e;
+            }
         }));
 
         // Show modernization view
