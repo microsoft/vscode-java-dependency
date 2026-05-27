@@ -81,12 +81,12 @@ steps:
   # 'com.mycompany'"). Verify deterministically through the appearance of
   # the "com.mycompany" node.
   - id: "switch-to-hierarchical"
-    action: "executeVSCodeCommand java.view.package.changeToHierarchicalPackageView"
-    # No `verify:` — visually only the package label changes inside the
-    # already-expanded src/main/java row, and the BEFORE/AFTER screenshots
-    # look nearly identical, which a strict screenshot-LLM mis-reads as
-    # "no change". The deterministic verifyTreeItem checks below are the
-    # ground truth.
+    action: 'clickViewTitleAction "Java Projects" "Hierarchical View"'
+    # Real UI path: opens the Java Projects view overflow menu and clicks
+    # "Hierarchical View". sub-screenshots capture overflow-open (button
+    # tooltip visible) and menuitem (Hierarchical View highlighted) so
+    # the LLM/human reviewer can verify the click landed correctly.
+    # deterministic verifyTreeItem below is still authoritative.
 
   - id: "wait-hierarchical"
     action: "wait 4 seconds"
@@ -101,9 +101,9 @@ steps:
 
   # ── Test 2: switch back to flat view ──
   - id: "switch-to-flat"
-    action: "executeVSCodeCommand java.view.package.changeToFlatPackageView"
-    # No `verify:` — see switch-to-hierarchical. verifyTreeItem
-    # below is authoritative.
+    action: 'clickViewTitleAction "Java Projects" "Flat View"'
+    # Real UI path through view-title overflow menu — see
+    # switch-to-hierarchical. verifyTreeItem below is authoritative.
 
   - id: "wait-flat"
     action: "wait 4 seconds"
@@ -181,10 +181,12 @@ steps:
     timeout: 15
 
   - id: "hide-non-java"
-    action: "executeVSCodeCommand java.project.explorer.hideNonJavaResources"
-    # No `verify:` — same rationale as switch-to-hierarchical: only the
-    # presence of a few peripheral nodes (pom.xml, .vscode) changes. The
-    # deterministic verifyTreeItem checks are authoritative.
+    action: 'clickViewTitleAction "Java Projects" "Hide Non-Java Resources"'
+    # Real UI path through view-title overflow menu. The menu item label
+    # toggles based on `config.java.project.explorer.showNonJavaResources`
+    # (Show vs Hide), and the current state at this point is "showing"
+    # so the menu surfaces "Hide Non-Java Resources". verifyTreeItem
+    # checks below are authoritative.
 
   - id: "wait-hide"
     action: "wait 5 seconds"
@@ -200,8 +202,10 @@ steps:
 
   # ── Test 5: show non-Java resources ──
   - id: "show-non-java"
-    action: "executeVSCodeCommand java.project.explorer.showNonJavaResources"
-    # No `verify:` — same rationale; verifyTreeItem below covers it.
+    action: 'clickViewTitleAction "Java Projects" "Show Non-Java Resources"'
+    # Real UI path through view-title overflow menu. After hide-non-java
+    # the toggle now surfaces "Show Non-Java Resources". verifyTreeItem
+    # below is authoritative.
 
   - id: "wait-show"
     action: "wait 5 seconds"
