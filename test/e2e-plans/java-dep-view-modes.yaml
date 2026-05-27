@@ -39,21 +39,13 @@ steps:
     action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
     verify: "Auxiliary bar (Chat) closed"
 
-  - id: "collapse-outline"
-    action: "collapseSidebarSection OUTLINE"
-
-  - id: "collapse-timeline"
-    action: "collapseSidebarSection TIMELINE"
-
-  - id: "collapse-workspace-root"
-    action: "collapseWorkspaceRoot"
-
-  # Collapse the entire EXPLORER section so JAVA PROJECTS gets the full
-  # vertical space — its tree is virtualized and rows below the viewport
+  # Collapse the entire MAVEN workspace-folder pane so JAVA PROJECTS gets the
+  # full vertical space — its tree is virtualized and rows below the viewport
   # are not rendered, which masks items like pom.xml that live below
-  # src/main/java in a Maven project.
-  - id: "collapse-explorer-section"
-    action: "collapseSidebarSection EXPLORER"
+  # src/main/java in a Maven project. OUTLINE and TIMELINE panes are
+  # collapsed by default in a fresh session, so no explicit step needed.
+  - id: "collapse-maven-pane"
+    action: "collapseSidebarSection maven"
 
   - id: "focus-java-projects"
     action: "executeVSCodeCommand javaProjectExplorer.focus"

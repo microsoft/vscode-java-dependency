@@ -56,14 +56,11 @@ steps:
     action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
     verify: "Auxiliary bar (Chat) closed"
 
-  - id: "collapse-outline"
-    action: "collapseSidebarSection OUTLINE"
-
-  - id: "collapse-timeline"
-    action: "collapseSidebarSection TIMELINE"
-
-  - id: "collapse-workspace-root"
-    action: "collapseWorkspaceRoot"
+  # Collapse the MAVEN workspace-folder pane so JAVA PROJECTS gets the full
+  # vertical space. OUTLINE and TIMELINE are collapsed by default in fresh
+  # sessions, so no explicit step is needed.
+  - id: "collapse-maven-pane"
+    action: "collapseSidebarSection maven"
 
   - id: "focus-java-projects"
     action: "executeVSCodeCommand javaProjectExplorer.focus"
@@ -72,23 +69,27 @@ steps:
   - id: "wait-tree-load"
     action: "wait 3 seconds"
 
-  # ── Test 1: Build All (incremental) ──
+  # ── Test 1: Build All (incremental) — Java Projects view title-bar button ──
+  # The "Build All" toolbar action ($(tools) icon) is contributed under
+  # view/title group navigation@30 in package.json. Clicking it through the
+  # UI exercises the full button-rendering + when-clause + command-dispatch
+  # chain — unlike executeVSCodeCommand, which would only hit the command
+  # bus directly.
   - id: "trigger-build-all"
-    action: "executeVSCodeCommand java.project.build.workspace"
-    # No `verify:` — build is a background operation; the status bar may
-    # briefly show "Building - X%" before returning to Ready. The
-    # screenshot LLM would compare two nearly-identical screenshots and
-    # downgrade. The next step's deterministic `waitForLanguageServer`
-    # confirms the build completed without breaking the LS.
+    action: 'clickViewTitleAction "Java Projects" "Build All"'
 
   - id: "wait-build-all"
     action: "waitForLanguageServer"
     timeout: 120
 
-  # ── Test 2: Rebuild All (full compile) ──
+  # ── Test 2: Rebuild All (full compile) — Java Projects overflow menu ──
+  # "Rebuild All" lives in view/title group overflow_20@5, so it is reached
+  # via the "Views and More Actions..." (...) overflow menu. The
+  # clickViewTitleAction helper automatically falls through from the direct
+  # button path to the overflow menu when the action is not present in the
+  # toolbar's navigation group.
   - id: "trigger-rebuild-all"
-    action: "executeVSCodeCommand java.project.rebuild.workspace"
-    # No `verify:` — same rationale as trigger-build-all.
+    action: 'clickViewTitleAction "Java Projects" "Rebuild All"'
 
   - id: "wait-rebuild-all"
     action: "waitForLanguageServer"
@@ -96,8 +97,9 @@ steps:
 
   # ── Test 3: Build Project (per-project, via context menu) ──
   # The `java.project.build.project` command requires a project URI, so it
-  # is gated behind the project context-menu in package.json. Invoke it
-  # via the context menu on the my-app node.
+  # is gated behind the project context-menu in package.json (8_execution@5
+  # when viewItem matches /java:project.*\+java.*\+uri/). Invoke it via the
+  # project node context menu — the menu surface that real users hit.
   - id: "click-project-build"
     action: "click my-app tree item"
     waitBefore: 1
@@ -125,19 +127,40 @@ steps:
     timeout: 180
 
   # ── Test 5: Reload Project (editor title-bar action on pom.xml) ──
-  # `java.project.reloadProjectFromActiveFile` is shown only when the
-  # active editor is a build file (pom.xml / build.gradle) and the
-  # context key `java:reloadProjectActive` is set. Open pom.xml and then
-  # invoke the command — the extension reads the active editor's URI to
-  # trigger a project re-import.
+  # `java.project.reloadProjectFromActiveFile` is contributed in editor/title
+  # group navigation when both `java:reloadProjectActive` and `javaLSReady`
+  # are true. The `java:reloadProjectActive` key is only set after the
+  # project file (pom.xml / build.gradle) has been modified — opening an
+  # unchanged pom.xml is NOT enough to make the $(sync) button appear.
+  #
+  # To exercise the real UI flow:
+  #   1. Open pom.xml.
+  #   2. Type a space at the cursor → file becomes dirty.
+  #   3. Save → JDT.LS detects the build file change and sets
+  #      `java:reloadProjectActive`, which renders the $(sync) "Reload
+  #      Java Project" button in the editor title bar.
+  #   4. Click the title-bar button → reload kicks off.
+  #   5. waitForLanguageServer confirms the reload completed.
+  #   6. Undo + save restores pom.xml to its original content so the
+  #      fixture is left clean for subsequent runs.
+  # ── Test 5: Reload Project From Active File ──
+  # `java.project.reloadProjectFromActiveFile` is contributed to editor/title
+  # group navigation only when `java:reloadProjectActive && javaLSReady` are
+  # both true. The `java:reloadProjectActive` key is set by redhat.java when
+  # JDT.LS detects an out-of-date project descriptor — but that signal is
+  # racy and inconsistent for synthetic changes (trivial whitespace edits
+  # often get absorbed without flipping the key, and a substantive edit
+  # would risk corrupting the fixture pom.xml). For deterministic CI
+  # behaviour this step therefore invokes the command id directly through
+  # the keybinding-bridge path. The fact that the command exists and runs
+  # without breaking the language server is still meaningful coverage,
+  # complementing the UI-driven tests above.
   - id: "open-pom"
     action: "open file pom.xml"
     waitBefore: 3
 
   - id: "trigger-reload-project"
     action: "executeVSCodeCommand java.project.reloadProjectFromActiveFile"
-    # No `verify:` — reload is async; deterministic waitForLanguageServer
-    # below covers the outcome.
 
   - id: "wait-reload-project"
     action: "waitForLanguageServer"

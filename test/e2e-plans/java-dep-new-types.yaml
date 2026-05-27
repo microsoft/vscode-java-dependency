@@ -54,14 +54,11 @@ steps:
     action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
     verify: "Auxiliary bar (Chat) closed"
 
-  - id: "collapse-outline"
-    action: "collapseSidebarSection OUTLINE"
-
-  - id: "collapse-timeline"
-    action: "collapseSidebarSection TIMELINE"
-
-  - id: "collapse-workspace-root"
-    action: "collapseWorkspaceRoot"
+  # Collapse the MAVEN workspace-folder pane so JAVA PROJECTS gets the full
+  # vertical space. OUTLINE and TIMELINE are collapsed by default in fresh
+  # sessions, so no explicit step is needed.
+  - id: "collapse-maven-pane"
+    action: "collapseSidebarSection maven"
 
   - id: "focus-java-projects"
     action: "executeVSCodeCommand javaProjectExplorer.focus"
