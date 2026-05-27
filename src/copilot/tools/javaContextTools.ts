@@ -229,7 +229,9 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
             const results = symbols.slice(0, limit).map(s => ({
                 name: s.name,
                 kind: vscode.SymbolKind[s.kind],
+                container: s.containerName || undefined,
                 location: `${vscode.workspace.asRelativePath(s.location.uri)}:${s.location.range.start.line + 1}`,
+                range: `L${s.location.range.start.line + 1}-${s.location.range.end.line + 1}`,
             }));
             resultCount = results.length;
             const findSymbolPayload = { results, total: symbols.length };
