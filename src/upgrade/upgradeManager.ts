@@ -26,26 +26,29 @@ class UpgradeManager {
         notificationManager.initialize(context);
 
         // Upgrade project
-        context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string, issueType?: string, extensionState?: string) => {
-            const dimensions = {
-                issueType: issueType ?? "unknown",
-                extensionState: extensionState ?? "unknown",
-            };
-            sendInfo("", { operationName: UpgradeTelemetry.EXECUTE_START, ...dimensions });
-            try {
-                await checkOrInstallAppModExtensionForUpgrade(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
-                const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
-                await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse, useCustomAgent: true });
-                sendInfo("", { operationName: UpgradeTelemetry.EXECUTE_END, ...dimensions, result: "success" });
-            } catch (e) {
-                sendInfo("", {
-                    operationName: UpgradeTelemetry.EXECUTE_END,
-                    ...dimensions,
-                    result: "failure",
-                    error: e instanceof Error ? e.message : String(e),
-                });
-                throw e;
-            }
+        context.subscriptions.push(commands.registerCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, (promptText?: string, issueType?: string, extensionState?: string, notificationOperationId?: string) => {
+            return instrumentOperation(Commands.JAVA_UPGRADE_WITH_COPILOT, async (operationId: string) => {
+                const dimensions = {
+                    issueType: issueType ?? "unknown",
+                    extensionState: extensionState ?? "unknown",
+                    notificationOperationId: notificationOperationId ?? "",
+                };
+                sendInfo(operationId, { operationName: UpgradeTelemetry.EXECUTE_START, ...dimensions });
+                try {
+                    await checkOrInstallAppModExtensionForUpgrade(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
+                    const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
+                    await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse, useCustomAgent: true });
+                    sendInfo(operationId, { operationName: UpgradeTelemetry.EXECUTE_END, ...dimensions, result: "success" });
+                } catch (e) {
+                    sendInfo(operationId, {
+                        operationName: UpgradeTelemetry.EXECUTE_END,
+                        ...dimensions,
+                        result: "failure",
+                        error: e instanceof Error ? e.message : String(e),
+                    });
+                    throw e;
+                }
+            })();
         }));
 
         // Show modernization view

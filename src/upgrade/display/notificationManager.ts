@@ -145,7 +145,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 switch (selection) {
                     case fixCVEButtonText:
                     case upgradeButtonText: {
-                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, issueType, extensionState);
+                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, issueType, extensionState, operationId);
                         break;
                     }
                     case BUTTON_TEXT_NOT_NOW: {
