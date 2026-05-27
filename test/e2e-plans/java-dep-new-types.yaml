@@ -103,7 +103,7 @@ steps:
     action: "run command View: Close All Editors"
 
   - id: "collapse-tree-1"
-    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
 
   - id: "collapse-workspace-root-2"
     action: "collapseWorkspaceRoot"
@@ -142,7 +142,7 @@ steps:
     action: "run command View: Close All Editors"
 
   - id: "collapse-tree-2"
-    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
 
   - id: "collapse-workspace-root-3"
     action: "collapseWorkspaceRoot"
@@ -181,7 +181,7 @@ steps:
     action: "run command View: Close All Editors"
 
   - id: "collapse-tree-3"
-    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
 
   - id: "collapse-workspace-root-4"
     action: "collapseWorkspaceRoot"
@@ -220,7 +220,7 @@ steps:
     action: "run command View: Close All Editors"
 
   - id: "collapse-tree-4"
-    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
 
   - id: "collapse-workspace-root-5"
     action: "collapseWorkspaceRoot"
@@ -258,7 +258,7 @@ steps:
     action: "run command View: Close All Editors"
 
   - id: "collapse-tree-5"
-    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
 
   - id: "collapse-workspace-root-6"
     action: "collapseWorkspaceRoot"
