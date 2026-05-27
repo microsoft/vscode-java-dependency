@@ -1,0 +1,144 @@
+# Test Plan: Java Dependency — Build Lifecycle
+#
+# Covers the project build / rebuild / reload commands contributed by
+# vscode-java-dependency. Each command is invoked through the documented
+# entry point (view title-bar action, overflow menu, project context menu,
+# or editor title-bar action) and verified by waiting for the Java Language
+# Server to return to the Ready state.
+#
+# Commands exercised:
+#   - java.project.build.workspace            (Build All — title-bar tools icon)
+#   - java.project.rebuild.workspace          (Rebuild All — overflow menu)
+#   - java.project.build.project              (Build Project — project context menu)
+#   - java.project.rebuild                    (Rebuild Project — project context menu)
+#   - java.project.reloadProjectFromActiveFile (Reload Project — pom.xml editor title)
+#
+# Note: java.project.clean.workspace is intentionally omitted from this plan
+# because the JDT.LS clean command triggers a VS Code window reload, which
+# tears down the autotest browser session.
+#
+# Verification strategy
+# ─────────────────────
+# Build commands have no visible editor side-effect — they trigger a
+# background compilation whose progress is reflected only in the status bar
+# (and briefly in the Java Language Server progress notifications). For each
+# build / rebuild, we run the command and then call `waitForLanguageServer`,
+# which polls the status bar until it returns to "Java: Ready" and the
+# post-Ready "Building - X%" phase has settled. A non-fatal command is
+# enough for the step to pass — the test asserts that the command does not
+# leave the LS hung or in an error state.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-build-lifecycle.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Build Lifecycle"
+description: |
+  Tests the build / rebuild / reload commands contributed by the Java
+  Project Manager. Each command is verified by waiting for the Java
+  Language Server to return to the Ready state after the command runs.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 240
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+
+steps:
+  # ── Setup ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Test 1: Build All (incremental) ──
+  - id: "trigger-build-all"
+    action: "executeVSCodeCommand java.project.build.workspace"
+    # No `verify:` — build is a background operation; the status bar may
+    # briefly show "Building - X%" before returning to Ready. The
+    # screenshot LLM would compare two nearly-identical screenshots and
+    # downgrade. The next step's deterministic `waitForLanguageServer`
+    # confirms the build completed without breaking the LS.
+
+  - id: "wait-build-all"
+    action: "waitForLanguageServer"
+    timeout: 120
+
+  # ── Test 2: Rebuild All (full compile) ──
+  - id: "trigger-rebuild-all"
+    action: "executeVSCodeCommand java.project.rebuild.workspace"
+    # No `verify:` — same rationale as trigger-build-all.
+
+  - id: "wait-rebuild-all"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  # ── Test 3: Build Project (per-project, via context menu) ──
+  # The `java.project.build.project` command requires a project URI, so it
+  # is gated behind the project context-menu in package.json. Invoke it
+  # via the context menu on the my-app node.
+  - id: "click-project-build"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "context-build-project"
+    action: "contextMenu my-app Build Project"
+    # No `verify:` — context-menu click has no immediate visible effect
+    # beyond closing the menu; waitForLanguageServer below is the ground
+    # truth that the build executed and the LS settled.
+
+  - id: "wait-build-project"
+    action: "waitForLanguageServer"
+    timeout: 120
+
+  # ── Test 4: Rebuild Project (per-project, via context menu) ──
+  - id: "click-project-rebuild"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "context-rebuild-project"
+    action: "contextMenu my-app Rebuild Project"
+
+  - id: "wait-rebuild-project"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  # ── Test 5: Reload Project (editor title-bar action on pom.xml) ──
+  # `java.project.reloadProjectFromActiveFile` is shown only when the
+  # active editor is a build file (pom.xml / build.gradle) and the
+  # context key `java:reloadProjectActive` is set. Open pom.xml and then
+  # invoke the command — the extension reads the active editor's URI to
+  # trigger a project re-import.
+  - id: "open-pom"
+    action: "open file pom.xml"
+    waitBefore: 3
+
+  - id: "trigger-reload-project"
+    action: "executeVSCodeCommand java.project.reloadProjectFromActiveFile"
+    # No `verify:` — reload is async; deterministic waitForLanguageServer
+    # below covers the outcome.
+
+  - id: "wait-reload-project"
+    action: "waitForLanguageServer"
+    timeout: 180

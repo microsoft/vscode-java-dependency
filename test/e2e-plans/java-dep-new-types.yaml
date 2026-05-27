@@ -1,0 +1,297 @@
+# Test Plan: Java Dependency — New File Types
+#
+# Covers the "New..." quick-pick options from the Java Projects view that are
+# NOT already covered by java-dep-file-operations.yaml (which only tests
+# `New Class` and `New Package`).
+#
+# Commands exercised (each invoked through the New... quick-pick on a node):
+#   - java.view.package.newJavaInterface       (Interface)
+#   - java.view.package.newJavaEnum            (Enum)
+#   - java.view.package.newJavaAnnotation      (Annotation)
+#   - java.view.package.newJavaAbstractClass   (Abstract Class)
+#   - java.view.package.newFile                ("File" option)
+#   - java.view.package.newFolder              ("Folder" option)
+#
+# Pattern for each type (same as the existing New Class flow):
+#   1. click `my-app` in the JAVA PROJECTS view
+#   2. clickTreeItemAction my-app New...  (triggers java.view.package.new)
+#   3. select <type> option in the quick pick
+#   4. select src/main/java source-folder option (where applicable)
+#   5. fillQuickInput <Name>
+#   6. verifyEditorTab — confirms the new file was created and opened
+#
+# Between each cycle the previously-created file is saved + all editors are
+# closed and the JAVA PROJECTS tree is collapsed, mirroring the technique
+# used in java-dep-file-operations.yaml.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-new-types.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — New File Types"
+description: |
+  Tests all the "New ..." quick-pick options in the Java Projects view that
+  are not already covered by java-dep-file-operations.yaml:
+  Interface / Enum / Annotation / Abstract Class / File / Folder.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 240
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+
+steps:
+  # ── Setup ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    # No `verify:` — waitForLanguageServer is itself the deterministic
+    # readiness check; see java-dep-file-operations.yaml for rationale.
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Test 1: New Interface ──
+  - id: "click-project-1"
+    action: "click my-app tree item"
+
+  - id: "trigger-new-1"
+    action: "clickTreeItemAction my-app New..."
+    verify: "New resource quick pick opened"
+
+  - id: "select-interface"
+    action: "select Interface option"
+    verify: "Interface selected"
+
+  - id: "select-source-folder-1"
+    action: "select src/main/java option"
+
+  - id: "enter-interface-name"
+    action: "fillQuickInput MyInterface"
+    # No `verify:` — fillQuickInput submits and closes the quick input. The
+    # deterministic `verifyEditorTab` below is the ground truth.
+
+  - id: "verify-interface-tab"
+    action: "wait 2 seconds"
+    # No `verify:` — BEFORE/AFTER screenshots are identical once the editor
+    # tab is open; verifyEditorTab is authoritative.
+    verifyEditorTab:
+      title: "MyInterface.java"
+    timeout: 20
+
+  # Reset between cycles: save the dirty buffer, close editors, refocus.
+  - id: "save-1"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-1"
+    action: "run command View: Close All Editors"
+
+  - id: "collapse-tree-1"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "collapse-workspace-root-2"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-2"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 1
+
+  # ── Test 2: New Enum ──
+  - id: "click-project-2"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "trigger-new-2"
+    action: "clickTreeItemAction my-app New..."
+
+  - id: "select-enum"
+    action: "select Enum option"
+
+  - id: "select-source-folder-2"
+    action: "select src/main/java option"
+
+  - id: "enter-enum-name"
+    action: "fillQuickInput MyEnum"
+
+  - id: "verify-enum-tab"
+    action: "wait 2 seconds"
+    verifyEditorTab:
+      title: "MyEnum.java"
+    timeout: 20
+
+  - id: "save-2"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-2"
+    action: "run command View: Close All Editors"
+
+  - id: "collapse-tree-2"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "collapse-workspace-root-3"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-3"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 1
+
+  # ── Test 3: New Annotation ──
+  - id: "click-project-3"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "trigger-new-3"
+    action: "clickTreeItemAction my-app New..."
+
+  - id: "select-annotation"
+    action: "select Annotation option"
+
+  - id: "select-source-folder-3"
+    action: "select src/main/java option"
+
+  - id: "enter-annotation-name"
+    action: "fillQuickInput MyAnnotation"
+
+  - id: "verify-annotation-tab"
+    action: "wait 2 seconds"
+    verifyEditorTab:
+      title: "MyAnnotation.java"
+    timeout: 20
+
+  - id: "save-3"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-3"
+    action: "run command View: Close All Editors"
+
+  - id: "collapse-tree-3"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "collapse-workspace-root-4"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-4"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 1
+
+  # ── Test 4: New Abstract Class ──
+  - id: "click-project-4"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "trigger-new-4"
+    action: "clickTreeItemAction my-app New..."
+
+  - id: "select-abstract-class"
+    action: "select Abstract Class option"
+
+  - id: "select-source-folder-4"
+    action: "select src/main/java option"
+
+  - id: "enter-abstract-name"
+    action: "fillQuickInput MyAbstract"
+
+  - id: "verify-abstract-tab"
+    action: "wait 2 seconds"
+    verifyEditorTab:
+      title: "MyAbstract.java"
+    timeout: 20
+
+  - id: "save-4"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-4"
+    action: "run command View: Close All Editors"
+
+  - id: "collapse-tree-4"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "collapse-workspace-root-5"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-5"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 1
+
+  # ── Test 5: New File (plain non-Java file via "File" option) ──
+  # The "File" entry routes to `java.view.package.newFile` and writes the
+  # file under the project root (the node we triggered from).
+  - id: "click-project-5"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "trigger-new-5"
+    action: "clickTreeItemAction my-app New..."
+
+  - id: "select-file"
+    action: "select File option"
+
+  - id: "enter-file-name"
+    action: "fillQuickInput notes.txt"
+
+  - id: "verify-file-tab"
+    action: "wait 2 seconds"
+    verifyEditorTab:
+      title: "notes.txt"
+    timeout: 20
+
+  - id: "save-5"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-5"
+    action: "run command View: Close All Editors"
+
+  - id: "collapse-tree-5"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "collapse-workspace-root-6"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-6"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 1
+
+  # ── Test 6: New Folder ──
+  # Folder creation has no editor side-effect — verify by checking the new
+  # folder exists on disk under the workspace root.
+  - id: "click-project-6"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "trigger-new-6"
+    action: "clickTreeItemAction my-app New..."
+
+  - id: "select-folder"
+    action: "select Folder option"
+
+  - id: "enter-folder-name"
+    action: "fillQuickInput my-new-folder"
+
+  - id: "wait-folder-create"
+    action: "wait 2 seconds"
+    # No `verify:` — folder creation has no editor side-effect, so the
+    # BEFORE/AFTER screenshots are nearly identical and a screenshot LLM
+    # would downgrade. The deterministic verifyFile below is authoritative.
+    verifyFile:
+      path: "~/my-new-folder"
+      exists: true
+    timeout: 15

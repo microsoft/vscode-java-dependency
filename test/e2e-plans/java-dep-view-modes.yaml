@@ -1,0 +1,228 @@
+# Test Plan: Java Dependency — View Modes & Refresh
+#
+# Covers Java Projects view title-bar / overflow commands:
+#   - java.view.package.changeToHierarchicalPackageView (Hierarchical View)
+#   - java.view.package.changeToFlatPackageView         (Flat View)
+#   - java.view.package.refresh                         (Refresh)
+#   - java.project.explorer.hideNonJavaResources        (Hide Non-Java Resources)
+#   - java.project.explorer.showNonJavaResources        (Show Non-Java Resources)
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-view-modes.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — View Modes & Refresh"
+description: |
+  Tests Java Projects explorer title-bar commands: switching between flat /
+  hierarchical package presentation, refreshing the tree, and toggling
+  visibility of non-Java resources (pom.xml, .vscode, .classpath, .project).
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+
+steps:
+  # ── Wait for LS ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    # No `verify:` — waitForLanguageServer is the deterministic readiness
+    # check. The AFTER screenshot may transiently show "Java: Building - 0%"
+    # right after Ready, which a strict LLM mis-reads as a failure.
+    timeout: 180
+
+  # Free horizontal & vertical space so JAVA PROJECTS gets enough room.
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  # Collapse the entire EXPLORER section so JAVA PROJECTS gets the full
+  # vertical space — its tree is virtualized and rows below the viewport
+  # are not rendered, which masks items like pom.xml that live below
+  # src/main/java in a Maven project.
+  - id: "collapse-explorer-section"
+    action: "collapseSidebarSection EXPLORER"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # Expand my-app → src/main/java so subsequent verifyTreeItem can observe
+  # package nodes at this layer.
+  - id: "expand-project"
+    action: "expandTreeItem my-app"
+
+  - id: "expand-src-main"
+    action: "expandTreeItem src/main/java"
+    waitBefore: 2
+
+  # ── Baseline: flat mode shows "com.mycompany.app" as a single node ──
+  - id: "verify-flat-baseline"
+    action: "wait 1 seconds"
+    # No `verify:` — verifyTreeItem is authoritative.
+    verifyTreeItem:
+      name: "com.mycompany.app"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  # ── Test 1: switch to hierarchical view ──
+  # In hierarchical (compressed) mode the JLS collapses single-child chains,
+  # so "com.mycompany.app" is split into a parent "com.mycompany" node with
+  # children "app" and "app1". This is the same behavior covered by
+  # test/maven-suite/projectView.test.ts ("primarySubPackage.name should be
+  # 'com.mycompany'"). Verify deterministically through the appearance of
+  # the "com.mycompany" node.
+  - id: "switch-to-hierarchical"
+    action: "executeVSCodeCommand java.view.package.changeToHierarchicalPackageView"
+    # No `verify:` — visually only the package label changes inside the
+    # already-expanded src/main/java row, and the BEFORE/AFTER screenshots
+    # look nearly identical, which a strict screenshot-LLM mis-reads as
+    # "no change". The deterministic verifyTreeItem checks below are the
+    # ground truth.
+
+  - id: "wait-hierarchical"
+    action: "wait 4 seconds"
+
+  - id: "verify-hierarchical-node"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  # ── Test 2: switch back to flat view ──
+  - id: "switch-to-flat"
+    action: "executeVSCodeCommand java.view.package.changeToFlatPackageView"
+    # No `verify:` — see switch-to-hierarchical. verifyTreeItem
+    # below is authoritative.
+
+  - id: "wait-flat"
+    action: "wait 4 seconds"
+
+  - id: "verify-flat-restored"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-hierarchical-gone"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 15
+
+  # ── Test 3: refresh ──
+  # Smoke check: the command runs without throwing and the tree remains stable.
+  - id: "refresh-tree"
+    action: "executeVSCodeCommand java.view.package.refresh"
+    # No `verify:` — refresh has no visible effect at steady state, so the
+    # BEFORE/AFTER screenshots are identical and a strict LLM downgrades.
+    # The deterministic verifyTreeItem on verify-refresh-stable confirms the
+    # tree did not get corrupted by the refresh.
+
+  - id: "wait-after-refresh"
+    action: "wait 3 seconds"
+
+  - id: "verify-refresh-stable"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  # ── Test 4: hide non-Java resources ──
+  # In flat mode the project shows non-Java resources such as pom.xml,
+  # .vscode, .classpath, .project. Hide should remove them from the tree.
+  # `inView: "Java Projects"` scopes the search to the Java Projects pane
+  # only — without it the EXPLORER pane (which also shows pom.xml at the
+  # workspace root) would mask any Java-Projects-side change.
+  #
+  # The virtualized Java Projects tree only renders rows in the viewport,
+  # so we first collapse src/main/java to bring pom.xml (a sibling) into
+  # view. Click selects the node, then ArrowLeft collapses it.
+  - id: "select-src-main"
+    action: "click src/main/java"
+
+  - id: "collapse-src-main"
+    action: "pressKey ArrowLeft"
+
+  # After collapsing src/main/java, press End to scroll the (virtualized)
+  # JAVA PROJECTS tree to its last row, which makes pom.xml — a child of
+  # my-app rendered below other source folders / libraries — render in
+  # the DOM. Playwright's `waitFor("visible")` does not auto-scroll
+  # virtualized lists, so this is necessary.
+  - id: "scroll-tree-end"
+    action: "pressKey End"
+
+  - id: "wait-collapse"
+    action: "wait 1 seconds"
+
+  - id: "verify-pom-visible-baseline"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "pom.xml"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "hide-non-java"
+    action: "executeVSCodeCommand java.project.explorer.hideNonJavaResources"
+    # No `verify:` — same rationale as switch-to-hierarchical: only the
+    # presence of a few peripheral nodes (pom.xml, .vscode) changes. The
+    # deterministic verifyTreeItem checks are authoritative.
+
+  - id: "wait-hide"
+    action: "wait 5 seconds"
+
+  - id: "verify-pom-hidden"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "pom.xml"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 30
+
+  # ── Test 5: show non-Java resources ──
+  - id: "show-non-java"
+    action: "executeVSCodeCommand java.project.explorer.showNonJavaResources"
+    # No `verify:` — same rationale; verifyTreeItem below covers it.
+
+  - id: "wait-show"
+    action: "wait 5 seconds"
+
+  # After the tree refresh, the scroll position may have reset to the top
+  # of the JAVA PROJECTS pane, so scroll back to the end to render pom.xml.
+  - id: "scroll-tree-end-2"
+    action: "pressKey End"
+
+  - id: "verify-pom-restored"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "pom.xml"
+      exact: true
+      inView: "Java Projects"
+    timeout: 30
