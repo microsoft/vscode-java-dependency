@@ -26,7 +26,10 @@ class UpgradeManager {
 
         // Upgrade project
         context.subscriptions.push(instrumentOperationAsVsCodeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, async (promptText?: string) => {
-            await checkOrInstallAppModExtensionForUpgrade(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
+            const canProceed = await checkOrInstallAppModExtensionForUpgrade(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
+            if (!canProceed) {
+                return;
+            }
             const promptToUse = promptText ?? DEFAULT_UPGRADE_PROMPT;
             await commands.executeCommand(Commands.GOTO_AGENT_MODE, { prompt: promptToUse, useCustomAgent: true });
         }));

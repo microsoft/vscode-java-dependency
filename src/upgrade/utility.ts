@@ -22,7 +22,20 @@ function findEolDate(currentVersion: string, eolDate: Record<string, string>): s
     return null;
 }
 
-export function buildNotificationMessage(issue: UpgradeIssue, hasExtension: boolean): string {
+export type ExtensionState = "up-to-date" | "outdated" | "not-installed";
+
+function getActionWord(extensionState: ExtensionState, verb: string): string {
+    switch (extensionState) {
+        case "up-to-date":
+            return verb;
+        case "outdated":
+            return `update ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and ${verb}`;
+        case "not-installed":
+            return `install ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and ${verb}`;
+    }
+}
+
+export function buildNotificationMessage(issue: UpgradeIssue, extensionState: ExtensionState): string {
     const {
         packageId,
         currentVersion,
@@ -31,7 +44,7 @@ export function buildNotificationMessage(issue: UpgradeIssue, hasExtension: bool
         packageDisplayName
     } = issue;
 
-    const upgradeWord = hasExtension ? "upgrade" : `install ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and upgrade`;
+    const upgradeWord = getActionWord(extensionState, "upgrade");
 
     if (packageId === Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME) {
         return `This project is using an older Java runtime (${currentVersion}). Would you like to ${upgradeWord} it to the latest LTS version?`;
@@ -51,7 +64,7 @@ export function buildNotificationMessage(issue: UpgradeIssue, hasExtension: bool
     }
 }
 
-export function buildCVENotificationMessage(issues: CveUpgradeIssue[], hasExtension: boolean): string {
+export function buildCVENotificationMessage(issues: CveUpgradeIssue[], extensionState: ExtensionState): string {
 
     if (issues.length === 0) {
         return "No CVE issues found.";
@@ -81,7 +94,7 @@ export function buildCVENotificationMessage(issues: CveUpgradeIssue[], hasExtens
       CVESeverityDistribution: severityText,
     });
 
-    const fixWord = hasExtension ? "fix" : `install ${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension and fix`;
+    const fixWord = getActionWord(extensionState, "fix");
 
     if (issues.length === 1) {
       return `${severityText} CVE vulnerability is detected in this project. Would you like to ${fixWord} it now?`;
@@ -154,11 +167,35 @@ export async function checkOrPopupToInstallAppModExtensionForModernization(
 }
 
 export async function checkOrInstallAppModExtensionForUpgrade(
-    extensionIdToCheck: string): Promise<void> {
-    if (extensions.getExtension(extensionIdToCheck)) {
-        return;
+    extensionIdToCheck: string): Promise<boolean> {
+    const ext = extensions.getExtension(extensionIdToCheck);
+
+    if (ext) {
+        const installedVersion = ext.packageJSON?.version;
+        if (installedVersion && semver.gte(installedVersion, Upgrade.MIN_APPMOD_VERSION)) {
+            return true;
+        }
     }
 
     await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+
+    if (ext) {
+        // Extension was updated (not freshly installed) — reload required
+        const reload = await window.showInformationMessage(
+            `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension has been updated. Reload VS Code to start the upgrade experience.`,
+            "Reload Now"
+        );
+        if (reload === "Reload Now") {
+            await commands.executeCommand("workbench.action.reloadWindow");
+            return true;
+        } else {
+            await window.showInformationMessage(
+                `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension has been updated. Please reload VS Code manually to start the upgrade experience.`
+            );
+            return false;
+        }
+    }
+
     await checkOrPromptToEnableAppModExtension("upgrade");
+    return true;
 }
