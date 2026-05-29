@@ -23,6 +23,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { Commands } from "../../commands";
+import { languageServerApiManager } from "../../languageServerApi/languageServerApiManager";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
 
 // Hard caps to keep tool responses within the < 200 token budget.
@@ -41,6 +42,27 @@ function toResult(data: unknown): vscode.LanguageModelToolResult {
 
 function getResponseCharCount(data: unknown): number {
     return typeof data === "string" ? data.length : JSON.stringify(data, null, 2).length;
+}
+
+/**
+ * Normalize a workspace-symbol query for a single fallback retry.
+ * Strips a fully-qualified package prefix (com.foo.Bar -> Bar), generic parameters
+ * (List<String> -> List), and method parameter lists (foo() -> foo). jdtls already
+ * performs camel-hump matching, so the contiguous identifier is preserved.
+ */
+function normalizeSymbolQuery(query: string): string {
+    if (!query) {
+        return "";
+    }
+    let q = query.trim();
+    // Drop generic parameters and method parens: List<String> / foo(args) -> List / foo
+    q = q.replace(/[<(].*$/, "");
+    // Drop a fully-qualified package/qualifier prefix: com.foo.Bar / Foo#bar -> Bar / bar
+    const lastSep = Math.max(q.lastIndexOf("."), q.lastIndexOf("#"));
+    if (lastSep >= 0 && lastSep < q.length - 1) {
+        q = q.substring(lastSep + 1);
+    }
+    return q.trim();
 }
 
 function getToolErrorCode(error: unknown): string {
@@ -125,7 +147,12 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
             } catch {
                 status = "error";
                 errorCode = "fileNotFound";
-                const fileNotFoundPayload = { error: "File not found." };
+                // Most fileNotFound errors come from the model guessing a path. Return an
+                // actionable hint instead of a dead end so it can self-correct via findSymbol.
+                const fileNotFoundPayload = {
+                    error: "File not found.",
+                    hint: "Call lsp_java_findSymbol to obtain the exact workspace path before retrying. Do not guess file paths.",
+                };
                 responseCharCount = getResponseCharCount(fileNotFoundPayload);
                 return toResult(fileNotFoundPayload);
             }
@@ -134,8 +161,13 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
             );
             if (!symbols || symbols.length === 0) {
                 status = "empty";
-                emptyReason = "documentSymbolProviderEmpty";
-                const noSymbolsPayload = { error: "No symbols found. The file may not be recognized by the Java language server." };
+                // Separate "index not ready yet" from a genuine no-symbol result so the model
+                // (and telemetry) can tell a transient state apart from an unrecognized file.
+                const indexing = !languageServerApiManager.isFullyReady();
+                emptyReason = indexing ? "indexingInProgress" : "documentSymbolProviderEmpty";
+                const noSymbolsPayload = indexing
+                    ? { error: "Java language server is still indexing. Retry shortly." }
+                    : { error: "No symbols found. The file may not be recognized by the Java language server." };
                 responseCharCount = getResponseCharCount(noSymbolsPayload);
                 return toResult(noSymbolsPayload);
             }
@@ -214,14 +246,44 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
         let errorCode = "";
         let emptyReason = "";
         let responseCharCount = 0;
+        let retried = false;
         try {
-            const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-                "vscode.executeWorkspaceSymbolProvider", options.input.query,
+            const rawQuery = (options.input.query ?? "").trim();
+            // Reject blank/whitespace-only queries early: an empty query triggers an
+            // expensive workspace-wide symbol scan and can return a huge list.
+            if (!rawQuery) {
+                status = "error";
+                errorCode = "emptyQuery";
+                const emptyQueryPayload = {
+                    error: "Query is empty. Provide a class, interface, method, or field name to search for.",
+                };
+                responseCharCount = getResponseCharCount(emptyQueryPayload);
+                return toResult(emptyQueryPayload);
+            }
+            let symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                "vscode.executeWorkspaceSymbolProvider", rawQuery,
             );
+            // Server-side fallback: if the verbatim query misses, retry once with a
+            // normalized identifier (strip package qualifier, generics, and parameter
+            // lists) so the model does not have to chain repeated findSymbol calls itself.
+            if (!symbols || symbols.length === 0) {
+                const normalized = normalizeSymbolQuery(rawQuery);
+                if (normalized && normalized !== rawQuery) {
+                    retried = true;
+                    symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                        "vscode.executeWorkspaceSymbolProvider", normalized,
+                    );
+                }
+            }
             if (!symbols || symbols.length === 0) {
                 status = "empty";
-                emptyReason = "workspaceSymbolNoMatch";
-                const noMatchesPayload = { results: [], message: "No symbols found." };
+                // Distinguish a transient "index not ready" state from a real no-match so the
+                // model can retry later instead of concluding the symbol does not exist.
+                const indexing = !languageServerApiManager.isFullyReady();
+                emptyReason = indexing ? "indexingInProgress" : "workspaceSymbolNoMatch";
+                const noMatchesPayload = indexing
+                    ? { results: [], message: "Java language server is still indexing. Retry shortly or use grep_search as a fallback." }
+                    : { results: [], message: "No symbols found." };
                 responseCharCount = getResponseCharCount(noMatchesPayload);
                 return toResult(noMatchesPayload);
             }
@@ -229,7 +291,9 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
             const results = symbols.slice(0, limit).map(s => ({
                 name: s.name,
                 kind: vscode.SymbolKind[s.kind],
+                container: s.containerName || undefined,
                 location: `${vscode.workspace.asRelativePath(s.location.uri)}:${s.location.range.start.line + 1}`,
+                range: `L${s.location.range.start.line + 1}-${s.location.range.end.line + 1}`,
             }));
             resultCount = results.length;
             const findSymbolPayload = { results, total: symbols.length };
@@ -245,6 +309,7 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                 status,
                 ...(errorCode && { errorCode }),
                 ...(emptyReason && { emptyReason }),
+                retried: retried ? "true" : "false",
                 limit,
                 resultCount,
                 totalResults,
