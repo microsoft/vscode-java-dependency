@@ -181,32 +181,56 @@ export async function checkOrPopupToInstallAppModExtensionForModernization(
 
 export async function checkOrInstallAppModExtensionForUpgrade(
     extensionIdToCheck: string): Promise<boolean> {
-    const state = getExtensionState(extensionIdToCheck);
+    return instrumentOperation("java.dependency.upgradeFlow", async (operationId: string) => {
+        const state = getExtensionState(extensionIdToCheck);
+        sendInfo(operationId, {
+            operationName: "java.dependency.upgradeFlow.start",
+            extensionState: state,
+        });
 
-    if (state === "up-to-date") {
-        return true;
-    }
-
-    await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
-
-    if (state === "outdated") {
-        // Extension was updated (not freshly installed) — reload required
-        const reload = await window.showInformationMessage(
-            `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension has been updated. Reload VS Code to start the upgrade experience.`,
-            "Reload Now"
-        );
-        if (reload === "Reload Now") {
-            await commands.executeCommand("workbench.action.reloadWindow");
+        if (state === "up-to-date") {
+            sendInfo(operationId, {
+                operationName: "java.dependency.upgradeFlow.result",
+                upgradeFlowResult: "proceeded",
+            });
+            return true;
         }
-        return false;
-    }
 
-    await checkOrPromptToEnableAppModExtension("upgrade");
+        await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
 
-    // Wait briefly for the newly installed extension to activate
-    await new Promise(resolve => setTimeout(resolve, 2000));
+        if (state === "outdated") {
+            // Extension was updated (not freshly installed) — reload required
+            const reload = await window.showInformationMessage(
+                `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension has been updated. Reload VS Code to start the upgrade experience.`,
+                "Reload Now"
+            );
+            if (reload === "Reload Now") {
+                sendInfo(operationId, {
+                    operationName: "java.dependency.upgradeFlow.result",
+                    upgradeFlowResult: "reload-accepted",
+                });
+                await commands.executeCommand("workbench.action.reloadWindow");
+            } else {
+                sendInfo(operationId, {
+                    operationName: "java.dependency.upgradeFlow.result",
+                    upgradeFlowResult: "reload-dismissed",
+                });
+            }
+            return false;
+        }
 
-    // Re-check if the newly installed extension is active and meets version requirement
-    const newState = getExtensionState(extensionIdToCheck);
-    return newState === "up-to-date";
+        await checkOrPromptToEnableAppModExtension("upgrade");
+
+        // Wait briefly for the newly installed extension to activate
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Re-check if the newly installed extension is active and meets version requirement
+        const newState = getExtensionState(extensionIdToCheck);
+        const canProceed = newState === "up-to-date";
+        sendInfo(operationId, {
+            operationName: "java.dependency.upgradeFlow.result",
+            upgradeFlowResult: canProceed ? "proceeded" : "activation-timeout",
+        });
+        return canProceed;
+    })();
 }
