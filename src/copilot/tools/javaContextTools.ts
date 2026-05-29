@@ -248,7 +248,18 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
         let responseCharCount = 0;
         let retried = false;
         try {
-            const rawQuery = options.input.query ?? "";
+            const rawQuery = (options.input.query ?? "").trim();
+            // Reject blank/whitespace-only queries early: an empty query triggers an
+            // expensive workspace-wide symbol scan and can return a huge list.
+            if (!rawQuery) {
+                status = "error";
+                errorCode = "emptyQuery";
+                const emptyQueryPayload = {
+                    error: "Query is empty. Provide a class, interface, method, or field name to search for.",
+                };
+                responseCharCount = getResponseCharCount(emptyQueryPayload);
+                return toResult(emptyQueryPayload);
+            }
             let symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
                 "vscode.executeWorkspaceSymbolProvider", rawQuery,
             );

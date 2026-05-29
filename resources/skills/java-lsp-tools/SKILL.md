@@ -12,7 +12,7 @@ Two compiler-accurate tools backed by the Java Language Server (jdtls). They ret
 ### `lsp_java_findSymbol`
 Search for Java symbol definitions (classes, methods, fields) by name across the workspace. Supports partial matching.
 - Input: `{ query, limit? }` — limit defaults to 20, max 50
-- Output: `{ name, kind, location }` per result (~60 tokens)
+- Output: `{ results: [{ name, kind, container?, location, range }], total }` (~60 tokens); `range` is `L start-end`
 - **Use instead of** `grep_search`, `file_search`, `semantic_search`, or `search_subagent` when looking for where a Java class/method/field is defined by identifier
 - Do not repeat with the same or similar query after relevant results are returned
 
