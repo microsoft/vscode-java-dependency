@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, ExtensionContext, extensions, window } from "vscode";
-import * as semver from "semver";
+import { commands, ExtensionContext, window } from "vscode";
 import { UpgradeReason, type IUpgradeIssuesRenderer, type UpgradeIssue } from "../type";
-import { buildCVENotificationMessage, buildFixPrompt, buildNotificationMessage, type ExtensionState } from "../utility";
+import { buildCVENotificationMessage, buildFixPrompt, buildNotificationMessage, getExtensionState } from "../utility";
 import { Commands } from "../../commands";
 import { Settings } from "../../settings";
 import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
-import { ExtensionName, Upgrade } from "../../constants";
+import { ExtensionName } from "../../constants";
 import { CveUpgradeIssue } from "../cve";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
@@ -27,19 +26,6 @@ const SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW = 10 * SECONDS_IN_A_DAY;
 
 function getNowTs() {
     return Number(new Date()) / 1000;
-}
-
-function getExtensionState(): ExtensionState {
-    const ext = extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
-    if (!ext) {
-        return "not-installed";
-    }
-    const version = ext.packageJSON?.version;
-    if (version && semver.gte(version, Upgrade.MIN_APPMOD_VERSION)) {
-        return "up-to-date";
-    }
-    // Treat missing version as outdated (conservative)
-    return "outdated";
 }
 
 class NotificationManager implements IUpgradeIssuesRenderer {
@@ -77,7 +63,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 }
                 this.hasShown = true;
 
-                const extensionState = getExtensionState();
+                const extensionState = getExtensionState(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
                 const prompt = buildFixPrompt(issue);
 
                 let notificationMessage = "";

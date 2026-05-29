@@ -24,6 +24,19 @@ function findEolDate(currentVersion: string, eolDate: Record<string, string>): s
 
 export type ExtensionState = "up-to-date" | "outdated" | "not-installed";
 
+export function getExtensionState(extensionId: string): ExtensionState {
+    const ext = extensions.getExtension(extensionId);
+    if (!ext) {
+        return "not-installed";
+    }
+    const version = ext.packageJSON?.version;
+    if (version && semver.gte(version, Upgrade.MIN_APPMOD_VERSION)) {
+        return "up-to-date";
+    }
+    // Treat missing version as outdated (conservative)
+    return "outdated";
+}
+
 function getActionWord(extensionState: ExtensionState, verb: string): string {
     switch (extensionState) {
         case "up-to-date":
@@ -168,18 +181,15 @@ export async function checkOrPopupToInstallAppModExtensionForModernization(
 
 export async function checkOrInstallAppModExtensionForUpgrade(
     extensionIdToCheck: string): Promise<boolean> {
-    const ext = extensions.getExtension(extensionIdToCheck);
+    const state = getExtensionState(extensionIdToCheck);
 
-    if (ext) {
-        const installedVersion = ext.packageJSON?.version;
-        if (installedVersion && semver.gte(installedVersion, Upgrade.MIN_APPMOD_VERSION)) {
-            return true;
-        }
+    if (state === "up-to-date") {
+        return true;
     }
 
     await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
 
-    if (ext) {
+    if (state === "outdated") {
         // Extension was updated (not freshly installed) — reload required
         const reload = await window.showInformationMessage(
             `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension has been updated. Reload VS Code to start the upgrade experience.`,
@@ -187,13 +197,8 @@ export async function checkOrInstallAppModExtensionForUpgrade(
         );
         if (reload === "Reload Now") {
             await commands.executeCommand("workbench.action.reloadWindow");
-            return true;
-        } else {
-            await window.showInformationMessage(
-                `${ExtensionName.APP_MODERNIZATION_EXTENSION_NAME} extension has been updated. Please reload VS Code manually to start the upgrade experience.`
-            );
-            return false;
         }
+        return false;
     }
 
     await checkOrPromptToEnableAppModExtension("upgrade");
