@@ -52,7 +52,7 @@
       {
         "name": "lsp_java_getFileStructure",
         "toolReferenceName": "javaFileStructure",
-        "modelDescription": "Get the outline of a known Java file: classes, interfaces, methods, fields, symbol kinds, and line ranges.\n\nUse this after lsp_java_findSymbol returns a relevant file, or when the user already provided a Java file path. It helps choose a precise read_file range instead of reading the whole file.\n\nDo not use this for workspace-wide search. For Java class, method, or field lookup across files, use lsp_java_findSymbol first. Only pass file paths confirmed by the user or prior tool results; do not guess paths. Do not call this repeatedly for the same file unless the first result was empty or stale.",
+        "modelDescription": "Get a known Java file's outline: classes, interfaces, methods, fields, symbol kinds, and line ranges, to pick a precise read_file range instead of reading the whole file.\n\nUse after lsp_java_findSymbol returns a file, or when the user gave a Java file path; do not guess paths. Not for workspace-wide search\u2014use lsp_java_findSymbol for that. Do not re-call for the same file unless the first result was empty.",
         "displayName": "Java: Get File Structure",
         "userDescription": "Get a Java file outline with classes, methods, fields, and line ranges.",
         "tags": [
@@ -80,7 +80,7 @@
       {
         "name": "lsp_java_findSymbol",
         "toolReferenceName": "javaFindSymbol",
-        "modelDescription": "Search Java symbols across the workspace by identifier and return concise definition locations.\n\nUse for precise Java class, interface, method, or field navigation. Prefer this over grep_search, file_search, semantic_search, or search subagents when the user is looking for a Java symbol by name or partial identifier.\n\nAfter this returns relevant symbols, do not call lsp_java_findSymbol again with the same or similar query. Continue with lsp_java_getFileStructure for the returned file, or read_file only the relevant line range.\n\nDo not use for non-Java files, string literals, comments, build files, XML, natural-language concepts, or broad codebase exploration. If there are no matches, retry at most once with a shorter materially different identifier, then fall back to generic search.",
+        "modelDescription": "Find Java class, interface, method, or field definitions across the workspace by name or partial identifier. Prefer over grep_search, file_search, semantic_search, or search subagents for Java symbol lookup.\n\nOn relevant results, do not repeat with a similar query; continue with lsp_java_getFileStructure or read_file on the returned line range. The tool retries internally, so on an empty result do not re-search\u2014retry once only if it reports indexing in progress, otherwise use generic search.\n\nDo not use for non-Java files, literals, comments, build/XML files, or conceptual exploration.",
         "displayName": "Java: Find Symbol",
         "userDescription": "Find Java class, method, field, or interface definitions by name.",
         "tags": [

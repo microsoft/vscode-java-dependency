@@ -40,6 +40,6 @@ If `findSymbol` returns relevant symbols, move forward to `getFileStructure` or 
 
 ## Fallback
 
-- `findSymbol` returns empty → retry at most once with a shorter, materially different identifier, then fall back to `grep_search`
-- Path error → use `findSymbol` to discover correct path first
+- `findSymbol` returns empty → it already retried internally with a normalized identifier, so do not re-issue the same search. If the result says indexing is in progress, retry once after a short pause; otherwise fall back to `grep_search`
+- Path error (`fileNotFound`) → use `findSymbol` to discover the correct path first; do not guess paths
 - Tool error / jdtls not ready → fall back to `grep_search` + `read_file`, don't retry more than once
