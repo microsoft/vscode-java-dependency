@@ -202,5 +202,11 @@ export async function checkOrInstallAppModExtensionForUpgrade(
     }
 
     await checkOrPromptToEnableAppModExtension("upgrade");
-    return true;
+
+    // Wait briefly for the newly installed extension to activate
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Re-check if the newly installed extension is active and meets version requirement
+    const newState = getExtensionState(extensionIdToCheck);
+    return newState === "up-to-date";
 }
