@@ -1,14 +1,15 @@
 ---
-description: REQUIRED for Java files. Provides compiler-accurate lsp_java_findSymbol and lsp_java_getFileStructure tools that replace grep_search, search_subagent, semantic_search, and file_search for Java symbol navigation.
+description: Use Java LSP tools for precise Java symbol navigation. Prefer lsp_java_findSymbol and lsp_java_getFileStructure over generic search only when locating Java classes, methods, fields, or file outlines.
 applyTo: '**/*.java'
 ---
 
-For Java files, two compiler-accurate `lsp_java_*` tools are available and return structured results in ~50 tokens vs ~500+ from generic search:
+For Java symbol navigation, two compiler-accurate `lsp_java_*` tools are available and return structured results with smaller, easier-to-interpret payloads than generic search:
 
 - `lsp_java_findSymbol(query)` — find class/method/field definitions by name across the workspace
 - `lsp_java_getFileStructure(uri)` — get file outline (classes, methods, fields) with line ranges
 
-These are deferred tools. Load them with `tool_search_tool_regex` using pattern `lsp_java_` before first use.
+If these tools are not already available in the current tool list, load them with `tool_search` using a query such as `Java LSP symbol navigation lsp_java`.
 
-Prefer these over `grep_search`, `search_subagent`, `semantic_search`, `file_search`, or full-file `read_file` when navigating Java symbols. Always use `findSymbol` to discover file paths before passing them to `getFileStructure` — do not guess paths. Fall back to `grep_search` if a tool returns empty or errors.
+Use `lsp_java_findSymbol` before `grep_search`, `search_subagent`, `semantic_search`, or `file_search` only when the task is to locate Java symbols by name or partial identifier. If it returns relevant symbols, do not call it again with the same or similar query; next use `lsp_java_getFileStructure` for the returned file or `read_file` on the smallest useful line range.
 
+Use `lsp_java_getFileStructure` only with a path confirmed by the user or a previous tool result. Do not guess paths. Use generic search for string literals, comments, XML, Gradle/Maven files, non-Java files, or broad conceptual exploration. `findSymbol` already retries internally with a normalized identifier, so do not re-issue the same search on an empty result: if it reports indexing in progress, retry once after a short pause; otherwise fall back to generic search.

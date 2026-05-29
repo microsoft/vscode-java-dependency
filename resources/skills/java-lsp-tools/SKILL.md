@@ -1,41 +1,45 @@
 ---
 name: java-lsp-tools
-description: Compiler-accurate Java code navigation via the Java Language Server. Use lsp_java_findSymbol to locate symbols and lsp_java_getFileStructure to inspect file outlines. Prefer over grep_search for Java symbol navigation.
+description: Compiler-accurate Java symbol navigation via the Java Language Server. Use lsp_java_findSymbol for Java identifiers and lsp_java_getFileStructure for known Java files; prefer them over generic search only for symbol/file-outline navigation.
 ---
 
 # Java LSP Tools
 
-Two compiler-accurate tools backed by the Java Language Server (jdtls). They return structured JSON with fewer tokens than `grep_search` or `read_file`.
+Two compiler-accurate tools backed by the Java Language Server (jdtls). They return structured JSON that is easier to interpret than generic search results for Java symbol navigation.
 
 ## Tools
 
 ### `lsp_java_findSymbol`
 Search for Java symbol definitions (classes, methods, fields) by name across the workspace. Supports partial matching.
 - Input: `{ query, limit? }` — limit defaults to 20, max 50
-- Output: `{ name, kind, location }` per result (~60 tokens)
-- **Use instead of** `grep_search` when looking for where a class/method is defined
+- Output: `{ results: [{ name, kind, container?, location, range }], total }` (~60 tokens); `range` is `L start-end`
+- **Use instead of** `grep_search`, `file_search`, `semantic_search`, or `search_subagent` when looking for where a Java class/method/field is defined by identifier
+- Do not repeat with the same or similar query after relevant results are returned
 
 ### `lsp_java_getFileStructure`
 Get hierarchical outline of a Java file (classes, methods, fields) with line ranges.
 - Input: `{ uri }` — workspace-relative path. Must be a known path from prior tool results or user input — do not guess
 - Output: symbol tree with `L start-end` ranges (~100 tokens)
-- **Use instead of** `read_file` full scan when you need to understand a file's layout
+- **Use before** `read_file` when you need to choose a precise line range in a known Java file
 
 ## When to Use
 
 | Task | Use | Not |
 |---|---|---|
 | Find class/method/field definition | `lsp_java_findSymbol` | `grep_search` |
-| See file outline before reading | `lsp_java_getFileStructure` | `read_file` full file |
+| See known Java file outline before reading | `lsp_java_getFileStructure` | `read_file` full file |
 | Search non-Java files (xml, gradle) | `grep_search` | lsp tools |
 | Search string literals or comments | `grep_search` | lsp tools |
+| Explore broad concepts without identifiers | `semantic_search` or `search_subagent` | lsp tools |
 
 ## Typical Workflow
 
 **findSymbol → getFileStructure → read_file (specific lines only)**
 
+If `findSymbol` returns relevant symbols, move forward to `getFileStructure` or `read_file`; do not call `findSymbol` again with the same or similar identifier.
+
 ## Fallback
 
-- `findSymbol` returns empty → retry with shorter keyword, then fall back to `grep_search`
-- Path error → use `findSymbol` to discover correct path first
+- `findSymbol` returns empty → it already retried internally with a normalized identifier, so do not re-issue the same search. If the result says indexing is in progress, retry once after a short pause; otherwise fall back to `grep_search`
+- Path error (`fileNotFound`) → use `findSymbol` to discover the correct path first; do not guess paths
 - Tool error / jdtls not ready → fall back to `grep_search` + `read_file`, don't retry more than once
