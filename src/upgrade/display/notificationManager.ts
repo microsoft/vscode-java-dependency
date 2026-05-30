@@ -7,7 +7,7 @@ import { buildCVENotificationMessage, buildFixPrompt, buildNotificationMessage, 
 import { Commands } from "../../commands";
 import { Settings } from "../../settings";
 import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
-import { ExtensionName } from "../../constants";
+import { ExtensionName, Upgrade } from "../../constants";
 import { CveUpgradeIssue } from "../cve";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
@@ -109,9 +109,12 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 });
 
                 switch (selection) {
-                    case fixCVEButtonText:
+                    case fixCVEButtonText: {
+                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, Upgrade.SOURCE_CVE);
+                        break;
+                    }
                     case upgradeButtonText: {
-                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt);
+                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, Upgrade.SOURCE_JAVA_UPGRADE);
                         break;
                     }
                     case BUTTON_TEXT_NOT_NOW: {

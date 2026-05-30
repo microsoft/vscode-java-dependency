@@ -43,6 +43,8 @@ export namespace Upgrade {
     export const PACKAGE_ID_FOR_JAVA_RUNTIME = "java:*";
     /** Minimum version of the appmod extension that supports gotoAgentMode command */
     export const MIN_APPMOD_VERSION = "1.15.0";
+    export const SOURCE_JAVA_UPGRADE = "vscode-java-dependency.java-upgrade";
+    export const SOURCE_CVE = "vscode-java-dependency.cve";
 }
 
 /**
