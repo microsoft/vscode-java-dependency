@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { commands, ExtensionContext, extensions, window } from "vscode";
+import { commands, ExtensionContext, window } from "vscode";
 import { UpgradeReason, type IUpgradeIssuesRenderer, type UpgradeIssue } from "../type";
-import { buildCVENotificationMessage, buildFixPrompt, buildNotificationMessage } from "../utility";
+import { buildCVENotificationMessage, buildFixPrompt, buildNotificationMessage, getExtensionState } from "../utility";
 import { Commands } from "../../commands";
 import { Settings } from "../../settings";
 import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
-import { ExtensionName } from "../../constants";
+import { ExtensionName, Upgrade } from "../../constants";
 import { CveUpgradeIssue } from "../cve";
 
 const KEY_PREFIX = 'javaupgrade.notificationManager';
@@ -17,6 +17,8 @@ const BUTTON_TEXT_UPGRADE = "Upgrade Now";
 const BUTTON_TEXT_FIX_CVE = "Fix Now";
 const BUTTON_TEXT_INSTALL_AND_UPGRADE = "Install Extension and Upgrade";
 const BUTTON_TEXT_INSTALL_AND_FIX_CVE = "Install Extension and Fix";
+const BUTTON_TEXT_UPDATE_AND_UPGRADE = "Update Extension and Upgrade";
+const BUTTON_TEXT_UPDATE_AND_FIX_CVE = "Update Extension and Fix";
 const BUTTON_TEXT_NOT_NOW = "Not Now";
 
 const SECONDS_IN_A_DAY = 24 * 60 * 60;
@@ -61,20 +63,36 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 }
                 this.hasShown = true;
 
-                const hasExtension = !!extensions.getExtension(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
+                const extensionState = getExtensionState(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
                 const prompt = buildFixPrompt(issue);
 
                 let notificationMessage = "";
 
                 if (hasCVEIssue) {
-                    notificationMessage = buildCVENotificationMessage(cveIssues, hasExtension);
+                    notificationMessage = buildCVENotificationMessage(cveIssues, extensionState);
                 } else {
-                    notificationMessage = buildNotificationMessage(issue, hasExtension);
+                    notificationMessage = buildNotificationMessage(issue, extensionState);
                 }
-                const upgradeButtonText = hasExtension ? BUTTON_TEXT_UPGRADE : BUTTON_TEXT_INSTALL_AND_UPGRADE;
-                const fixCVEButtonText = hasExtension ? BUTTON_TEXT_FIX_CVE : BUTTON_TEXT_INSTALL_AND_FIX_CVE;
+
+                let upgradeButtonText: string;
+                let fixCVEButtonText: string;
+                switch (extensionState) {
+                    case "up-to-date":
+                        upgradeButtonText = BUTTON_TEXT_UPGRADE;
+                        fixCVEButtonText = BUTTON_TEXT_FIX_CVE;
+                        break;
+                    case "outdated":
+                        upgradeButtonText = BUTTON_TEXT_UPDATE_AND_UPGRADE;
+                        fixCVEButtonText = BUTTON_TEXT_UPDATE_AND_FIX_CVE;
+                        break;
+                    case "not-installed":
+                        upgradeButtonText = BUTTON_TEXT_INSTALL_AND_UPGRADE;
+                        fixCVEButtonText = BUTTON_TEXT_INSTALL_AND_FIX_CVE;
+                        break;
+                }
                 sendInfo(operationId, {
                     operationName: "java.dependency.upgradeNotification.show",
+                    extensionState,
                 });
 
                 const buttons = hasCVEIssue
@@ -91,9 +109,12 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 });
 
                 switch (selection) {
-                    case fixCVEButtonText:
+                    case fixCVEButtonText: {
+                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, Upgrade.SOURCE_CVE);
+                        break;
+                    }
                     case upgradeButtonText: {
-                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt);
+                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, Upgrade.SOURCE_JAVA_UPGRADE);
                         break;
                     }
                     case BUTTON_TEXT_NOT_NOW: {
