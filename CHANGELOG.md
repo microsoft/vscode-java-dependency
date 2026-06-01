@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.27.4
 
+- fix - Check GHCP modernization version before call gotoAgentMode command in https://github.com/microsoft/vscode-java-dependency/pull/1022
 - fix - Implement LSP tools for stable builds in https://github.com/microsoft/vscode-java-dependency/pull/1014
 
 ## 0.27.3
