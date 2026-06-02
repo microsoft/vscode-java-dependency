@@ -90,7 +90,18 @@ class SyncHandler implements Disposable {
         }));
 
         this.disposables.push(watcher.onDidCreate((uri: Uri) => {
-            this.refresh(this.getParentNodeInExplorer(uri));
+            const node: ExplorerNode | undefined = this.getParentNodeInExplorer(uri);
+            // When the created resource lands in a package that is not currently
+            // rendered, getParentNodeInExplorer resolves to the source root. Tell
+            // that root which path changed so the server can refresh only that
+            // subtree instead of deeply refreshing the whole source tree. Gate on
+            // the node kind (not instanceof) to avoid importing PackageRootNode
+            // here, which would create a module cycle and break activation.
+            // See https://github.com/microsoft/vscode-java-dependency/issues/914
+            if (node instanceof DataNode && node.nodeData?.kind === NodeKind.PackageRoot) {
+                (node as unknown as { pendingSyncPaths: Set<string> }).pendingSyncPaths.add(uri.toString());
+            }
+            this.refresh(node);
         }));
 
         this.disposables.push(watcher.onDidDelete((uri: Uri) => {

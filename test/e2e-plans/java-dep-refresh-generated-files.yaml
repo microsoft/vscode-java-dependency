@@ -1,0 +1,158 @@
+# Test Plan: Java Dependency — Refresh surfaces externally generated files
+#
+# Regression test for https://github.com/microsoft/vscode-java-dependency/issues/914
+#   "Refresh option doesn't work, classes not visible"
+#
+# Root cause: jdtls.ext PackageCommand.getPackageFragmentRootContent() called
+# refreshLocal(root.getResource(), IResource.DEPTH_ONE), a shallow refresh that
+# only syncs the source root's immediate children. A file written into a
+# BRAND-NEW nested package folder (e.g. by a code generator or a refactor-move)
+# was therefore never discovered: JDT created no IPackageFragment for it, so the
+# Java Projects view stayed empty even after a manual Refresh — while the Folder
+# (Explorer) view, which reads the filesystem directly, showed the file.
+#
+# The fix deep-refreshes the source root (DEPTH_INFINITE) and closes the
+# IPackageFragmentRoot so its cached child list is rebuilt from the refreshed
+# resource tree.
+#
+# This test writes .java files straight to disk (insertLineInFile uses
+# fs.writeFileSync, bypassing VS Code's file service — i.e. exactly an external
+# generator), then invokes the explicit Refresh command and asserts that it
+# surfaces BOTH a brand-new sub-package AND a new class in an existing package.
+# The brand-new package is the decisive case: pre-fix it never appears because
+# DEPTH_ONE never descends into the source root to discover the new folder.
+#
+# Note on tree layout: the Java Projects tree is virtualized, so an off-screen
+# row is not present in the DOM. The plan therefore keeps the tree compact —
+# the Explorer file tree is collapsed (and explorer.autoReveal is disabled so
+# opening generated files does not re-expand it), and the brand-new package is
+# asserted while every package node is collapsed, before the existing package is
+# expanded for its class-level check.
+#
+# Expected: FAILS before the fix (the brand-new package never appears),
+#           PASSES after the PackageCommand.java fix.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-refresh-generated-files.yaml \
+#       --override extensionPath=<path-to-this-repo>
+#   # or in CI with the built VSIX:
+#   npx autotest run test/e2e-plans/java-dep-refresh-generated-files.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Refresh surfaces externally generated files (#914)"
+description: |
+  Regression for issue #914. Externally written .java files — one in a brand-new
+  sub-package, one in an existing package — must both appear in the Java Projects
+  view after an explicit Refresh.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+    # Keep the Explorer file tree collapsed when generated files are opened, so
+    # the Java Projects view keeps its full height and rows are not virtualized
+    # out of the DOM.
+    explorer.autoReveal: false
+
+steps:
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  # ── Free vertical space so the Java Projects tree is not occluded ──
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  # Collapse the Explorer "folders" (file tree) section entirely so the Java
+  # Projects view section gets the full sidebar height — otherwise its rows are
+  # virtualized out of the DOM and cannot be asserted on.
+  - id: "collapse-explorer-folders"
+    action: "collapseSidebarSection MAVEN"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Establish a well-defined baseline tree state ──
+  - id: "expand-project"
+    action: "expandTreeItem my-app"
+    verify: "my-app project expanded"
+
+  - id: "expand-source-root"
+    action: "expandTreeItem src/main/java"
+    verify: "source root src/main/java expanded; package nodes visible"
+
+  - id: "baseline-existing-pkg"
+    action: "wait 1 seconds"
+    verify: "Existing package com.mycompany.app visible (sanity check of tree state)"
+    verifyTreeItem:
+      name: "com.mycompany.app"
+      visible: true
+
+  # ── Simulate a code generator writing files directly to disk ──────────
+  # A) new class inside a BRAND-NEW sub-package (com.mycompany.app.gen)
+  - id: "gen-file-new-pkg"
+    action: "insertLineInFile src/main/java/com/mycompany/app/gen/Gen914InNewPkg.java 1 package com.mycompany.app.gen;\n\npublic class Gen914InNewPkg {\n}\n"
+    verify: "Gen914InNewPkg.java written to disk under brand-new package com.mycompany.app.gen"
+
+  # B) new class inside an EXISTING package (com.mycompany.app)
+  - id: "gen-file-existing-pkg"
+    action: "insertLineInFile src/main/java/com/mycompany/app/Gen914InExisting.java 1 package com.mycompany.app;\n\npublic class Gen914InExisting {\n}\n"
+    verify: "Gen914InExisting.java written to disk under existing package"
+
+  # Dismiss any transient editor/quick-open overlay left by opening the files.
+  - id: "dismiss-overlay"
+    action: "pressKey Escape"
+
+  - id: "settle"
+    action: "wait 3 seconds"
+
+  # ── The behaviour under test: an explicit manual Refresh ──────────────
+  - id: "manual-refresh"
+    action: "executeVSCodeCommand java.view.package.refresh"
+    verify: "Java Projects view refreshed via the Refresh command"
+
+  - id: "wait-after-refresh"
+    action: "wait 4 seconds"
+
+  # Make sure the source root is expanded so its (collapsed) package nodes show.
+  - id: "reexpand-source-root"
+    action: "expandTreeItem src/main/java"
+
+  # ── Assertion 1 (the core regression) ─────────────────────────────────
+  # Every package node is still collapsed here, so the tree is compact and the
+  # brand-new sibling package node is within the viewport. Pre-fix this fails
+  # (DEPTH_ONE never discovers the new folder); post-fix it passes.
+  - id: "check-new-pkg"
+    action: "wait 1 seconds"
+    verify: "Brand-new package com.mycompany.app.gen appears after manual refresh"
+    verifyTreeItem:
+      name: "com.mycompany.app.gen"
+      visible: true
+    timeout: 15
+
+  # ── Assertion 2 (sanity) ──────────────────────────────────────────────
+  # A new class added to an already-known package also surfaces after Refresh.
+  - id: "expand-existing-pkg"
+    action: "expandTreeItem com.mycompany.app"
+    verify: "existing package com.mycompany.app expanded"
+
+  - id: "check-existing-pkg-class"
+    action: "wait 1 seconds"
+    verify: "Gen914InExisting appears under com.mycompany.app after manual refresh"
+    verifyTreeItem:
+      name: "Gen914InExisting"
+      visible: true
+    timeout: 15
