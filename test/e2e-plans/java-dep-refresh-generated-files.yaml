@@ -96,7 +96,6 @@ steps:
 
   - id: "baseline-existing-pkg"
     action: "wait 1 seconds"
-    verify: "Existing package com.mycompany.app visible (sanity check of tree state)"
     verifyTreeItem:
       name: "com.mycompany.app"
       visible: true
@@ -135,9 +134,12 @@ steps:
   # Every package node is still collapsed here, so the tree is compact and the
   # brand-new sibling package node is within the viewport. Pre-fix this fails
   # (DEPTH_ONE never discovers the new folder); post-fix it passes.
+  # No `verify:` — verifyTreeItem is the authoritative deterministic assertion.
+  # The new package becomes visible during the earlier wait-after-refresh step,
+  # so an LLM screenshot before/after diff on this pure wait would see no delta
+  # and yield a false negative. The DOM check below is what actually matters.
   - id: "check-new-pkg"
     action: "wait 1 seconds"
-    verify: "Brand-new package com.mycompany.app.gen appears after manual refresh"
     verifyTreeItem:
       name: "com.mycompany.app.gen"
       visible: true
@@ -149,9 +151,10 @@ steps:
     action: "expandTreeItem com.mycompany.app"
     verify: "existing package com.mycompany.app expanded"
 
+  # No `verify:` — verifyTreeItem is the authoritative deterministic assertion
+  # (see check-new-pkg). The class is already visible by the time this wait runs.
   - id: "check-existing-pkg-class"
     action: "wait 1 seconds"
-    verify: "Gen914InExisting appears under com.mycompany.app after manual refresh"
     verifyTreeItem:
       name: "Gen914InExisting"
       visible: true

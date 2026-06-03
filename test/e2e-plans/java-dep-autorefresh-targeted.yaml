@@ -91,7 +91,6 @@ steps:
 
   - id: "baseline-existing-pkg"
     action: "wait 1 seconds"
-    verify: "Existing package com.mycompany.app visible (sanity check of tree state)"
     verifyTreeItem:
       name: "com.mycompany.app"
       visible: true
@@ -121,9 +120,11 @@ steps:
   # Every package node is collapsed here, so the tree is compact and the new
   # sibling package node is within the viewport. waitForTreeItem polls until the
   # item is visible or the timeout elapses.
+  # No `verify:` — verifyTreeItem is the authoritative deterministic assertion.
+  # An LLM screenshot diff here is timing-dependent (the package may appear just
+  # before or during this wait), so we rely solely on the DOM check.
   - id: "check-new-pkg-autorefresh"
     action: "wait 1 seconds"
-    verify: "Brand-new package com.mycompany.app.autogen appears via auto-refresh alone (no manual Refresh)"
     verifyTreeItem:
       name: "com.mycompany.app.autogen"
       visible: true
