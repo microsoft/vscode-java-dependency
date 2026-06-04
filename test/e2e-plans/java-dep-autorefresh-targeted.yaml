@@ -72,6 +72,16 @@ steps:
       name: "com.mycompany.app"
       visible: true
 
+  # Negative baseline: the brand-new package must be ABSENT before the file is
+  # written, so check-new-pkg-autorefresh later observes a genuine appearance
+  # driven by the watcher, not a pre-existing node.
+  - id: "baseline-new-pkg-absent"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app.autogen"
+      visible: false
+    timeout: 5
+
   # Write a file straight to disk into a brand-new sub-package.
   - id: "gen-file-new-pkg"
     action: "insertLineInFile src/main/java/com/mycompany/app/autogen/Gen914AutoNewPkg.java 1 package com.mycompany.app.autogen;\n\npublic class Gen914AutoNewPkg {\n}\n"

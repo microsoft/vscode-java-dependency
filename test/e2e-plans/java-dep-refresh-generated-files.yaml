@@ -69,6 +69,16 @@ steps:
       name: "com.mycompany.app"
       visible: true
 
+  # Negative baseline: the brand-new package must be ABSENT before any file is
+  # written. This is the "before" half of the regression's before/after check —
+  # it proves check-new-pkg later observes a genuine appearance, not a leftover.
+  - id: "baseline-new-pkg-absent"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app.gen"
+      visible: false
+    timeout: 5
+
   # Write files straight to disk: one in a brand-new sub-package, one in an
   # existing package.
   - id: "gen-file-new-pkg"
