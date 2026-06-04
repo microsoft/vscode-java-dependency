@@ -6,67 +6,210 @@ on:
   pull_request:
     branches: [ main ]
 
+# Parallelized E2E pipeline (Windows):
+#   build-windows        → lint + checkstyle + packages VSIX once and uploads
+#   discover-plans       → emits a matrix of test-plan basenames
+#   e2e-windows (matrix) → one job per plan, all running in parallel
+#   analyze-windows      → aggregates results.json from every plan
+#
+# Modelled after vscode-java-pack/.github/workflows/e2e-autotest.yml.
+# Splitting plans across jobs keeps each job well under the per-job
+# 30-minute timeout and surfaces individual plan failures independently.
+
 jobs:
-  windowsUI:
-    name: Windows-UI
+  # ── Job 1: Lint + Checkstyle + Build the VSIX once ──────
+  build-windows:
+    name: Build VSIX (Windows)
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        
-    - name: Install Node.js modules
-      run: npm install
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Install VSCE
-      run: npm install -g @vscode/vsce
+      - name: Install Node.js modules
+        run: npm install
 
-    - name: Lint
-      run: npm run tslint
+      - name: Install VSCE
+        run: npm install -g @vscode/vsce
 
-    - name: Checkstyle
-      working-directory: .\jdtls.ext
-      run: .\mvnw.cmd checkstyle:check
+      - name: Lint
+        run: npm run tslint
 
-    - name: Build OSGi bundle
-      run: npm run build-server
+      - name: Checkstyle
+        working-directory: .\jdtls.ext
+        run: .\mvnw.cmd checkstyle:check
 
-    - name: Build VSIX file
-      run: vsce package -o vscode-java-dependency.vsix
+      - name: Build OSGi bundle
+        run: npm run build-server
 
-    - name: Setup autotest
-      run: npm install -g @vscjava/vscode-autotest
+      - name: Build VSIX file
+        run: vsce package -o vscode-java-dependency.vsix
 
-    - name: E2E Test (autotest)
-      env:
-        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-        AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-      run: |
-        autotest run-all test/e2e-plans --vsix "$((Get-Location).Path)\vscode-java-dependency.vsix" --output test-results
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-windows
+          path: vscode-java-dependency.vsix
+          retention-days: 1
 
-    - name: Upload test results
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: e2e-results-windows
-        path: test-results/
-        retention-days: 7
+  # ── Job 2: Discover test plans ──────────────────────────
+  discover-plans:
+    name: Discover E2E Plans
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.scan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Write Job Summary
-      if: always()
-      shell: bash
-      run: |
-        if [ -f test-results/summary.md ]; then
-          cat test-results/summary.md >> "$GITHUB_STEP_SUMMARY"
-        fi
+      - name: Scan test plans
+        id: scan
+        shell: bash
+        run: |
+          plans=$(ls test/e2e-plans/*.yaml | xargs -n1 basename | sed 's/\.yaml$//' | jq -R . | jq -sc .)
+          echo "matrix=$plans" >> "$GITHUB_OUTPUT"
+          echo "Found plans: $plans"
+
+  # ── Job 3: Run each plan in parallel ────────────────────
+  e2e-windows:
+    name: Windows-UI (${{ matrix.plan }})
+    needs: [ build-windows, discover-plans ]
+    runs-on: windows-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        plan: ${{ fromJson(needs.discover-plans.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup autotest
+        run: npm install -g @vscjava/vscode-autotest
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-windows
+          path: .
+
+      - name: E2E Test — ${{ matrix.plan }}
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+        run: |
+          autotest run "test/e2e-plans/${{ matrix.plan }}.yaml" --vsix "$((Get-Location).Path)\vscode-java-dependency.vsix" --output "test-results\${{ matrix.plan }}"
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-windows-${{ matrix.plan }}
+          path: test-results/
+          retention-days: 7
+
+  # ── Job 4: Aggregate analysis ───────────────────────────
+  analyze-windows:
+    name: Windows-UI Summary
+    needs: e2e-windows
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup autotest
+        run: npm install -g @vscjava/vscode-autotest
+
+      - name: Download all plan results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-results-windows-*
+          path: all-results
+          merge-multiple: false
+
+      - name: Organize results
+        shell: bash
+        run: |
+          mkdir -p test-results
+          for dir in all-results/e2e-results-windows-*/; do
+            find "$dir" -name "results.json" -exec dirname {} \; | while read d; do
+              name=$(basename "$d")
+              mkdir -p "test-results/$name"
+              cp -r "$d"/. "test-results/$name"/
+            done
+          done
+          echo "Organized plan result directories:"
+          ls test-results/ || true
+
+      - name: Analyze results
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+        run: autotest analyze test-results --output test-results
+
+      - name: Write Job Summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f test-results/summary.md ]; then
+            cat test-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload aggregate summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-aggregate-summary-windows
+          path: test-results/summary.md
+          retention-days: 30
+
+  # ── Job 5: Branch-protection compatibility gate ─────────
+  # Preserves the original required-status-check name `Windows-UI`
+  # so existing branch-protection rules keep working without edits.
+  # Fails if any upstream job did not succeed.
+  windows-ui:
+    name: Windows-UI
+    needs: [ build-windows, discover-plans, e2e-windows, analyze-windows ]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs
+        shell: bash
+        run: |
+          echo "build-windows:    ${{ needs.build-windows.result }}"
+          echo "discover-plans:   ${{ needs.discover-plans.result }}"
+          echo "e2e-windows:      ${{ needs.e2e-windows.result }}"
+          echo "analyze-windows:  ${{ needs.analyze-windows.result }}"
+          if [ "${{ needs.build-windows.result }}" != "success" ] || \
+             [ "${{ needs.discover-plans.result }}" != "success" ] || \
+             [ "${{ needs.e2e-windows.result }}" != "success" ] || \
+             [ "${{ needs.analyze-windows.result }}" != "success" ]; then
+            echo "::error::One or more required Windows-UI jobs failed"
+            exit 1
+          fi
+

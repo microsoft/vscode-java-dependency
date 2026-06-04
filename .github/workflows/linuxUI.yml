@@ -6,71 +6,215 @@ on:
   pull_request:
     branches: [ main ]
 
+# Parallelized E2E pipeline (Linux):
+#   build-linux        → packages VSIX once and uploads as artifact
+#   discover-plans     → emits a matrix of test-plan basenames
+#   e2e-linux (matrix) → one job per plan, all running in parallel
+#   analyze-linux      → aggregates results.json from every plan
+#
+# Modelled after vscode-java-pack/.github/workflows/e2e-autotest.yml.
+# Splitting plans across jobs keeps each job well under the per-job
+# 30-minute timeout and surfaces individual plan failures independently.
+
 jobs:
-  linuxUI:
-    name: Linux-UI
+  # ── Job 1: Build the VSIX once ──────────────────────────
+  build-linux:
+    name: Build VSIX (Linux)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Build Environment
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libxkbfile-dev pkg-config libsecret-1-dev libxss1 dbus xvfb libgtk-3-0 libgbm1
-        # Use 1920x1080 so the Java Projects view (rendered inside the Explorer
-        # sidebar) gets enough vertical space. With 1024x768 the sticky
-        # pane-header overlapped tree rows and intercepted click events.
-        sudo /usr/bin/Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
-        sleep 3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        
-    - name: Install Node.js modules
-      run: npm install
+      - name: Install Node.js modules
+        run: npm install
 
-    - name: Install VSCE
-      run: npm install -g @vscode/vsce
+      - name: Install VSCE
+        run: npm install -g @vscode/vsce
 
-    - name: Build OSGi bundle
-      run: npm run build-server
+      - name: Build OSGi bundle
+        run: npm run build-server
 
-    - name: Build VSIX file
-      run: vsce package -o vscode-java-dependency.vsix
+      - name: Build VSIX file
+        run: vsce package -o vscode-java-dependency.vsix
 
-    - name: Setup autotest
-      run: npm install -g @vscjava/vscode-autotest
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-linux
+          path: vscode-java-dependency.vsix
+          retention-days: 1
 
-    - name: E2E Test (autotest)
-      env:
-        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-        AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-      run: |
-        DISPLAY=:99 autotest run-all test/e2e-plans \
-          --vsix $(pwd)/vscode-java-dependency.vsix \
-          --output test-results
+  # ── Job 2: Discover test plans ──────────────────────────
+  discover-plans:
+    name: Discover E2E Plans
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.scan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Upload test results
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: e2e-results-linux
-        path: test-results/
-        retention-days: 7
+      - name: Scan test plans
+        id: scan
+        shell: bash
+        run: |
+          plans=$(ls test/e2e-plans/*.yaml | xargs -n1 basename | sed 's/\.yaml$//' | jq -R . | jq -sc .)
+          echo "matrix=$plans" >> "$GITHUB_OUTPUT"
+          echo "Found plans: $plans"
 
-    - name: Write Job Summary
-      if: always()
-      run: |
-        if [ -f test-results/summary.md ]; then
-          cat test-results/summary.md >> "$GITHUB_STEP_SUMMARY"
-        fi
+  # ── Job 3: Run each plan in parallel ────────────────────
+  e2e-linux:
+    name: Linux-UI (${{ matrix.plan }})
+    needs: [ build-linux, discover-plans ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        plan: ${{ fromJson(needs.discover-plans.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Build Environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbfile-dev pkg-config libsecret-1-dev libxss1 dbus xvfb libgtk-3-0 libgbm1
+          # Use 1920x1080 so the Java Projects view (rendered inside the Explorer
+          # sidebar) gets enough vertical space. With 1024x768 the sticky
+          # pane-header overlapped tree rows and intercepted click events.
+          sudo /usr/bin/Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup autotest
+        run: npm install -g @vscjava/vscode-autotest
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-linux
+          path: .
+
+      - name: E2E Test — ${{ matrix.plan }}
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+        run: |
+          DISPLAY=:99 autotest run "test/e2e-plans/${{ matrix.plan }}.yaml" \
+            --vsix "$(pwd)/vscode-java-dependency.vsix" \
+            --output "test-results/${{ matrix.plan }}"
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-linux-${{ matrix.plan }}
+          path: test-results/
+          retention-days: 7
+
+  # ── Job 4: Aggregate analysis ───────────────────────────
+  analyze-linux:
+    name: Linux-UI Summary
+    needs: e2e-linux
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup autotest
+        run: npm install -g @vscjava/vscode-autotest
+
+      - name: Download all plan results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-results-linux-*
+          path: all-results
+          merge-multiple: false
+
+      - name: Organize results
+        shell: bash
+        run: |
+          mkdir -p test-results
+          for dir in all-results/e2e-results-linux-*/; do
+            find "$dir" -name "results.json" -exec dirname {} \; | while read d; do
+              name=$(basename "$d")
+              mkdir -p "test-results/$name"
+              cp -r "$d"/. "test-results/$name"/
+            done
+          done
+          echo "Organized plan result directories:"
+          ls test-results/ || true
+
+      - name: Analyze results
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+        run: autotest analyze test-results --output test-results
+
+      - name: Write Job Summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f test-results/summary.md ]; then
+            cat test-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload aggregate summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-aggregate-summary-linux
+          path: test-results/summary.md
+          retention-days: 30
+
+  # ── Job 5: Branch-protection compatibility gate ─────────
+  # Preserves the original required-status-check name `Linux-UI`
+  # so existing branch-protection rules keep working without edits.
+  # Fails if any upstream job did not succeed.
+  linux-ui:
+    name: Linux-UI
+    needs: [ build-linux, discover-plans, e2e-linux, analyze-linux ]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs
+        shell: bash
+        run: |
+          echo "build-linux:     ${{ needs.build-linux.result }}"
+          echo "discover-plans:  ${{ needs.discover-plans.result }}"
+          echo "e2e-linux:       ${{ needs.e2e-linux.result }}"
+          echo "analyze-linux:   ${{ needs.analyze-linux.result }}"
+          if [ "${{ needs.build-linux.result }}" != "success" ] || \
+             [ "${{ needs.discover-plans.result }}" != "success" ] || \
+             [ "${{ needs.e2e-linux.result }}" != "success" ] || \
+             [ "${{ needs.analyze-linux.result }}" != "success" ]; then
+            echo "::error::One or more required Linux-UI jobs failed"
+            exit 1
+          fi
+
