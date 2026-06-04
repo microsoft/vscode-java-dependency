@@ -40,14 +40,21 @@ export class PackageRootNode extends DataNode {
             syncPaths = Array.from(this.pendingSyncPaths);
             this.pendingSyncPaths.clear();
         }
-        return Jdtls.getPackageData({
-            kind: NodeKind.PackageRoot,
-            projectUri: this._project.nodeData.uri,
-            rootPath: this.nodeData.path,
-            handlerIdentifier: this.nodeData.handlerIdentifier,
-            isHierarchicalView: Settings.isHierarchicalView(),
-            syncPaths,
-        });
+        try {
+            return await Jdtls.getPackageData({
+                kind: NodeKind.PackageRoot,
+                projectUri: this._project.nodeData.uri,
+                rootPath: this.nodeData.path,
+                handlerIdentifier: this.nodeData.handlerIdentifier,
+                isHierarchicalView: Settings.isHierarchicalView(),
+                syncPaths,
+            });
+        } catch (error) {
+            // Restore the snapshot so a transient server error does not drop the
+            // pending paths; the next refresh will retry the targeted sync.
+            syncPaths?.forEach((path) => this.pendingSyncPaths.add(path));
+            throw error;
+        }
     }
 
     protected createChildNodeList(): ExplorerNode[] {

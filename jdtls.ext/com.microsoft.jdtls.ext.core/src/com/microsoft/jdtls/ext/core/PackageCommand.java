@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -533,7 +534,7 @@ public class PackageCommand {
             // See https://github.com/microsoft/vscode-java-dependency/issues/914
             boolean refreshedTargets = false;
             if (syncPaths != null && !syncPaths.isEmpty()) {
-                List<IResource> targets = new ArrayList<>();
+                Set<IResource> targets = new LinkedHashSet<>();
                 boolean allResolved = true;
                 for (String syncPath : syncPaths) {
                     IResource target = findNearestExistingResource(syncPath, (IContainer) rootResource);
@@ -541,6 +542,9 @@ public class PackageCommand {
                         allResolved = false;
                         break;
                     }
+                    // Multiple changed paths can resolve to the same existing
+                    // ancestor (e.g. several new files in one new package); the
+                    // set keeps each distinct subtree so it is refreshed once.
                     targets.add(target);
                 }
                 if (allResolved && !targets.isEmpty()) {

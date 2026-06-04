@@ -47,7 +47,7 @@ steps:
     action: "collapseSidebarSection TIMELINE"
 
   - id: "collapse-explorer-folders"
-    action: "collapseSidebarSection MAVEN"
+    action: "collapseSidebarSection maven"
 
   - id: "focus-java-projects"
     action: "executeVSCodeCommand javaProjectExplorer.focus"
