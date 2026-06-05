@@ -191,16 +191,15 @@ steps:
   # jar-leaf `–`. Driving the command by id sidesteps the hit-target gap and
   # exercises the same handler — `removeLibrary(Uri.parse(node.uri).fsPath)`.
   #
-  # We pass a `{uri}` payload via JSON. JSON.parse runs before
-  # resolveWorkspacePlaceholders, so `${workspaceFolder}` here is a literal
-  # substring inside a valid JSON string. After parse + placeholder
-  # substitution the URI mixes forward slashes (from the template) with
-  # backslashes (from the Windows `${workspaceFolder}`), but `vscode.Uri.parse`
-  # tolerates both and the resulting `.fsPath` round-trips through
-  # `workspace.asRelativePath` to match the include entry that
-  # `java.project.addLibraries` wrote in cycle 2.
+  # We pass a `{uri}` payload as JSON. JSON.parse runs before
+  # resolveWorkspacePlaceholders, so `${workspaceFolderUri}` here is a literal
+  # substring inside a valid JSON string. autotest substitutes it with a
+  # correctly-formed `file:///...` URI for the current OS (drive-letter form
+  # on Windows, plain absolute path on POSIX), so the same template round-trips
+  # through `Uri.parse(...).fsPath` and `workspace.asRelativePath(...)` to
+  # match the include entry that `java.project.addLibraries` wrote in cycle 2.
   - id: "invoke-remove-extra-a"
-    action: 'executeVSCodeCommand java.project.removeLibrary {"uri":"file:///${workspaceFolder}/extraJars/extra-a.jar"}'
+    action: 'executeVSCodeCommand java.project.removeLibrary {"uri":"${workspaceFolderUri}/extraJars/extra-a.jar"}'
 
   - id: "wait-after-remove"
     action: "wait 5 seconds"
@@ -272,7 +271,7 @@ steps:
   # disappears — proving the exclude path works independently of the include
   # removal already covered in cycle 3.
   - id: "invoke-remove-extra-a-glob"
-    action: 'executeVSCodeCommand java.project.removeLibrary {"uri":"file:///${workspaceFolder}/extraJars/extra-a.jar"}'
+    action: 'executeVSCodeCommand java.project.removeLibrary {"uri":"${workspaceFolderUri}/extraJars/extra-a.jar"}'
 
   - id: "wait-after-glob-remove"
     action: "wait 5 seconds"
