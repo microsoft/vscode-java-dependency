@@ -1,0 +1,124 @@
+# Regression test for issue #914: manual Refresh must surface externally written
+# .java files (a brand-new sub-package and a class in an existing package).
+# Pre-fix the shallow DEPTH_ONE refresh never discovered the new package folder.
+#
+# Tree layout: the Java Projects tree is virtualized, so off-screen rows are not
+# in the DOM. The Explorer file tree is collapsed and explorer.autoReveal is off
+# so assertions run while the tree is compact and every package node collapsed.
+#
+# insertLineInFile uses fs.writeFileSync, bypassing VS Code's file service — i.e.
+# exactly an external generator. Assertions use the deterministic verifyTreeItem
+# DOM check; file-write and refresh steps carry no `verify:` because the LLM
+# screenshot judge has no reliable visual signal for them.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-refresh-generated-files.yaml \
+#       --override extensionPath=<path-to-this-repo>
+
+name: "Java Dependency — Refresh surfaces externally generated files (#914)"
+description: |
+  Regression for issue #914. Externally written .java files — one in a brand-new
+  sub-package, one in an existing package — must both appear in the Java Projects
+  view after an explicit Refresh.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+    explorer.autoReveal: false
+
+steps:
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  # Free vertical space so the Java Projects tree is not virtualized.
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-explorer-folders"
+    action: "collapseSidebarSection maven"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  - id: "expand-project"
+    action: "expandTreeItem my-app"
+    verify: "my-app project expanded"
+
+  - id: "expand-source-root"
+    action: "expandTreeItem src/main/java"
+    verify: "source root src/main/java expanded"
+
+  - id: "baseline-existing-pkg"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app"
+      visible: true
+
+  # Negative baseline: the brand-new package must be ABSENT before any file is
+  # written. This is the "before" half of the regression's before/after check —
+  # it proves check-new-pkg later observes a genuine appearance, not a leftover.
+  - id: "baseline-new-pkg-absent"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app.gen"
+      visible: false
+    timeout: 5
+
+  # Write files straight to disk: one in a brand-new sub-package, one in an
+  # existing package.
+  - id: "gen-file-new-pkg"
+    action: "insertLineInFile src/main/java/com/mycompany/app/gen/Gen914InNewPkg.java 1 package com.mycompany.app.gen;\n\npublic class Gen914InNewPkg {\n}\n"
+
+  - id: "gen-file-existing-pkg"
+    action: "insertLineInFile src/main/java/com/mycompany/app/Gen914InExisting.java 1 package com.mycompany.app;\n\npublic class Gen914InExisting {\n}\n"
+
+  - id: "dismiss-overlay"
+    action: "pressKey Escape"
+
+  - id: "settle"
+    action: "wait 3 seconds"
+
+  # The behaviour under test: an explicit manual Refresh.
+  - id: "manual-refresh"
+    action: "executeVSCodeCommand java.view.package.refresh"
+
+  - id: "wait-after-refresh"
+    action: "wait 4 seconds"
+
+  - id: "reexpand-source-root"
+    action: "expandTreeItem src/main/java"
+
+  # Core regression: the brand-new package appears after Refresh.
+  - id: "check-new-pkg"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app.gen"
+      visible: true
+    timeout: 15
+
+  # Sanity: a new class in an existing package also appears.
+  - id: "expand-existing-pkg"
+    action: "expandTreeItem com.mycompany.app"
+    verify: "existing package com.mycompany.app expanded"
+
+  - id: "check-existing-pkg-class"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "Gen914InExisting"
+      visible: true
+    timeout: 15
