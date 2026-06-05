@@ -13,12 +13,11 @@ on:
 #   build  (matrix)   → produces one VSIX per OS, uploaded as artifact
 #   e2e    (matrix)   → cartesian product of {os × plan}, all running in parallel
 #   analyze           → aggregates results from BOTH OSes into one unified summary
-#   Linux-UI          → branch-protection gate (preserves required-check name)
-#   Windows-UI        → branch-protection gate (preserves required-check name)
 #
 # Modelled after vscode-java-pack/.github/workflows/e2e-autotest.yml; matrix
 # has been extended with an `os` dimension so a single `e2e` job covers both
-# platforms.
+# platforms. Each matrix cell surfaces as its own PR check, so failures are
+# visible without an extra gate job.
 
 jobs:
   # ── Lint + Checkstyle (OS-agnostic) ─────────────────────
@@ -254,52 +253,3 @@ jobs:
           name: e2e-aggregate-summary
           path: test-results/summary.md
           retention-days: 30
-
-  # ── Branch-protection compatibility gates ───────────────
-  # Preserve the historical required-status-check names so existing
-  # branch-protection rules keep working without edits. The matrix
-  # aggregates per-OS results into a single `needs.e2e.result`, so
-  # both gates reflect the same overall e2e outcome. (If you want
-  # truly per-OS gates, switch branch protection to require the
-  # individual matrix job names instead.)
-  Linux-UI:
-    name: Linux-UI
-    needs: [ lint, build, discover-plans, e2e ]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify upstream jobs
-        shell: bash
-        run: |
-          echo "lint:           ${{ needs.lint.result }}"
-          echo "build:          ${{ needs.build.result }}"
-          echo "discover-plans: ${{ needs.discover-plans.result }}"
-          echo "e2e:            ${{ needs.e2e.result }}"
-          if [ "${{ needs.lint.result }}" != "success" ] || \
-             [ "${{ needs.build.result }}" != "success" ] || \
-             [ "${{ needs.discover-plans.result }}" != "success" ] || \
-             [ "${{ needs.e2e.result }}" != "success" ]; then
-            echo "::error::One or more required jobs failed"
-            exit 1
-          fi
-
-  Windows-UI:
-    name: Windows-UI
-    needs: [ lint, build, discover-plans, e2e ]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify upstream jobs
-        shell: bash
-        run: |
-          echo "lint:           ${{ needs.lint.result }}"
-          echo "build:          ${{ needs.build.result }}"
-          echo "discover-plans: ${{ needs.discover-plans.result }}"
-          echo "e2e:            ${{ needs.e2e.result }}"
-          if [ "${{ needs.lint.result }}" != "success" ] || \
-             [ "${{ needs.build.result }}" != "success" ] || \
-             [ "${{ needs.discover-plans.result }}" != "success" ] || \
-             [ "${{ needs.e2e.result }}" != "success" ]; then
-            echo "::error::One or more required jobs failed"
-            exit 1
-          fi
