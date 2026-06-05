@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -371,7 +372,7 @@ public class PackageCommand {
                 throw new CoreException(
                         new Status(IStatus.ERROR, JdtlsExtActivator.PLUGIN_ID, String.format("No package root found for %s", query.getPath())));
             }
-            List<Object> result = getPackageFragmentRootContent(packageRoot, query.isHierarchicalView(), pm);
+            List<Object> result = getPackageFragmentRootContent(packageRoot, query.isHierarchicalView(), query.getSyncPaths(), pm);
             ResourceSet resourceSet = new ResourceSet(result, query.isHierarchicalView());
             ResourceVisitor visitor = new JavaResourceVisitor(packageRoot.getJavaProject());
             resourceSet.accept(visitor);
@@ -508,8 +509,62 @@ public class PackageCommand {
      * @param pm the progress monitor
      */
     public static List<Object> getPackageFragmentRootContent(IPackageFragmentRoot root, boolean isHierarchicalView, IProgressMonitor pm) throws CoreException {
+        return getPackageFragmentRootContent(root, isHierarchicalView, null, pm);
+    }
+
+    public static List<Object> getPackageFragmentRootContent(IPackageFragmentRoot root, boolean isHierarchicalView, List<String> syncPaths, IProgressMonitor pm) throws CoreException {
         ArrayList<Object> result = new ArrayList<>();
-        refreshLocal(root.getResource(), pm);
+        IResource rootResource = root.getResource();
+        if (rootResource instanceof IContainer && rootResource.exists()
+                && root.getKind() == IPackageFragmentRoot.K_SOURCE) {
+            // Packages created out-of-band (e.g. by code generators or
+            // refactor-moves that write straight to disk) are otherwise never
+            // surfaced. A shallow DEPTH_ONE refresh only syncs the source root's
+            // immediate children and never discovers brand-new nested package
+            // folders. Even a DEPTH_INFINITE resource refresh is not enough on
+            // its own: the Java Model keeps a cached list of package fragments
+            // for the root, so closing it forces getChildren() below to rebuild
+            // that list from the freshly refreshed resource tree.
+            //
+            // On auto-refresh the client passes the changed resource URIs in
+            // syncPaths so we only deep-refresh those subtrees instead of the
+            // whole source tree. If any path cannot be resolved to an existing
+            // resource inside this root we conservatively fall back to a full
+            // DEPTH_INFINITE refresh so no package is ever missed.
+            // See https://github.com/microsoft/vscode-java-dependency/issues/914
+            boolean refreshedTargets = false;
+            if (syncPaths != null && !syncPaths.isEmpty()) {
+                Set<IResource> targets = new LinkedHashSet<>();
+                boolean allResolved = true;
+                for (String syncPath : syncPaths) {
+                    IResource target = findNearestExistingResource(syncPath, (IContainer) rootResource);
+                    if (target == null) {
+                        allResolved = false;
+                        break;
+                    }
+                    // Multiple changed paths can resolve to the same existing
+                    // ancestor (e.g. several new files in one new package); the
+                    // set keeps each distinct subtree so it is refreshed once.
+                    targets.add(target);
+                }
+                if (allResolved && !targets.isEmpty()) {
+                    for (IResource target : targets) {
+                        refreshLocal(target, IResource.DEPTH_INFINITE, pm);
+                    }
+                    refreshedTargets = true;
+                }
+            }
+            if (!refreshedTargets) {
+                refreshLocal(rootResource, IResource.DEPTH_INFINITE, pm);
+            }
+            try {
+                root.close();
+            } catch (JavaModelException e) {
+                JdtlsExtActivator.log(e);
+            }
+        } else {
+            refreshLocal(rootResource, IResource.DEPTH_ONE, pm);
+        }
         if (isHierarchicalView) {
             Map<String, IJavaElement> map = new HashMap<>();
             for (IJavaElement child : root.getChildren()) {
@@ -599,13 +654,56 @@ public class PackageCommand {
     }
 
     private static void refreshLocal(IResource resource, IProgressMonitor monitor) {
+        refreshLocal(resource, IResource.DEPTH_ONE, monitor);
+    }
+
+    private static void refreshLocal(IResource resource, int depth, IProgressMonitor monitor) {
         if (resource == null || !resource.exists()) {
             return;
         }
         try {
-            resource.refreshLocal(IResource.DEPTH_ONE, monitor);
+            resource.refreshLocal(depth, monitor);
         } catch (CoreException e) {
             JdtlsExtActivator.log(e);
         }
+    }
+
+    /**
+     * Resolve a changed resource URI to the nearest ancestor that already exists
+     * in the workspace resource tree and lives inside the given source root.
+     * Used to scope an auto-refresh to only the affected subtree. Returns null
+     * when the URI cannot be mapped to a resource within the root, in which case
+     * the caller falls back to a full refresh so no package is missed.
+     */
+    private static IResource findNearestExistingResource(String uriStr, IContainer root) {
+        if (StringUtils.isBlank(uriStr) || root == null) {
+            return null;
+        }
+        try {
+            URI uri = JDTUtils.toURI(uriStr);
+            if (uri == null) {
+                return null;
+            }
+            IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
+            IResource resource = null;
+            IFile[] files = wsRoot.findFilesForLocationURI(uri);
+            if (files.length > 0) {
+                resource = files[0];
+            } else {
+                IContainer[] containers = wsRoot.findContainersForLocationURI(uri);
+                if (containers.length > 0) {
+                    resource = containers[0];
+                }
+            }
+            while (resource != null && !resource.exists()) {
+                resource = resource.getParent();
+            }
+            if (resource != null && root.getFullPath().isPrefixOf(resource.getFullPath())) {
+                return resource;
+            }
+        } catch (Exception e) {
+            JdtlsExtActivator.logException("Failed to resolve sync path " + uriStr, e);
+        }
+        return null;
     }
 }

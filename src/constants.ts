@@ -36,11 +36,15 @@ export namespace ExtensionName {
     export const APP_MODERNIZATION_FOR_JAVA = "vscjava.migrate-java-to-azure";
     // Java upgrade extension is merged into app modernization extension
     export const APP_MODERNIZATION_UPGRADE_FOR_JAVA = APP_MODERNIZATION_FOR_JAVA;
-    export const APP_MODERNIZATION_EXTENSION_NAME = "GitHub Copilot app modernization";
+    export const APP_MODERNIZATION_EXTENSION_NAME = "GitHub Copilot modernization";
 }
 
 export namespace Upgrade {
     export const PACKAGE_ID_FOR_JAVA_RUNTIME = "java:*";
+    /** Minimum version of the appmod extension that supports gotoAgentMode command */
+    export const MIN_APPMOD_VERSION = "1.15.0";
+    export const SOURCE_JAVA_UPGRADE = "vscode-java-dependency.java-upgrade";
+    export const SOURCE_CVE = "vscode-java-dependency.cve";
 }
 
 /**

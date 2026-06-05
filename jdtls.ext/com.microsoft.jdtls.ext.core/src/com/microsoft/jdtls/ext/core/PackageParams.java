@@ -11,6 +11,8 @@
 
 package com.microsoft.jdtls.ext.core;
 
+import java.util.List;
+
 import com.microsoft.jdtls.ext.core.model.NodeKind;
 
 /**
@@ -30,6 +32,14 @@ public class PackageParams {
     private String rootPath;
 
     private boolean isHierarchicalView;
+
+    /**
+     * Optional list of resource URIs (sent by the client on auto-refresh) that
+     * have just changed on disk. When present, the server only refreshes the
+     * affected subtrees instead of deeply refreshing the whole source root.
+     * See https://github.com/microsoft/vscode-java-dependency/issues/914
+     */
+    private List<String> syncPaths;
 
     public PackageParams() {
     }
@@ -95,6 +105,14 @@ public class PackageParams {
 
     public void setRootPath(String rootPath) {
         this.rootPath = rootPath;
+    }
+
+    public List<String> getSyncPaths() {
+        return syncPaths;
+    }
+
+    public void setSyncPaths(List<String> syncPaths) {
+        this.syncPaths = syncPaths;
     }
 
 }

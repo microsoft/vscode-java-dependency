@@ -1,0 +1,105 @@
+# Validates the targeted (scoped) auto-refresh optimization for issue #914.
+# Companion to java-dep-refresh-generated-files.yaml (which tests manual Refresh).
+#
+# On auto-refresh the extension passes the changed URI to the server
+# (PackageParams.syncPaths); the server refreshes only the affected subtree (the
+# nearest existing ancestor) instead of the whole source root, then closes the
+# package root to rebuild its package-fragment list. This plan does NOT call
+# java.view.package.refresh — it relies solely on the FileSystemWatcher, so it
+# exercises the syncPaths path. Auto-refresh is on by default.
+#
+# Tree layout and verify policy are the same as the manual-Refresh plan: compact
+# virtualized tree, deterministic verifyTreeItem assertions, no `verify:` on the
+# file-write step (no reliable visual signal for the LLM judge).
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-autorefresh-targeted.yaml \
+#       --override extensionPath=<path-to-this-repo>
+
+name: "Java Dependency — Auto-refresh surfaces a new package (targeted, #914)"
+description: |
+  Validates the targeted (scoped) auto-refresh optimization for issue #914: a
+  .java file written by an external generator into a brand-new sub-package must
+  appear in the Java Projects view via the file-watcher auto-refresh alone (no
+  manual Refresh), which routes the changed URI through PackageParams.syncPaths.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+    explorer.autoReveal: false
+
+steps:
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  # Free vertical space so the Java Projects tree is not virtualized.
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-explorer-folders"
+    action: "collapseSidebarSection maven"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # The source root must be expanded so a PackageRootNode exists to target.
+  - id: "expand-project"
+    action: "expandTreeItem my-app"
+    verify: "my-app project expanded"
+
+  - id: "expand-source-root"
+    action: "expandTreeItem src/main/java"
+    verify: "source root src/main/java expanded"
+
+  - id: "baseline-existing-pkg"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app"
+      visible: true
+
+  # Negative baseline: the brand-new package must be ABSENT before the file is
+  # written, so check-new-pkg-autorefresh later observes a genuine appearance
+  # driven by the watcher, not a pre-existing node.
+  - id: "baseline-new-pkg-absent"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app.autogen"
+      visible: false
+    timeout: 5
+
+  # Write a file straight to disk into a brand-new sub-package.
+  - id: "gen-file-new-pkg"
+    action: "insertLineInFile src/main/java/com/mycompany/app/autogen/Gen914AutoNewPkg.java 1 package com.mycompany.app.autogen;\n\npublic class Gen914AutoNewPkg {\n}\n"
+
+  - id: "dismiss-overlay"
+    action: "pressKey Escape"
+
+  # Let the file watcher + debounced auto-refresh fire. No manual Refresh.
+  - id: "wait-for-auto-refresh"
+    action: "wait 6 seconds"
+
+  - id: "reexpand-source-root"
+    action: "expandTreeItem src/main/java"
+
+  # The brand-new package appears via auto-refresh alone.
+  - id: "check-new-pkg-autorefresh"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.mycompany.app.autogen"
+      visible: true
+    timeout: 20
