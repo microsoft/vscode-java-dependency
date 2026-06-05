@@ -8,19 +8,48 @@ on:
 
 # Unified parallel E2E UI pipeline for Linux + Windows.
 #
-#   discover-plans                  → emits a matrix of test-plan basenames
-#   build-linux / build-windows     → produce VSIX once per OS, upload artifact
-#   e2e-linux / e2e-windows (matrix)→ one job per (OS, plan), running in parallel
-#   analyze                         → aggregates results from BOTH OSes into a
-#                                     single unified summary in $GITHUB_STEP_SUMMARY
-#   Linux-UI / Windows-UI (gate)    → preserves the original required-status-check
-#                                     names so existing branch-protection keeps working
+#   lint              → tslint + checkstyle (ubuntu, OS-agnostic)
+#   discover-plans    → emits a matrix of test-plan basenames
+#   build  (matrix)   → produces one VSIX per OS, uploaded as artifact
+#   e2e    (matrix)   → cartesian product of {os × plan}, all running in parallel
+#   analyze           → aggregates results from BOTH OSes into one unified summary
+#   Linux-UI          → branch-protection gate (preserves required-check name)
+#   Windows-UI        → branch-protection gate (preserves required-check name)
 #
-# Modelled after vscode-java-pack/.github/workflows/e2e-autotest.yml,
-# but consolidates the two former workflows (linuxUI.yml, windowsUI.yml)
-# into one file with one shared summary.
+# Modelled after vscode-java-pack/.github/workflows/e2e-autotest.yml; matrix
+# has been extended with an `os` dimension so a single `e2e` job covers both
+# platforms.
 
 jobs:
+  # ── Lint + Checkstyle (OS-agnostic) ─────────────────────
+  lint:
+    name: Lint & Checkstyle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node.js modules
+        run: npm install
+
+      - name: Lint
+        run: npm run tslint
+
+      - name: Checkstyle
+        working-directory: ./jdtls.ext
+        run: ./mvnw checkstyle:check
+
   # ── Discover test plans ─────────────────────────────────
   discover-plans:
     name: Discover E2E Plans
@@ -38,11 +67,15 @@ jobs:
           echo "matrix=$plans" >> "$GITHUB_OUTPUT"
           echo "Found plans: $plans"
 
-  # ── Build VSIX (Linux) ──────────────────────────────────
-  build-linux:
-    name: Build VSIX (Linux)
-    runs-on: ubuntu-latest
+  # ── Build VSIX (one per OS) ─────────────────────────────
+  build:
+    name: Build VSIX (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
     steps:
       - uses: actions/checkout@v4
 
@@ -72,70 +105,27 @@ jobs:
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vsix-linux
+          name: vsix-${{ matrix.os }}
           path: vscode-java-dependency.vsix
           retention-days: 1
 
-  # ── Build VSIX (Windows) — also runs lint + checkstyle ──
-  build-windows:
-    name: Build VSIX (Windows)
-    runs-on: windows-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Node.js modules
-        run: npm install
-
-      - name: Install VSCE
-        run: npm install -g @vscode/vsce
-
-      - name: Lint
-        run: npm run tslint
-
-      - name: Checkstyle
-        working-directory: .\jdtls.ext
-        run: .\mvnw.cmd checkstyle:check
-
-      - name: Build OSGi bundle
-        run: npm run build-server
-
-      - name: Build VSIX file
-        run: vsce package -o vscode-java-dependency.vsix
-
-      - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vsix-windows
-          path: vscode-java-dependency.vsix
-          retention-days: 1
-
-  # ── Run each plan in parallel (Linux) ───────────────────
-  e2e-linux:
-    name: Linux (${{ matrix.plan }})
-    needs: [ build-linux, discover-plans ]
-    runs-on: ubuntu-latest
+  # ── Run every (OS × plan) combo in parallel ─────────────
+  e2e:
+    name: E2E (${{ matrix.os }} / ${{ matrix.plan }})
+    needs: [ build, discover-plans ]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
+        os: [ ubuntu-latest, windows-latest ]
         plan: ${{ fromJson(needs.discover-plans.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Build Environment
+      - name: Setup Linux Build Environment (Xvfb)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libxkbfile-dev pkg-config libsecret-1-dev libxss1 dbus xvfb libgtk-3-0 libgbm1
@@ -162,10 +152,12 @@ jobs:
       - name: Download VSIX artifact
         uses: actions/download-artifact@v4
         with:
-          name: vsix-linux
+          name: vsix-${{ matrix.os }}
           path: .
 
-      - name: E2E Test — ${{ matrix.plan }}
+      - name: E2E Test — ${{ matrix.plan }} (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
         env:
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -175,49 +167,9 @@ jobs:
             --vsix "$(pwd)/vscode-java-dependency.vsix" \
             --output "test-results/${{ matrix.plan }}"
 
-      - name: Upload test results
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-results-linux-${{ matrix.plan }}
-          path: test-results/
-          retention-days: 7
-
-  # ── Run each plan in parallel (Windows) ─────────────────
-  e2e-windows:
-    name: Windows (${{ matrix.plan }})
-    needs: [ build-windows, discover-plans ]
-    runs-on: windows-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        plan: ${{ fromJson(needs.discover-plans.outputs.matrix) }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Setup autotest
-        run: npm install -g @vscjava/vscode-autotest
-
-      - name: Download VSIX artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: vsix-windows
-          path: .
-
-      - name: E2E Test — ${{ matrix.plan }}
+      - name: E2E Test — ${{ matrix.plan }} (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         env:
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -229,14 +181,14 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-results-windows-${{ matrix.plan }}
+          name: e2e-results-${{ matrix.os }}-${{ matrix.plan }}
           path: test-results/
           retention-days: 7
 
   # ── Unified analysis across both OSes ───────────────────
   analyze:
     name: E2E Summary
-    needs: [ e2e-linux, e2e-windows ]
+    needs: e2e
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -259,14 +211,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p test-results
-          for dir in all-results/e2e-results-linux-*/; do
+          # Artifact dir names look like: e2e-results-ubuntu-latest-<plan>
+          # or                            e2e-results-windows-latest-<plan>
+          for dir in all-results/e2e-results-ubuntu-latest-*/; do
+            [ -d "$dir" ] || continue
             find "$dir" -name "results.json" -exec dirname {} \; | while read d; do
               name=$(basename "$d")
               mkdir -p "test-results/linux-$name"
               cp -r "$d"/. "test-results/linux-$name"/
             done
           done
-          for dir in all-results/e2e-results-windows-*/; do
+          for dir in all-results/e2e-results-windows-latest-*/; do
+            [ -d "$dir" ] || continue
             find "$dir" -name "results.json" -exec dirname {} \; | while read d; do
               name=$(basename "$d")
               mkdir -p "test-results/windows-$name"
@@ -300,44 +256,50 @@ jobs:
           retention-days: 30
 
   # ── Branch-protection compatibility gates ───────────────
-  # Preserve the original required-status-check names so existing
-  # branch-protection rules keep working without edits. Each gate
-  # checks only its own OS's pipeline (analyze is shared and excluded
-  # so a per-OS gate can pass/fail independently).
+  # Preserve the historical required-status-check names so existing
+  # branch-protection rules keep working without edits. The matrix
+  # aggregates per-OS results into a single `needs.e2e.result`, so
+  # both gates reflect the same overall e2e outcome. (If you want
+  # truly per-OS gates, switch branch protection to require the
+  # individual matrix job names instead.)
   Linux-UI:
     name: Linux-UI
-    needs: [ build-linux, discover-plans, e2e-linux ]
+    needs: [ lint, build, discover-plans, e2e ]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Verify Linux jobs
+      - name: Verify upstream jobs
         shell: bash
         run: |
-          echo "build-linux:    ${{ needs.build-linux.result }}"
+          echo "lint:           ${{ needs.lint.result }}"
+          echo "build:          ${{ needs.build.result }}"
           echo "discover-plans: ${{ needs.discover-plans.result }}"
-          echo "e2e-linux:      ${{ needs.e2e-linux.result }}"
-          if [ "${{ needs.build-linux.result }}" != "success" ] || \
+          echo "e2e:            ${{ needs.e2e.result }}"
+          if [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ] || \
              [ "${{ needs.discover-plans.result }}" != "success" ] || \
-             [ "${{ needs.e2e-linux.result }}" != "success" ]; then
-            echo "::error::One or more Linux-UI jobs failed"
+             [ "${{ needs.e2e.result }}" != "success" ]; then
+            echo "::error::One or more required jobs failed"
             exit 1
           fi
 
   Windows-UI:
     name: Windows-UI
-    needs: [ build-windows, discover-plans, e2e-windows ]
+    needs: [ lint, build, discover-plans, e2e ]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Verify Windows jobs
+      - name: Verify upstream jobs
         shell: bash
         run: |
-          echo "build-windows:   ${{ needs.build-windows.result }}"
-          echo "discover-plans:  ${{ needs.discover-plans.result }}"
-          echo "e2e-windows:     ${{ needs.e2e-windows.result }}"
-          if [ "${{ needs.build-windows.result }}" != "success" ] || \
+          echo "lint:           ${{ needs.lint.result }}"
+          echo "build:          ${{ needs.build.result }}"
+          echo "discover-plans: ${{ needs.discover-plans.result }}"
+          echo "e2e:            ${{ needs.e2e.result }}"
+          if [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ] || \
              [ "${{ needs.discover-plans.result }}" != "success" ] || \
-             [ "${{ needs.e2e-windows.result }}" != "success" ]; then
-            echo "::error::One or more Windows-UI jobs failed"
+             [ "${{ needs.e2e.result }}" != "success" ]; then
+            echo "::error::One or more required jobs failed"
             exit 1
           fi
