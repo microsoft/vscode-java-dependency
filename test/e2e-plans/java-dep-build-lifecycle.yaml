@@ -12,10 +12,8 @@
 #   - java.project.build.project              (Build Project — project context menu)
 #   - java.project.rebuild                    (Rebuild Project — project context menu)
 #   - java.project.reloadProjectFromActiveFile (Reload Project — pom.xml editor title)
-#
-# Note: java.project.clean.workspace is intentionally omitted from this plan
-# because the JDT.LS clean command triggers a VS Code window reload, which
-# tears down the autotest browser session.
+#   - java.project.update                     (Reload Project — Maven submenu on project context menu)
+#   - java.project.clean.workspace            (Clean Workspace — view-title overflow; dialog cancelled to avoid VS Code reload)
 #
 # Verification strategy
 # ─────────────────────
@@ -165,3 +163,51 @@ steps:
   - id: "wait-reload-project"
     action: "waitForLanguageServer"
     timeout: 180
+
+  # ── Test 6: Reload Project (Maven submenu on project context menu) ──
+  # `java.project.update` lives in the `javaProject.maven` submenu under the
+  # project context menu's `9_configuration@10` group. Real users right-click
+  # the Maven project node → hover the "Maven" submenu → click "Reload
+  # Project". This is the only UI surface for this command (no command
+  # palette entry, no toolbar button).
+  - id: "close-pom-editors"
+    action: "run command View: Close All Editors"
+
+  - id: "focus-java-projects-reload"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 1
+
+  - id: "click-project-update"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "context-update-maven"
+    action: 'contextMenuSubmenu my-app Maven "Reload Project"'
+
+  - id: "wait-update-project"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  # ── Test 7: Clean Workspace (overflow menu, dialog cancelled if shown) ──
+  # `java.project.clean.workspace` is contributed to the Java Projects view
+  # title-bar `overflow_20@10` group. When clicked it forwards to JDT.LS's
+  # `java.clean.workspace`. Depending on the redhat.java / JDT.LS version
+  # this may or may not raise a modal warning dialog ("…delete workspace
+  # cache and restart?") before doing the work. We use a *tolerant* dialog
+  # cancel (`tryClickDialogButton`) so the step passes whether or not the
+  # dialog appears — when it does appear we cancel to avoid the destructive
+  # VS Code reload; when it does not we proceed straight to the LS settle
+  # check. The primary coverage signal is the overflow-menu mount + click,
+  # which `trigger-clean-workspace` already exercises with a deterministic
+  # `clickViewTitleAction`.
+  - id: "trigger-clean-workspace"
+    action: 'clickViewTitleAction "Java Projects" "Clean Workspace"'
+
+  - id: "cancel-clean-dialog"
+    action: "tryClickDialogButton Cancel"
+    # No `verify:` — tolerant action: clicks Cancel if dialog appears, else
+    # silently no-ops. `trigger-clean-workspace` is the deterministic signal.
+
+  - id: "wait-clean-settle"
+    action: "waitForLanguageServer"
+    timeout: 60
