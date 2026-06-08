@@ -1,0 +1,290 @@
+# Test Plan: Java Dependency — Classpath / Referenced Libraries
+#
+# Covers the referenced-library management commands contributed by
+# vscode-java-dependency. These commands are only active for invisible
+# (unmanaged-folder) projects — Maven / Gradle projects manage their
+# classpath through pom.xml / build.gradle and do NOT expose the
+# Referenced Libraries container's inline actions.
+#
+# Commands exercised:
+#   - java.project.refreshLibraries  (Refresh — inline title icon on Referenced Libraries)
+#   - java.project.addLibraries      (Add Jar Libraries… — inline `+` icon)
+#   - java.project.removeLibrary     (Remove from Project Classpath — invoked
+#                                     by command id in both `include`-removal
+#                                     and `exclude`-addition modes)
+#   - java.project.addLibraryFolders (Add Library Folders… — Alt-variant of `+` icon;
+#                                     no plain-click UI affordance, invoked via command path)
+#
+# Verification strategy
+# ─────────────────────
+# `referencedLibraries` is a workspace setting (`java.project.referencedLibraries`)
+# whose include/exclude globs are reflected live in the JAVA PROJECTS tree under
+# the "Referenced Libraries" container. Each command we exercise either inserts
+# a new include glob (addLibraries / addLibraryFolders), removes/excludes one
+# (removeLibrary), or re-reads the setting from disk (refreshLibraries). We
+# therefore assert state by name-matching jar leaves in the tree with the
+# deterministic `verifyTreeItem` block — both presence (`visible: true`, the
+# default) and absence (`visible: false`).
+#
+# Substring matching for jar leaves
+# ─────────────────────────────────
+# Each jar leaf is rendered as "<basename>.jar <resolved-path-description>",
+# so the accessible name carries the full resolved path. We deliberately omit
+# `exact: true` on jar `verifyTreeItem` blocks — the driver falls back to
+# substring matching, which is exactly what we need to locate a leaf by its
+# basename. The project root (`invisible`) keeps `exact: true` because no
+# description is appended to project-level rows.
+#
+# Fixture layout (test/invisible)
+# ───────────────────────────────
+#   .vscode/settings.json         java.project.referencedLibraries = ["lib/**/*.jar"]
+#   lib/simple.jar                already attached at startup via the include glob
+#   libSource/simple.jar          existing companion file (unrelated to this plan)
+#   extraJars/extra-a.jar         added/removed via the UI in cycles 2 + 3
+#   extraJars/extra-b.jar         surfaced by cycle 4's folder-add (extra-a stays excluded)
+#
+# Native file/folder pickers are intercepted by `setup.mockOpenDialog` — the
+# first entry is consumed by `addLibraries`, the second by `addLibraryFolders`.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-classpath.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Classpath / Referenced Libraries"
+description: |
+  Tests the four referenced-library commands on an invisible (unmanaged)
+  Java project: refreshLibraries, addLibraries, removeLibrary, and
+  addLibraryFolders.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../invisible"
+  timeout: 240
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+  # Native file/folder pickers are mocked at the Electron `dialog.showOpenDialog`
+  # layer, but VS Code's smoke-test driver suppresses the native dialog and
+  # falls back to its internal quick-pick `simpleFileDialog`. The mock therefore
+  # never fires — instead we drive the simple dialog with `fillQuickInput`,
+  # typing the resolved jar / folder path and pressing Enter. The mockOpenDialog
+  # block below is kept as a behavioural reference (and harmless no-op).
+  mockOpenDialog:
+    - ["~/extraJars/extra-a.jar"]
+    - ["~/extraJars"]
+
+steps:
+  # ── Setup: activate the Java extension, wait for LS, clear sidebar ──
+  # Invisible projects do not auto-activate redhat.java the way Maven /
+  # Gradle workspaces do (those activate via the pom.xml / build.gradle
+  # workspaceContains contributions). Open `src/App.java` first so the
+  # Language Server actually starts — otherwise `waitForLanguageServer`
+  # times out and the Java Projects view never registers.
+  - id: "open-bootstrap-file"
+    action: "open file src/App.java"
+
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    # No `verify:` — `waitForLanguageServer` is itself the deterministic
+    # readiness check. The AFTER screenshot may transiently show
+    # "Java: Building - 0%" which a strict LLM mis-reads as a failure.
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  # Single-folder workspaces don't have a collapsible aria-level=1 workspace
+  # root inside `.explorer-folders-view`, so `collapseWorkspaceRoot` is a
+  # no-op here. Instead collapse the whole `invisible` pane in the EXPLORER
+  # view container — otherwise its top-level entries (.vscode/extraJars/
+  # lib/libSource/src) push the JAVA PROJECTS pane down so far that the
+  # virtualised list does not render the jar leaves and `verifyTreeItem`
+  # times out hunting an off-screen node.
+  - id: "collapse-explorer-pane"
+    action: "collapseSidebarSection invisible"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 5 seconds"
+
+  # Invisible-project root takes the worktree folder name (`invisible`).
+  - id: "verify-project-node"
+    action: "wait 1 seconds"
+    # No `verify:` — state-check step; `verifyTreeItem` is authoritative.
+    verifyTreeItem:
+      name: "invisible"
+      exact: true
+    timeout: 15
+
+  - id: "expand-project"
+    action: "expandTreeItem invisible"
+    waitBefore: 2
+
+  - id: "expand-referenced-libraries"
+    action: "expandTreeItem Referenced Libraries"
+    waitBefore: 2
+
+  # Baseline: lib/simple.jar matches the default include glob `lib/**/*.jar`.
+  # No `exact:` — the jar row's accessible name includes a description with the
+  # resolved jar path; substring match on the basename is sufficient and stable.
+  - id: "verify-baseline-simple-jar"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "simple.jar"
+    timeout: 15
+
+  # ── Cycle 1: java.project.refreshLibraries ──
+  # Click the inline `$(refresh)` icon on the Referenced Libraries container.
+  # The aria-label is the localised command title — here "Refresh". The action
+  # is idempotent: nothing on disk changed, so simple.jar must remain attached.
+  - id: "click-refresh-libraries"
+    action: 'clickTreeItemAction "Referenced Libraries" "Refresh"'
+
+  - id: "wait-after-refresh"
+    action: "wait 3 seconds"
+
+  - id: "verify-refresh-stable"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "simple.jar"
+    timeout: 15
+
+  # ── Cycle 2: java.project.addLibraries ──
+  # Click the inline `$(add)` icon on the Referenced Libraries container.
+  # aria-label = "Add Jar Libraries to Project Classpath...". Partial match
+  # on "Add Jar Libraries" is enough — the driver does `aria-label.includes()`.
+  # In smoke-test mode VS Code substitutes its quick-pick `simpleFileDialog`
+  # for the native picker, so we type the resolved jar path into the input
+  # bar and press Enter via `fillQuickInput`. The command then appends the
+  # new path to `java.project.referencedLibraries.include`.
+  - id: "click-add-libraries"
+    action: 'clickTreeItemAction "Referenced Libraries" "Add Jar Libraries"'
+
+  - id: "type-add-libraries-path"
+    action: "fillQuickInput ${workspaceFolder}/extraJars/extra-a.jar"
+
+  - id: "wait-after-add"
+    action: "wait 5 seconds"
+
+  - id: "verify-extra-a-added"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "extra-a.jar"
+    timeout: 20
+
+  # ── Cycle 3: java.project.removeLibrary ──
+  # Invoke the command directly. The inline `$(remove)` icon on the jar leaf
+  # is rendered only on row hover and its `<a class="action-label">` hit-target
+  # is narrower than the wrapping `<li class="action-item">`, so the centre-of-
+  # actionItem click that `clickTreeItemAction` performs lands consistently on
+  # extension-contributed view-title icons (`+`, `$(refresh)`) but not on the
+  # jar-leaf `–`. Driving the command by id sidesteps the hit-target gap and
+  # exercises the same handler — `removeLibrary(Uri.parse(node.uri).fsPath)`.
+  #
+  # We pass a `{uri}` payload as JSON. JSON.parse runs before
+  # resolveWorkspacePlaceholders, so `${workspaceFolderUri}` here is a literal
+  # substring inside a valid JSON string. autotest substitutes it with a
+  # correctly-formed `file:///...` URI for the current OS (drive-letter form
+  # on Windows, plain absolute path on POSIX), so the same template round-trips
+  # through `Uri.parse(...).fsPath` and `workspace.asRelativePath(...)` to
+  # match the include entry that `java.project.addLibraries` wrote in cycle 2.
+  - id: "invoke-remove-extra-a"
+    action: 'executeVSCodeCommand java.project.removeLibrary {"uri":"${workspaceFolderUri}/extraJars/extra-a.jar"}'
+
+  - id: "wait-after-remove"
+    action: "wait 5 seconds"
+
+  - id: "verify-extra-a-gone"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "extra-a.jar"
+      visible: false
+    timeout: 20
+
+  - id: "verify-simple-still-present"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "simple.jar"
+    timeout: 15
+
+  # ── Cycle 4: java.project.addLibraryFolders ──
+  # The `addLibraryFolders` command has no plain-click affordance — it is
+  # only bound as the `alt:` variant of the `+` icon (Alt-click). autotest
+  # 0.7.x has no Alt-modifier tree-item action, so we invoke the command
+  # directly. The same simpleFileDialog appears in folder-pick mode; we
+  # type the resolved folder path and press Enter. The command appends
+  # `extraJars/**/*.jar` (the folder glob) to the include list.
+  #
+  # Because extra-a.jar is now in the exclude list, only extra-b.jar
+  # surfaces from the folder-add — making this a sharp differentiation
+  # test against cycle 3's removeLibrary outcome.
+  - id: "invoke-add-library-folders"
+    action: "executeVSCodeCommand java.project.addLibraryFolders"
+
+  # In folder-pick mode the simpleFileDialog treats Enter on a folder as
+  # "navigate into", so `fillQuickInput` types the path AND opens the folder.
+  # The "Select Library Folders" button is the explicit confirmation
+  # affordance; clicking it is what actually returns the URI to the command.
+  - id: "type-add-folder-path"
+    action: "fillQuickInput ${workspaceFolder}/extraJars"
+
+  - id: "confirm-folder-select"
+    action: "tryClickButton Select Library Folders"
+
+  - id: "wait-after-add-folder"
+    action: "wait 5 seconds"
+
+  - id: "verify-extra-b-via-folder"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "extra-b.jar"
+    timeout: 20
+
+  # Sanity-check that extra-a.jar is back too — `removeLibrary` in cycle 3
+  # only stripped the explicit `extraJars/extra-a.jar` include entry; it did
+  # NOT add an exclude. The folder glob `extraJars/**/*.jar` therefore
+  # re-attaches both jars. This is the exact behavioural contract documented
+  # in libraryController.ts (the `if (removedPaths.length === 0)` branch
+  # only fires for glob-matched jars).
+  - id: "verify-extra-a-reattached-via-glob"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "extra-a.jar"
+    timeout: 15
+
+  # ── Cycle 5: java.project.removeLibrary (exclude code path) ──
+  # extra-a.jar is now attached via the folder glob, NOT an explicit include.
+  # Removing it now exercises the second branch of removeLibrary: the include
+  # list has no exact match for the relative path, so the handler appends
+  # `extraJars/extra-a.jar` to `referencedLibraries.exclude`. The folder
+  # glob still attaches extra-b.jar, so it must stay visible while extra-a
+  # disappears — proving the exclude path works independently of the include
+  # removal already covered in cycle 3.
+  - id: "invoke-remove-extra-a-glob"
+    action: 'executeVSCodeCommand java.project.removeLibrary {"uri":"${workspaceFolderUri}/extraJars/extra-a.jar"}'
+
+  - id: "wait-after-glob-remove"
+    action: "wait 5 seconds"
+
+  - id: "verify-extra-a-excluded"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "extra-a.jar"
+      visible: false
+    timeout: 20
+
+  - id: "verify-extra-b-still-via-glob"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "extra-b.jar"
+    timeout: 15
