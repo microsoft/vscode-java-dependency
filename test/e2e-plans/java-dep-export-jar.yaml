@@ -1,0 +1,162 @@
+# Test Plan: Java Dependency — Export Jar
+#
+# Covers java.view.package.exportJar — the multi-step wizard that builds a
+# runnable jar from a Java project. The command is contributed both as the
+# title-bar `$(export)` icon on the JAVA PROJECTS workspace-root node
+# (package.json:858-861, group=inline) and as a context-menu entry, but we
+# invoke it directly by id: the inline icon is rendered against the
+# `java:workspace` viewItem (not the Maven project node `my-app`), which
+# is fragile to locate by name, and ResolveJavaProject auto-resolves when
+# there's exactly one project in the workspace — so direct invocation
+# bypasses one wizard step that's not the command's responsibility.
+#
+# Wizard step machine (BuildArtifactTaskProvider.ts:284 `createJarFile`):
+#   1. ResolveJavaProject  → auto when single-project; quick-pick otherwise
+#   2. ResolveMainClass    → quick-pick of main classes + "<without main class>"
+#   3. GenerateJar
+#       a. generateClasspaths    → multi-select quick-pick if >1 dependency item
+#       b. showSaveDialog        → only if outputPath === "" (skipped when
+#                                  java.project.exportJar.targetPath is set
+#                                  to a non-empty value; we set it via
+#                                  workspaceSettings to keep the output
+#                                  filename deterministic)
+#       c. Jdtls.exportJar       → writes the jar file
+#
+# Verification strategy
+# ─────────────────────
+# The jar is written to a known absolute path inside the workspace
+# (`output.jar`). We assert with `verifyFile exists: true` — the strongest
+# possible signal that the full wizard completed end-to-end, not just that
+# the command was dispatched. The Jdtls export runs in a hidden Pseudoterminal
+# (BuildArtifactTaskProvider line 91: `presentationOptions.reveal = Never`),
+# so there is no terminal text to inspect; the file on disk is the only
+# unambiguous post-condition.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-export-jar.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Export Jar"
+description: |
+  Exercises the multi-step Export Jar wizard end-to-end on the maven
+  fixture: triggers the command, picks the main class, accepts the default
+  classpath element selection, and verifies that the resulting jar file
+  exists at the configured target path.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  # Bumped above the standard 180s — the wizard runs a full workspace build
+  # (await buildWorkspace() in executeExportJarTask) before the first
+  # quick-pick appears, which on a cold JDT-LS warmup commonly takes 60-90s.
+  timeout: 360
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+    # Pinning java.project.exportJar.targetPath to an absolute deterministic
+    # path bypasses the showSaveDialog branch in GenerateJarExecutor
+    # (BuildArtifactTaskProvider lines 240-244 short-circuit only when
+    # outputPath === ""), and lets the verifyFile assertion target a stable
+    # location regardless of how the fixture's worktree is named.
+    #
+    # We use user-level `settings:` (not `workspaceSettings:`) because
+    # autotest's workspaceSettings merge uses JSON.parse on the existing
+    # `.vscode/settings.json`, and the maven fixture's settings.json
+    # contains JSONC `//` comments which fail JSON.parse. User settings
+    # are written fresh each run (user-data-dir is wiped on launch) so
+    # there is no JSONC merge hazard. The Settings.getExportJarTargetPath
+    # config read is unscoped, so user-level setting takes effect identically.
+    java.project.exportJar.targetPath: "${workspaceFolder}/output.jar"
+
+steps:
+  # ── Setup: wait for LS, free sidebar space, focus Java Projects ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    # No `verify:` — `waitForLanguageServer` is itself the deterministic
+    # readiness check. The AFTER screenshot may transiently show
+    # "Java: Building - 0%" which a strict LLM mis-reads as a failure.
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Trigger the Export Jar wizard ──
+  # Direct command invocation avoids the brittle inline-icon-on-workspace-
+  # node click path (the `$(export)` icon is contributed against viewItem
+  # `java:workspace`, not against the Maven project node `my-app`, and
+  # locating workspace-level inline icons in autotest is fragile).
+  # ResolveJavaProject auto-resolves for single-project workspaces.
+  - id: "invoke-export-jar"
+    action: "executeVSCodeCommand java.view.package.exportJar"
+
+  # The wizard first triggers a full workspace build (await buildWorkspace()
+  # in executeExportJarTask) before any UI appears. On a cold JDT-LS this
+  # typically takes 30-60s; the Jdtls.getMainClasses fetch then needs
+  # another 2-5s before the first quick-pick is shown. Wait generously.
+  - id: "wait-build-complete"
+    action: "wait 60 seconds"
+
+  # ── Step 2: pick the main class ──
+  # The maven fixture has a single class with a `public static void main`
+  # entry point: com.mycompany.app.App. App1 has no main, so the only
+  # quick-pick options are "App" and "<without main class>". We pick "App"
+  # explicitly so the resulting jar is runnable.
+  - id: "pick-main-class"
+    action: "select App option"
+    # No `verify:` — selectPaletteOption is the action and verification in
+    # one. The quick-pick closes on selection; the AFTER screenshot may
+    # already show the next quick-pick (classpath elements), which a
+    # strict LLM could mis-read as "App selection was lost".
+
+  - id: "wait-after-main-class"
+    action: "wait 5 seconds"
+
+  # ── Step 3a: accept the pre-selected classpath elements ──
+  # GenerateJarExecutor.generateClasspaths builds a list of runtime / test
+  # output folders + dependency artifacts, pre-selects everything tagged
+  # `runtime`, and shows a multi-select QuickPick. For the maven fixture
+  # this includes target/classes plus any resolved JUnit jars under test
+  # scope. The pre-selection is the sane default — accepting it gives a
+  # runnable jar without needing to compute which items to check.
+  #
+  # `confirmQuickInput` presses Enter on the open quick-pick widget without
+  # typing anything, which leaves selections untouched and submits.
+  - id: "accept-classpath-elements"
+    action: "confirmQuickInput"
+
+  # ── Step 3c: wait for Jdtls to generate the jar ──
+  # Jdtls.exportJar writes the jar via a JDT LSP request. The custom
+  # pseudoterminal stays hidden (presentationOptions.reveal=Never), so
+  # there is no terminal-text signal — we just wait long enough for the
+  # filesystem write to settle.
+  - id: "wait-jar-generated"
+    action: "wait 30 seconds"
+
+  # ── Verification: jar file exists at the configured target path ──
+  # This is the strongest possible end-to-end check: the file appearing
+  # on disk proves ResolveJavaProject + ResolveMainClass + generateClasspaths
+  # + Jdtls.exportJar all completed in order. A failure here pinpoints
+  # the wizard breaking; a pass means the full happy path worked.
+  - id: "verify-jar-created"
+    action: "wait 1 seconds"
+    verifyFile:
+      path: "${workspaceFolder}/output.jar"
+      exists: true
+    timeout: 60
