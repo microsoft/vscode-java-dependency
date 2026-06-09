@@ -197,6 +197,11 @@ export async function checkOrInstallAppModExtensionForUpgrade(
         }
 
         await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+        sendInfo(operationId, {
+            operationName: "java.dependency.upgradeFlow.result",
+            upgradeFlowStep: "installSucceeded",
+            extensionState: state,
+        });
 
         if (state === "outdated") {
             // Extension was updated (not freshly installed) — reload required
