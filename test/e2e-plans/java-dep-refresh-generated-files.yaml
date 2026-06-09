@@ -55,13 +55,15 @@ steps:
   - id: "wait-tree-load"
     action: "wait 3 seconds"
 
+  # NOTE: no `verify:` on expand steps — the LLM screenshot check is flaky
+  # ("LLM downgraded pass -> fail" on already-expanded trees). The next
+  # verifyTreeItem (or the chained expand below) provides authoritative
+  # ground truth: if the expand didn't happen the child won't be visible.
   - id: "expand-project"
     action: "expandTreeItem my-app"
-    verify: "my-app project expanded"
 
   - id: "expand-source-root"
     action: "expandTreeItem src/main/java"
-    verify: "source root src/main/java expanded"
 
   - id: "baseline-existing-pkg"
     action: "wait 1 seconds"
@@ -111,10 +113,11 @@ steps:
       visible: true
     timeout: 15
 
-  # Sanity: a new class in an existing package also appears.
+  # Sanity: a new class in an existing package also appears. No `verify:` here
+  # for the same reason as the expand steps above — check-existing-pkg-class
+  # below is the deterministic assertion.
   - id: "expand-existing-pkg"
     action: "expandTreeItem com.mycompany.app"
-    verify: "existing package com.mycompany.app expanded"
 
   - id: "check-existing-pkg-class"
     action: "wait 1 seconds"

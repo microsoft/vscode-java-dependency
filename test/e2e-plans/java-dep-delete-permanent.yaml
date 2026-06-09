@@ -1,0 +1,144 @@
+# Test Plan: Java Dependency — Permanent Delete
+#
+# Covers java.view.package.deleteFilePermanently (the "shift+delete" /
+# non-trash branch of file removal). The companion command
+# java.view.package.moveFileToTrash is already covered by
+# java-dep-file-operations.yaml.
+#
+# Why this is a separate plan
+# ───────────────────────────
+# The permanent-delete command has no plain-click UI affordance on regular
+# local files: the JAVA PROJECTS context-menu entry (package.json:812-820)
+# and the `delete` keybinding (package.json:485-490) are both gated on
+# `!explorerResourceMoveableToTrash`, so files in `test/maven` only ever
+# see "Delete" (move-to-trash). We therefore invoke the command directly
+# via id and rely on tree selection to supply the target node — the same
+# pattern the classpath plan uses for `removeLibrary`.
+#
+# The confirmation dialog also differs from moveFileToTrash: the prompt
+# says "permanently delete" instead of "delete", and the action button is
+# labelled "Delete" instead of "Move to Recycle Bin" (see
+# src/explorerCommands/delete.ts line 17 + getInformationMessage).
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-delete-permanent.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Permanent Delete"
+description: |
+  Tests the java.view.package.deleteFilePermanently command on a regular
+  Maven-project file. Invokes the command by id (no UI affordance on local
+  files), confirms the "permanently delete" dialog, and verifies the file
+  is gone from disk and from the Java Projects tree.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+
+steps:
+  # ── Setup: wait for LS, free sidebar space, focus Java Projects ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    # No `verify:` — `waitForLanguageServer` is itself the deterministic
+    # readiness check. The AFTER screenshot may transiently show
+    # "Java: Building - 0%" which a strict LLM mis-reads as a failure.
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Reveal App1.java via link-with-editor, then select it ──
+  # Opening the file makes link-with-editor expand the tree path and
+  # reveal+select App1 deterministically — much more reliable than
+  # manual expandTreeItem chains on the virtualised tree.
+  - id: "open-target-file"
+    action: "open file App1.java"
+    waitBefore: 2
+
+  - id: "collapse-workspace-root-2"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-2"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 2
+
+  # Click the tree item to guarantee it's the active selection — getCmdNode
+  # (explorerCommands/utility.ts:38) falls back to `selectedNodes[0]` when
+  # the command is invoked without a node argument. Linking-with-editor
+  # already auto-selected App1 when the file was opened, but clicking
+  # re-asserts the selection deterministically after the focus-java-projects
+  # round trip.
+  #
+  # We intentionally do NOT verify the App1 tree row here. On 1024x768 CI
+  # displays the row gets virtualised out of view in the brief window
+  # between `open file` and the click, and an inView:"Java Projects"
+  # verifyTreeItem then times out — even though the underlying selection
+  # is set correctly (proven by the subsequent delete succeeding). The
+  # post-delete `verify-file-gone` + `verify-tree-item-gone` block is the
+  # authoritative ground truth for whether the right node was targeted.
+  - id: "select-app1"
+    action: "click App1 tree item"
+    waitBefore: 1
+
+  # ── Invoke java.view.package.deleteFilePermanently ──
+  # The handler at views/dependencyExplorer.ts:177 takes `node?: DataNode`.
+  # With no node arg, getCmdNode uses the current selection (set by the
+  # `click App1 tree item` step above). DataNode is a class instance with
+  # methods (.getChildren()) so passing a POJO would crash — selection
+  # fallback is the only viable path from a smoke-test.
+  - id: "invoke-delete-permanently"
+    action: "executeVSCodeCommand java.view.package.deleteFilePermanently"
+
+  # `expectConfirmDialog` waits for the dialog and clicks the first
+  # recognized confirm button (autotest knows "Delete" is one of them, see
+  # dialogOperations.ts:16). It's the strict variant — throws if no dialog
+  # appears, surfacing a silently-failed command invocation immediately
+  # instead of 15s later when verifyFile times out.
+  - id: "confirm-delete"
+    action: "expectConfirmDialog"
+
+  - id: "wait-after-delete"
+    action: "wait 5 seconds"
+
+  # ── Verify deletion on disk AND in the tree ──
+  # The disk check is the strongest signal: useTrash=false routes through
+  # workspace.fs.delete with the OS-level unlink, so a passing verifyFile
+  # exists:false proves the permanent-delete path actually fired (rather
+  # than silently downgrading to a no-op or moving to trash).
+  - id: "verify-file-gone"
+    action: "wait 1 seconds"
+    verifyFile:
+      path: "${workspaceFolder}/src/main/java/com/mycompany/app1/App1.java"
+      exists: false
+    timeout: 15
+
+  - id: "verify-tree-item-gone"
+    action: "wait 1 seconds"
+    # No `verify:` — verifyTreeItem is authoritative.
+    verifyTreeItem:
+      name: "App1"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 15
