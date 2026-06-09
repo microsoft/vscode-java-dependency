@@ -78,7 +78,10 @@ steps:
 
   - id: "select-interface"
     action: "select Interface option"
-    verify: "Interface selected"
+    # No `verify:` — LLM screenshot check is flaky when the quick-pick
+    # advances immediately after selection (LLM sees the next page and
+    # mistakes the advance for "selection not visible"). The downstream
+    # fillQuickInput / file creation provides authoritative verification.
 
   - id: "select-source-folder-1"
     action: "select src/main/java option"
