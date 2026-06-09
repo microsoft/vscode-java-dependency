@@ -79,14 +79,37 @@ function getToolErrorCode(error: unknown): string {
     return "unexpectedError";
 }
 
+function stripJavaLocationSuffix(input: string): string {
+    let normalized = input.trim();
+    if (normalized.length >= 2) {
+        const first = normalized[0];
+        const last = normalized[normalized.length - 1];
+        if ((first === "\"" && last === "\"") || (first === "'" && last === "'") || (first === "`" && last === "`")) {
+            normalized = normalized.substring(1, normalized.length - 1).trim();
+        }
+    }
+
+    const javaExt = ".java";
+    const javaIndex = normalized.toLowerCase().lastIndexOf(javaExt);
+    if (javaIndex < 0) {
+        return normalized;
+    }
+
+    const fileEnd = javaIndex + javaExt.length;
+    const suffix = normalized.substring(fileEnd);
+    return /^:L?\d+(?:[-:]\d+)?$/i.test(suffix) ? normalized.substring(0, fileEnd) : normalized;
+}
+
 /**
  * Resolve a file path to a vscode.Uri.
  * Accepts:
  *   - Full file URI:  "file:///home/user/project/src/Main.java"
  *   - Relative path:  "src/main/java/Main.java"
+ *   - Location string: "src/main/java/Main.java:42"
  *   - Absolute path:  "/home/user/project/src/Main.java" or "C:\\Users\\...\\Main.java"
  *
- * Relative paths are resolved against the first workspace folder.
+ * Relative paths are resolved against the first workspace folder unless they
+ * start with a workspace folder name in a multi-root workspace.
  * The resolved URI must use the file: scheme and fall under a workspace folder.
  */
 function resolveFileUri(input: string): vscode.Uri {
@@ -96,19 +119,31 @@ function resolveFileUri(input: string): vscode.Uri {
     }
 
     let uri: vscode.Uri;
+    const normalizedInput = stripJavaLocationSuffix(input);
 
-    if (input.includes("://")) {
+    if (normalizedInput.includes("://")) {
         // URI string (e.g. "file:///home/user/project/src/Main.java")
-        uri = vscode.Uri.parse(input);
+        uri = vscode.Uri.parse(normalizedInput);
         if (uri.scheme !== "file") {
             throw new Error(`Unsupported URI scheme "${uri.scheme}". Only file: URIs are allowed.`);
         }
-    } else if (path.isAbsolute(input)) {
+    } else if (path.isAbsolute(normalizedInput)) {
         // Absolute filesystem path (Unix or Windows)
-        uri = vscode.Uri.file(input);
+        uri = vscode.Uri.file(normalizedInput);
     } else {
-        // Relative path — resolve against first workspace folder
-        uri = vscode.Uri.joinPath(folders[0].uri, input);
+        // Relative path — resolve against a matching workspace folder when
+        // asRelativePath included the folder name, otherwise use the first root.
+        const normalizedRelativePath = normalizedInput.replace(/\\/g, "/");
+        const matchingFolder = folders.find(folder =>
+            normalizedRelativePath === folder.name || normalizedRelativePath.startsWith(`${folder.name}/`));
+        if (matchingFolder) {
+            const pathInFolder = normalizedRelativePath === matchingFolder.name
+                ? ""
+                : normalizedRelativePath.substring(matchingFolder.name.length + 1);
+            uri = vscode.Uri.joinPath(matchingFolder.uri, pathInFolder);
+        } else {
+            uri = vscode.Uri.joinPath(folders[0].uri, normalizedInput);
+        }
     }
 
     // Ensure the resolved path is under a workspace folder
@@ -288,15 +323,40 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                 return toResult(noMatchesPayload);
             }
             totalResults = symbols.length;
-            const results = symbols.slice(0, limit).map(s => ({
-                name: s.name,
-                kind: vscode.SymbolKind[s.kind],
-                container: s.containerName || undefined,
-                location: `${vscode.workspace.asRelativePath(s.location.uri)}:${s.location.range.start.line + 1}`,
-                range: `L${s.location.range.start.line + 1}-${s.location.range.end.line + 1}`,
-            }));
+            const results = symbols.slice(0, limit).map(s => {
+                const file = vscode.workspace.asRelativePath(s.location.uri);
+                const startLine = s.location.range.start.line + 1;
+                const endLine = s.location.range.end.line + 1;
+                return {
+                    name: s.name,
+                    kind: vscode.SymbolKind[s.kind],
+                    container: s.containerName || undefined,
+                    file,
+                    startLine,
+                    endLine,
+                    location: `${file}:${startLine}`,
+                    range: `L${startLine}-${endLine}`,
+                    outlineInput: file,
+                };
+            });
             resultCount = results.length;
-            const findSymbolPayload = { results, total: symbols.length };
+            const nextStep = symbols.length <= 3
+                ? [
+                    "These are exact Java symbol locations.",
+                    "Use read_file on the returned file/range, or lsp_java_getFileStructure with outlineInput for broader file context.",
+                    "Do not call lsp_java_findSymbol again for the same or similar symbol unless these results are irrelevant.",
+                ].join(" ")
+                : symbols.length > resultCount
+                    ? [
+                        "Many symbols matched.",
+                        "Refine only if the returned locations are not specific enough;",
+                        "otherwise use read_file on the relevant returned file/range.",
+                    ].join(" ")
+                    : [
+                        "Use read_file on the relevant returned file/range,",
+                        "or lsp_java_getFileStructure with outlineInput when file outline is needed.",
+                    ].join(" ");
+            const findSymbolPayload = { results, total: symbols.length, nextStep };
             responseCharCount = getResponseCharCount(findSymbolPayload);
             return toResult(findSymbolPayload);
         } catch (e) {
