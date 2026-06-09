@@ -197,6 +197,10 @@ export async function checkOrInstallAppModExtensionForUpgrade(
         }
 
         await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+        sendInfo(operationId, {
+            operationName: "java.dependency.upgradeFlow.installSucceeded",
+            extensionState: state,
+        });
 
         if (state === "outdated") {
             // Extension was updated (not freshly installed) — reload required
@@ -221,16 +225,13 @@ export async function checkOrInstallAppModExtensionForUpgrade(
 
         await checkOrPromptToEnableAppModExtension("upgrade");
 
-        // Wait briefly for the newly installed extension to activate
+        // Give the newly installed extension a moment to activate before proceeding
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Re-check if the newly installed extension is active and meets version requirement
-        const newState = getExtensionState(extensionIdToCheck);
-        const canProceed = newState === "up-to-date";
         sendInfo(operationId, {
             operationName: "java.dependency.upgradeFlow.result",
-            upgradeFlowResult: canProceed ? "proceeded" : "activation-timeout",
+            upgradeFlowResult: "proceeded",
         });
-        return canProceed;
+        return true;
     })();
 }
