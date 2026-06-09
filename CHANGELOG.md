@@ -4,6 +4,11 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.27.5
+
+- fix - Check GHCP modernization version before call gotoAgentMode command in https://github.com/microsoft/vscode-java-dependency/pull/1022
+- perf - Tune Java LSP tool selection guidance in https://github.com/microsoft/vscode-java-dependency/pull/1020
+
 ## 0.27.4
 
 - fix - Implement LSP tools for stable builds in https://github.com/microsoft/vscode-java-dependency/pull/1014

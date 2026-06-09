@@ -16,6 +16,14 @@ import { NodeFactory } from "./nodeFactory";
 
 export class PackageRootNode extends DataNode {
 
+    /**
+     * Resource URIs reported by the file watcher as newly created under this
+     * source root since the last load. Consumed on the next loadData() so the
+     * server can scope its filesystem refresh to only the changed subtrees.
+     * See https://github.com/microsoft/vscode-java-dependency/issues/914
+     */
+    public pendingSyncPaths: Set<string> = new Set<string>();
+
     constructor(nodeData: INodeData, parent: DataNode, protected _project: ProjectNode) {
         super(nodeData, parent);
     }
@@ -25,13 +33,28 @@ export class PackageRootNode extends DataNode {
     }
 
     protected async loadData(): Promise<INodeData[]> {
-        return Jdtls.getPackageData({
-            kind: NodeKind.PackageRoot,
-            projectUri: this._project.nodeData.uri,
-            rootPath: this.nodeData.path,
-            handlerIdentifier: this.nodeData.handlerIdentifier,
-            isHierarchicalView: Settings.isHierarchicalView(),
-        });
+        let syncPaths: string[] | undefined;
+        if (this.pendingSyncPaths.size) {
+            // Snapshot and clear synchronously before the async server call so
+            // watcher events arriving during the await are not lost.
+            syncPaths = Array.from(this.pendingSyncPaths);
+            this.pendingSyncPaths.clear();
+        }
+        try {
+            return await Jdtls.getPackageData({
+                kind: NodeKind.PackageRoot,
+                projectUri: this._project.nodeData.uri,
+                rootPath: this.nodeData.path,
+                handlerIdentifier: this.nodeData.handlerIdentifier,
+                isHierarchicalView: Settings.isHierarchicalView(),
+                syncPaths,
+            });
+        } catch (error) {
+            // Restore the snapshot so a transient server error does not drop the
+            // pending paths; the next refresh will retry the targeted sync.
+            syncPaths?.forEach((path) => this.pendingSyncPaths.add(path));
+            throw error;
+        }
     }
 
     protected createChildNodeList(): ExplorerNode[] {

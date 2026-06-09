@@ -1,0 +1,169 @@
+# Test Plan: Java Dependency — Create Project
+#
+# Covers java.project.create — the flagship "Java: Create Java Project..."
+# wizard. We exercise the "No build tools" branch (a.k.a. invisible /
+# unmanaged-folder project) because it is the only project type whose
+# scaffolding lives entirely inside this extension (`templates/invisible-
+# project/`) — every other type (Maven, Gradle, Spring Boot, Quarkus, ...)
+# delegates to a third-party extension's create-command, which is out of
+# scope for this repo's E2E coverage.
+#
+# Wizard flow (controllers/projectController.ts — `createJavaProject` →
+# `scaffoldSimpleProject`):
+#   1. `window.showQuickPick`  → user picks a project type
+#   2. `window.showOpenDialog` (folder mode, `openLabel: "Select the project location"`)
+#                              → user picks parent directory
+#   3. `window.showInputBox`   → user types the project name
+#   4. `fse.copy(templates/invisible-project, <basePath>/<projectName>)` → scaffold
+#   5. `commands.executeCommand("vscode.openFolder", Uri.file(...), openInNewWindow)`
+#       where openInNewWindow = workspace && !_.isEmpty(workspace.workspaceFolders)
+#
+# Why a new window does NOT break this test
+# ─────────────────────────────────────────
+# Because the test runs with a workspace open (`workspace: "../maven"`),
+# step 5 opens the new project in a SEPARATE Electron window. The Playwright
+# driver is attached via CDP to the original window's renderer process; the
+# new window is a separate process the driver never sees. After step 4
+# (the fse.copy) the scaffolded files are already on disk regardless of
+# whether step 5 succeeds in opening the new window — so the deterministic
+# verifyFile assertions still pass. We deliberately put no UI steps after
+# the project creation completes, to avoid any race with the second-window
+# spawn momentarily stealing OS focus.
+#
+# Verification strategy
+# ─────────────────────
+# `templates/invisible-project/` ships exactly three files:
+#   - README.md
+#   - .vscode/settings.json
+#   - src/App.java
+# In addition, `scaffoldSimpleProject` (projectController.ts:185) creates
+# an empty `lib/` directory at runtime via `fse.ensureDir`, so a freshly
+# scaffolded project on disk has the three template files plus `lib/`.
+# We assert two of the template files (the .vscode settings file and
+# App.java) on disk. Notably absent: `.classpath` / `.project` — invisible
+# projects rely on `java.import.generatesMetadataFilesAtProjectRoot` (off
+# by default in the template), so testing for .classpath would yield a
+# false negative.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-project-creation.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Create Project"
+description: |
+  Exercises the java.project.create wizard end-to-end on the "No build
+  tools" path: triggers the command, picks the project type, drives the
+  folder picker, names the project, and verifies the scaffolded template
+  files appear on disk.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 240
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+
+steps:
+  # ── Setup: wait for LS, free sidebar space, focus Java Projects ──
+  # We open the maven workspace to satisfy step 5's openInNewWindow=true
+  # branch (see header comment). LS readiness isn't strictly required for
+  # project creation, but the wait gives the workbench time to settle
+  # before we drive multiple chained quick-picks / input-boxes.
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    # No `verify:` — `waitForLanguageServer` is itself the deterministic
+    # readiness check. The AFTER screenshot may transiently show
+    # "Java: Building - 0%" which a strict LLM mis-reads as a failure.
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar (Chat) closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Step 1: trigger the wizard and pick the project type ──
+  # Direct command invocation is more reliable than navigating the title-
+  # bar `$(add)` icon on the Java Projects view, which routes through the
+  # `_java.project.create.from.javaprojectexplorer` proxy command — same
+  # underlying handler but extra menu-binding indirection.
+  - id: "invoke-create-project"
+    action: "executeVSCodeCommand java.project.create"
+
+  # The project-type quick-pick lists 9 items (controllers/projectController.ts
+  # `projectTypes`). "No build tools" is index 0. We pick by exact label
+  # rather than index to keep the plan resilient if the list is re-ordered.
+  - id: "pick-no-build-tools"
+    action: "select No build tools option"
+
+  # ── Step 2: drive the folder picker ──
+  # `window.showOpenDialog` (canSelectFolders: true) is intercepted by
+  # VS Code's smoke-test driver and re-surfaced as the internal
+  # simpleFileDialog quick-pick — the same mechanism the classpath plan
+  # uses for addLibraryFolders. In folder-pick mode, typing a path and
+  # pressing Enter NAVIGATES INTO the folder; the explicit confirmation
+  # button (labelled with the dialog's `openLabel`, here "Select the
+  # project location") is what actually returns the URI to the caller.
+  #
+  # We type the workspace root path so the scaffolded project lands
+  # directly inside the auto-copied worktree — that keeps the verifyFile
+  # paths simple and the worktree gets cleaned up by autotest at teardown.
+  - id: "type-project-location"
+    action: "fillQuickInput ${workspaceFolder}"
+
+  - id: "confirm-project-location"
+    action: "tryClickButton Select the project location"
+
+  # ── Step 3: name the project ──
+  # `window.showInputBox` surfaces as the quick-input widget too;
+  # `fillAnyInput` covers both quick-input and inline-rename widgets so
+  # it's slightly more robust if VS Code ever changes which surface the
+  # InputBox API targets.
+  - id: "type-project-name"
+    action: "fillAnyInput AutotestNewProject"
+
+  # ── Step 4 + 5: wait for scaffold + new-window spawn ──
+  # `fse.copy(templates/invisible-project, ...)` is a few-KB synchronous-
+  # style copy that completes in <500ms, but `vscode.openFolder` triggers
+  # a second Electron window launch which can briefly steal focus and
+  # delay file flushing on slower disks. 8s is a comfortable margin.
+  - id: "wait-scaffold-and-open"
+    action: "wait 8 seconds"
+
+  # ── Verification: scaffolded template files exist on disk ──
+  # These two assertions together prove:
+  #   - the wizard reached step 4 (file copy)
+  #   - the basePath (workspace root) and projectName (AutotestNewProject)
+  #     were correctly threaded through showOpenDialog / showInputBox
+  #
+  # Verifying directly on disk is the strongest signal we can get: it
+  # decouples the test from whatever happens with the new-window spawn,
+  # which Playwright can't observe anyway (different Electron process).
+  - id: "verify-app-java"
+    action: "wait 1 seconds"
+    verifyFile:
+      path: "${workspaceFolder}/AutotestNewProject/src/App.java"
+      exists: true
+    timeout: 15
+
+  - id: "verify-vscode-settings"
+    action: "wait 1 seconds"
+    verifyFile:
+      path: "${workspaceFolder}/AutotestNewProject/.vscode/settings.json"
+      exists: true
+    timeout: 15

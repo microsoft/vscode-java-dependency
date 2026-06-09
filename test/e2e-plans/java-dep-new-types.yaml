@@ -7,6 +7,7 @@
 # Commands exercised (each invoked through the New... quick-pick on a node):
 #   - java.view.package.newJavaInterface       (Interface)
 #   - java.view.package.newJavaEnum            (Enum)
+#   - java.view.package.newJavaRecord          (Record — requires Java 16+)
 #   - java.view.package.newJavaAnnotation      (Annotation)
 #   - java.view.package.newJavaAbstractClass   (Abstract Class)
 #   - java.view.package.newFile                ("File" option)
@@ -31,7 +32,7 @@ name: "Java Dependency — New File Types"
 description: |
   Tests all the "New ..." quick-pick options in the Java Projects view that
   are not already covered by java-dep-file-operations.yaml:
-  Interface / Enum / Annotation / Abstract Class / File / Folder.
+  Interface / Enum / Record / Annotation / Abstract Class / File / Folder.
 
 setup:
   extension: "redhat.java"
@@ -77,7 +78,10 @@ steps:
 
   - id: "select-interface"
     action: "select Interface option"
-    verify: "Interface selected"
+    # No `verify:` — LLM screenshot check is flaky when the quick-pick
+    # advances immediately after selection (LLM sees the next page and
+    # mistakes the advance for "selection not visible"). The downstream
+    # fillQuickInput / file creation provides authoritative verification.
 
   - id: "select-source-folder-1"
     action: "select src/main/java option"
@@ -190,7 +194,9 @@ steps:
     action: "executeVSCodeCommand javaProjectExplorer.focus"
     waitBefore: 1
 
-  # ── Test 4: New Abstract Class ──
+  # ── Test 4: New Record (Java 16+; fixture pom uses Java 17) ──
+  # The Record option is only shown when the project source level is >= 16,
+  # see JavaType.getDisplayNames(..., includeRecord) in src/explorerCommands/new.ts.
   - id: "click-project-4"
     action: "click my-app tree item"
     waitBefore: 1
@@ -198,19 +204,19 @@ steps:
   - id: "trigger-new-4"
     action: "clickTreeItemAction my-app New..."
 
-  - id: "select-abstract-class"
-    action: "select Abstract Class option"
+  - id: "select-record"
+    action: "select Record option"
 
   - id: "select-source-folder-4"
     action: "select src/main/java option"
 
-  - id: "enter-abstract-name"
-    action: "fillQuickInput MyAbstract"
+  - id: "enter-record-name"
+    action: "fillQuickInput MyRecord"
 
-  - id: "verify-abstract-tab"
+  - id: "verify-record-tab"
     action: "wait 2 seconds"
     verifyEditorTab:
-      title: "MyAbstract.java"
+      title: "MyRecord.java"
     timeout: 20
 
   - id: "save-4"
@@ -229,9 +235,7 @@ steps:
     action: "executeVSCodeCommand javaProjectExplorer.focus"
     waitBefore: 1
 
-  # ── Test 5: New File (plain non-Java file via "File" option) ──
-  # The "File" entry routes to `java.view.package.newFile` and writes the
-  # file under the project root (the node we triggered from).
+  # ── Test 5: New Abstract Class ──
   - id: "click-project-5"
     action: "click my-app tree item"
     waitBefore: 1
@@ -239,16 +243,19 @@ steps:
   - id: "trigger-new-5"
     action: "clickTreeItemAction my-app New..."
 
-  - id: "select-file"
-    action: "select File option"
+  - id: "select-abstract-class"
+    action: "select Abstract Class option"
 
-  - id: "enter-file-name"
-    action: "fillQuickInput notes.txt"
+  - id: "select-source-folder-5"
+    action: "select src/main/java option"
 
-  - id: "verify-file-tab"
+  - id: "enter-abstract-name"
+    action: "fillQuickInput MyAbstract"
+
+  - id: "verify-abstract-tab"
     action: "wait 2 seconds"
     verifyEditorTab:
-      title: "notes.txt"
+      title: "MyAbstract.java"
     timeout: 20
 
   - id: "save-5"
@@ -267,14 +274,52 @@ steps:
     action: "executeVSCodeCommand javaProjectExplorer.focus"
     waitBefore: 1
 
-  # ── Test 6: New Folder ──
-  # Folder creation has no editor side-effect — verify by checking the new
-  # folder exists on disk under the workspace root.
+  # ── Test 6: New File (plain non-Java file via "File" option) ──
+  # The "File" entry routes to `java.view.package.newFile` and writes the
+  # file under the project root (the node we triggered from).
   - id: "click-project-6"
     action: "click my-app tree item"
     waitBefore: 1
 
   - id: "trigger-new-6"
+    action: "clickTreeItemAction my-app New..."
+
+  - id: "select-file"
+    action: "select File option"
+
+  - id: "enter-file-name"
+    action: "fillQuickInput notes.txt"
+
+  - id: "verify-file-tab"
+    action: "wait 2 seconds"
+    verifyEditorTab:
+      title: "notes.txt"
+    timeout: 20
+
+  - id: "save-6"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-6"
+    action: "run command View: Close All Editors"
+
+  - id: "collapse-tree-6"
+    action: 'clickViewTitleAction "Java Projects" "Collapse All"'
+
+  - id: "collapse-workspace-root-7"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-7"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 1
+
+  # ── Test 7: New Folder ──
+  # Folder creation has no editor side-effect — verify by checking the new
+  # folder exists on disk under the workspace root.
+  - id: "click-project-7"
+    action: "click my-app tree item"
+    waitBefore: 1
+
+  - id: "trigger-new-7"
     action: "clickTreeItemAction my-app New..."
 
   - id: "select-folder"
