@@ -200,7 +200,7 @@ export async function checkOrInstallAppModExtensionForUpgrade(
         sendInfo(operationId, {
             operationName: "java.dependency.upgradeFlow.result",
             upgradeFlowStep: "installSucceeded",
-            extensionState: state,
+            installType: state === "outdated" ? "updated" : "installed",
         });
 
         if (state === "outdated") {
