@@ -224,8 +224,6 @@ export async function checkOrInstallAppModExtensionForUpgrade(
             return false;
         }
 
-        await checkOrPromptToEnableAppModExtension("upgrade");
-
         // Give the newly installed extension a moment to activate before proceeding
         await new Promise(resolve => setTimeout(resolve, 2000));
 
