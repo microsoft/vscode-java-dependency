@@ -224,8 +224,9 @@ export async function checkOrInstallAppModExtensionForUpgrade(
             return false;
         }
 
-        // Give the newly installed extension a moment to activate before proceeding
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait until the freshly installed extension is registered, returning as
+        // soon as it is ready, or after a 5s timeout fallback at the latest.
+        await waitForExtensionReady(extensionIdToCheck, 5000);
 
         sendInfo(operationId, {
             operationName: "java.dependency.upgradeFlow.result",
@@ -233,4 +234,25 @@ export async function checkOrInstallAppModExtensionForUpgrade(
         });
         return true;
     })();
+}
+
+function waitForExtensionReady(extensionId: string, timeoutMs: number): Promise<void> {
+    return new Promise<void>(resolve => {
+        if (extensions.getExtension(extensionId)) {
+            resolve();
+            return;
+        }
+        let timer: NodeJS.Timeout;
+        const disposable = extensions.onDidChange(() => {
+            if (extensions.getExtension(extensionId)) {
+                clearTimeout(timer);
+                disposable.dispose();
+                resolve();
+            }
+        });
+        timer = setTimeout(() => {
+            disposable.dispose();
+            resolve();
+        }, timeoutMs);
+    });
 }
