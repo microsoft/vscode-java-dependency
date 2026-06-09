@@ -142,7 +142,7 @@ function resolveFileUri(input: string): vscode.Uri {
                 : normalizedRelativePath.substring(matchingFolder.name.length + 1);
             uri = vscode.Uri.joinPath(matchingFolder.uri, pathInFolder);
         } else {
-            uri = vscode.Uri.joinPath(folders[0].uri, normalizedInput);
+            uri = vscode.Uri.joinPath(folders[0].uri, normalizedRelativePath);
         }
     }
 
@@ -340,17 +340,17 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                 };
             });
             resultCount = results.length;
-            const nextStep = symbols.length <= 3
+            const nextStep = totalResults > resultCount
                 ? [
-                    "These are exact Java symbol locations.",
-                    "Use read_file on the returned file/range, or lsp_java_getFileStructure with outlineInput for broader file context.",
-                    "Do not call lsp_java_findSymbol again for the same or similar symbol unless these results are irrelevant.",
+                    "Many symbols matched.",
+                    "Refine only if the returned locations are not specific enough;",
+                    "otherwise use read_file on the relevant returned file/range.",
                 ].join(" ")
-                : symbols.length > resultCount
+                : resultCount <= 3
                     ? [
-                        "Many symbols matched.",
-                        "Refine only if the returned locations are not specific enough;",
-                        "otherwise use read_file on the relevant returned file/range.",
+                        "These are exact Java symbol locations.",
+                        "Use read_file on the returned file/range, or lsp_java_getFileStructure with outlineInput for broader file context.",
+                        "Do not call lsp_java_findSymbol again for the same or similar symbol unless these results are irrelevant.",
                     ].join(" ")
                     : [
                         "Use read_file on the relevant returned file/range,",
