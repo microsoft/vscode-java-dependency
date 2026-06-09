@@ -32,15 +32,18 @@
 #
 # Verification strategy
 # ─────────────────────
-# `templates/invisible-project/` ships exactly three files (plus an empty
-# `lib/` ensure-dir):
+# `templates/invisible-project/` ships exactly three files:
 #   - README.md
 #   - .vscode/settings.json
 #   - src/App.java
-# We assert two of them (the .vscode settings file and App.java) on disk.
-# Notably absent: `.classpath` / `.project` — invisible projects rely on
-# `java.import.generatesMetadataFilesAtProjectRoot` (off by default in the
-# template), so testing for .classpath would yield a false negative.
+# In addition, `scaffoldSimpleProject` (projectController.ts:185) creates
+# an empty `lib/` directory at runtime via `fse.ensureDir`, so a freshly
+# scaffolded project on disk has the three template files plus `lib/`.
+# We assert two of the template files (the .vscode settings file and
+# App.java) on disk. Notably absent: `.classpath` / `.project` — invisible
+# projects rely on `java.import.generatesMetadataFilesAtProjectRoot` (off
+# by default in the template), so testing for .classpath would yield a
+# false negative.
 #
 # Usage:
 #   npx autotest run test/e2e-plans/java-dep-project-creation.yaml --vsix <path-to-vsix>

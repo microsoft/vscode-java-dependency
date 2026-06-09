@@ -17,9 +17,11 @@
 #       a. generateClasspaths    → multi-select quick-pick if >1 dependency item
 #       b. showSaveDialog        → only if outputPath === "" (skipped when
 #                                  java.project.exportJar.targetPath is set
-#                                  to a non-empty value; we set it via
-#                                  workspaceSettings to keep the output
-#                                  filename deterministic)
+#                                  to a non-empty value; we set it via a
+#                                  user-level `settings:` block to keep the
+#                                  output filename deterministic — see the
+#                                  setup section below for why user-level
+#                                  and not workspaceSettings)
 #       c. Jdtls.exportJar       → writes the jar file
 #
 # Verification strategy
