@@ -44,6 +44,28 @@ function getResponseCharCount(data: unknown): number {
     return typeof data === "string" ? data.length : JSON.stringify(data, null, 2).length;
 }
 
+interface ReadFileInput {
+    filePath: string;
+    offset: number;
+    limit: number;
+}
+
+function toInclusiveLineRange(range: vscode.Range): { startLine: number; endLine: number } {
+    const startLine = range.start.line + 1;
+    const endLine = Math.max(startLine, range.end.character === 0 && range.end.line > range.start.line
+        ? range.end.line
+        : range.end.line + 1);
+    return { startLine, endLine };
+}
+
+function toReadFileInput(filePath: string, startLine: number, endLine: number): ReadFileInput {
+    return {
+        filePath,
+        offset: startLine,
+        limit: endLine - startLine + 1,
+    };
+}
+
 /**
  * Normalize a workspace-symbol query for a single fallback retry.
  * Strips a fully-qualified package prefix (com.foo.Bar -> Bar), generic parameters
@@ -303,8 +325,7 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
             totalResults = symbols.length;
             const results = symbols.slice(0, limit).map(s => {
                 const file = vscode.workspace.asRelativePath(s.location.uri);
-                const startLine = s.location.range.start.line + 1;
-                const endLine = s.location.range.end.line + 1;
+                const { startLine, endLine } = toInclusiveLineRange(s.location.range);
                 return {
                     name: s.name,
                     kind: vscode.SymbolKind[s.kind],
@@ -312,6 +333,7 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                     file,
                     startLine,
                     endLine,
+                    readFileInput: toReadFileInput(file, startLine, endLine),
                     location: `${file}:${startLine}`,
                     range: `L${startLine}-${endLine}`,
                 };

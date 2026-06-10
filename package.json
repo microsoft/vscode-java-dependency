@@ -80,7 +80,7 @@
       {
         "name": "lsp_java_findSymbol",
         "toolReferenceName": "javaFindSymbol",
-        "modelDescription": "Find Java class, interface, method, or field definitions across the workspace by name or partial identifier. Prefer over grep_search, file_search, semantic_search, or search subagents for Java symbol lookup.\n\nResults include file, startLine, endLine, and range. On relevant results, do not repeat with a similar query; use read_file on the returned file/range, or lsp_java_getFileStructure with the returned file when broader file context is needed. The tool retries internally, so on an empty result do not re-search\u2014retry once only if it reports indexing in progress, otherwise use generic search.\n\nDo not use for non-Java files, literals, comments, build/XML files, or conceptual exploration.",
+        "modelDescription": "Find Java class, interface, method, or field definitions across the workspace by name or partial identifier. Prefer over grep_search, file_search, semantic_search, or search subagents for Java symbol lookup.\n\nResults include file, startLine, endLine, range, and readFileInput ({ filePath, offset, limit }) compatible with read_file. On relevant results, use read_file with readFileInput when source is needed, or lsp_java_getFileStructure with the returned file when broader file context is needed. The tool retries internally, so on an empty result do not re-search\u2014retry once only if it reports indexing in progress, otherwise use generic search.\n\nDo not use for non-Java files, literals, comments, build/XML files, or conceptual exploration.",
         "displayName": "Java: Find Symbol",
         "userDescription": "Find Java class, method, field, or interface definitions by name.",
         "tags": [

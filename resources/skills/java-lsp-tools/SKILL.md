@@ -12,9 +12,9 @@ Two compiler-accurate tools backed by the Java Language Server (jdtls). They ret
 ### `lsp_java_findSymbol`
 Search for Java symbol definitions (classes, methods, fields) by name across the workspace. Supports partial matching.
 - Input: `{ query, limit? }` — limit defaults to 20, max 50
-- Output: `{ results: [{ name, kind, container?, file, startLine, endLine, location, range }], total }`; `range` is `L start-end`, and `file` can be passed to `lsp_java_getFileStructure`
+- Output: `{ results: [{ name, kind, container?, file, startLine, endLine, readFileInput, location, range }], total }`; `readFileInput` is `{ filePath, offset, limit }` for `read_file`, and `file` can be passed to `lsp_java_getFileStructure`
 - **Use instead of** `grep_search`, `file_search`, `semantic_search`, or `search_subagent` when looking for where a Java class/method/field is defined by identifier
-- Do not repeat with the same or similar query after relevant results are returned
+- When source is needed for a returned symbol, use its `readFileInput` directly
 
 ### `lsp_java_getFileStructure`
 Get hierarchical outline of a Java file (classes, methods, fields) with line ranges.
@@ -36,7 +36,7 @@ Get hierarchical outline of a Java file (classes, methods, fields) with line ran
 
 **findSymbol → getFileStructure → read_file (specific lines only)**
 
-If `findSymbol` returns relevant symbols, use `read_file` on the returned `file`/`range`, or call `getFileStructure` with the returned `file` when broader file context is needed. Do not call `findSymbol` again with the same or similar identifier unless the returned symbols are irrelevant.
+If `findSymbol` returns relevant symbols and source is needed, call `read_file` with the returned `readFileInput`, or call `getFileStructure` with the returned `file` when broader file context is needed.
 
 ## Fallback
 
