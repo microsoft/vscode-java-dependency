@@ -79,33 +79,11 @@ function getToolErrorCode(error: unknown): string {
     return "unexpectedError";
 }
 
-function stripJavaLocationSuffix(input: string): string {
-    let normalized = input.trim();
-    if (normalized.length >= 2) {
-        const first = normalized[0];
-        const last = normalized[normalized.length - 1];
-        if ((first === "\"" && last === "\"") || (first === "'" && last === "'") || (first === "`" && last === "`")) {
-            normalized = normalized.substring(1, normalized.length - 1).trim();
-        }
-    }
-
-    const javaExt = ".java";
-    const javaIndex = normalized.toLowerCase().lastIndexOf(javaExt);
-    if (javaIndex < 0) {
-        return normalized;
-    }
-
-    const fileEnd = javaIndex + javaExt.length;
-    const suffix = normalized.substring(fileEnd);
-    return /^:L?\d+(?:[-:]\d+)?$/i.test(suffix) ? normalized.substring(0, fileEnd) : normalized;
-}
-
 /**
  * Resolve a file path to a vscode.Uri.
  * Accepts:
  *   - Full file URI:  "file:///home/user/project/src/Main.java"
  *   - Relative path:  "src/main/java/Main.java"
- *   - Location string: "src/main/java/Main.java:42"
  *   - Absolute path:  "/home/user/project/src/Main.java" or "C:\\Users\\...\\Main.java"
  *
  * Relative paths are resolved against the first workspace folder unless they
@@ -119,7 +97,7 @@ function resolveFileUri(input: string): vscode.Uri {
     }
 
     let uri: vscode.Uri;
-    const normalizedInput = stripJavaLocationSuffix(input);
+    const normalizedInput = input.trim();
 
     if (normalizedInput.includes("://")) {
         // URI string (e.g. "file:///home/user/project/src/Main.java")
