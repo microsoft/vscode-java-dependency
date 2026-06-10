@@ -1,0 +1,195 @@
+# Test Plan: Java Dependency — Copy File / Relative Paths
+#
+# Covers two clipboard commands contributed against the Java Projects view:
+#   - java.view.package.copyFilePath          (Copy Path)
+#   - java.view.package.copyRelativeFilePath  (Copy Relative Path)
+#
+# Why a dedicated plan
+# ────────────────────
+# These two commands have **no on-screen side effect at all** — they don't
+# open a dialog, write a file, change the tree, or post a notification.
+# The only observable consequence is what ends up on the OS clipboard.
+# Verifying them therefore requires an autotest clipboard primitive
+# (writeClipboard / readClipboard / verifyClipboard) added in 0.7.15.
+#
+# Both handlers (dependencyExplorer.ts:159 and :165) are thin wrappers
+# around VS Code's built-in `copyFilePath` / `copyRelativeFilePath`:
+#
+#   instrumentOperationAsVsCodeCommand(Commands.VIEW_PACKAGE_COPY_FILE_PATH,
+#     (node?: DataNode) => {
+#       const cmdNode = getCmdNode(this._dependencyViewer.selection, node);
+#       if (cmdNode?.uri) {
+#         commands.executeCommand("copyFilePath", Uri.parse(cmdNode.uri));
+#       }
+#     })
+#
+# So the values landing on the clipboard are whatever VS Code's built-ins
+# write — i.e. the URI's fsPath (absolute, OS-native separators) and the
+# workspace-relative path (no leading slash).
+#
+# Invocation pattern (same as delete-permanent.yaml)
+# ──────────────────────────────────────────────────
+# Both commands accept a `node?: DataNode` parameter and fall back to
+# the current tree selection via getCmdNode (explorerCommands/utility.ts:38).
+# DataNode is a class instance, not a POJO, so passing a synthetic node
+# from YAML would crash. Selection fallback is the only viable smoke-test
+# path: open a file via link-with-editor (auto-selects in the tree) →
+# click the tree row to re-assert selection after focus changes →
+# invoke the command by id.
+#
+# Cross-OS path separator handling
+# ────────────────────────────────
+# Windows fsPaths use `\` and POSIX uses `/`. The assertions therefore
+# combine three orthogonal checks per command:
+#   - `contains: "App.java"`  — leaf filename, identical on every OS
+#   - `matches: regex`        — accepts both separators between segments
+#   - `notContains: <sentinel>` — proves the clipboard was overwritten
+#                                 (we seed a sentinel before each command)
+#
+# A pure `exact:` match would force a per-OS conditional plan; the regex
+# approach keeps a single plan that's portable Linux ↔ Windows ↔ macOS.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-copy-paths.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Copy File / Relative Paths"
+description: |
+  Exercises java.view.package.copyFilePath and java.view.package.copyRelativeFilePath
+  on a Maven-project source file. Seeds a clipboard sentinel before each command,
+  invokes the command by id (using the current tree selection), and verifies the
+  resulting clipboard text via path-shape regex + filename containment +
+  sentinel-overwritten check.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    workbench.startupEditor: "none"
+
+steps:
+  # ── Setup: wait for LS, free sidebar space, focus Java Projects ──
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    # No `verify:` — `waitForLanguageServer` is itself the deterministic
+    # readiness check. The AFTER screenshot may transiently show
+    # "Java: Building - 0%" which a strict LLM mis-reads as a failure.
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  # ── Reveal & select App.java via link-with-editor ──
+  # Same pattern as java-dep-delete-permanent.yaml: opening the file
+  # makes link-with-editor reveal+select the tree node deterministically,
+  # which is more reliable than chained expandTreeItem on the virtualised
+  # tree on 1024x768 CI displays.
+  - id: "open-target-file"
+    action: "open file App.java"
+    waitBefore: 2
+
+  - id: "collapse-workspace-root-2"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-2"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 2
+
+  # Click the App tree row to assert it as the active selection. The Java
+  # Projects view labels source files by class name (no `.java` suffix —
+  # the leaf row reads "App"), and a default substring `click App tree
+  # item` would also match the project node "my-app" first (case-insensitive
+  # substring), silently selecting the project — whose URI is the workspace
+  # root, not the file. We use the `exact` modifier (autotest ≥ 0.7.16) so
+  # only the leaf row labeled exactly "App" matches.
+  - id: "select-app"
+    action: "click App tree item exact"
+    waitBefore: 1
+
+  # ── Cycle 1: java.view.package.copyFilePath (absolute path) ──
+  # Sentinel proves the clipboard was actually written — without it, a
+  # silently-no-op command would pass if the OS clipboard happened to
+  # already contain "App.java" from any earlier action on the host.
+  - id: "seed-clipboard-absolute"
+    action: "writeClipboard __SENTINEL_BEFORE_COPY_FILE_PATH__"
+
+  - id: "invoke-copy-file-path"
+    action: "executeVSCodeCommand java.view.package.copyFilePath"
+    waitBefore: 1
+
+  # Verify the clipboard contents post-action.
+  #
+  # • `contains: "App.java"` — the leaf filename is identical on every OS
+  # • `matches: ...` — accepts either `\` (Windows) or `/` (POSIX) between
+  #     path segments, and asserts the URL-decoded fsPath structure
+  #     `maven/src/main/java/com/mycompany/app/App.java`. The `[\\\\/]`
+  #     escapes to a literal `[\/]` character class in the compiled regex.
+  # • `notContains: <sentinel>` — proves the seed was overwritten and the
+  #     command isn't silently no-op'ing into a stale clipboard.
+  - id: "verify-absolute-path"
+    action: "wait 1 seconds"
+    verifyClipboard:
+      contains: "App.java"
+      matches: "maven[\\\\/]src[\\\\/]main[\\\\/]java[\\\\/]com[\\\\/]mycompany[\\\\/]app[\\\\/]App\\.java$"
+      notContains: "__SENTINEL_BEFORE_COPY_FILE_PATH__"
+    timeout: 10
+
+  # ── Cycle 2: java.view.package.copyRelativeFilePath ──
+  # The selection persists across the previous command, so no re-click.
+  # A fresh sentinel is still needed — the cycle-1 clipboard now contains
+  # the absolute path, which would trivially satisfy any leaf-only check.
+  #
+  # Cross-platform note: VS Code's built-in `copyRelativeFilePath` computes
+  # `path.relative(workspaceFolderUri, fileUri)` and falls back to the
+  # absolute fsPath when the file URI isn't a member of any workspace
+  # folder. On Windows the URI we pass — `Uri.parse(cmdNode.uri)` from
+  # JDT.LS — can differ from VS Code's registered workspace folder URI
+  # in drive-letter case or percent-encoding, so the membership test
+  # fails and we get the absolute path back. On POSIX the URIs match and
+  # the relative form is produced. The assertions below tolerate both:
+  # they prove the command fired and overwrote the sentinel with a
+  # well-formed path ending in the expected package + class layout, but
+  # do not require the leading-`src` shape that only POSIX produces.
+  - id: "seed-clipboard-relative"
+    action: "writeClipboard __SENTINEL_BEFORE_COPY_RELATIVE_FILE_PATH__"
+
+  - id: "invoke-copy-relative-file-path"
+    action: "executeVSCodeCommand java.view.package.copyRelativeFilePath"
+    waitBefore: 1
+
+  # Verify the clipboard after copyRelativeFilePath.
+  #
+  # • `contains: "App.java"` — leaf filename appears (OS-independent)
+  # • `matches: ...` — same path-suffix shape as the absolute assertion
+  #     above. Anchored to `$` so it matches whether the path is the
+  #     POSIX relative form `src/main/java/.../App.java` (single match
+  #     of the suffix) or the Windows absolute fallback
+  #     `C:\...\maven\src\main\java\.../App.java` (suffix at end).
+  # • `notContains: <sentinel>` — proves the seed was overwritten,
+  #     which is the strongest signal that the wrapper command actually
+  #     forwarded to the built-in (rather than silently no-op'ing on a
+  #     missing selection).
+  - id: "verify-relative-path"
+    action: "wait 1 seconds"
+    verifyClipboard:
+      contains: "App.java"
+      matches: "src[\\\\/]main[\\\\/]java[\\\\/]com[\\\\/]mycompany[\\\\/]app[\\\\/]App\\.java$"
+      notContains: "__SENTINEL_BEFORE_COPY_RELATIVE_FILE_PATH__"
+    timeout: 10
