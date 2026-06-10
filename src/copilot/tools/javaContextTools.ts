@@ -29,6 +29,7 @@ import { sendInfo } from "vscode-extension-telemetry-wrapper";
 // Hard caps to keep tool responses within the < 200 token budget.
 const MAX_SYMBOL_DEPTH = 3;
 const MAX_SYMBOL_NODES = 80;
+const DEFAULT_FILE_STRUCTURE_SYMBOL_NODES = 40;
 const MAX_CALL_RESULTS = 50;
 const MAX_TYPE_RESULTS = 50;
 const MAX_IMPORTS = 50;
@@ -50,6 +51,11 @@ interface ReadFileInput {
     limit: number;
 }
 
+interface ReadFileRange {
+    offset: number;
+    limit: number;
+}
+
 function toInclusiveLineRange(range: vscode.Range): { startLine: number; endLine: number } {
     const startLine = range.start.line + 1;
     const endLine = Math.max(startLine, range.end.character === 0 && range.end.line > range.start.line
@@ -58,11 +64,17 @@ function toInclusiveLineRange(range: vscode.Range): { startLine: number; endLine
     return { startLine, endLine };
 }
 
+function toReadFileRange(startLine: number, endLine: number): ReadFileRange {
+    return {
+        offset: startLine,
+        limit: endLine - startLine + 1,
+    };
+}
+
 function toReadFileInput(filePath: string, startLine: number, endLine: number): ReadFileInput {
     return {
         filePath,
-        offset: startLine,
-        limit: endLine - startLine + 1,
+        ...toReadFileRange(startLine, endLine),
     };
 }
 
@@ -165,16 +177,19 @@ function resolveFileUri(input: string): vscode.Uri {
 
 interface FileStructureInput {
     uri: string;
+    limit?: number;
 }
 
 const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
     async invoke(options, _token) {
         const startTime = Date.now();
+        const limit = Math.min(Math.max(options.input.limit || DEFAULT_FILE_STRUCTURE_SYMBOL_NODES, 1), MAX_SYMBOL_NODES);
         let resultCount = 0;
         let status = "success";
         let errorCode = "";
         let emptyReason = "";
         let responseCharCount = 0;
+        let truncated = false;
         try {
             const uri = resolveFileUri(options.input.uri);
             try {
@@ -206,11 +221,12 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
                 responseCharCount = getResponseCharCount(noSymbolsPayload);
                 return toResult(noSymbolsPayload);
             }
-            const counter = { count: 0 };
-            const result = symbolsToJson(symbols, 0, counter);
+            const counter = { count: 0, truncated: false };
+            const result = symbolsToJson(symbols, 0, counter, limit);
             resultCount = counter.count;
-            const truncated = counter.count >= MAX_SYMBOL_NODES;
-            const fileStructurePayload = { symbols: result, ...(truncated && { truncated: true }) };
+            truncated = counter.truncated;
+            const file = vscode.workspace.asRelativePath(uri);
+            const fileStructurePayload = { file, symbols: result, ...(truncated && { truncated: true }) };
             responseCharCount = getResponseCharCount(fileStructurePayload);
             return toResult(fileStructurePayload);
         } catch (e) {
@@ -223,6 +239,8 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
                 status,
                 ...(errorCode && { errorCode }),
                 ...(emptyReason && { emptyReason }),
+                truncated: truncated ? "true" : "false",
+                limit,
                 resultCount,
                 responseCharCount,
                 durationMs: Date.now() - startTime,
@@ -234,28 +252,36 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
 interface SymbolNode {
     name: string;
     kind: string;
+    startLine: number;
+    endLine: number;
+    readFileRange: ReadFileRange;
     range: string;
     detail?: string;
     children?: SymbolNode[];
 }
 
-function symbolsToJson(symbols: vscode.DocumentSymbol[], depth: number, counter: { count: number }): SymbolNode[] {
+function symbolsToJson(symbols: vscode.DocumentSymbol[], depth: number, counter: { count: number; truncated: boolean }, limit: number): SymbolNode[] {
     const result: SymbolNode[] = [];
     for (const s of symbols) {
-        if (counter.count >= MAX_SYMBOL_NODES) {
+        if (counter.count >= limit) {
+            counter.truncated = true;
             break;
         }
         counter.count++;
+        const { startLine, endLine } = toInclusiveLineRange(s.range);
         const node: SymbolNode = {
             name: s.name,
             kind: vscode.SymbolKind[s.kind],
-            range: `L${s.range.start.line + 1}-${s.range.end.line + 1}`,
+            startLine,
+            endLine,
+            readFileRange: toReadFileRange(startLine, endLine),
+            range: `L${startLine}-${endLine}`,
         };
         if (s.detail) {
             node.detail = s.detail;
         }
         if (s.children?.length && depth < MAX_SYMBOL_DEPTH) {
-            node.children = symbolsToJson(s.children, depth + 1, counter);
+            node.children = symbolsToJson(s.children, depth + 1, counter, limit);
         }
         result.push(node);
     }
