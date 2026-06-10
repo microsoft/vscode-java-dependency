@@ -360,7 +360,6 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                     startLine,
                     endLine,
                     readFileInput: toReadFileInput(file, startLine, endLine),
-                    location: `${file}:${startLine}`,
                     range: `L${startLine}-${endLine}`,
                 };
             });
