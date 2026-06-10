@@ -28,8 +28,8 @@ import { sendInfo } from "vscode-extension-telemetry-wrapper";
 
 // Hard caps to keep tool responses within the < 200 token budget.
 const MAX_SYMBOL_DEPTH = 3;
-const MAX_SYMBOL_NODES = 80;
-const DEFAULT_FILE_STRUCTURE_SYMBOL_NODES = 40;
+const MAX_FILE_STRUCTURE_SYMBOL_NODES = 60;
+const DEFAULT_FILE_STRUCTURE_SYMBOL_NODES = 20;
 const MAX_CALL_RESULTS = 50;
 const MAX_TYPE_RESULTS = 50;
 const MAX_IMPORTS = 50;
@@ -183,7 +183,7 @@ interface FileStructureInput {
 const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
     async invoke(options, _token) {
         const startTime = Date.now();
-        const limit = Math.min(Math.max(options.input.limit || DEFAULT_FILE_STRUCTURE_SYMBOL_NODES, 1), MAX_SYMBOL_NODES);
+        const limit = Math.min(Math.max(options.input.limit || DEFAULT_FILE_STRUCTURE_SYMBOL_NODES, 1), MAX_FILE_STRUCTURE_SYMBOL_NODES);
         let resultCount = 0;
         let status = "success";
         let errorCode = "";

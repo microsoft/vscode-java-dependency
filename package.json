@@ -52,7 +52,7 @@
       {
         "name": "lsp_java_getFileStructure",
         "toolReferenceName": "javaFileStructure",
-        "modelDescription": "Get a known Java file's outline: classes, interfaces, methods, fields, symbol kinds, and read_file ranges, to pick a precise source range instead of reading the whole file.\n\nUse when the user gave a Java file path or lsp_java_findSymbol returned a file and broader file context is needed; do not guess paths. Results include a top-level file plus per-symbol startLine, endLine, and readFileRange ({ offset, limit }); call read_file with filePath=file and the selected symbol's readFileRange. Use limit to cap returned outline items (default 40, max 80). Not for workspace-wide search\u2014use lsp_java_findSymbol for that.",
+        "modelDescription": "Get a known Java file's outline: classes, interfaces, methods, fields, symbol kinds, and read_file ranges, to pick a precise source range instead of reading the whole file.\n\nUse when the user gave a Java file path or lsp_java_findSymbol returned a file and broader file context is needed; do not guess paths. Results include a top-level file plus per-symbol startLine, endLine, and readFileRange ({ offset, limit }); call read_file with filePath=file and the selected symbol's readFileRange. Use limit to cap returned outline items (default 20, max 60). Not for workspace-wide search\u2014use lsp_java_findSymbol for that.",
         "displayName": "Java: Get File Structure",
         "userDescription": "Get a Java file outline with classes, methods, fields, and line ranges.",
         "tags": [
@@ -73,7 +73,7 @@
             },
             "limit": {
               "type": "number",
-              "description": "Maximum outline items to return (default: 40, max: 80). Use a smaller value when only top-level context is needed."
+              "description": "Maximum outline items to return (default: 20, max: 60). Use a smaller value when only top-level context is needed."
             }
           },
           "required": [
