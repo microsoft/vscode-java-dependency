@@ -314,7 +314,6 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                     endLine,
                     location: `${file}:${startLine}`,
                     range: `L${startLine}-${endLine}`,
-                    outlineInput: file,
                 };
             });
             resultCount = results.length;

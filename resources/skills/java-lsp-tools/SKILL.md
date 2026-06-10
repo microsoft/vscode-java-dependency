@@ -12,13 +12,13 @@ Two compiler-accurate tools backed by the Java Language Server (jdtls). They ret
 ### `lsp_java_findSymbol`
 Search for Java symbol definitions (classes, methods, fields) by name across the workspace. Supports partial matching.
 - Input: `{ query, limit? }` — limit defaults to 20, max 50
-- Output: `{ results: [{ name, kind, container?, file, startLine, endLine, location, range, outlineInput }], total }`; `range` is `L start-end`, and `outlineInput` can be passed to `lsp_java_getFileStructure`
+- Output: `{ results: [{ name, kind, container?, file, startLine, endLine, location, range }], total }`; `range` is `L start-end`, and `file` can be passed to `lsp_java_getFileStructure`
 - **Use instead of** `grep_search`, `file_search`, `semantic_search`, or `search_subagent` when looking for where a Java class/method/field is defined by identifier
 - Do not repeat with the same or similar query after relevant results are returned
 
 ### `lsp_java_getFileStructure`
 Get hierarchical outline of a Java file (classes, methods, fields) with line ranges.
-- Input: `{ uri }` — workspace-relative path. Prefer `outlineInput` or `file` from `lsp_java_findSymbol`. Must be a known path from prior tool results or user input — do not guess
+- Input: `{ uri }` — workspace-relative path. Prefer `file` from `lsp_java_findSymbol`. Must be a known path from prior tool results or user input — do not guess
 - Output: symbol tree with `L start-end` ranges (~100 tokens)
 - **Use before** `read_file` when you need to choose a precise line range in a known Java file
 
@@ -36,7 +36,7 @@ Get hierarchical outline of a Java file (classes, methods, fields) with line ran
 
 **findSymbol → getFileStructure → read_file (specific lines only)**
 
-If `findSymbol` returns relevant symbols, use `read_file` on the returned `file`/`range`, or call `getFileStructure` with `outlineInput` when broader file context is needed. Do not call `findSymbol` again with the same or similar identifier unless the returned symbols are irrelevant.
+If `findSymbol` returns relevant symbols, use `read_file` on the returned `file`/`range`, or call `getFileStructure` with the returned `file` when broader file context is needed. Do not call `findSymbol` again with the same or similar identifier unless the returned symbols are irrelevant.
 
 ## Fallback
 
