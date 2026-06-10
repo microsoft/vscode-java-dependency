@@ -318,23 +318,7 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                 };
             });
             resultCount = results.length;
-            const nextStep = totalResults > resultCount
-                ? [
-                    "Many symbols matched.",
-                    "Refine only if the returned locations are not specific enough;",
-                    "otherwise use read_file on the relevant returned file/range.",
-                ].join(" ")
-                : resultCount <= 3
-                    ? [
-                        "These are exact Java symbol locations.",
-                        "Use read_file on the returned file/range, or lsp_java_getFileStructure with outlineInput for broader file context.",
-                        "Do not call lsp_java_findSymbol again for the same or similar symbol unless these results are irrelevant.",
-                    ].join(" ")
-                    : [
-                        "Use read_file on the relevant returned file/range,",
-                        "or lsp_java_getFileStructure with outlineInput when file outline is needed.",
-                    ].join(" ");
-            const findSymbolPayload = { results, total: symbols.length, nextStep };
+            const findSymbolPayload = { results, total: symbols.length };
             responseCharCount = getResponseCharCount(findSymbolPayload);
             return toResult(findSymbolPayload);
         } catch (e) {
