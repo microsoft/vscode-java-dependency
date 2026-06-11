@@ -183,7 +183,7 @@ interface FileStructureInput {
 const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
     async invoke(options, _token) {
         const startTime = Date.now();
-        const limit = Math.min(Math.max(options.input.limit || DEFAULT_FILE_STRUCTURE_SYMBOL_NODES, 1), MAX_FILE_STRUCTURE_SYMBOL_NODES);
+        const limit = Math.min(Math.max(Math.floor(options.input.limit ?? DEFAULT_FILE_STRUCTURE_SYMBOL_NODES), 1), MAX_FILE_STRUCTURE_SYMBOL_NODES);
         let resultCount = 0;
         let status = "success";
         let errorCode = "";
