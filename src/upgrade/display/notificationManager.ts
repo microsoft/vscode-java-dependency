@@ -93,6 +93,7 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                 sendInfo(operationId, {
                     operationName: "java.dependency.upgradeNotification.show",
                     extensionState,
+                    source: hasCVEIssue ? Upgrade.SOURCE_CVE : Upgrade.SOURCE_JAVA_UPGRADE,
                 });
 
                 const buttons = hasCVEIssue

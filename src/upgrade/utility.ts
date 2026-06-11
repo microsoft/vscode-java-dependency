@@ -197,6 +197,11 @@ export async function checkOrInstallAppModExtensionForUpgrade(
         }
 
         await commands.executeCommand("workbench.extensions.installExtension", ExtensionName.APP_MODERNIZATION_FOR_JAVA);
+        sendInfo(operationId, {
+            operationName: "java.dependency.upgradeFlow.result",
+            upgradeFlowStep: "installSucceeded",
+            installType: state === "outdated" ? "updated" : "installed",
+        });
 
         if (state === "outdated") {
             // Extension was updated (not freshly installed) — reload required
@@ -219,18 +224,35 @@ export async function checkOrInstallAppModExtensionForUpgrade(
             return false;
         }
 
-        await checkOrPromptToEnableAppModExtension("upgrade");
+        // Wait until the freshly installed extension is registered, returning as
+        // soon as it is ready, or after a 5s timeout fallback at the latest.
+        await waitForExtensionReady(extensionIdToCheck, 5000);
 
-        // Wait briefly for the newly installed extension to activate
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Re-check if the newly installed extension is active and meets version requirement
-        const newState = getExtensionState(extensionIdToCheck);
-        const canProceed = newState === "up-to-date";
         sendInfo(operationId, {
             operationName: "java.dependency.upgradeFlow.result",
-            upgradeFlowResult: canProceed ? "proceeded" : "activation-timeout",
+            upgradeFlowResult: "proceeded",
         });
-        return canProceed;
+        return true;
     })();
+}
+
+function waitForExtensionReady(extensionId: string, timeoutMs: number): Promise<void> {
+    return new Promise<void>(resolve => {
+        if (extensions.getExtension(extensionId)) {
+            resolve();
+            return;
+        }
+        let timer: NodeJS.Timeout;
+        const disposable = extensions.onDidChange(() => {
+            if (extensions.getExtension(extensionId)) {
+                clearTimeout(timer);
+                disposable.dispose();
+                resolve();
+            }
+        });
+        timer = setTimeout(() => {
+            disposable.dispose();
+            resolve();
+        }, timeoutMs);
+    });
 }
