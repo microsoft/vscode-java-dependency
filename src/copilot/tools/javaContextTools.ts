@@ -28,7 +28,8 @@ import { sendInfo } from "vscode-extension-telemetry-wrapper";
 
 // Hard caps to keep tool responses within the < 200 token budget.
 const MAX_SYMBOL_DEPTH = 3;
-const MAX_SYMBOL_NODES = 80;
+const MAX_FILE_STRUCTURE_SYMBOL_NODES = 60;
+const DEFAULT_FILE_STRUCTURE_SYMBOL_NODES = 20;
 const MAX_CALL_RESULTS = 50;
 const MAX_TYPE_RESULTS = 50;
 const MAX_IMPORTS = 50;
@@ -42,6 +43,39 @@ function toResult(data: unknown): vscode.LanguageModelToolResult {
 
 function getResponseCharCount(data: unknown): number {
     return typeof data === "string" ? data.length : JSON.stringify(data, null, 2).length;
+}
+
+interface ReadFileInput {
+    filePath: string;
+    offset: number;
+    limit: number;
+}
+
+interface ReadFileRange {
+    offset: number;
+    limit: number;
+}
+
+function toInclusiveLineRange(range: vscode.Range): { startLine: number; endLine: number } {
+    const startLine = range.start.line + 1;
+    const endLine = Math.max(startLine, range.end.character === 0 && range.end.line > range.start.line
+        ? range.end.line
+        : range.end.line + 1);
+    return { startLine, endLine };
+}
+
+function toReadFileRange(startLine: number, endLine: number): ReadFileRange {
+    return {
+        offset: startLine,
+        limit: endLine - startLine + 1,
+    };
+}
+
+function toReadFileInput(filePath: string, startLine: number, endLine: number): ReadFileInput {
+    return {
+        filePath,
+        ...toReadFileRange(startLine, endLine),
+    };
 }
 
 /**
@@ -86,7 +120,8 @@ function getToolErrorCode(error: unknown): string {
  *   - Relative path:  "src/main/java/Main.java"
  *   - Absolute path:  "/home/user/project/src/Main.java" or "C:\\Users\\...\\Main.java"
  *
- * Relative paths are resolved against the first workspace folder.
+ * Relative paths are resolved against the first workspace folder unless they
+ * start with a workspace folder name in a multi-root workspace.
  * The resolved URI must use the file: scheme and fall under a workspace folder.
  */
 function resolveFileUri(input: string): vscode.Uri {
@@ -96,19 +131,31 @@ function resolveFileUri(input: string): vscode.Uri {
     }
 
     let uri: vscode.Uri;
+    const normalizedInput = input.trim();
 
-    if (input.includes("://")) {
+    if (normalizedInput.includes("://")) {
         // URI string (e.g. "file:///home/user/project/src/Main.java")
-        uri = vscode.Uri.parse(input);
+        uri = vscode.Uri.parse(normalizedInput);
         if (uri.scheme !== "file") {
             throw new Error(`Unsupported URI scheme "${uri.scheme}". Only file: URIs are allowed.`);
         }
-    } else if (path.isAbsolute(input)) {
+    } else if (path.isAbsolute(normalizedInput)) {
         // Absolute filesystem path (Unix or Windows)
-        uri = vscode.Uri.file(input);
+        uri = vscode.Uri.file(normalizedInput);
     } else {
-        // Relative path — resolve against first workspace folder
-        uri = vscode.Uri.joinPath(folders[0].uri, input);
+        // Relative path — resolve against a matching workspace folder when
+        // asRelativePath included the folder name, otherwise use the first root.
+        const normalizedRelativePath = normalizedInput.replace(/\\/g, "/");
+        const matchingFolder = folders.find(folder =>
+            normalizedRelativePath === folder.name || normalizedRelativePath.startsWith(`${folder.name}/`));
+        if (matchingFolder) {
+            const pathInFolder = normalizedRelativePath === matchingFolder.name
+                ? ""
+                : normalizedRelativePath.substring(matchingFolder.name.length + 1);
+            uri = vscode.Uri.joinPath(matchingFolder.uri, pathInFolder);
+        } else {
+            uri = vscode.Uri.joinPath(folders[0].uri, normalizedRelativePath);
+        }
     }
 
     // Ensure the resolved path is under a workspace folder
@@ -130,16 +177,19 @@ function resolveFileUri(input: string): vscode.Uri {
 
 interface FileStructureInput {
     uri: string;
+    limit?: number;
 }
 
 const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
     async invoke(options, _token) {
         const startTime = Date.now();
+        const limit = Math.min(Math.max(Math.floor(options.input.limit ?? DEFAULT_FILE_STRUCTURE_SYMBOL_NODES), 1), MAX_FILE_STRUCTURE_SYMBOL_NODES);
         let resultCount = 0;
         let status = "success";
         let errorCode = "";
         let emptyReason = "";
         let responseCharCount = 0;
+        let truncated = false;
         try {
             const uri = resolveFileUri(options.input.uri);
             try {
@@ -171,11 +221,12 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
                 responseCharCount = getResponseCharCount(noSymbolsPayload);
                 return toResult(noSymbolsPayload);
             }
-            const counter = { count: 0 };
-            const result = symbolsToJson(symbols, 0, counter);
+            const counter = { count: 0, truncated: false };
+            const result = symbolsToJson(symbols, 0, counter, limit);
             resultCount = counter.count;
-            const truncated = counter.count >= MAX_SYMBOL_NODES;
-            const fileStructurePayload = { symbols: result, ...(truncated && { truncated: true }) };
+            truncated = counter.truncated;
+            const file = vscode.workspace.asRelativePath(uri);
+            const fileStructurePayload = { file, symbols: result, ...(truncated && { truncated: true }) };
             responseCharCount = getResponseCharCount(fileStructurePayload);
             return toResult(fileStructurePayload);
         } catch (e) {
@@ -188,6 +239,8 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
                 status,
                 ...(errorCode && { errorCode }),
                 ...(emptyReason && { emptyReason }),
+                truncated: truncated ? "true" : "false",
+                limit,
                 resultCount,
                 responseCharCount,
                 durationMs: Date.now() - startTime,
@@ -199,28 +252,36 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
 interface SymbolNode {
     name: string;
     kind: string;
+    startLine: number;
+    endLine: number;
+    readFileRange: ReadFileRange;
     range: string;
     detail?: string;
     children?: SymbolNode[];
 }
 
-function symbolsToJson(symbols: vscode.DocumentSymbol[], depth: number, counter: { count: number }): SymbolNode[] {
+function symbolsToJson(symbols: vscode.DocumentSymbol[], depth: number, counter: { count: number; truncated: boolean }, limit: number): SymbolNode[] {
     const result: SymbolNode[] = [];
     for (const s of symbols) {
-        if (counter.count >= MAX_SYMBOL_NODES) {
+        if (counter.count >= limit) {
+            counter.truncated = true;
             break;
         }
         counter.count++;
+        const { startLine, endLine } = toInclusiveLineRange(s.range);
         const node: SymbolNode = {
             name: s.name,
             kind: vscode.SymbolKind[s.kind],
-            range: `L${s.range.start.line + 1}-${s.range.end.line + 1}`,
+            startLine,
+            endLine,
+            readFileRange: toReadFileRange(startLine, endLine),
+            range: `L${startLine}-${endLine}`,
         };
         if (s.detail) {
             node.detail = s.detail;
         }
         if (s.children?.length && depth < MAX_SYMBOL_DEPTH) {
-            node.children = symbolsToJson(s.children, depth + 1, counter);
+            node.children = symbolsToJson(s.children, depth + 1, counter, limit);
         }
         result.push(node);
     }
@@ -288,13 +349,20 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                 return toResult(noMatchesPayload);
             }
             totalResults = symbols.length;
-            const results = symbols.slice(0, limit).map(s => ({
-                name: s.name,
-                kind: vscode.SymbolKind[s.kind],
-                container: s.containerName || undefined,
-                location: `${vscode.workspace.asRelativePath(s.location.uri)}:${s.location.range.start.line + 1}`,
-                range: `L${s.location.range.start.line + 1}-${s.location.range.end.line + 1}`,
-            }));
+            const results = symbols.slice(0, limit).map(s => {
+                const file = vscode.workspace.asRelativePath(s.location.uri);
+                const { startLine, endLine } = toInclusiveLineRange(s.location.range);
+                return {
+                    name: s.name,
+                    kind: vscode.SymbolKind[s.kind],
+                    container: s.containerName || undefined,
+                    file,
+                    startLine,
+                    endLine,
+                    readFileInput: toReadFileInput(file, startLine, endLine),
+                    range: `L${startLine}-${endLine}`,
+                };
+            });
             resultCount = results.length;
             const findSymbolPayload = { results, total: symbols.length };
             responseCharCount = getResponseCharCount(findSymbolPayload);

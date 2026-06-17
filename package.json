@@ -52,7 +52,7 @@
       {
         "name": "lsp_java_getFileStructure",
         "toolReferenceName": "javaFileStructure",
-        "modelDescription": "Get a known Java file's outline: classes, interfaces, methods, fields, symbol kinds, and line ranges, to pick a precise read_file range instead of reading the whole file.\n\nUse after lsp_java_findSymbol returns a file, or when the user gave a Java file path; do not guess paths. Not for workspace-wide search\u2014use lsp_java_findSymbol for that. Do not re-call for the same file unless the first result was empty.",
+        "modelDescription": "Outline a known Java file (classes, methods, fields with line ranges) to pick a precise read_file range instead of reading the whole file. Needs a path from lsp_java_findSymbol or the user — do not guess. Returns file plus per-symbol readFileRange ({ offset, limit }) for read_file. Use limit to cap outline items (default 20, max 60). Not for workspace search (use lsp_java_findSymbol).",
         "displayName": "Java: Get File Structure",
         "userDescription": "Get a Java file outline with classes, methods, fields, and line ranges.",
         "tags": [
@@ -69,7 +69,11 @@
           "properties": {
             "uri": {
               "type": "string",
-              "description": "Workspace-relative path to a Java file. Must be a known path from prior tool results or user input — do not guess."
+              "description": "Workspace-relative path to a Java file, from lsp_java_findSymbol or user input — do not guess."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum outline items to return (default: 20, max: 60). Use a smaller value when only top-level context is needed."
             }
           },
           "required": [
@@ -80,7 +84,7 @@
       {
         "name": "lsp_java_findSymbol",
         "toolReferenceName": "javaFindSymbol",
-        "modelDescription": "Find Java class, interface, method, or field definitions across the workspace by name or partial identifier. Prefer over grep_search, file_search, semantic_search, or search subagents for Java symbol lookup.\n\nOn relevant results, do not repeat with a similar query; continue with lsp_java_getFileStructure or read_file on the returned line range. The tool retries internally, so on an empty result do not re-search\u2014retry once only if it reports indexing in progress, otherwise use generic search.\n\nDo not use for non-Java files, literals, comments, build/XML files, or conceptual exploration.",
+        "modelDescription": "Find Java class/interface/method/field definitions across the workspace by name or partial identifier. Prefer over grep_search, file_search, or semantic_search for Java symbol lookup. Each result has file and readFileInput ({ filePath, offset, limit }) for read_file; use it when source is needed, or lsp_java_getFileStructure with file for broader context. On empty results don't re-search (it retries internally); retry once only if it reports indexing in progress, else use generic search. Not for non-Java files, literals, comments, or build/XML files.",
         "displayName": "Java: Find Symbol",
         "userDescription": "Find Java class, method, field, or interface definitions by name.",
         "tags": [

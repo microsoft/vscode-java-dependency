@@ -12,14 +12,14 @@ Two compiler-accurate tools backed by the Java Language Server (jdtls). They ret
 ### `lsp_java_findSymbol`
 Search for Java symbol definitions (classes, methods, fields) by name across the workspace. Supports partial matching.
 - Input: `{ query, limit? }` — limit defaults to 20, max 50
-- Output: `{ results: [{ name, kind, container?, location, range }], total }` (~60 tokens); `range` is `L start-end`
+- Output: `{ results: [{ name, kind, container?, file, startLine, endLine, readFileInput, range }], total }`; `readFileInput` is `{ filePath, offset, limit }` for `read_file`, and `file` can be passed to `lsp_java_getFileStructure`
 - **Use instead of** `grep_search`, `file_search`, `semantic_search`, or `search_subagent` when looking for where a Java class/method/field is defined by identifier
-- Do not repeat with the same or similar query after relevant results are returned
+- When source is needed for a returned symbol, use its `readFileInput` directly
 
 ### `lsp_java_getFileStructure`
 Get hierarchical outline of a Java file (classes, methods, fields) with line ranges.
-- Input: `{ uri }` — workspace-relative path. Must be a known path from prior tool results or user input — do not guess
-- Output: symbol tree with `L start-end` ranges (~100 tokens)
+- Input: `{ uri, limit? }` — workspace-relative path plus max outline items. Prefer `file` from `lsp_java_findSymbol`; limit defaults to 20, max 60. Must be a known path from prior tool results or user input — do not guess
+- Output: `{ file, symbols: [{ name, kind, startLine, endLine, readFileRange, range, detail?, children? }], truncated? }`; call `read_file` with `filePath=file` and the selected symbol's `readFileRange`
 - **Use before** `read_file` when you need to choose a precise line range in a known Java file
 
 ## When to Use
@@ -34,9 +34,9 @@ Get hierarchical outline of a Java file (classes, methods, fields) with line ran
 
 ## Typical Workflow
 
-**findSymbol → getFileStructure → read_file (specific lines only)**
+**lsp_java_findSymbol → lsp_java_getFileStructure → read_file (specific lines only)**
 
-If `findSymbol` returns relevant symbols, move forward to `getFileStructure` or `read_file`; do not call `findSymbol` again with the same or similar identifier.
+If `lsp_java_findSymbol` returns relevant symbols and source is needed, call `read_file` with the returned `readFileInput`, or call `lsp_java_getFileStructure` with the returned `file` when broader file context is needed.
 
 ## Fallback
 
