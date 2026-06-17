@@ -55,6 +55,17 @@ You can tell that the glob pattern is supported. And here's more - you can  incl
 }
 ```
 
+### Stay Secure and Up to Date
+
+Project Manager for Java keeps an eye on your project's Java runtime and dependencies, so you don't have to track them yourself. When it spots something worth your attention, it offers a one-click recommendation to fix it:
+
+- **Upgrade recommendations** – Get notified when your Java runtime or libraries are out of date, deprecated, or have reached end of life, along with a suggested target version.
+- **Security recommendations** – Get alerted when known vulnerabilities (CVEs) are detected in your dependencies, so you can address them before they become a problem.
+
+When you accept a recommendation, the upgrade or fix is carried out for you by the [GitHub Copilot app modernization](https://marketplace.visualstudio.com/items?itemName=vscjava.migrate-java-to-azure) extension. If the extension isn't installed yet, it will be set up automatically as part of the flow.
+
+You can turn these reminders on or off at any time with the `java.dependency.enableDependencyCheckup` setting.
+
 ## Requirements
 
 - VS Code (version 1.95.0+)

@@ -3,7 +3,7 @@
 
 import { commands, ExtensionContext, window } from "vscode";
 import { UpgradeReason, type IUpgradeIssuesRenderer, type UpgradeIssue } from "../type";
-import { buildCVENotificationMessage, buildFixPrompt, buildNotificationMessage, getExtensionState } from "../utility";
+import { buildCVENotificationMessage, buildFixPrompt, buildNotificationMessage, getExtensionState, type ExtensionState } from "../utility";
 import { Commands } from "../../commands";
 import { Settings } from "../../settings";
 import { instrumentOperation, sendInfo } from "vscode-extension-telemetry-wrapper";
@@ -13,13 +13,19 @@ import { CveUpgradeIssue } from "../cve";
 const KEY_PREFIX = 'javaupgrade.notificationManager';
 const NEXT_SHOW_TS_KEY = `${KEY_PREFIX}.nextShowTs`;
 
-const BUTTON_TEXT_UPGRADE = "Upgrade Now";
-const BUTTON_TEXT_FIX_CVE = "Fix Now";
-const BUTTON_TEXT_INSTALL_AND_UPGRADE = "Install Extension and Upgrade";
-const BUTTON_TEXT_INSTALL_AND_FIX_CVE = "Install Extension and Fix";
-const BUTTON_TEXT_UPDATE_AND_UPGRADE = "Update Extension and Upgrade";
-const BUTTON_TEXT_UPDATE_AND_FIX_CVE = "Update Extension and Fix";
 const BUTTON_TEXT_NOT_NOW = "Not Now";
+
+// Action button label keyed by the install state of the app modernization extension.
+const UPGRADE_BUTTON_TEXT: Record<ExtensionState, string> = {
+    "up-to-date": "Upgrade Now",
+    "outdated": "Update Extension and Upgrade",
+    "not-installed": "Install Extension and Upgrade",
+};
+const FIX_CVE_BUTTON_TEXT: Record<ExtensionState, string> = {
+    "up-to-date": "Fix Now",
+    "outdated": "Update Extension and Fix",
+    "not-installed": "Install Extension and Fix",
+};
 
 const SECONDS_IN_A_DAY = 24 * 60 * 60;
 const SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW = 10 * SECONDS_IN_A_DAY;
@@ -44,84 +50,51 @@ class NotificationManager implements IUpgradeIssuesRenderer {
                     return;
                 }
 
-                // Filter to only CVE issues and cast to CveUpgradeIssue[]
-                const cveIssues = issues.filter(
-                        (i): i is CveUpgradeIssue => i.reason === UpgradeReason.CVE
-                    );
-                const nonCVEIssues = issues.filter(
-                        (i) => i.reason !== UpgradeReason.CVE
-                    );
-                const hasCVEIssue = cveIssues.length > 0;
-                const issue = hasCVEIssue ? cveIssues[0] : nonCVEIssues[0];
-
-                if (!this.shouldShow()) {
-                    return;
-                }
-
-                if (this.hasShown) {
+                if (!this.shouldShow() || this.hasShown) {
                     return;
                 }
                 this.hasShown = true;
 
+                // Prefer Java upgrade recommendations over CVE fixes: only fall back
+                // to a CVE notification when there is no upgrade issue to recommend.
+                const cveIssues = issues.filter(
+                        (i): i is CveUpgradeIssue => i.reason === UpgradeReason.CVE
+                    );
+                const upgradeIssues = issues.filter(
+                        (i) => i.reason !== UpgradeReason.CVE
+                    );
+                const isCVE = upgradeIssues.length === 0;
+                const issue = isCVE ? cveIssues[0] : upgradeIssues[0];
+
                 const extensionState = getExtensionState(ExtensionName.APP_MODERNIZATION_UPGRADE_FOR_JAVA);
-                const prompt = buildFixPrompt(issue);
+                const source = isCVE ? Upgrade.SOURCE_CVE : Upgrade.SOURCE_JAVA_UPGRADE;
+                const notificationMessage = isCVE
+                    ? buildCVENotificationMessage(cveIssues, extensionState)
+                    : buildNotificationMessage(issue, extensionState);
+                const actionButtonText = isCVE
+                    ? FIX_CVE_BUTTON_TEXT[extensionState]
+                    : UPGRADE_BUTTON_TEXT[extensionState];
 
-                let notificationMessage = "";
-
-                if (hasCVEIssue) {
-                    notificationMessage = buildCVENotificationMessage(cveIssues, extensionState);
-                } else {
-                    notificationMessage = buildNotificationMessage(issue, extensionState);
-                }
-
-                let upgradeButtonText: string;
-                let fixCVEButtonText: string;
-                switch (extensionState) {
-                    case "up-to-date":
-                        upgradeButtonText = BUTTON_TEXT_UPGRADE;
-                        fixCVEButtonText = BUTTON_TEXT_FIX_CVE;
-                        break;
-                    case "outdated":
-                        upgradeButtonText = BUTTON_TEXT_UPDATE_AND_UPGRADE;
-                        fixCVEButtonText = BUTTON_TEXT_UPDATE_AND_FIX_CVE;
-                        break;
-                    case "not-installed":
-                        upgradeButtonText = BUTTON_TEXT_INSTALL_AND_UPGRADE;
-                        fixCVEButtonText = BUTTON_TEXT_INSTALL_AND_FIX_CVE;
-                        break;
-                }
                 sendInfo(operationId, {
                     operationName: "java.dependency.upgradeNotification.show",
                     extensionState,
-                    source: hasCVEIssue ? Upgrade.SOURCE_CVE : Upgrade.SOURCE_JAVA_UPGRADE,
+                    source,
                 });
-
-                const buttons = hasCVEIssue
-                    ? [fixCVEButtonText, BUTTON_TEXT_NOT_NOW]
-                    : [upgradeButtonText, BUTTON_TEXT_NOT_NOW];
 
                 const selection = await window.showInformationMessage(
                         notificationMessage,
-                        ...buttons
+                        actionButtonText,
+                        BUTTON_TEXT_NOT_NOW
                     );
                 sendInfo(operationId, {
                     operationName: "java.dependency.upgradeNotification.runUpgrade",
                     choice: selection ?? "",
                 });
 
-                switch (selection) {
-                    case fixCVEButtonText: {
-                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, Upgrade.SOURCE_CVE);
-                        break;
-                    }
-                    case upgradeButtonText: {
-                        commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, prompt, Upgrade.SOURCE_JAVA_UPGRADE);
-                        break;
-                    }
-                    case BUTTON_TEXT_NOT_NOW: {
-                        this.setNextShowTs(getNowTs() + SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW);
-                        break;
-                    }
+                if (selection === actionButtonText) {
+                    commands.executeCommand(Commands.JAVA_UPGRADE_WITH_COPILOT, buildFixPrompt(issue), source);
+                } else if (selection === BUTTON_TEXT_NOT_NOW) {
+                    this.setNextShowTs(getNowTs() + SECONDS_COUNT_BEFORE_NOTIFICATION_RESHOW);
                 }
             }
         ))();
