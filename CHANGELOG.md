@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - enhancement - Prefer Java upgrade over CVE in dependency recommendations in https://github.com/microsoft/vscode-java-dependency/pull/1033
 - enhancement - Improve Java upgrade telemetry tracking and extension installation flow in https://github.com/microsoft/vscode-java-dependency/pull/1030
+- perf - Improve Java LSP tool result handoff in https://github.com/microsoft/vscode-java-dependency/pull/1031
+- fix - Refresh now surfaces externally-generated files in new packages in https://github.com/microsoft/vscode-java-dependency/pull/1026
 
 ## 0.27.5
 
