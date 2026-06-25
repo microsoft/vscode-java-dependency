@@ -4,6 +4,11 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.27.6
+
+- enhancement - Prefer Java upgrade over CVE in dependency recommendations in https://github.com/microsoft/vscode-java-dependency/pull/1033
+- enhancement - Improve Java upgrade telemetry tracking and extension installation flow in https://github.com/microsoft/vscode-java-dependency/pull/1030
+
 ## 0.27.5
 
 - fix - Check GHCP modernization version before call gotoAgentMode command in https://github.com/microsoft/vscode-java-dependency/pull/1022
