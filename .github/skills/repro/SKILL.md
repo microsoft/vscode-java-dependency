@@ -81,6 +81,14 @@ npx @vscode/vsce package -o vscode-java-dependency.vsix
 npx -y @vscjava/vscode-autotest run test\e2e-plans\repro-issue-<n>.yaml --vsix vscode-java-dependency.vsix --no-llm --output test-results\repro-issue-<n>
 ```
 
+**Name the plan for the OS the bug affects** — the red→green gate (§5) keys off the filename suffix:
+
+- `repro-issue-<n>-windows.yaml` — a **Windows-only** bug (e.g. drive-letter / path-separator / `\`-vs-`/` issues). The gate runs it on **Windows only**; the Linux gate skips it (the bug does not manifest there, so a Linux run would spuriously report `NOT_REPRODUCED`).
+- `repro-issue-<n>-linux.yaml` — a **Linux-only** bug. Windows gate skips it.
+- `repro-issue-<n>.yaml` — an **OS-agnostic** bug. The gate runs it on **both** Linux and Windows and both must go red→green.
+
+Pick the suffix from the report's platform: if the issue only reproduces on one OS, use that OS's suffix; only use the plain name when you have confirmed the bug is platform-independent.
+
 Author the plan step-by-step for the **actions**, but you do not need a verifier on every step — put a deterministic verifier (`verifyTreeItem` / `verifyFile` / `verifyEditorTab` / `verifyClipboard`) on the **decisive assertion step** (the one that captures the bug) and on any step prone to a silent no-op. That decisive verifier must assert the **expected** behavior, so it **fails on the current (buggy) build**. Inspect `test-results/repro-issue-<n>/results.json` and the screenshots to confirm the failure matches the report, and keep the red-run screenshot as before-fix evidence.
 
 **Run this on the un-fixed checkout FIRST — see RED before you write the fix.** That is the whole point of the reproduction: build + run the plan against the current (buggy) product code and confirm the decisive verifier fails with the reported symptom. Only then move to §5 and write the fix. This local red→green loop is fast in the agent env (VS Code is pre-warmed) and is what gives you confidence the plan actually reproduces before CI re-proves it.
@@ -99,7 +107,7 @@ Author the plan step-by-step for the **actions**, but you do not need a verifier
 
 A regression plan run once only ever proves GREEN on the fixed code. So for a `repro-issue-<n>.yaml`, `.github/workflows/e2eUI.yml` runs a dedicated **red→green gate** that is the authoritative machine proof — you do **not** have to reproduce the red→green in the PR body by argument:
 
-- On a pull request, the gate **rebuilds the PR's base commit** (`main`, before your fix) into its own VSIX, then runs your repro plan against **both** builds in one CI run:
+- On a pull request, the gate **rebuilds the PR's base commit** (`main`, before your fix) into its own VSIX, then runs your repro plan against **both** builds in one CI run, on the OS(es) implied by the filename suffix (`-windows` / `-linux` / none = both, see §4):
   - **base (un-fixed) → must be ❌ RED** — a deterministic assertion `fail` (not a crash/error), proving the plan reproduces the bug.
   - **head (fix) → must be ✅ GREEN** — all steps pass, proving the fix works.
 - `.github/scripts/repro-gate.js` reads both `results.json` files and passes the check only for `base RED && head GREEN`. It fails with a clear verdict otherwise:

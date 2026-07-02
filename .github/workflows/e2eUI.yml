@@ -84,8 +84,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       regression: ${{ steps.scan.outputs.regression }}
-      repro: ${{ steps.scan.outputs.repro }}
-      has_repro: ${{ steps.scan.outputs.has_repro }}
+      repro_linux: ${{ steps.scan.outputs.repro_linux }}
+      repro_windows: ${{ steps.scan.outputs.repro_windows }}
+      has_repro_linux: ${{ steps.scan.outputs.has_repro_linux }}
+      has_repro_windows: ${{ steps.scan.outputs.has_repro_windows }}
     steps:
       - uses: actions/checkout@v4
 
@@ -105,19 +107,28 @@ jobs:
             repro=""
           fi
 
+          # OS-specific bugs: a repro plan can target one OS by filename suffix.
+          #   repro-issue-<n>-windows.yaml → Windows gate only
+          #   repro-issue-<n>-linux.yaml   → Linux gate only
+          #   repro-issue-<n>.yaml         → both gates (OS-agnostic bug)
+          # This avoids a Windows-only bug being reported NOT_REPRODUCED on the
+          # Linux gate (where the bug simply does not manifest), and vice versa.
+          repro_linux=$(printf '%s\n' "$repro"   | grep -v -- '-windows$' || true)
+          repro_windows=$(printf '%s\n' "$repro" | grep -v -- '-linux$'   || true)
+
           to_json() { printf '%s\n' "$1" | grep -v '^[[:space:]]*$' | jq -R . | jq -sc .; }
           reg_json=$(to_json "$regression")
-          repro_json=$(to_json "$repro")
+          linux_json=$(to_json "$repro_linux")
+          windows_json=$(to_json "$repro_windows")
 
-          echo "regression=$reg_json" >> "$GITHUB_OUTPUT"
-          echo "repro=$repro_json"     >> "$GITHUB_OUTPUT"
-          if [ "$repro_json" = "[]" ]; then
-            echo "has_repro=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_repro=true" >> "$GITHUB_OUTPUT"
-          fi
-          echo "Regression plans: $reg_json"
-          echo "Repro plans:      $repro_json"
+          echo "regression=$reg_json"      >> "$GITHUB_OUTPUT"
+          echo "repro_linux=$linux_json"   >> "$GITHUB_OUTPUT"
+          echo "repro_windows=$windows_json" >> "$GITHUB_OUTPUT"
+          [ "$linux_json"   = "[]" ] && echo "has_repro_linux=false"   >> "$GITHUB_OUTPUT" || echo "has_repro_linux=true"   >> "$GITHUB_OUTPUT"
+          [ "$windows_json" = "[]" ] && echo "has_repro_windows=false" >> "$GITHUB_OUTPUT" || echo "has_repro_windows=true" >> "$GITHUB_OUTPUT"
+          echo "Regression plans:   $reg_json"
+          echo "Repro (Linux gate): $linux_json"
+          echo "Repro (Win gate):   $windows_json"
 
   # ── Build VSIX (Linux) ──────────────────────────────────
   build-linux:
@@ -316,7 +327,7 @@ jobs:
   build-base-linux:
     name: Build base VSIX (Linux)
     needs: [ discover-plans ]
-    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro == 'true' }}
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_linux == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -357,7 +368,7 @@ jobs:
   build-base-windows:
     name: Build base VSIX (Windows)
     needs: [ discover-plans ]
-    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro == 'true' }}
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_windows == 'true' }}
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -401,13 +412,13 @@ jobs:
   repro-gate-linux:
     name: Repro Gate Linux (${{ matrix.plan }})
     needs: [ build-linux, build-base-linux, discover-plans ]
-    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro == 'true' }}
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_linux == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        plan: ${{ fromJson(needs.discover-plans.outputs.repro) }}
+        plan: ${{ fromJson(needs.discover-plans.outputs.repro_linux) }}
 
     steps:
       - uses: actions/checkout@v4   # head checkout provides the repro plan yaml
@@ -481,13 +492,13 @@ jobs:
   repro-gate-windows:
     name: Repro Gate Windows (${{ matrix.plan }})
     needs: [ build-windows, build-base-windows, discover-plans ]
-    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro == 'true' }}
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_windows == 'true' }}
     runs-on: windows-latest
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        plan: ${{ fromJson(needs.discover-plans.outputs.repro) }}
+        plan: ${{ fromJson(needs.discover-plans.outputs.repro_windows) }}
 
     steps:
       - uses: actions/checkout@v4
