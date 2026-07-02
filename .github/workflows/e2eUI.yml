@@ -9,19 +9,42 @@ on:
 # Split-pipeline E2E UI workflow.
 #
 #   lint              → tslint + checkstyle (ubuntu, OS-agnostic)
-#   discover-plans    → emits a matrix of test-plan basenames
+#   discover-plans    → splits plans into two matrices:
+#                         · regression  = java-dep-*.yaml (run once, expect GREEN)
+#                         · repro       = repro-issue-*.yaml (red→green gate)
 #
-#   build-linux       ─┐
-#   e2e-linux  (×plan) ┤
-#                      ├──→ analyze  → unified summary covering both OSes
-#   build-windows     ─┤
-#   e2e-windows (×plan)┘
+#   build-linux        ─┐
+#   e2e-linux  (×reg)   ┤
+#                       ├──→ analyze  → unified summary covering both OSes
+#   build-windows      ─┤
+#   e2e-windows (×reg)  ┘
 #
-# Per-OS pipelines run completely independently: Linux e2e jobs do NOT
-# wait for the Windows VSIX build (and vice versa), so a slow Windows
-# build cannot delay the start of Linux e2e plans. Each matrix cell
-# surfaces as its own PR check, so failures are visible without an
-# extra gate job.
+#   build-base-linux   ─┐ (PR only, only when a repro-issue-*.yaml exists)
+#   repro-gate-linux   ─┤   builds the PR *base* (un-fixed) VSIX, runs the
+#   build-base-windows ─┤   repro plan against BOTH base and head, and proves
+#   repro-gate-windows ─┘   the bug is RED on base and GREEN on head.
+#
+# Per-OS pipelines run completely independently: Linux jobs do NOT wait for
+# the Windows VSIX build (and vice versa). Each matrix cell surfaces as its
+# own PR check, so failures are visible without an extra gate job.
+#
+# ── Red→green gate (model A) ────────────────────────────────
+# A regression plan run once only ever proves GREEN on the fixed code. To
+# prove a Copilot-authored repro plan genuinely captures the bug, the gate
+# rebuilds the PR's *base* commit (main, un-fixed) into its own VSIX and runs
+# the SAME repro-issue-<n>.yaml against base AND head in one CI run:
+#     base (main, un-fixed) → expect ❌ RED  (bug reproduced)
+#     head (PR, fixed)      → expect ✅ GREEN (fix works)
+# .github/scripts/repro-gate.js reads both results.json files and passes the
+# check only when base failed a deterministic assertion and head is all-pass
+# (distinguishing a genuine assertion RED from an infra crash). The gate runs
+# only on pull_request events; after merge (push to main) the base already
+# contains the fix, so the plan is demoted to an ordinary GREEN regression.
+#
+# discover-plans globs test/e2e-plans/*.yaml, so a Copilot-authored
+# repro-issue-<n>.yaml is picked up automatically. Each plan's full
+# test-results/ (screenshots + results.json) is uploaded as the
+# e2e-results-<os>-<plan> artifact — the fix-proof for repro PRs.
 #
 # Inspired by vscode-java-pack/.github/workflows/e2e-autotest.yml.
 
@@ -60,7 +83,11 @@ jobs:
     name: Discover E2E Plans
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.scan.outputs.matrix }}
+      regression: ${{ steps.scan.outputs.regression }}
+      repro_linux: ${{ steps.scan.outputs.repro_linux }}
+      repro_windows: ${{ steps.scan.outputs.repro_windows }}
+      has_repro_linux: ${{ steps.scan.outputs.has_repro_linux }}
+      has_repro_windows: ${{ steps.scan.outputs.has_repro_windows }}
     steps:
       - uses: actions/checkout@v4
 
@@ -68,9 +95,40 @@ jobs:
         id: scan
         shell: bash
         run: |
-          plans=$(ls test/e2e-plans/*.yaml | xargs -n1 basename | sed 's/\.yaml$//' | jq -R . | jq -sc .)
-          echo "matrix=$plans" >> "$GITHUB_OUTPUT"
-          echo "Found plans: $plans"
+          all=$(ls test/e2e-plans/*.yaml | xargs -n1 basename | sed 's/\.yaml$//')
+          repro=$(printf '%s\n' "$all" | grep '^repro-issue-' || true)
+          regression=$(printf '%s\n' "$all" | grep -v '^repro-issue-' || true)
+
+          # The red→green gate only makes sense on a PR (it diffs base vs head).
+          # On push to main the base already contains the fix, so run every
+          # plan — including repro-issue-* — as an ordinary GREEN regression.
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            regression="$all"
+            repro=""
+          fi
+
+          # OS-specific bugs: a repro plan can target one OS by filename suffix.
+          #   repro-issue-<n>-windows.yaml → Windows gate only
+          #   repro-issue-<n>-linux.yaml   → Linux gate only
+          #   repro-issue-<n>.yaml         → both gates (OS-agnostic bug)
+          # This avoids a Windows-only bug being reported NOT_REPRODUCED on the
+          # Linux gate (where the bug simply does not manifest), and vice versa.
+          repro_linux=$(printf '%s\n' "$repro"   | grep -v -- '-windows$' || true)
+          repro_windows=$(printf '%s\n' "$repro" | grep -v -- '-linux$'   || true)
+
+          to_json() { printf '%s\n' "$1" | grep -v '^[[:space:]]*$' | jq -R . | jq -sc .; }
+          reg_json=$(to_json "$regression")
+          linux_json=$(to_json "$repro_linux")
+          windows_json=$(to_json "$repro_windows")
+
+          echo "regression=$reg_json"      >> "$GITHUB_OUTPUT"
+          echo "repro_linux=$linux_json"   >> "$GITHUB_OUTPUT"
+          echo "repro_windows=$windows_json" >> "$GITHUB_OUTPUT"
+          [ "$linux_json"   = "[]" ] && echo "has_repro_linux=false"   >> "$GITHUB_OUTPUT" || echo "has_repro_linux=true"   >> "$GITHUB_OUTPUT"
+          [ "$windows_json" = "[]" ] && echo "has_repro_windows=false" >> "$GITHUB_OUTPUT" || echo "has_repro_windows=true" >> "$GITHUB_OUTPUT"
+          echo "Regression plans:   $reg_json"
+          echo "Repro (Linux gate): $linux_json"
+          echo "Repro (Win gate):   $windows_json"
 
   # ── Build VSIX (Linux) ──────────────────────────────────
   build-linux:
@@ -157,7 +215,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        plan: ${{ fromJson(needs.discover-plans.outputs.matrix) }}
+        plan: ${{ fromJson(needs.discover-plans.outputs.regression) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -220,7 +278,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        plan: ${{ fromJson(needs.discover-plans.outputs.matrix) }}
+        plan: ${{ fromJson(needs.discover-plans.outputs.regression) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -259,6 +317,240 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: e2e-results-windows-${{ matrix.plan }}
+          path: test-results/
+          retention-days: 7
+
+  # ── Build base (un-fixed) VSIX for the red→green gate ───
+  # Only runs on PRs that add/contain a repro-issue-*.yaml plan. Checks out
+  # the PR's base commit (main, before the fix) and packages it so the gate
+  # can prove the repro plan is RED on un-fixed code.
+  build-base-linux:
+    name: Build base VSIX (Linux)
+    needs: [ discover-plans ]
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_linux == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node.js modules
+        run: npm install
+
+      - name: Install VSCE
+        run: npm install -g @vscode/vsce
+
+      - name: Build OSGi bundle
+        run: npm run build-server
+
+      - name: Build base VSIX file
+        run: vsce package -o vscode-java-dependency-base.vsix
+
+      - name: Upload base VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-base-linux
+          path: vscode-java-dependency-base.vsix
+          retention-days: 1
+
+  build-base-windows:
+    name: Build base VSIX (Windows)
+    needs: [ discover-plans ]
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_windows == 'true' }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node.js modules
+        run: npm install
+
+      - name: Install VSCE
+        run: npm install -g @vscode/vsce
+
+      - name: Build OSGi bundle
+        run: npm run build-server
+
+      - name: Build base VSIX file
+        run: vsce package -o vscode-java-dependency-base.vsix
+
+      - name: Upload base VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-base-windows
+          path: vscode-java-dependency-base.vsix
+          retention-days: 1
+
+  # ── Red→green gate (Linux) ──────────────────────────────
+  # Runs each repro-issue-*.yaml against the base (un-fixed) VSIX and the
+  # head (fixed) VSIX, then repro-gate.js proves base=RED and head=GREEN.
+  repro-gate-linux:
+    name: Repro Gate Linux (${{ matrix.plan }})
+    needs: [ build-linux, build-base-linux, discover-plans ]
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_linux == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        plan: ${{ fromJson(needs.discover-plans.outputs.repro_linux) }}
+
+    steps:
+      - uses: actions/checkout@v4   # head checkout provides the repro plan yaml
+
+      - name: Setup Build Environment (Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbfile-dev pkg-config libsecret-1-dev libxss1 dbus xvfb libgtk-3-0 libgbm1
+          sudo /usr/bin/Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup autotest
+        run: npm install -g @vscjava/vscode-autotest
+
+      - name: Download head VSIX (fixed)
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-linux
+          path: .
+
+      - name: Download base VSIX (un-fixed)
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-base-linux
+          path: .
+
+      - name: Run repro plan on base then head
+        shell: bash
+        run: |
+          # Each run is EXPECTED to have a non-zero exit on base (RED), so do
+          # not let the step fail here — repro-gate.js is the sole judge.
+          set +e
+          DISPLAY=:99 autotest run "test/e2e-plans/${{ matrix.plan }}.yaml" \
+            --vsix "$(pwd)/vscode-java-dependency-base.vsix" \
+            --no-llm --output "test-results/base-${{ matrix.plan }}"
+          echo "base autotest exit: $?"
+          DISPLAY=:99 autotest run "test/e2e-plans/${{ matrix.plan }}.yaml" \
+            --vsix "$(pwd)/vscode-java-dependency.vsix" \
+            --no-llm --output "test-results/head-${{ matrix.plan }}"
+          echo "head autotest exit: $?"
+          set -e
+
+      - name: Judge red→green
+        shell: bash
+        run: |
+          node .github/scripts/repro-gate.js \
+            "test-results/base-${{ matrix.plan }}/results.json" \
+            "test-results/head-${{ matrix.plan }}/results.json" \
+            "${{ matrix.plan }}" "Linux"
+
+      - name: Upload gate results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: repro-gate-results-linux-${{ matrix.plan }}
+          path: test-results/
+          retention-days: 7
+
+  # ── Red→green gate (Windows) ────────────────────────────
+  repro-gate-windows:
+    name: Repro Gate Windows (${{ matrix.plan }})
+    needs: [ build-windows, build-base-windows, discover-plans ]
+    if: ${{ github.event_name == 'pull_request' && needs.discover-plans.outputs.has_repro_windows == 'true' }}
+    runs-on: windows-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        plan: ${{ fromJson(needs.discover-plans.outputs.repro_windows) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup autotest
+        run: npm install -g @vscjava/vscode-autotest
+
+      - name: Download head VSIX (fixed)
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-windows
+          path: .
+
+      - name: Download base VSIX (un-fixed)
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-base-windows
+          path: .
+
+      - name: Run repro plan on base then head
+        shell: pwsh
+        run: |
+          $head = "$((Get-Location).Path)\vscode-java-dependency.vsix"
+          $base = "$((Get-Location).Path)\vscode-java-dependency-base.vsix"
+          autotest run "test/e2e-plans/${{ matrix.plan }}.yaml" --vsix "$base" --no-llm --output "test-results\base-${{ matrix.plan }}"
+          Write-Host "base autotest exit: $LASTEXITCODE"
+          autotest run "test/e2e-plans/${{ matrix.plan }}.yaml" --vsix "$head" --no-llm --output "test-results\head-${{ matrix.plan }}"
+          Write-Host "head autotest exit: $LASTEXITCODE"
+          # Do not fail the step on a non-zero autotest exit — the gate judges.
+          exit 0
+
+      - name: Judge red→green
+        shell: pwsh
+        run: |
+          node .github/scripts/repro-gate.js "test-results\base-${{ matrix.plan }}\results.json" "test-results\head-${{ matrix.plan }}\results.json" "${{ matrix.plan }}" "Windows"
+
+      - name: Upload gate results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: repro-gate-results-windows-${{ matrix.plan }}
           path: test-results/
           retention-days: 7
 
