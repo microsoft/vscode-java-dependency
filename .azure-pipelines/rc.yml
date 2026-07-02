@@ -17,7 +17,7 @@ extends:
     pool:
       name: VSEng-MicroBuildVSStable
     settings:
-      networkIsolationPolicy: Permissive
+      networkIsolationPolicy: Okay,GitHub
     stages:
       - stage: Build
         jobs:
