@@ -5,7 +5,9 @@ description: Reproduce a reported vscode-java-dependency (Project Manager for Ja
 
 # Reproduce a reported bug
 
-Use this skill when an issue is assigned to Copilot (or you are asked to reproduce/confirm a report) for `vscode-java-dependency` (Project Manager for Java).
+Use this skill when the task is to fix or confirm a **reproducible bug** in `vscode-java-dependency` (Project Manager for Java) — an issue that carries repro steps + a project, or an explicit request to reproduce/confirm a report.
+
+**Do NOT use this skill (and do not author a `repro-issue-*.yaml`) when the task is not a reproducible bug**, e.g. a new feature, refactor, performance work, dependency/version bump, docs, config, CI, or code cleanup — those are ordinary PRs with ordinary unit/integration tests. Also skip it when a report is **not reproducible** (vague, no project, environment/hardware-specific, external service): ask for a minimal repro and label `needs-more-info`, or fix with the best available non-UI test — never invent a repro plan just to have one. The CI red→green gate only triggers when a `repro-issue-<n>.yaml` is present, so not entering this flow means nothing extra runs.
 
 Goal: turn a bug report into a **deterministic, committed reproduction** that fails before the fix and passes after it. Prefer the smallest reproduction that proves the bug. Not every bug needs a UI test — decide first.
 
