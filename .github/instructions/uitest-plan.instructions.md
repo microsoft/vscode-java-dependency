@@ -31,12 +31,13 @@ action: 'clickViewTitleAction "Java Projects" "Unlink with Editor"'
 
 ## Verification rules
 
-- Add deterministic verification to every meaningful step. The natural-language `verify` field is context for humans and failure analysis; it is not pass/fail authority by itself, and it is auto-passed when a plan runs with `--no-llm`.
+- You do **not** need a verifier on every step. Author the *actions* step-by-step, but gate pass/fail with a deterministic verifier only on the **decisive assertion step(s)** — the step that captures the reported bug — plus any step prone to a silent no-op (see the `expandTreeItem` / free-form action caveat above). Intermediate action steps can rely on AutoTest screenshots instead of their own verifier.
+- The natural-language `verify` field is context for humans and failure analysis; it is not pass/fail authority by itself, and it is auto-passed when a plan runs with `--no-llm`. So the decisive step **must** carry a deterministic verifier, or a `--no-llm` run is a false green.
 - Use `verifyTreeItem` (with `name:`, optional `exact: true`, and `visible: false` for absence) as the authoritative check for Java Projects tree state.
 - Use `verifyFile` after operations that create, modify, or delete files on disk (new type, export jar, permanent delete). VS Code can open duplicate editor tabs with stale buffers, so prefer file-content checks over editor checks after such operations.
 - Use `verifyEditorTab` to assert which file an action opened, and `verifyClipboard` for copy-path commands.
 - On state-check steps whose only assertion is a deterministic verifier, omit the `verify:` field to avoid false LLM failures.
-- Use screenshots only as diagnostics produced by AutoTest; do not make screenshots the only evidence of pass/fail.
+- Screenshots are AutoTest's evidence that an action ran and are the primary artifact for **proving a fix** (a red run before, a green run after). Do not make a screenshot the sole pass/fail authority for the decisive assertion — pair it with a deterministic verifier.
 
 ## Local validation commands
 

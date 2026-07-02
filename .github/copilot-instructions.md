@@ -13,4 +13,4 @@
 - When asked to add, update, run, or debug UI/E2E coverage, prefer the AutoTest YAML workflow under `test/e2e-plans/`.
 - Use the `uitest` skill for UI test work. It should create or update `test/e2e-plans/*.yaml`, validate the plan, build the OSGi bundle and package the extension when needed, run AutoTest, and inspect `test-results/`.
 - Do not create legacy VS Code extension tests (`test/maven-suite`, `test/gui`) for UI coverage unless the user explicitly asks for that format.
-- Prefer deterministic AutoTest verifiers (`verifyTreeItem`, `verifyFile`, `verifyEditorTab`, `verifyClipboard`) over screenshot-only checks.
+- Prefer deterministic AutoTest verifiers (`verifyTreeItem`, `verifyFile`, `verifyEditorTab`, `verifyClipboard`) on the decisive assertion step; you do not need a verifier on every step. Use AutoTest screenshots to prove a fix (a red run before, a green run after) — but never as the sole pass/fail authority for the decisive assertion.

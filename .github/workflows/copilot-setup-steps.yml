@@ -10,8 +10,12 @@ name: "Copilot Setup Steps"
 # Xvfb / GTK libraries required to launch VS Code headless.
 #
 # NOTE: This workflow only takes effect once it is on the default branch.
-# Reproducing UI tests additionally needs the Copilot firewall to allow the
-# VS Code download + Marketplace hosts — see .github/skills/repro/SKILL.md.
+#
+# Setup steps run BEFORE the Copilot agent firewall is enabled, so the final
+# step pre-downloads VS Code (stable) and the Java Extension Pack into AutoTest's
+# `<repo>/.vscode-test` cache. That warms the exact files AutoTest fetches from
+# the VS Code CDN + Marketplace at run time — hosts the firewall blocks — so the
+# firewalled UI reproduction launches offline. See .github/skills/repro/SKILL.md.
 
 on:
   workflow_dispatch:
@@ -67,3 +71,10 @@ jobs:
         # pay the full build cost. Copilot must repackage after editing src/** or
         # jdtls.ext/** before rerunning a plan against a stale VSIX.
         run: vsce package -o vscode-java-dependency.vsix
+
+      - name: Pre-download VS Code and Java extensions (before firewall)
+        # Warms <repo>/.vscode-test so the firewalled agent run does not need the
+        # VS Code CDN or Marketplace. Best-effort: a failure here only degrades UI
+        # reproduction, so it must not block Copilot from starting work.
+        continue-on-error: true
+        run: node .github/scripts/prewarm-vscode.js
