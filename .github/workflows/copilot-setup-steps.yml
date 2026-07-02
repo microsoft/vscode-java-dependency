@@ -1,0 +1,69 @@
+name: "Copilot Setup Steps"
+
+# Prepares the GitHub Copilot coding agent's ephemeral environment so it can
+# build this extension and reproduce bugs with AutoTest UI/E2E plans without a
+# slow trial-and-error dependency hunt.
+#
+# The `copilot-setup-steps` job runs BEFORE Copilot starts working. It mirrors
+# the Linux path of `.github/workflows/e2eUI.yml`: JDK 21 + Node 20, the OSGi
+# bundle build (which also warms the Maven cache), the AutoTest CLI, and the
+# Xvfb / GTK libraries required to launch VS Code headless.
+#
+# NOTE: This workflow only takes effect once it is on the default branch.
+# Reproducing UI tests additionally needs the Copilot firewall to allow the
+# VS Code download + Marketplace hosts — see .github/skills/repro/SKILL.md.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or Copilot will not pick it up.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Lowest permissions needed for setup. Copilot gets its own token afterwards.
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install graphics libraries for headless VS Code
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbfile-dev pkg-config libsecret-1-dev libxss1 dbus xvfb libgtk-3-0 libgbm1
+
+      - name: Install Node.js modules
+        run: npm install
+
+      - name: Install global build & test tooling
+        run: npm install -g @vscode/vsce @vscjava/vscode-autotest
+
+      - name: Build OSGi bundle (warms the Maven cache)
+        run: npm run build-server
+
+      - name: Package a baseline VSIX
+        # Produces vscode-java-dependency.vsix so the first AutoTest run does not
+        # pay the full build cost. Copilot must repackage after editing src/** or
+        # jdtls.ext/** before rerunning a plan against a stale VSIX.
+        run: vsce package -o vscode-java-dependency.vsix
