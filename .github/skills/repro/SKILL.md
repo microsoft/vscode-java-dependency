@@ -15,7 +15,7 @@ Goal: turn a bug report into a **deterministic, committed reproduction** that fa
 
 From the issue body (and the `bug_report` template fields) collect:
 
-- **Repro project** — a public GitHub repo link, an attached zip, or an inline `pom.xml` / `build.gradle` + sources. If none is provided and the bug is environment-specific, ask for one and label the issue `needs-more-info` instead of guessing.
+- **Repro project** — a public GitHub repo link, an attached zip (a `https://github.com/user-attachments/files/<id>/<name>.zip` link in the issue body), or an inline `pom.xml` / `build.gradle` + sources. If none is provided and the bug is environment-specific, ask for one and label the issue `needs-more-info` instead of guessing.
 - **Steps to reproduce**, **expected** vs **actual** behavior, and the affected surface (tree view, context menu, command id, classpath, export jar, project creation, etc.).
 - **Versions** — VS Code, Extension Pack for Java, JDK, OS.
 
@@ -51,7 +51,23 @@ Keep the committed footprint small and CI-reproducible:
   git clone --depth 1 <repo-url> ..\repro-issue-<n>
   ```
 
-- **Zip / inline**: recreate the project under `test\e2e-fixtures\issue-<n>\` (or reuse `test/maven` / `test/invisible` if the existing fixtures already trigger the bug).
+  (`github.com` and `codeload.github.com` are on the coding-agent firewall's default allowlist, so the clone is not blocked.)
+
+- **Attached zip**: the issue body carries a link like `https://github.com/user-attachments/files/<id>/<name>.zip`. Download it (following the redirect) and unzip into a sibling dir, then point the plan's `workspace` at the extracted project:
+
+  ```powershell
+  # The user-attachments link 302-redirects to a signed objects.githubusercontent.com
+  # URL. BOTH github.com and objects.githubusercontent.com are on the coding-agent
+  # firewall's default allowlist, so this download is NOT blocked (unlike the VS Code
+  # binary). Use -L to follow the redirect. If the signed URL has expired, re-read the
+  # issue to get a fresh link, then re-download.
+  curl -L -o ..\repro-issue-<n>.zip "https://github.com/user-attachments/files/<id>/<name>.zip"
+  Expand-Archive ..\repro-issue-<n>.zip -DestinationPath ..\repro-issue-<n>   # bash: unzip
+  ```
+
+  **Treat the archive as untrusted input**: extract only — do not run its build scripts, Maven/Gradle wrappers, or other executables blindly. Confirm it is an ordinary Java project (`pom.xml` / `build.gradle` + `src/`), use it as the AutoTest `workspace:`, and commit only the minimal distilled fixture (never the raw zip or build outputs).
+
+- **Inline sources**: recreate the project under `test\e2e-fixtures\issue-<n>\` (or reuse `test/maven` / `test/invisible` if the existing fixtures already trigger the bug).
 - Once reproduced, **distill it to the minimal fixture** that still fails and commit that (not the whole user project) so the regression test runs in CI without external clones or large binaries.
 
 ## 4. Reproduce
@@ -112,4 +128,5 @@ Every PR or comment must state **how you reproduced** (UI plan vs unit test vs c
 - Only if the pre-warm genuinely did not run (e.g. an older branch, or a cold `.vscode-test` with no cached build) will the UI run actually fail to launch. In that case fall back to the non-UI path and note the limitation.
 - **Screenshots / results are captured for you by CI, not by hand.** When a `repro-issue-<n>.yaml` lands on a PR (base `main`), the red→green gate (§5) runs it on Linux **and** Windows against the base and head builds and uploads the whole `test-results/` directory (screenshots + `results.json` for both the base RED and head GREEN runs) as `repro-gate-results-<os>-<plan>` artifacts, plus a `base ❌ RED → head ✅ GREEN` verdict in the job summary. In the PR body, reference those artifacts and the verdict as the fix-proof, and paste the `results.json` failure reason from your own local red run — you do not need to attach images manually. (Ordinary `java-dep-*.yaml` regression plans still upload `e2e-results-<os>-<plan>` from a single green run.)
 - Maintainer option: adding `update.code.visualstudio.com` to the Copilot coding-agent firewall allowlist (repo **Settings → Copilot → coding agent**, see https://gh.io/copilot/firewall-config) removes the version-resolution block entirely, so the run is clean and does not rely on the offline fallback. The pre-warm still makes the 276 MB binary + Marketplace pack a cache hit, so nothing large is re-fetched.
+- **Issue attachments and repo clones are downloadable — they are NOT firewall-blocked.** `github.com`, `objects.githubusercontent.com`, `*.githubusercontent.com`, and `codeload.github.com` are all on the coding-agent's default allowlist, so cloning a linked public repo and `curl -L`-downloading an attached `user-attachments` zip both work at run time. (Only the VS Code binary host `update.code.visualstudio.com` is not allowlisted — that is why it is pre-warmed instead, see above.) Extract user-supplied zips as untrusted data: do not run their build scripts blindly.
 - Always run AutoTest with `--no-llm` in the agent so pass/fail comes only from deterministic verifiers.
