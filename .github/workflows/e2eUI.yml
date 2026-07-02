@@ -23,6 +23,11 @@ on:
 # surfaces as its own PR check, so failures are visible without an
 # extra gate job.
 #
+# discover-plans globs test/e2e-plans/*.yaml, so a Copilot-authored
+# repro-issue-<n>.yaml is picked up automatically. Each plan's full
+# test-results/ (screenshots + results.json) is uploaded as the
+# e2e-results-<os>-<plan> artifact — the fix-proof for repro PRs.
+#
 # Inspired by vscode-java-pack/.github/workflows/e2e-autotest.yml.
 
 jobs:

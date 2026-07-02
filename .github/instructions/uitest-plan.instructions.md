@@ -9,7 +9,7 @@ Test plans under `test/e2e-plans/` are executable YAML files consumed by `@vscja
 
 ## Setup rules
 
-- Use `setup.extension: "vscjava.vscode-java-pack"` plus `setup.vscodeVersion: "stable"` for most scenarios. Installing the Extension Pack for Java pulls in every Java extension the Java Projects view relies on, so there is no need to install `redhat.java` separately.
+- Use `setup.extension: "vscjava.vscode-java-pack"` plus `setup.vscodeVersion: "stable"` for most scenarios. Installing the Extension Pack for Java pulls in every Java extension the Java Projects view relies on, so there is no need to install `redhat.java` separately. Keep `stable` (always the latest release) — do **not** pin a concrete version. In the Copilot agent, `.github/workflows/copilot-setup-steps.yml` pre-downloads that latest build + the pack before the firewall, and `@vscode/test-electron` falls back to the cached build when the run-time version check is blocked, so the plan runs offline without pinning.
 - Install the extension under test from a local VSIX at runtime with `--vsix vscode-java-dependency.vsix` — do not rely on a marketplace copy of `vscjava.vscode-java-dependency`.
 - Use existing in-repo fixtures as the workspace: `../maven` (a `maven-archetype-quickstart` project: `my-app` / `com.mycompany.app` / `App.java`) or `../invisible` (an unmanaged-folder project for referenced-library scenarios). Paths are relative to the test plan file. Do not add large binary fixtures.
 - Referenced-library / classpath commands (`java.project.addLibraries`, `java.project.removeLibrary`, `java.project.addLibraryFolders`, `java.project.refreshLibraries`) only apply to invisible projects — use `../invisible`, not `../maven`, for those.
