@@ -55,16 +55,10 @@ extends:
                 inputs:
                   versionSpec: 20.x
               - template: /.azure-pipelines/npm-cfs.yml@self
-              - task: Npm@1
+              - script: npm install --verbose
                 displayName: npm install
-                inputs:
-                  verbose: true
-              - task: Npm@1
+              - script: npm run build-server
                 displayName: npm run build-server
-                inputs:
-                  command: custom
-                  verbose: false
-                  customCommand: run build-server
               - task: Bash@3
                 displayName: vsce package
                 inputs:
