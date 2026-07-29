@@ -3,6 +3,7 @@ variables:
   - name: Codeql.Enabled
     value: true
   - template: /.azure-pipelines/npm-cfs-variables.yml@self
+  - template: /.azure-pipelines/maven-cfs-variables.yml@self
 schedules:
   - cron: 0 0 * * *
     branches:
@@ -73,6 +74,13 @@ extends:
                 displayName: npm install
               - task: CmdLine@2
                 displayName: npx gulp build_server
+                # System.AccessToken is a secret, and Azure Pipelines does not export secret
+                # variables to the environment -- not even through a variable that merely
+                # references one. It is mapped here, on the step that actually runs Maven,
+                # rather than in maven-cfs-variables.yml alongside the rest of the wiring.
+                env:
+                  SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+                  MVNW_PASSWORD: $(System.AccessToken)
                 inputs:
                   targetType: inline
                   script: |-
