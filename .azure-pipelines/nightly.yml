@@ -69,10 +69,8 @@ extends:
               - script: java --version
                 displayName: 'Check Java installation'
               - template: /.azure-pipelines/npm-cfs.yml@self
-              - task: Npm@1
+              - script: npm install
                 displayName: npm install
-                inputs:
-                  verbose: false
               - task: CmdLine@2
                 displayName: npx gulp build_server
                 inputs:
