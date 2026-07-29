@@ -18,7 +18,10 @@ const jvmOptions = [
 const env = { ...process.env };
 env.MAVEN_OPTS = env.MAVEN_OPTS ? env.MAVEN_OPTS + ' ' + jvmOptions : jvmOptions;
 
-const mvnCommand = `${mvnw()} clean package`;
+// `eclipse.p2.mirrors=false` stops p2 from following download.eclipse.org's mirror
+// redirect, which hands out a different third party host per request and makes the
+// set of addresses the build contacts impossible to express as an allow list.
+const mvnCommand = `${mvnw()} clean package -Declipse.p2.mirrors=false`;
 cp.execSync(mvnCommand, {cwd:server_dir, stdio:[0,1,2], env: env} );
 copy(path.join(server_dir, 'com.microsoft.jdtls.ext.core/target'), path.resolve('server'), (file) => {
     return /^com.microsoft.jdtls.ext.core.*.jar$/.test(file);
