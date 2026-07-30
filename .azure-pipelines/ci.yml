@@ -60,6 +60,13 @@ extends:
                 displayName: npm install
               - script: npm run build-server
                 displayName: npm run build-server
+                # System.AccessToken is a secret, and Azure Pipelines does not export secret
+                # variables to the environment -- not even through a variable that merely
+                # references one. It is mapped here, on the step that actually runs Maven,
+                # rather than in maven-cfs-variables.yml alongside the rest of the wiring.
+                env:
+                  SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+                  MVNW_PASSWORD: $(System.AccessToken)
               - task: Bash@3
                 displayName: vsce package
                 inputs:
