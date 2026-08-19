@@ -227,10 +227,10 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
      */
     public addProgressiveProjects(projectUris: string[]): void {
         const folders = workspace.workspaceFolders;
-        // Multi-root workspaces use WorkspaceNode roots, so inserting ProjectNode
-        // roots would create a mixed and invalid tree structure. Wait for the
-        // full server-ready refresh instead.
-        if (!folders || folders.length !== 1) {
+        // Multi-root workspaces use WorkspaceNode roots. Those roots can remain
+        // cached briefly after switching to a single folder, so wait for the
+        // full refresh rather than creating a mixed root structure.
+        if (!folders || folders.length !== 1 || this._rootItems?.some(root => root instanceof WorkspaceNode)) {
             return;
         }
 

@@ -43,4 +43,35 @@ suite("Multiple Project View Tests", () => {
         assert.equal(updatedRoots?.length, expectedRootCount, "Progressive updates should not add project roots");
         assert.ok(updatedRoots?.every(root => root instanceof WorkspaceNode), "All roots should remain workspace nodes");
     });
+
+    test("Does not add project roots while cached multi-root roots are stale", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+        const roots = await explorer.dataProvider.getChildren();
+        const folders = vscode.workspace.workspaceFolders;
+        assert.ok(folders && folders.length > 1, "The test requires a multi-root workspace");
+        assert.ok(roots?.every(root => root instanceof WorkspaceNode), "All cached roots should be workspace nodes");
+
+        const projects = await explorer.dataProvider.getRootProjects();
+        const project = projects.find((node): node is ProjectNode =>
+            node instanceof ProjectNode && Boolean(node.uri));
+        assert.ok(project?.uri, "At least one Java project should be available");
+
+        const removedFolders = folders!.slice(1);
+        assert.ok(vscode.workspace.updateWorkspaceFolders(1, removedFolders.length),
+            "The workspace should switch to a single folder");
+
+        try {
+            assert.equal(vscode.workspace.workspaceFolders?.length, 1, "The workspace should have one folder");
+            explorer.dataProvider.addProgressiveProjects([project!.uri!]);
+
+            const updatedRoots = await explorer.dataProvider.getChildren();
+            assert.equal(updatedRoots?.length, roots?.length, "Stale cached roots should not be mixed with project roots");
+            assert.ok(updatedRoots?.every(root => root instanceof WorkspaceNode),
+                "Cached workspace roots should remain unchanged until refresh");
+        } finally {
+            assert.ok(vscode.workspace.updateWorkspaceFolders(1, 0,
+                ...removedFolders.map(folder => ({ uri: folder.uri, name: folder.name }))),
+                "The removed workspace folders should be restored");
+        }
+    });
 });
