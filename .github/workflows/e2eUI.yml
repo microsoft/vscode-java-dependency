@@ -181,10 +181,10 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup autotest
-        run: npm install -g @vscjava/vscode-autotest
+        run: npm install -g git+https://github.com/wenytang-ms/javaext-autotest.git#e0375659a4cfbe669f42adca4272e80dadff9388
 
       - name: Download VSIX artifact
         uses: actions/download-artifact@v4
@@ -234,10 +234,10 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup autotest
-        run: npm install -g @vscjava/vscode-autotest
+        run: npm install -g git+https://github.com/wenytang-ms/javaext-autotest.git#e0375659a4cfbe669f42adca4272e80dadff9388
 
       - name: Download VSIX artifact
         uses: actions/download-artifact@v4
@@ -272,10 +272,10 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup autotest
-        run: npm install -g @vscjava/vscode-autotest
+        run: npm install -g git+https://github.com/wenytang-ms/javaext-autotest.git#e0375659a4cfbe669f42adca4272e80dadff9388
 
       - name: Download all plan results
         uses: actions/download-artifact@v4
