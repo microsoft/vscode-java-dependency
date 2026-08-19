@@ -184,7 +184,7 @@ jobs:
           node-version: 22
 
       - name: Setup autotest
-        run: npm install -g git+https://github.com/wenytang-ms/javaext-autotest.git#e0375659a4cfbe669f42adca4272e80dadff9388
+        run: npm install -g @vscjava/vscode-autotest@0.7.25
 
       - name: Download VSIX artifact
         uses: actions/download-artifact@v4
@@ -237,7 +237,7 @@ jobs:
           node-version: 22
 
       - name: Setup autotest
-        run: npm install -g git+https://github.com/wenytang-ms/javaext-autotest.git#e0375659a4cfbe669f42adca4272e80dadff9388
+        run: npm install -g @vscjava/vscode-autotest@0.7.25
 
       - name: Download VSIX artifact
         uses: actions/download-artifact@v4
@@ -275,7 +275,7 @@ jobs:
           node-version: 22
 
       - name: Setup autotest
-        run: npm install -g git+https://github.com/wenytang-ms/javaext-autotest.git#e0375659a4cfbe669f42adca4272e80dadff9388
+        run: npm install -g @vscjava/vscode-autotest@0.7.25
 
       - name: Download all plan results
         uses: actions/download-artifact@v4
