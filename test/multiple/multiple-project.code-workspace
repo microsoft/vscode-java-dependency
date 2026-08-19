@@ -1,16 +1,16 @@
 {
 	"folders": [
 		{
-			"path": "..\\simple"
+			"path": "../simple"
 		},
 		{
-			"path": "..\\maven"
+			"path": "../maven"
 		},
 		{
-			"path": "..\\gradle"
+			"path": "../gradle"
 		},
 		{
-			"path": "..\\non-java"
+			"path": "../non-java"
 		}
 	],
 	"settings": {}
