@@ -116,12 +116,16 @@ class LanguageServerApiManager {
                     // Server is sending project data, so it's definitely running.
                     // Mark as running so ready() returns immediately on subsequent calls.
                     this.isServerRunning = true;
-                    // During import, the JDTLS server is blocked by Eclipse workspace
-                    // operations and cannot respond to queries. Instead of triggering
-                    // a refresh (which queries the server), directly add projects to
-                    // the tree view from the notification data.
-                    const projectUris = uris.map(u => u.toString());
-                    commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_ADD_PROJECTS, projectUris);
+                    if (this.isServerReady) {
+                        commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_REFRESH, /* debounce = */true);
+                    } else {
+                        // During import, the JDTLS server is blocked by Eclipse workspace
+                        // operations and cannot respond to queries. Instead of triggering
+                        // a refresh (which queries the server), directly add projects to
+                        // the tree view from the notification data.
+                        const projectUris = uris.map(u => u.toString());
+                        commands.executeCommand(Commands.VIEW_PACKAGE_INTERNAL_ADD_PROJECTS, projectUris);
+                    }
                     syncHandler.updateFileWatcher(Settings.autoRefresh());
                 }));
             }

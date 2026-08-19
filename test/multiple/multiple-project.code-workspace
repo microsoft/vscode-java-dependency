@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "..\\gradle"
+		},
+		{
+			"path": "..\\non-java"
 		}
 	],
 	"settings": {}
