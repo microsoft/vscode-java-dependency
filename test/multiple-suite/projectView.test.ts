@@ -57,7 +57,7 @@ suite("Multiple Project View Tests", () => {
         assert.ok(project?.uri, "At least one Java project should be available");
 
         const removedFolders = folders!.slice(1);
-        assert.ok(vscode.workspace.updateWorkspaceFolders(1, removedFolders.length),
+        const workspaceFoldersChanged = updateWorkspaceFoldersAndWait(1, removedFolders.length, [],
             "The workspace should switch to a single folder");
 
         try {
@@ -69,9 +69,31 @@ suite("Multiple Project View Tests", () => {
             assert.ok(updatedRoots?.every(root => root instanceof WorkspaceNode),
                 "Cached workspace roots should remain unchanged until refresh");
         } finally {
-            assert.ok(vscode.workspace.updateWorkspaceFolders(1, 0,
-                ...removedFolders.map(folder => ({ uri: folder.uri, name: folder.name }))),
+            await workspaceFoldersChanged;
+            await updateWorkspaceFoldersAndWait(1, 0,
+                removedFolders.map(folder => ({ uri: folder.uri })),
                 "The removed workspace folders should be restored");
         }
     });
 });
+
+async function updateWorkspaceFoldersAndWait(
+    start: number,
+    deleteCount: number,
+    foldersToAdd: Array<{ uri: vscode.Uri; name?: string }>,
+    failureMessage: string,
+): Promise<void> {
+    let resolveChange: () => void;
+    const changed = new Promise<void>((resolve) => resolveChange = resolve);
+    const listener = vscode.workspace.onDidChangeWorkspaceFolders(() => {
+        listener.dispose();
+        resolveChange();
+    });
+
+    if (!vscode.workspace.updateWorkspaceFolders(start, deleteCount, ...foldersToAdd)) {
+        listener.dispose();
+        assert.fail(failureMessage);
+    }
+
+    await changed;
+}
