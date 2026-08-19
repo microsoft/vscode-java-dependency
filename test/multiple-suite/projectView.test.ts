@@ -80,7 +80,7 @@ suite("Multiple Project View Tests", () => {
 async function updateWorkspaceFoldersAndWait(
     start: number,
     deleteCount: number,
-    foldersToAdd: Array<{ uri: vscode.Uri; name?: string }>,
+    foldersToAdd: { uri: vscode.Uri; name?: string }[],
     failureMessage: string,
 ): Promise<void> {
     let resolveChange: () => void;
