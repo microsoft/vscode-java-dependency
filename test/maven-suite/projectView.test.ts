@@ -247,6 +247,22 @@ suite("Maven Project View Tests", () => {
         assert.ok(!projectChildren.find((node: DataNode) => node.nodeData.name === ".hidden"));
     });
 
+    test("Does not display empty physical ancestors of Java package roots", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+        const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
+        const projectChildren = await projectNode.getChildren();
+
+        assert.ok(!projectChildren.find((node: DataNode) => node.nodeData.name === "src"),
+            "The physical src folder should not duplicate Java package roots");
+
+        const resourcesRoot = projectChildren.find((node: DataNode) =>
+            node.nodeData.name === "src/main/resources") as PackageRootNode;
+        assert.ok(resourcesRoot, "The Maven resources root should remain visible");
+        const resourceChildren = await resourcesRoot.getChildren();
+        assert.ok(resourceChildren.find((node: DataNode) => node.nodeData.name === "application.yml"),
+            "Non-Java files under the resources root should remain visible");
+    });
+
     test("Can apply 'java.project.explorer.showNonJavaResources'", async function() {
         await vscode.workspace.getConfiguration("java.project.explorer").update(
             "showNonJavaResources",

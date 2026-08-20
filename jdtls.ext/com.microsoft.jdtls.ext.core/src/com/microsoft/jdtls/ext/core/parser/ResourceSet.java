@@ -16,6 +16,7 @@ import java.util.ListIterator;
 import java.util.Objects;
 
 import org.eclipse.core.internal.utils.FileUtil;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
@@ -109,7 +110,7 @@ public class ResourceSet {
                     visitor.visit((IFile) resource);
                 }
             } else if (resource instanceof IFolder) {
-                if (shouldVisit((IFolder) resource)) {
+                if (shouldVisit((IFolder) resource) && hasVisibleNonJavaResources((IFolder) resource)) {
                     visitor.visit((IFolder) resource);
                 }
             } else if (resource instanceof IJarEntryResource) {
@@ -151,5 +152,25 @@ public class ResourceSet {
         }
 
         return JavaCore.create(resource) == null;
+    }
+
+    private boolean hasVisibleNonJavaResources(IContainer container) {
+        try {
+            for (IResource member : container.members()) {
+                if (JavaCore.create(member) != null) {
+                    continue;
+                }
+                if (member instanceof IFile) {
+                    return true;
+                }
+                if (member instanceof IContainer && hasVisibleNonJavaResources((IContainer) member)) {
+                    return true;
+                }
+            }
+        } catch (CoreException e) {
+            JdtlsExtActivator.logException("Failed to inspect non-Java resources", e);
+            return true;
+        }
+        return false;
     }
 }
