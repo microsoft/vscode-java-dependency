@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as _ from "lodash";
+import * as path from "path";
 import {
     commands, Event, EventEmitter, ExtensionContext, ProviderResult,
     RelativePattern, TreeDataProvider, TreeItem, Uri, window, workspace,
@@ -226,7 +227,10 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
      */
     public addProgressiveProjects(projectUris: string[]): void {
         const folders = workspace.workspaceFolders;
-        if (!folders || !folders.length) {
+        // Multi-root workspaces use WorkspaceNode roots. Those roots can remain
+        // cached briefly after switching to a single folder, so wait for the
+        // full refresh rather than creating a mixed root structure.
+        if (!folders || folders.length !== 1 || this._rootItems?.some(root => root instanceof WorkspaceNode)) {
             return;
         }
 
@@ -238,11 +242,14 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             this._rootItems
                 .filter((n): n is ProjectNode => n instanceof ProjectNode)
                 .map((n) => n.uri)
+                .filter((uri): uri is string => Boolean(uri))
+                .map(getProjectUriKey)
         );
 
         let added = false;
         for (const uriStr of projectUris) {
-            if (existingUris.has(uriStr)) {
+            const uriKey = getProjectUriKey(uriStr);
+            if (existingUris.has(uriKey)) {
                 continue;
             }
             // Extract project name from URI (last non-empty path segment)
@@ -253,7 +260,7 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
                 kind: NodeKind.Project,
             };
             this._rootItems.push(new ProjectNode(nodeData, undefined));
-            existingUris.add(uriStr);
+            existingUris.add(uriKey);
             added = true;
         }
 
@@ -307,4 +314,17 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             explorerLock.release();
         }
     }
+}
+
+function getProjectUriKey(uriString: string): string {
+    const uri = Uri.parse(uriString);
+    if (uri.scheme !== "file") {
+        return uri.toString();
+    }
+
+    let fsPath = path.normalize(uri.fsPath);
+    if (fsPath !== path.parse(fsPath).root) {
+        fsPath = fsPath.replace(/[\\\/]+$/, "");
+    }
+    return process.platform === "win32" ? fsPath.toLowerCase() : fsPath;
 }

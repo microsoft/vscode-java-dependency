@@ -277,6 +277,24 @@ suite("Maven Project View Tests", () => {
         assert.equal(mavenChildren[1].getDisplayName(), "junit:junit:4.13.1");
     });
 
+    test("Does not add duplicate progressive projects for equivalent URIs", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+        await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+
+        const roots = await explorer.dataProvider.getChildren();
+        assert.equal(roots?.length, 1, "Number of root nodes should be 1");
+        const projectNode = roots![0] as ProjectNode;
+        assert.ok(projectNode.uri, "Project node should have a URI");
+
+        const equivalentUri = projectNode.uri!.endsWith("/")
+            ? projectNode.uri!.replace(/\/+$/, "")
+            : `${projectNode.uri}/`;
+        explorer.dataProvider.addProgressiveProjects([equivalentUri]);
+
+        const updatedRoots = await explorer.dataProvider.getChildren();
+        assert.equal(updatedRoots?.length, 1, "Equivalent project URIs should be deduplicated");
+    });
+
     teardown(async () => {
         // Restore default settings. Some tests might alter them and others depend on a specific setting.
         // Not resetting to the default settings will also show the file as changed in the source control view.
