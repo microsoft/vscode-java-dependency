@@ -187,8 +187,11 @@ public class ResourceSet {
                 if (member instanceof IFile) {
                     return true;
                 }
-                if (member instanceof IContainer && hasVisibleNonJavaResources((IContainer) member)) {
-                    return true;
+                if (member instanceof IContainer) {
+                    IContainer child = (IContainer) member;
+                    if (!containsSourceClasspathEntry(child) || hasVisibleNonJavaResources(child)) {
+                        return true;
+                    }
                 }
             }
         } catch (CoreException e) {
