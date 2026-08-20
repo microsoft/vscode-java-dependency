@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
-import { ContainerNode, contextManager, DependencyExplorer,
+import { ContainerNode, contextManager, DataNode, DependencyExplorer,
     PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, setupTestEnv, Uris } from "../shared";
 
@@ -22,7 +22,10 @@ suite("Simple Project View Tests", () => {
 
         // validate package root/dependency nodes
         const projectChildren = await projectNode.getChildren();
-        assert.equal(projectChildren.length, 6, "Number of children nodes should be 6");
+        assert.equal(projectChildren.length, 5,
+            `Number of children nodes should be 5: ${projectChildren.map((node: DataNode) => node.name).join(", ")}`);
+        assert.ok(!projectChildren.find((node: DataNode) => node.name === "src"),
+            "The empty physical source folder should not be visible");
         const mainPackage = projectChildren[0] as PackageRootNode;
         assert.equal(mainPackage.name, "src/main/java", "Package name should be \"src/main/java\"");
         const systemLibrary = projectChildren[1] as ContainerNode;

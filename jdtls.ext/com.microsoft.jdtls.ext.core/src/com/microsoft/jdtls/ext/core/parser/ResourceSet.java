@@ -110,7 +110,9 @@ public class ResourceSet {
                     visitor.visit((IFile) resource);
                 }
             } else if (resource instanceof IFolder) {
-                if (shouldVisit((IFolder) resource) && hasVisibleNonJavaResources((IFolder) resource)) {
+                if (shouldVisit((IFolder) resource)
+                        && (!containsSourceClasspathEntry((IFolder) resource)
+                                || hasVisibleNonJavaResources((IFolder) resource))) {
                     visitor.visit((IFolder) resource);
                 }
             } else if (resource instanceof IJarEntryResource) {
@@ -152,6 +154,28 @@ public class ResourceSet {
         }
 
         return JavaCore.create(resource) == null;
+    }
+
+    private boolean containsSourceClasspathEntry(IContainer container) {
+        try {
+            IJavaProject javaProject = JavaCore.create(container.getProject());
+            if (javaProject == null) {
+                return false;
+            }
+            IPath containerPath = container.getFullPath();
+            if (containerPath.equals(javaProject.getOutputLocation())) {
+                return false;
+            }
+            for (IClasspathEntry entry : javaProject.getRawClasspath()) {
+                if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE
+                        && containerPath.isPrefixOf(entry.getPath())) {
+                    return true;
+                }
+            }
+        } catch (CoreException e) {
+            JdtlsExtActivator.logException("Failed to inspect Java source entries", e);
+        }
+        return false;
     }
 
     private boolean hasVisibleNonJavaResources(IContainer container) {
