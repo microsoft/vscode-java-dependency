@@ -222,3 +222,44 @@ steps:
       exact: true
       inView: "Java Projects"
     timeout: 30
+
+  # ── Test 6: do not show empty physical ancestors of package roots (#1062) ──
+  # src/main/java and src/main/resources are represented as Java package roots.
+  # The physical src → main hierarchy must not also appear as an empty normal
+  # folder tree when non-Java resources are shown.
+  - id: "reset-tree-for-non-java-ancestor-check"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "expand-project-for-non-java-ancestor-check"
+    action: "expandTreeItem my-app"
+    waitBefore: 2
+
+  - id: "verify-resources-root-visible"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "src/main/resources"
+      exact: true
+      level: 2
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "expand-resources-root"
+    action: "expandTreeItem src/main/resources"
+
+  - id: "verify-resource-file-visible"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "application.yml"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-empty-physical-src-hidden"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "src"
+      exact: true
+      level: 2
+      visible: false
+      inView: "Java Projects"
+    timeout: 15
