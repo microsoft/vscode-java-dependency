@@ -98,6 +98,17 @@ async function main(): Promise<void> {
             ],
         });
 
+        // Run multi-root workspace test
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./multiple-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "multiple", "multiple-project.code-workspace"),
+                `--user-data-dir=${userDir}`,
+            ],
+        });
+
         // Run test for non-Java Gradle project (regression test for #921)
         await runTests({
             vscodeExecutablePath,

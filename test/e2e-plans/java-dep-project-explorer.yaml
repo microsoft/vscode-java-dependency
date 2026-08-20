@@ -152,3 +152,79 @@ steps:
       name: "App"
       exact: true
     timeout: 15
+
+  # ── Test 5: mixed multi-root project attribution (#1060) ──
+  # First establish a mixed workspace and refresh it into WorkspaceNode roots.
+  # The smoke-test driver renders folder pickers as an internal quick input:
+  # entering an absolute folder path opens it, then the Add button confirms it.
+  - id: "invoke-add-non-java-root"
+    action: "executeVSCodeCommand workbench.action.addRootFolder"
+
+  - id: "type-non-java-root"
+    action: "fillQuickInput ${workspaceParent}/non-java"
+
+  - id: "confirm-non-java-root"
+    action: "tryClickButton Add"
+
+  - id: "wait-non-java-root-ready"
+    action: "waitForLanguageServer"
+    timeout: 120
+    skipLlmVerify: true
+
+  - id: "refresh-mixed-workspace"
+    action: "executeVSCodeCommand java.view.package.refresh"
+    waitBefore: 2
+
+  - id: "collapse-multi-root-explorer"
+    action: "collapseSidebarSection UNTITLED (WORKSPACE)"
+
+  - id: "focus-mixed-workspace"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 2
+
+  - id: "verify-non-java-workspace-root"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "non-java"
+    timeout: 15
+
+  # Add a Java folder after the mixed multi-root structure already exists and
+  # refresh it into the expected WorkspaceNode -> ProjectNode hierarchy.
+  - id: "invoke-add-java-root"
+    action: "executeVSCodeCommand workbench.action.addRootFolder"
+
+  - id: "type-java-root"
+    action: "fillQuickInput ${workspaceParent}/simple"
+
+  - id: "confirm-java-root"
+    action: "tryClickButton Add"
+
+  - id: "wait-java-root-ready"
+    action: "waitForLanguageServer"
+    timeout: 120
+    skipLlmVerify: true
+
+  - id: "refresh-added-java-root"
+    action: "executeVSCodeCommand java.view.package.refresh"
+
+  - id: "verify-java-workspace-root"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "simple"
+      exact: true
+      count: 1
+      level: 1
+    timeout: 15
+
+  # Deterministically simulate the onDidProjectsImport path. Before #1060 this
+  # command appended a second top-level ProjectNode named "simple" beside the
+  # existing WorkspaceNode. The fixed provider ignores progressive insertion
+  # in multi-root workspaces, so exactly one level-1 row remains.
+  - id: "simulate-progressive-project-import"
+    action: 'executeVSCodeCommand _java.view.package.internal.addProjects ["${workspaceParentUri}/simple"]'
+    verifyTreeItem:
+      name: "simple"
+      exact: true
+      count: 1
+      level: 1
+    timeout: 15
