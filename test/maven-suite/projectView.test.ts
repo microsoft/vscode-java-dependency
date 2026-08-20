@@ -3,7 +3,7 @@
 
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode,
+import { Commands, ContainerNode, contextManager, DataNode, DependencyExplorer, FileNode, FolderNode,
     INodeData, Jdtls, languageServerApiManager, NodeKind, PackageNode, PackageRootNode, PrimaryTypeNode, ProjectNode } from "../../extension.bundle";
 import { fsPath, printNodes, setupTestEnv, Uris } from "../shared";
 
@@ -245,6 +245,61 @@ suite("Maven Project View Tests", () => {
         const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
         const projectChildren = await projectNode.getChildren();
         assert.ok(!projectChildren.find((node: DataNode) => node.nodeData.name === ".hidden"));
+    });
+
+    test("Does not display empty physical ancestors of Java package roots", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+        const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
+        const projectChildren = await projectNode.getChildren();
+
+        assert.ok(!projectChildren.find((node: DataNode) => node.nodeData.name === "src"),
+            "The physical src folder should not duplicate Java package roots");
+
+        const resourcesRoot = projectChildren.find((node: DataNode) =>
+            node.nodeData.name === "src/main/resources") as PackageRootNode;
+        assert.ok(resourcesRoot, "The Maven resources root should remain visible");
+        const resourceChildren = await resourcesRoot.getChildren();
+        assert.ok(resourceChildren.find((node: DataNode) => node.nodeData.name === "application.yml"),
+            "Non-Java files under the resources root should remain visible");
+    });
+
+    test("Displays empty non-Java folders next to Java package roots", async function() {
+        const explorer = DependencyExplorer.getInstance(contextManager.context);
+        const projectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
+        const initialChildren = await projectNode.getChildren();
+        const mainSourceRoot = initialChildren.find((node: DataNode) =>
+            node.nodeData.name === "src/main/java") as PackageRootNode;
+        const srcPath = mainSourceRoot.nodeData.path!.replace(/\/main\/java$/, "");
+        const docsUri = vscode.Uri.joinPath(vscode.Uri.file(Uris.MAVEN_PROJECT_NODE), "src", "docs");
+        await vscode.workspace.fs.createDirectory(docsUri);
+
+        try {
+            await vscode.commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
+                Commands.JAVA_GETPACKAGEDATA, {
+                    kind: NodeKind.Folder,
+                    projectUri: projectNode.uri,
+                    path: srcPath,
+                });
+            await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+            const refreshedProjectNode = (await explorer.dataProvider.getChildren())![0] as ProjectNode;
+            const projectChildren = await refreshedProjectNode.getChildren();
+            const srcFolder = projectChildren.find((node: DataNode) =>
+                node.nodeData.name === "src") as FolderNode;
+
+            assert.ok(srcFolder, "The physical src folder should remain visible when it contains an empty non-Java folder");
+            const srcChildren = await srcFolder.getChildren();
+            assert.ok(srcChildren.find((node: DataNode) => node.nodeData.name === "docs"),
+                "The empty non-Java folder should remain visible");
+        } finally {
+            await vscode.workspace.fs.delete(docsUri, { recursive: true });
+            await vscode.commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
+                Commands.JAVA_GETPACKAGEDATA, {
+                    kind: NodeKind.Folder,
+                    projectUri: projectNode.uri,
+                    path: srcPath,
+                });
+            await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+        }
     });
 
     test("Can apply 'java.project.explorer.showNonJavaResources'", async function() {
