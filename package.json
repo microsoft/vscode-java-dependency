@@ -1225,7 +1225,7 @@
     "minimatch": "^5.1.9",
     "semver": "^7.3.8",
     "vscode-extension-telemetry-wrapper": "^0.15.2",
-    "vscode-tas-client": "^0.1.75"
+    "vscode-tas-client": "^0.3.0"
   },
   "overrides": {
     "serialize-javascript": ">=7.0.5"
