@@ -294,11 +294,20 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
             const folders = workspace.workspaceFolders;
             if (folders && folders.length) {
                 if (folders.length > 1) {
-                    folders.forEach((folder) => rootItems.push(new WorkspaceNode({
-                        name: folder.name,
-                        uri: folder.uri.toString(),
-                        kind: NodeKind.Workspace,
-                    }, undefined)));
+                    const javaProjectsByFolder = Settings.nonJavaResourcesFiltered()
+                        ? await Promise.all(folders.map((folder) => Jdtls.getProjects(folder.uri.toString())))
+                        : undefined;
+                    folders.forEach((folder, index) => {
+                        // Java-only mode should not leave empty non-Java workspace roots in the tree.
+                        if (javaProjectsByFolder && javaProjectsByFolder[index].length === 0) {
+                            return;
+                        }
+                        rootItems.push(new WorkspaceNode({
+                            name: folder.name,
+                            uri: folder.uri.toString(),
+                            kind: NodeKind.Workspace,
+                        }, undefined));
+                    });
                     this._rootItems = rootItems;
                 } else {
                     const result: INodeData[] = await Jdtls.getProjects(folders[0].uri.toString());
