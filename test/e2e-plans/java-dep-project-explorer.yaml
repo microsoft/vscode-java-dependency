@@ -7,6 +7,7 @@
 #   - revealInProjectExplorer reveals file from File Explorer context menu
 #   - hideNonJavaResources removes non-Java workspace roots while preserving
 #     Java roots across refreshes and newly imported projects
+#   - showNonJavaResources restores and expands filesystem-only workspace roots
 #
 # Usage:
 #   npx autotest run test/e2e-plans/java-dep-project-explorer.yaml --vsix <path-to-vsix>
@@ -14,8 +15,8 @@
 name: "Java Dependency — Project Explorer"
 description: |
   Tests the Java Projects explorer view: focus, link/unlink with editor,
-  reveal in project explorer, and filtering non-Java workspace roots without
-  hiding Java roots during refresh or project import.
+  reveal in project explorer, and hiding or expanding non-Java workspace roots
+  without disrupting Java roots during refresh or project import.
 
 setup:
   extension: "redhat.java"
@@ -314,3 +315,16 @@ steps:
       level: 1
       inView: "Java Projects"
     timeout: 30
+
+  - id: "expand-restored-non-java-workspace-root"
+    action: "expandTreeItem non-java"
+
+  - id: "verify-non-java-workspace-resource"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "package.json"
+      exact: true
+      count: 1
+      level: 2
+      inView: "Java Projects"
+    timeout: 15

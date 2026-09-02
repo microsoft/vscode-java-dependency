@@ -4,7 +4,7 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import {
-    Commands, contextManager, DependencyExplorer, Jdtls, ProjectNode, WorkspaceNode,
+    Commands, contextManager, DependencyExplorer, FileNode, Jdtls, ProjectNode, WorkspaceNode,
 } from "../../extension.bundle";
 import { setupTestEnv } from "../shared";
 
@@ -30,9 +30,13 @@ suite("Multiple Project View Tests", () => {
         const nonJavaRoot = roots?.find(root =>
             root instanceof WorkspaceNode && root.name === "non-java") as WorkspaceNode | undefined;
         assert.ok(nonJavaRoot, "The non-Java workspace folder should have a root node");
-        assert.equal((await nonJavaRoot!.getChildren()).length, 0, "The non-Java root should not contain Java projects");
+        const nonJavaChildren = await nonJavaRoot.getChildren();
+        const packageJson = nonJavaChildren.find((node) => node instanceof FileNode && node.name === "package.json");
+        assert.ok(packageJson, "The non-Java workspace folder should expose its filesystem resources");
 
         const projects = await explorer.dataProvider.getRootProjects();
+        assert.ok(projects.every((node) => node instanceof ProjectNode),
+            "Filesystem resources should not be returned as root projects");
         const project = projects.find((node): node is ProjectNode =>
             node instanceof ProjectNode && Boolean(node.uri));
         assert.ok(project?.uri, "At least one Java project should be available");
@@ -77,6 +81,27 @@ suite("Multiple Project View Tests", () => {
                 originalWorkspaceValue,
                 vscode.ConfigurationTarget.Workspace,
             );
+            await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+        }
+    });
+
+    test("Applies files.exclude to non-Java workspace folders", async function() {
+        const configuration = vscode.workspace.getConfiguration("files");
+        const originalWorkspaceValue = configuration.inspect<{ [pattern: string]: boolean }>("exclude")?.workspaceValue;
+
+        await configuration.update("exclude", { "package.json": true }, vscode.ConfigurationTarget.Workspace);
+        try {
+            await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
+
+            const explorer = DependencyExplorer.getInstance(contextManager.context);
+            const roots = await explorer.dataProvider.getChildren();
+            const nonJavaRoot = roots?.find(root =>
+                root instanceof WorkspaceNode && root.name === "non-java") as WorkspaceNode | undefined;
+            assert.ok(nonJavaRoot, "The non-Java workspace folder should have a root node");
+            assert.ok(!(await nonJavaRoot.getChildren()).some((node) => node.getDisplayName() === "package.json"),
+                "Excluded filesystem resources should not appear in the Java Projects explorer");
+        } finally {
+            await configuration.update("exclude", originalWorkspaceValue, vscode.ConfigurationTarget.Workspace);
             await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
         }
     });
