@@ -5,7 +5,8 @@
 #   - linkWithFolderExplorer reveals active file in tree
 #   - unlinkWithFolderExplorer stops auto-reveal
 #   - revealInProjectExplorer reveals file from File Explorer context menu
-#   - hideNonJavaResources removes workspace roots without Java projects
+#   - hideNonJavaResources removes non-Java workspace roots while preserving
+#     Java roots across refreshes and newly imported projects
 #
 # Usage:
 #   npx autotest run test/e2e-plans/java-dep-project-explorer.yaml --vsix <path-to-vsix>
@@ -13,7 +14,8 @@
 name: "Java Dependency — Project Explorer"
 description: |
   Tests the Java Projects explorer view: focus, link/unlink with editor,
-  reveal in project explorer, and filtering non-Java workspace roots.
+  reveal in project explorer, and filtering non-Java workspace roots without
+  hiding Java roots during refresh or project import.
 
 setup:
   extension: "redhat.java"
@@ -154,7 +156,7 @@ steps:
       exact: true
     timeout: 15
 
-  # ── Test 5: mixed multi-root project attribution (#1060) ──
+  # ── Test 5: mixed multi-root filtering and project attribution (#758, #1060) ──
   # First establish a mixed workspace and refresh it into WorkspaceNode roots.
   # The smoke-test driver renders folder pickers as an internal quick input:
   # entering an absolute folder path opens it, then the Add button confirms it.
@@ -187,6 +189,10 @@ steps:
     action: "wait 1 seconds"
     verifyTreeItem:
       name: "non-java"
+      exact: true
+      count: 1
+      level: 1
+      inView: "Java Projects"
     timeout: 15
 
   # Hide Non-Java Resources now applies to the workspace-root level as well:
@@ -194,14 +200,13 @@ steps:
   - id: "hide-non-java-workspace-root"
     action: 'clickViewTitleAction "Java Projects" "Hide Non-Java Resources"'
 
-  - id: "wait-hide-non-java-workspace-root"
-    action: "wait 5 seconds"
-
   - id: "verify-non-java-workspace-root-hidden"
     action: "wait 1 seconds"
     verifyTreeItem:
       name: "non-java"
-      visible: false
+      exact: true
+      count: 0
+      level: 1
       inView: "Java Projects"
     timeout: 30
 
@@ -209,24 +214,43 @@ steps:
     action: "wait 1 seconds"
     verifyTreeItem:
       name: "maven"
+      exact: true
+      count: 1
+      level: 1
       inView: "Java Projects"
     timeout: 15
 
-  - id: "restore-non-java-workspace-root"
-    action: 'clickViewTitleAction "Java Projects" "Show Non-Java Resources"'
+  - id: "expand-java-workspace-root"
+    action: "expandTreeItem maven"
 
-  - id: "wait-restore-non-java-workspace-root"
-    action: "wait 5 seconds"
+  - id: "verify-nested-java-project-remains"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "my-app"
+      exact: true
+      count: 1
+      level: 2
+      inView: "Java Projects"
+    timeout: 15
 
-  - id: "verify-non-java-workspace-root-restored"
+  # Rebuilding the roots must preserve the Java-only view rather than
+  # reintroducing the filtered workspace folder.
+  - id: "refresh-hidden-workspace-roots"
+    action: "executeVSCodeCommand java.view.package.refresh"
+
+  - id: "verify-non-java-root-stays-hidden-after-refresh"
     action: "wait 1 seconds"
     verifyTreeItem:
       name: "non-java"
+      exact: true
+      count: 0
+      level: 1
       inView: "Java Projects"
     timeout: 30
 
-  # Add a Java folder after the mixed multi-root structure already exists and
-  # refresh it into the expected WorkspaceNode -> ProjectNode hierarchy.
+  # Add a Java folder while non-Java roots are hidden. A newly imported Java
+  # workspace root must still appear, while the existing non-Java root remains
+  # filtered.
   - id: "invoke-add-java-root"
     action: "executeVSCodeCommand workbench.action.addRootFolder"
 
@@ -251,7 +275,18 @@ steps:
       exact: true
       count: 1
       level: 1
+      inView: "Java Projects"
     timeout: 15
+
+  - id: "verify-non-java-root-stays-hidden-after-java-import"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "non-java"
+      exact: true
+      count: 0
+      level: 1
+      inView: "Java Projects"
+    timeout: 30
 
   # Deterministically simulate the onDidProjectsImport path. Before #1060 this
   # command appended a second top-level ProjectNode named "simple" beside the
@@ -264,4 +299,18 @@ steps:
       exact: true
       count: 1
       level: 1
+      inView: "Java Projects"
     timeout: 15
+
+  - id: "restore-non-java-workspace-root"
+    action: 'clickViewTitleAction "Java Projects" "Show Non-Java Resources"'
+
+  - id: "verify-non-java-workspace-root-restored"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "non-java"
+      exact: true
+      count: 1
+      level: 1
+      inView: "Java Projects"
+    timeout: 30
