@@ -10,14 +10,19 @@ import { DataNode } from "./dataNode";
 import { ExplorerNode } from "./explorerNode";
 import { FileNode } from "./fileNode";
 
+interface ISiblingClause {
+    when: string;
+}
+
 interface IFilesExclude {
-    [pattern: string]: boolean;
+    [pattern: string]: boolean | ISiblingClause;
 }
 
 export async function getWorkspaceResourceData(directoryUri: Uri, workspaceFolderUri: Uri): Promise<INodeData[]> {
     const entries = await workspace.fs.readDirectory(directoryUri);
     const excludePatterns = workspace.getConfiguration("files", workspaceFolderUri)
         .get<IFilesExclude>("exclude", {});
+    const siblingNames = new Set(entries.map(([name]) => name));
 
     return entries
         .map(([name, fileType]) => {
@@ -33,11 +38,12 @@ export async function getWorkspaceResourceData(directoryUri: Uri, workspaceFolde
                 kind,
             };
             return {
+                name,
                 nodeData,
                 relativePath,
             };
         })
-        .filter(({ relativePath }) => !isExcluded(relativePath, excludePatterns))
+        .filter(({ name, relativePath }) => !isExcluded(name, relativePath, siblingNames, excludePatterns))
         .map(({ nodeData }) => nodeData);
 }
 
@@ -82,7 +88,22 @@ class WorkspaceResourceFolderNode extends DataNode {
     }
 }
 
-function isExcluded(relativePath: string, excludePatterns: IFilesExclude): boolean {
-    return Object.entries(excludePatterns).some(([pattern, enabled]) =>
-        enabled && minimatch.match([relativePath], pattern, { dot: true }).length > 0);
+function isExcluded(
+    name: string,
+    relativePath: string,
+    siblingNames: Set<string>,
+    excludePatterns: IFilesExclude,
+): boolean {
+    return Object.entries(excludePatterns).some(([pattern, value]) => {
+        if (!value || minimatch.match([relativePath], pattern, { dot: true }).length === 0) {
+            return false;
+        }
+        if (typeof value === "boolean") {
+            return value;
+        }
+
+        const extension = path.posix.extname(name);
+        const basename = name.substring(0, name.length - extension.length);
+        return siblingNames.has(value.when.replace("$(basename)", basename));
+    });
 }

@@ -85,12 +85,24 @@ suite("Multiple Project View Tests", () => {
         }
     });
 
-    test("Applies files.exclude to non-Java workspace folders", async function() {
+    test("Applies boolean and conditional files.exclude to non-Java workspace folders", async function() {
         const configuration = vscode.workspace.getConfiguration("files");
-        const originalWorkspaceValue = configuration.inspect<{ [pattern: string]: boolean }>("exclude")?.workspaceValue;
+        const originalWorkspaceValue = configuration.inspect<{
+            [pattern: string]: boolean | { when: string };
+        }>("exclude")?.workspaceValue;
+        const nonJavaFolder = vscode.workspace.workspaceFolders?.find((folder) => folder.name === "non-java");
+        assert.ok(nonJavaFolder, "The non-Java workspace folder should exist");
+        const standaloneJs = vscode.Uri.joinPath(nonJavaFolder.uri, "standalone.js");
+        const pairedJs = vscode.Uri.joinPath(nonJavaFolder.uri, "paired.js");
+        const pairedTs = vscode.Uri.joinPath(nonJavaFolder.uri, "paired.ts");
+        const temporaryFiles = [standaloneJs, pairedJs, pairedTs];
 
-        await configuration.update("exclude", { "package.json": true }, vscode.ConfigurationTarget.Workspace);
+        await Promise.all(temporaryFiles.map((uri) => vscode.workspace.fs.writeFile(uri, new Uint8Array())));
         try {
+            await configuration.update("exclude", {
+                "package.json": true,
+                "**/*.js": { when: "$(basename).ts" },
+            }, vscode.ConfigurationTarget.Workspace);
             await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
 
             const explorer = DependencyExplorer.getInstance(contextManager.context);
@@ -98,10 +110,17 @@ suite("Multiple Project View Tests", () => {
             const nonJavaRoot = roots?.find(root =>
                 root instanceof WorkspaceNode && root.name === "non-java") as WorkspaceNode | undefined;
             assert.ok(nonJavaRoot, "The non-Java workspace folder should have a root node");
-            assert.ok(!(await nonJavaRoot.getChildren()).some((node) => node.getDisplayName() === "package.json"),
+            const childNames = (await nonJavaRoot.getChildren()).map((node) => node.getDisplayName());
+            assert.ok(!childNames.includes("package.json"),
                 "Excluded filesystem resources should not appear in the Java Projects explorer");
+            assert.ok(childNames.includes("standalone.js"),
+                "A conditional exclusion should keep files whose sibling does not exist");
+            assert.ok(!childNames.includes("paired.js"),
+                "A conditional exclusion should hide files whose configured sibling exists");
+            assert.ok(childNames.includes("paired.ts"), "The matching sibling should remain visible");
         } finally {
             await configuration.update("exclude", originalWorkspaceValue, vscode.ConfigurationTarget.Workspace);
+            await Promise.all(temporaryFiles.map((uri) => vscode.workspace.fs.delete(uri)));
             await vscode.commands.executeCommand(Commands.VIEW_PACKAGE_REFRESH);
         }
     });
