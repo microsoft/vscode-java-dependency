@@ -182,11 +182,9 @@ steps:
 
   - id: "hide-non-java"
     action: 'clickViewTitleAction "Java Projects" "Hide Non-Java Resources"'
-    # Real UI path through view-title overflow menu. The menu item label
-    # toggles based on `config.java.project.explorer.showNonJavaResources`
-    # (Show vs Hide), and the current state at this point is "showing"
-    # so the menu surfaces "Hide Non-Java Resources". verifyTreeItem
-    # checks below are authoritative.
+    # Direct view-title toolbar action. Its label and icon toggle based on
+    # `config.java.project.explorer.showNonJavaResources`; the current state
+    # is "showing", so the toolbar surfaces "Hide Non-Java Resources".
 
   - id: "wait-hide"
     action: "wait 5 seconds"
@@ -203,9 +201,8 @@ steps:
   # ── Test 5: show non-Java resources ──
   - id: "show-non-java"
     action: 'clickViewTitleAction "Java Projects" "Show Non-Java Resources"'
-    # Real UI path through view-title overflow menu. After hide-non-java
-    # the toggle now surfaces "Show Non-Java Resources". verifyTreeItem
-    # below is authoritative.
+    # After hide-non-java, the same toolbar position surfaces
+    # "Show Non-Java Resources".
 
   - id: "wait-show"
     action: "wait 5 seconds"
