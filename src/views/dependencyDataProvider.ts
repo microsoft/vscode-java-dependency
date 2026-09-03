@@ -189,16 +189,16 @@ export class DependencyDataProvider implements TreeDataProvider<ExplorerNode> {
         return project?.revealPaths(paths);
     }
 
-    public async getRootProjects(): Promise<ExplorerNode[]> {
+    public async getRootProjects(): Promise<ProjectNode[]> {
         const rootElements = await this.getRootNodes();
         if (rootElements[0] instanceof ProjectNode) {
-            return rootElements;
+            return rootElements.filter((node): node is ProjectNode => node instanceof ProjectNode);
         } else {
-            let result: ExplorerNode[] = [];
+            let result: ProjectNode[] = [];
             for (const rootWorkspace of rootElements) {
                 const projects = await rootWorkspace.getChildren();
                 if (projects) {
-                    result = result.concat(projects);
+                    result = result.concat(projects.filter((node): node is ProjectNode => node instanceof ProjectNode));
                 }
             }
             return result;

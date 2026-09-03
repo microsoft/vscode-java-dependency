@@ -22,6 +22,8 @@ export namespace Explorer {
         File = "file",
         Type = "type",
         Folder = "folder",
+        WorkspaceResourceFile = "workspaceResourceFile",
+        WorkspaceResourceFolder = "workspaceResourceFolder",
         Symbol = "symbol",
     }
 

@@ -37,7 +37,7 @@
   "configuration.java.dependency.autoRefresh": "在 Java 專案管理員中自動同步修改",
   "configuration.java.dependency.refreshDelay": "控制 Java 專案管理員重新整理的延遲時間 (毫秒)",
   "configuration.java.dependency.packagePresentation": "Java 套件顯示方式: 平行顯示或者分層顯示",
-  "configuration.java.project.explorer.showNonJavaResources": "啟用時，Java 專案管理員會顯示非 Java 資源；停用時，將隱藏不包含 Java 專案的工作區資料夾。",
+  "configuration.java.project.explorer.showNonJavaResources": "啟用時，Java 專案管理員會顯示非 Java 資源，並可瀏覽不包含 Java 專案的工作區資料夾；停用時，將隱藏不包含 Java 專案的工作區資料夾。",
   "configuration.java.project.exportJar.targetPath.customization": "匯出 Jar 檔案的路徑。如果您想要手動選擇輸出路徑，可以不填。",
   "configuration.java.project.exportJar.targetPath.workspaceFolder": "匯出 Jar 檔案到工作區資料夾下。Jar 檔案的名稱和工作區資料夾的名稱相同。",
   "configuration.java.project.exportJar.targetPath.select": "在匯出 Jar 檔案時手動選擇輸出位置。",
