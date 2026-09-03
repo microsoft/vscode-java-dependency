@@ -56,9 +56,19 @@ export function createWorkspaceResourceNode(
         case NodeKind.Folder:
             return new WorkspaceResourceFolderNode(nodeData, parent, workspaceFolderUri);
         case NodeKind.File:
-            return new FileNode(nodeData, parent);
+            return new WorkspaceResourceFileNode(nodeData, parent);
         default:
             throw new Error(`Unsupported workspace resource kind: ${nodeData.kind}`);
+    }
+}
+
+export function isWorkspaceResourceNode(node: ExplorerNode): boolean {
+    return node instanceof WorkspaceResourceFolderNode || node instanceof WorkspaceResourceFileNode;
+}
+
+class WorkspaceResourceFileNode extends FileNode {
+    protected get contextValue(): string {
+        return Explorer.ContextValueType.WorkspaceResourceFile;
     }
 }
 
@@ -84,7 +94,7 @@ class WorkspaceResourceFolderNode extends DataNode {
     }
 
     protected get contextValue(): string {
-        return Explorer.ContextValueType.Folder;
+        return Explorer.ContextValueType.WorkspaceResourceFolder;
     }
 }
 

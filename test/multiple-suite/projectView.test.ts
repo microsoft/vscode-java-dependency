@@ -33,6 +33,11 @@ suite("Multiple Project View Tests", () => {
         const nonJavaChildren = await nonJavaRoot.getChildren();
         const packageJson = nonJavaChildren.find((node) => node instanceof FileNode && node.name === "package.json");
         assert.ok(packageJson, "The non-Java workspace folder should expose its filesystem resources");
+        assert.match(
+            (await packageJson.getTreeItem()).contextValue || "",
+            /java:workspaceResourceFile(?=.*?\b\+uri\b)/,
+            "Filesystem-backed resources should use a browse-only context",
+        );
 
         const projects = await explorer.dataProvider.getRootProjects();
         assert.ok(projects.every((node) => node instanceof ProjectNode),
