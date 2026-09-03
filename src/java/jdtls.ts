@@ -31,12 +31,14 @@ export namespace Jdtls {
     export async function getPackageData(params: IPackageDataParam): Promise<INodeData[]> {
         const uri: Uri | null = !params.projectUri ? null : Uri.parse(params.projectUri);
         const excludePatterns: {[key: string]: boolean} | undefined = workspace.getConfiguration("files", uri).get("exclude");
+        const nonJavaResourcesFiltered: boolean = Settings.nonJavaResourcesFiltered();
+        params.mergeBuildOutputSourceRoots = !nonJavaResourcesFiltered;
 
         let nodeData: INodeData[] = await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
             Commands.JAVA_GETPACKAGEDATA, params) || [];
 
         // check filter settings.
-        if (Settings.nonJavaResourcesFiltered()) {
+        if (nonJavaResourcesFiltered) {
             nodeData = nodeData.filter((data: INodeData) => {
                 return data.kind !== NodeKind.Folder && data.kind !== NodeKind.File;
             });
@@ -65,7 +67,12 @@ export namespace Jdtls {
     }
 
     export async function resolvePath(params: string): Promise<INodeData[]> {
-        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_RESOLVEPATH, params) || [];
+        return await commands.executeCommand(
+            Commands.EXECUTE_WORKSPACE_COMMAND,
+            Commands.JAVA_RESOLVEPATH,
+            params,
+            !Settings.nonJavaResourcesFiltered(),
+        ) || [];
     }
 
     export async function getMainClasses(params: string): Promise<IMainClassInfo[]> {

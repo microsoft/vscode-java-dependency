@@ -1,0 +1,156 @@
+# Test Plan: Java Dependency — Generated Sources Tree
+#
+# Verifies that a generated Java source root under Maven's physical target
+# directory is rendered as one merged hierarchy when non-Java resources are
+# shown, while Hide keeps the Java source root available at the project level.
+#
+# Usage:
+#   npx autotest run test/e2e-plans/java-dep-generated-sources-tree.yaml --vsix <path-to-vsix>
+
+name: "Java Dependency — Generated Sources Tree"
+description: |
+  Tests the merged Java Projects hierarchy for a physical Maven target folder
+  containing a generated Java source root and ordinary build output.
+
+setup:
+  extension: "redhat.java"
+  vscodeVersion: "stable"
+  workspace: "../generated-sources"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    java.dependency.packagePresentation: "flat"
+    java.project.explorer.showNonJavaResources: true
+    workbench.startupEditor: "none"
+
+steps:
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+    verify: "Auxiliary bar closed"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verify: "Java Projects view is focused"
+
+  - id: "wait-tree-load"
+    action: "wait 3 seconds"
+
+  - id: "expand-project"
+    action: "expandTreeItem generated-sources-tree"
+
+  - id: "verify-single-target"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "target"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-generated-root-not-duplicated"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "target/generated-sources/demo"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "expand-target"
+    action: "expandTreeItem target"
+
+  - id: "verify-build-info-visible"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "build-info.txt"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "expand-generated-sources"
+    action: "expandTreeItem generated-sources"
+
+  - id: "verify-nested-source-root"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "demo"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "expand-source-root"
+    action: "expandTreeItem demo"
+
+  - id: "verify-generated-package"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "com.example.generated"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "hide-non-java-resources"
+    action: 'clickViewTitleAction "Java Projects" "Hide Non-Java Resources"'
+
+  - id: "wait-hide-refresh"
+    action: "wait 3 seconds"
+
+  - id: "expand-project-after-hide"
+    action: "expandTreeItem generated-sources-tree"
+
+  - id: "verify-physical-target-hidden"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "target"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-generated-root-kept"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "target/generated-sources/demo"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "show-non-java-resources"
+    action: 'clickViewTitleAction "Java Projects" "Show Non-Java Resources"'
+
+  - id: "wait-show-refresh"
+    action: "wait 3 seconds"
+
+  - id: "expand-project-after-show"
+    action: "expandTreeItem generated-sources-tree"
+
+  - id: "verify-target-restored"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "target"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-generated-root-merged-again"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "target/generated-sources/demo"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 15

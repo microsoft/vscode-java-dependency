@@ -33,6 +33,8 @@ public class PackageParams {
 
     private boolean isHierarchicalView;
 
+    private boolean mergeBuildOutputSourceRoots;
+
     /**
      * Optional list of resource URIs (sent by the client on auto-refresh) that
      * have just changed on disk. When present, the server only refreshes the
@@ -50,6 +52,14 @@ public class PackageParams {
 
     public void setHierarchicalView(boolean isHierarchicalView) {
         this.isHierarchicalView = isHierarchicalView;
+    }
+
+    public boolean isMergeBuildOutputSourceRoots() {
+        return mergeBuildOutputSourceRoots;
+    }
+
+    public void setMergeBuildOutputSourceRoots(boolean mergeBuildOutputSourceRoots) {
+        this.mergeBuildOutputSourceRoots = mergeBuildOutputSourceRoots;
     }
 
     public PackageParams(NodeKind kind, String projectUri) {
