@@ -13,7 +13,7 @@ description: |
   containing a generated Java source root and ordinary build output.
 
 setup:
-  extension: "redhat.java"
+  extension: "vscjava.vscode-java-pack"
   vscodeVersion: "stable"
   workspace: "../generated-sources"
   timeout: 180
@@ -69,19 +69,26 @@ steps:
       inView: "Java Projects"
     timeout: 15
 
-  - id: "expand-target"
-    action: "expandTreeItem target"
+  # Opening the generated Java file lets link-with-editor reveal the complete
+  # merged hierarchy without an ambiguous "target" match in the File Explorer.
+  - id: "open-generated-file"
+    action: "open file GeneratedApp.java"
+    waitBefore: 2
 
-  - id: "verify-build-info-visible"
+  - id: "collapse-workspace-root-after-generated-file"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-after-generated-file"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 2
+
+  - id: "verify-generated-sources-folder"
     action: "wait 1 seconds"
     verifyTreeItem:
-      name: "build-info.txt"
+      name: "generated-sources"
       exact: true
       inView: "Java Projects"
     timeout: 15
-
-  - id: "expand-generated-sources"
-    action: "expandTreeItem generated-sources"
 
   - id: "verify-nested-source-root"
     action: "wait 1 seconds"
@@ -91,13 +98,39 @@ steps:
       inView: "Java Projects"
     timeout: 15
 
-  - id: "expand-source-root"
-    action: "expandTreeItem demo"
-
   - id: "verify-generated-package"
     action: "wait 1 seconds"
     verifyTreeItem:
       name: "com.example.generated"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-generated-type"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "GeneratedApp"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  # Reveal an ordinary build file to prove the physical target resources remain
+  # available alongside the generated Java source root.
+  - id: "open-build-info"
+    action: "open file build-info.txt"
+    waitBefore: 2
+
+  - id: "collapse-workspace-root-after-build-info"
+    action: "collapseWorkspaceRoot"
+
+  - id: "focus-java-projects-after-build-info"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    waitBefore: 2
+
+  - id: "verify-build-info-visible"
+    action: "wait 1 seconds"
+    verifyTreeItem:
+      name: "build-info.txt"
       exact: true
       inView: "Java Projects"
     timeout: 15
@@ -132,7 +165,10 @@ steps:
     action: 'clickViewTitleAction "Java Projects" "Show Non-Java Resources"'
 
   - id: "wait-show-refresh"
-    action: "wait 3 seconds"
+    action: "wait 5 seconds"
+
+  - id: "reset-tree-after-show"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
 
   - id: "expand-project-after-show"
     action: "expandTreeItem generated-sources-tree"
