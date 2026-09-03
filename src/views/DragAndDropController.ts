@@ -16,6 +16,7 @@ import { PackageRootNode } from "./packageRootNode";
 import { PrimaryTypeNode } from "./PrimaryTypeNode";
 import { ProjectNode } from "./projectNode";
 import { WorkspaceNode } from "./workspaceNode";
+import { isWorkspaceResourceNode } from "./workspaceResourceFolderNode";
 import { addLibraryGlobs } from "../controllers/libraryController";
 import { sendError, sendInfo } from "vscode-extension-telemetry-wrapper";
 import { DocumentSymbolNode } from "./documentSymbolNode";
@@ -241,7 +242,7 @@ export class DragAndDropController implements TreeDragAndDropController<Explorer
         }
         if (node instanceof WorkspaceNode || node instanceof ProjectNode
                 || node instanceof PackageRootNode || node instanceof ContainerNode
-                || node instanceof DocumentSymbolNode) {
+                || node instanceof DocumentSymbolNode || isWorkspaceResourceNode(node)) {
             return false;
         }
 
