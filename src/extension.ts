@@ -25,6 +25,7 @@ import { newJavaFile } from "./explorerCommands/new";
 import upgradeManager from "./upgrade/upgradeManager";
 import { registerJavaContextTools } from "./copilot/tools/javaContextTools";
 import { languageServerApiManager } from "./languageServerApi/languageServerApiManager";
+import { enableAppModRecommendationsAfterProjectManagerViewInitialized, registerAppModRecommendation } from "./appModRecommendation/register";
 
 export async function activate(context: ExtensionContext): Promise<void> {
     contextManager.initialize(context);
@@ -101,9 +102,12 @@ async function activateJavaProjectExplorerWhenJavaContentExists(context: Extensi
 
 async function activateExtension(_operationId: string, context: ExtensionContext): Promise<void> {
     context.subscriptions.push(new ProjectController(context));
+    registerAppModRecommendation(context);
     Settings.initialize(context);
     context.subscriptions.push(new LibraryController(context));
-    context.subscriptions.push(DependencyExplorer.getInstance(context));
+    const dependencyExplorer = DependencyExplorer.getInstance(context);
+    context.subscriptions.push(dependencyExplorer);
+    void enableAppModRecommendationsAfterProjectManagerViewInitialized(context);
     context.subscriptions.push(contextManager);
     context.subscriptions.push(syncHandler);
     context.subscriptions.push(tasks.registerTaskProvider(DeprecatedExportJarTaskProvider.type, new DeprecatedExportJarTaskProvider()));
