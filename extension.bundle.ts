@@ -28,6 +28,7 @@ export { languageServerApiManager } from "./src/languageServerApi/languageServer
 
 // tasks
 export { BuildTaskProvider, categorizePaths, getFinalPaths } from "./src/tasks/build/buildTaskProvider";
+export { dedupAlreadyCoveredPattern } from "./src/controllers/libraryController";
 
 // delegate commands
 export { Jdtls } from "./src/java/jdtls";
