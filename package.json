@@ -253,12 +253,14 @@
       {
         "command": "java.project.explorer.showNonJavaResources",
         "title": "%contributes.commands.java.project.explorer.showNonJavaResources%",
-        "category": "Java"
+        "category": "Java",
+        "icon": "$(eye)"
       },
       {
         "command": "java.project.explorer.hideNonJavaResources",
         "title": "%contributes.commands.java.project.explorer.hideNonJavaResources%",
-        "category": "Java"
+        "category": "Java",
+        "icon": "$(eye-closed)"
       },
       {
         "command": "java.view.package.revealFileInOS",
@@ -754,12 +756,12 @@
         {
           "command": "java.project.explorer.showNonJavaResources",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && !config.java.project.explorer.showNonJavaResources",
-          "group": "overflow_10@30"
+          "group": "navigation@40"
         },
         {
           "command": "java.project.explorer.hideNonJavaResources",
           "when": "view == javaProjectExplorer && java:serverMode == Standard && config.java.project.explorer.showNonJavaResources",
-          "group": "overflow_10@30"
+          "group": "navigation@40"
         },
         {
           "command": "java.project.rebuild.workspace",
