@@ -3,7 +3,7 @@
 
 import * as fse from "fs-extra";
 import * as _ from "lodash";
-import * as minimatch from "minimatch";
+import { minimatch } from "minimatch";
 import { platform } from "os";
 import * as path from "path";
 import { Disposable, ExtensionContext, Uri, window, workspace, WorkspaceFolder } from "vscode";
@@ -90,7 +90,7 @@ export function addLibraryGlobs(libraryGlobs: string[]) {
 /**
  * Check if the `update` patterns are already covered by `origin` patterns and return those uncovered
  */
-function dedupAlreadyCoveredPattern(origin: string[], ...update: string[]): string[] {
+export function dedupAlreadyCoveredPattern(origin: string[], ...update: string[]): string[] {
     return update.filter((newPattern) => {
         return !origin.some((originPattern) => {
             return minimatch(newPattern, originPattern);
