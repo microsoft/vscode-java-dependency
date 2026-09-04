@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as glob from "glob";
+import { glob } from "glob";
 import * as Mocha from "mocha";
 import * as path from "path";
 
@@ -15,11 +15,7 @@ export function run(): Promise<void> {
     const testsRoot = __dirname;
 
     return new Promise((c, e) => {
-        glob("**/**.test.js", { cwd: testsRoot }, (err, files) => {
-            if (err) {
-                return e(err);
-            }
-
+        glob("**/**.test.js", { cwd: testsRoot }).then((files) => {
             files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
 
             try {
@@ -33,6 +29,6 @@ export function run(): Promise<void> {
             } catch (err) {
                 e(err);
             }
-        });
+        }).catch(e);
     });
 }
