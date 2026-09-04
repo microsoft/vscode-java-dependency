@@ -15,4 +15,5 @@ dist
 **/.project
 **/.checkstyle
 test-resources/
+test-results/
 **/.gradle

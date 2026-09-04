@@ -9,7 +9,7 @@ Test plans under `test/e2e-plans/` are executable YAML files consumed by `@vscja
 
 ## Setup rules
 
-- Use `setup.extension: "vscjava.vscode-java-pack"` plus `setup.vscodeVersion: "stable"` for most scenarios. Installing the Extension Pack for Java pulls in every Java extension the Java Projects view relies on, so there is no need to install `redhat.java` separately.
+- Use `setup.extension: "vscjava.vscode-java-pack"` plus `setup.vscodeVersion: "stable"` for most scenarios. Installing the Extension Pack for Java pulls in every Java extension the Java Projects view relies on, so there is no need to install `redhat.java` separately. Keep `stable` (always the latest release) — do **not** pin a concrete version. In the Copilot agent, `.github/workflows/copilot-setup-steps.yml` pre-downloads that latest build + the pack before the firewall, and `@vscode/test-electron` falls back to the cached build when the run-time version check is blocked, so the plan runs offline without pinning.
 - Install the extension under test from a local VSIX at runtime with `--vsix vscode-java-dependency.vsix` — do not rely on a marketplace copy of `vscjava.vscode-java-dependency`.
 - Use existing in-repo fixtures as the workspace: `../maven` (a `maven-archetype-quickstart` project: `my-app` / `com.mycompany.app` / `App.java`) or `../invisible` (an unmanaged-folder project for referenced-library scenarios). Paths are relative to the test plan file. Do not add large binary fixtures.
 - Referenced-library / classpath commands (`java.project.addLibraries`, `java.project.removeLibrary`, `java.project.addLibraryFolders`, `java.project.refreshLibraries`) only apply to invisible projects — use `../invisible`, not `../maven`, for those.
@@ -31,12 +31,13 @@ action: 'clickViewTitleAction "Java Projects" "Unlink with Editor"'
 
 ## Verification rules
 
-- Add deterministic verification to every meaningful step. The natural-language `verify` field is context for humans and failure analysis; it is not pass/fail authority by itself, and it is auto-passed when a plan runs with `--no-llm`.
+- You do **not** need a verifier on every step. Author the *actions* step-by-step, but gate pass/fail with a deterministic verifier only on the **decisive assertion step(s)** — the step that captures the reported bug — plus any step prone to a silent no-op (see the `expandTreeItem` / free-form action caveat above). Intermediate action steps can rely on AutoTest screenshots instead of their own verifier.
+- The natural-language `verify` field is context for humans and failure analysis; it is not pass/fail authority by itself, and it is auto-passed when a plan runs with `--no-llm`. So the decisive step **must** carry a deterministic verifier, or a `--no-llm` run is a false green.
 - Use `verifyTreeItem` (with `name:`, optional `exact: true`, and `visible: false` for absence) as the authoritative check for Java Projects tree state.
 - Use `verifyFile` after operations that create, modify, or delete files on disk (new type, export jar, permanent delete). VS Code can open duplicate editor tabs with stale buffers, so prefer file-content checks over editor checks after such operations.
 - Use `verifyEditorTab` to assert which file an action opened, and `verifyClipboard` for copy-path commands.
 - On state-check steps whose only assertion is a deterministic verifier, omit the `verify:` field to avoid false LLM failures.
-- Use screenshots only as diagnostics produced by AutoTest; do not make screenshots the only evidence of pass/fail.
+- Screenshots are AutoTest's evidence that an action ran and are the primary artifact for **proving a fix** (a red run before, a green run after). Do not make a screenshot the sole pass/fail authority for the decisive assertion — pair it with a deterministic verifier.
 
 ## Local validation commands
 
