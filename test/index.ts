@@ -64,6 +64,17 @@ async function main(): Promise<void> {
             ],
         });
 
+        // Run test for generated Maven source roots inside the build output folder
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.resolve(__dirname, "./generated-sources-suite"),
+            launchArgs: [
+                path.join(__dirname, "..", "..", "test", "generated-sources"),
+                `--user-data-dir=${userDir}`,
+            ],
+        });
+
         // Run test for gradle project
         await runTests({
             vscodeExecutablePath,
