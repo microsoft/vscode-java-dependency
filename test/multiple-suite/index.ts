@@ -16,7 +16,7 @@ export function run(): Promise<void> {
 
     return new Promise((c, e) => {
         glob("**/**.test.js", { cwd: testsRoot }).then((files) => {
-            files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
+            files.sort().forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
 
             try {
                 mocha.run((failures) => {
