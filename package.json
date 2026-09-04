@@ -377,6 +377,46 @@
         "command": "_java.upgradeWithCopilot",
         "title": "%contributes.commands.java.upgradeWithCopilot%",
         "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.install",
+        "title": "Install GitHub Copilot App Modernization",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.viewExtension",
+        "title": "View GitHub Copilot App Modernization Extension",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.testPromptHook",
+        "title": "Test App Modernization Prompt Hook",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.resetSuppression",
+        "title": "Reset App Modernization Recommendation Suppression",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.enableChatRecommendations",
+        "title": "Enable App Modernization Chat Recommendations",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.disableChatRecommendations",
+        "title": "Disable App Modernization Chat Recommendations",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.showChatRecommendationStatus",
+        "title": "Show App Modernization Chat Recommendation Status",
+        "category": "Java"
+      },
+      {
+        "command": "java.project.appMod.showLastHookRecommendation",
+        "title": "Show Last App Modernization Hook Recommendation",
+        "category": "Java"
       }
     ],
     "configuration": {
