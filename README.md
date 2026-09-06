@@ -68,7 +68,7 @@ You can turn these reminders on or off at any time with the `java.dependency.ena
 
 ## Requirements
 
-- VS Code (version 1.95.0+)
+- VS Code (version 1.134.0+)
 - [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java)
 
 
