@@ -6,6 +6,7 @@ import { createUuid, sendOperationEnd, sendOperationStart } from "vscode-extensi
 import { Commands } from "../commands";
 import { Explorer } from "../constants";
 import { INodeData, TypeKind } from "../java/nodeData";
+import { PackageRootKind } from "../java/packageRootNodeData";
 import { Settings } from "../settings";
 import { isTest } from "../utility";
 import { DataNode } from "./dataNode";
@@ -125,8 +126,9 @@ export class PrimaryTypeNode extends DataNode {
             contextValue += "+test";
         }
 
-        if (this._rootNode?.getParent() instanceof ProjectNode
-            && (this._rootNode.getParent() as ProjectNode).nodeData?.metaData?.MaxSourceVersion >= 16) {
+        const rootData = this._rootNode?.nodeData;
+        if (rootData && "entryKind" in rootData && rootData.entryKind === PackageRootKind.K_SOURCE
+            && this.getProjectAncestor()?.nodeData.metaData?.MaxSourceVersion >= 16) {
             contextValue += "+allowRecord";
         }
 
@@ -138,14 +140,15 @@ export class PrimaryTypeNode extends DataNode {
      * otherwise undefined.
      */
     private getUnmanagedFolderAncestor(): ProjectNode | undefined {
+        const project = this.getProjectAncestor();
+        return project?.isUnmanagedFolder() ? project : undefined;
+    }
+
+    private getProjectAncestor(): ProjectNode | undefined {
         let ancestor = this.getParent();
         while (ancestor && !(ancestor instanceof ProjectNode)) {
             ancestor = ancestor.getParent();
         }
-        if (ancestor?.isUnmanagedFolder()) {
-            return ancestor;
-        }
-
-        return undefined;
+        return ancestor;
     }
 }

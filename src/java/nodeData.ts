@@ -31,6 +31,8 @@ export interface INodeData {
     handlerIdentifier?: string;
     uri?: string;
     kind: NodeKind;
+    /** Candidate physical ancestors and source root, subject to client-side visibility filters. */
+    buildOutputPath?: INodeData[];
     children?: any[];
     metaData?: { [id: string]: any };
 }

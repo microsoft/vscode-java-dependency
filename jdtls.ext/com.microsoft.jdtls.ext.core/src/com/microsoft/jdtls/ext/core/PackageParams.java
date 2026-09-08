@@ -33,6 +33,7 @@ public class PackageParams {
 
     private boolean isHierarchicalView;
 
+    // Request candidate display paths; the client decides whether their ancestors are visible.
     private boolean mergeBuildOutputSourceRoots;
 
     /**
