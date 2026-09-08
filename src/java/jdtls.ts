@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 
-import * as minimatch from "minimatch";
+import { minimatch } from "minimatch";
 import { CancellationToken, Uri, commands, workspace } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
