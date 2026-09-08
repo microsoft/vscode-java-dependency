@@ -1200,7 +1200,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/lodash": "^4.17.25",
-    "@types/minimatch": "^3.0.3",
+    "@types/minimatch": "^6.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "20.x",
     "@types/semver": "^7.8.0",
