@@ -32,7 +32,7 @@ steps:
     action: "collapseSidebarSection TIMELINE"
 
   - id: "collapse-workspace-root"
-    action: "collapseWorkspaceRoot"
+    action: "collapseSidebarSection nested-generated-sources"
 
   - id: "focus-java-projects"
     action: "executeVSCodeCommand javaProjectExplorer.focus"
@@ -66,7 +66,7 @@ steps:
       title: "InnerGenerated.java"
 
   - id: "collapse-workspace-after-inner-source"
-    action: "collapseWorkspaceRoot"
+    action: "collapseSidebarSection nested-generated-sources"
 
   - id: "verify-flat-inner-reveal"
     action: "executeVSCodeCommand javaProjectExplorer.focus"
@@ -91,7 +91,7 @@ steps:
       title: "OuterGenerated.java"
 
   - id: "collapse-workspace-after-outer-source"
-    action: "collapseWorkspaceRoot"
+    action: "collapseSidebarSection nested-generated-sources"
 
   - id: "verify-flat-outer-reveal"
     action: "executeVSCodeCommand javaProjectExplorer.focus"
@@ -217,7 +217,7 @@ steps:
       title: "build-info.txt"
 
   - id: "collapse-workspace-after-build-info"
-    action: "collapseWorkspaceRoot"
+    action: "collapseSidebarSection nested-generated-sources"
 
   - id: "verify-build-info-reveal"
     action: "executeVSCodeCommand javaProjectExplorer.focus"

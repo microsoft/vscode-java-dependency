@@ -391,6 +391,17 @@ public class PackageCommand {
             return Collections.emptyList();
         }
 
+        // A source root loads packages, not the folder path to another source root.
+        // Keep nested roots at project level so both browsing and reveal can reach them.
+        for (IClasspathEntry entry : packageRoot.getJavaProject().getRawClasspath()) {
+            IPath entryPath = entry.getPath();
+            if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE
+                    && currentPath.isPrefixOf(entryPath) && entryPath.isPrefixOf(rootPath)
+                    && !entryPath.equals(rootPath)) {
+                return Collections.emptyList();
+            }
+        }
+
         List<PackageNode> result = new ArrayList<>();
         while (currentPath.segmentCount() < rootPath.segmentCount()) {
             IFolder folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(currentPath);

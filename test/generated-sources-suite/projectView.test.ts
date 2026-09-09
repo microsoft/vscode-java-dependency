@@ -102,6 +102,16 @@ suite("Generated Source Tree Tests", () => {
                 await assertMergedLayout();
                 await assertRevealedType(true);
 
+                const logicalChildren = await Jdtls.getPackageData({
+                    kind: NodeKind.Project,
+                    projectUri: (await getProjectNode()).uri,
+                    mergeBuildOutputSourceRoots: false,
+                });
+                const logicalRoot = logicalChildren.find(node =>
+                    node.kind === NodeKind.PackageRoot && node.path?.endsWith(`/${generatedRootPath}`));
+                assert.equal(logicalRoot?.name, generatedRootPath,
+                    "Project actions must retain the logical source root even when its tree node is merged");
+
                 await setShowNonJavaResources(false);
                 const projectChildren = await (await getProjectNode()).getChildren();
                 assert.ok(!projectChildren.some(node => node instanceof FolderNode && node.name === "target"),

@@ -12,7 +12,8 @@ name: "Java Dependency — Generated Sources Tree"
 description: |
   Tests the merged Java Projects hierarchy for a physical Maven target folder
   containing a generated Java source root and ordinary build output, including
-  link-with-editor after Show/Hide and flat/hierarchical presentation transitions.
+  link-with-editor after Show/Hide and flat/hierarchical presentation transitions,
+  and Class/Package creation from the project node while its source root is merged.
 
 setup:
   extension: "vscjava.vscode-java-pack"
@@ -299,3 +300,91 @@ steps:
       visible: false
       inView: "Java Projects"
     timeout: 15
+
+  # Show is still enabled. Use the project node's New... action, not a source
+  # folder or URI, so creation must find the logical root hidden under target.
+  - id: "save-before-project-class"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-before-project-class"
+    action: "executeVSCodeCommand workbench.action.closeAllEditors"
+
+  - id: "collapse-workspace-before-project-class"
+    action: "collapseWorkspaceRoot"
+
+  - id: "collapse-tree-before-project-class"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "focus-tree-before-project-class"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+
+  - id: "select-project-for-class"
+    action: "click generated-sources-tree tree item"
+
+  - id: "new-class-from-project"
+    action: "clickTreeItemAction generated-sources-tree New..."
+
+  - id: "select-project-class-type"
+    action: "select Class option"
+
+  # This fixture has only one source root, so no source-folder picker is shown.
+  - id: "enter-project-class-name"
+    action: "fillQuickInput ProjectCreatedClass"
+
+  - id: "verify-project-class-in-generated-root"
+    action: "wait 2 seconds"
+    verifyFile:
+      path: "~/target/generated-sources/demo/ProjectCreatedClass.java"
+      exists: true
+      contains: "public class ProjectCreatedClass"
+    verifyEditorTab:
+      title: "ProjectCreatedClass.java"
+    timeout: 20
+
+  - id: "verify-no-class-at-project-root"
+    action: "wait 1 seconds"
+    verifyFile:
+      path: "~/ProjectCreatedClass.java"
+      exists: false
+
+  - id: "save-before-project-package"
+    action: "executeVSCodeCommand workbench.action.files.saveAll"
+
+  - id: "close-editors-before-project-package"
+    action: "executeVSCodeCommand workbench.action.closeAllEditors"
+
+  - id: "collapse-workspace-before-project-package"
+    action: "collapseWorkspaceRoot"
+
+  - id: "collapse-tree-before-project-package"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "focus-tree-before-project-package"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+
+  - id: "select-project-for-package"
+    action: "click generated-sources-tree tree item"
+
+  - id: "new-package-from-project"
+    action: "clickTreeItemAction generated-sources-tree New..."
+
+  - id: "select-project-package-type"
+    action: "select Package option"
+
+  - id: "enter-project-package-name"
+    action: "fillQuickInput com.example.projectcreated"
+
+  # verifyFile's existence check also supports directories; an empty package
+  # must exist on disk even before the Java Projects view refreshes.
+  - id: "verify-project-package-in-generated-root"
+    action: "wait 2 seconds"
+    verifyFile:
+      path: "~/target/generated-sources/demo/com/example/projectcreated"
+      exists: true
+    timeout: 20
+
+  - id: "verify-no-package-at-project-root"
+    action: "wait 1 seconds"
+    verifyFile:
+      path: "~/com/example/projectcreated"
+      exists: false

@@ -31,13 +31,13 @@ export namespace Jdtls {
     export async function getPackageData(params: IPackageDataParam): Promise<INodeData[]> {
         const nonJavaResourcesFiltered: boolean = Settings.nonJavaResourcesFiltered();
         const isVisible = createNodeVisibilityFilter(params.projectUri, nonJavaResourcesFiltered);
-        params.mergeBuildOutputSourceRoots = !nonJavaResourcesFiltered;
+        params.mergeBuildOutputSourceRoots ??= !nonJavaResourcesFiltered;
 
         const nodeData: INodeData[] = await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
             Commands.JAVA_GETPACKAGEDATA, params) || [];
 
         return nodeData.filter(node => isVisible(node)
-            && (params.kind !== NodeKind.Project || !getVisibleBuildOutputPath(node, isVisible)));
+            && (!params.mergeBuildOutputSourceRoots || params.kind !== NodeKind.Project || !getVisibleBuildOutputPath(node, isVisible)));
     }
 
     export async function resolvePath(params: string): Promise<INodeData[]> {
@@ -106,6 +106,8 @@ function getVisibleBuildOutputPath(node: INodeData, isVisible: (node: INodeData)
 
 interface IPackageDataParam {
     projectUri: string | undefined;
+    /** Set false to request logical source roots rather than their merged explorer layout. */
+    mergeBuildOutputSourceRoots?: boolean;
     [key: string]: any;
 }
 
