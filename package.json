@@ -1216,7 +1216,7 @@
     "webpack-cli": "^7.2.2"
   },
   "dependencies": {
-    "@github/copilot-language-server": "^1.530.0",
+    "@github/copilot-language-server": "^1.537.0",
     "@octokit/rest": "^22.0.1",
     "await-lock": "^2.2.2",
     "fmtr": "^2.0.1",
