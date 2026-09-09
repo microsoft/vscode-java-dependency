@@ -126,6 +126,7 @@ public class PackageCommand {
             throw new IllegalArgumentException("Should have one argument for resolvePath");
         }
         String typeRootUri = (String) arguments.get(0);
+        boolean mergeBuildOutputSourceRoots = arguments.size() > 1 && Boolean.TRUE.equals(arguments.get(1));
         List<PackageNode> result = new ArrayList<>();
         URI uri = JDTUtils.toURI(typeRootUri);
         ITypeRoot typeRoot = ExtUtils.JDT_SCHEME.equals(uri.getScheme()) ? JDTUtils.resolveClassFile(uri) : JDTUtils.resolveCompilationUnit(uri);
@@ -143,12 +144,7 @@ public class PackageCommand {
             if (isClassFile) {
                 result.add(PackageNode.createNodeForVirtualContainer(pkgRoot));
             }
-            // for invisible project, removing the '_' link name may cause an empty named package root
-            // in this case, we will avoid that 'empty' node from displaying
-            PackageNode pkgRootNode = PackageNode.createNodeForPackageFragmentRoot(pkgRoot);
-            if (StringUtils.isNotBlank(pkgRootNode.getName())) {
-                result.add(pkgRootNode);
-            }
+            addPackageFragmentRootPath(result, pkgRoot, mergeBuildOutputSourceRoots);
             if (!packageFragment.isDefaultPackage()) {
                 result.add(PackageNode.createNodeForPackageFragment(packageFragment));
             }
@@ -158,7 +154,7 @@ public class PackageCommand {
             IPackageFragmentRoot pkgRoot = resource.getPackageFragmentRoot();
             result.add(PackageNode.createNodeForProject(pkgRoot));
             result.add(PackageNode.createNodeForVirtualContainer(resource.getPackageFragmentRoot()));
-            result.add(PackageNode.createNodeForPackageFragmentRoot(pkgRoot));
+            addPackageFragmentRootPath(result, pkgRoot, mergeBuildOutputSourceRoots);
             if (resource.getParent() instanceof IPackageFragment) {
                 IPackageFragment packageFragment = (IPackageFragment) resource.getParent();
                 if (!packageFragment.isDefaultPackage()) {
@@ -193,12 +189,7 @@ public class PackageCommand {
                     result.add(PackageNode.createNodeForProject(packageFragment));
 
                     IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) packageFragment.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
-                    // for invisible project, removing the '_' link name may cause an empty named package root
-                    // in this case, we will avoid that 'empty' node from displaying
-                    PackageNode pkgRootNode = PackageNode.createNodeForPackageFragmentRoot(pkgRoot);
-                    if (StringUtils.isNotBlank(pkgRootNode.getName())) {
-                        result.add(pkgRootNode);
-                    }
+                    addPackageFragmentRootPath(result, pkgRoot, mergeBuildOutputSourceRoots);
                     if (!packageFragment.isDefaultPackage()) {
                         result.add(PackageNode.createNodeForPackageFragment(packageFragment));
                     }
@@ -207,7 +198,7 @@ public class PackageCommand {
                     item.setUri(JDTUtils.getFileURI(resource));
                     result.add(item);
                 } else {
-                    return getParentAncestorNodes(resource);
+                    return getParentAncestorNodes(resource, mergeBuildOutputSourceRoots);
                 }
             } else {
                 IContainer container = JDTUtils.findFolder(typeRootUri);
@@ -227,7 +218,8 @@ public class PackageCommand {
      * @return parent node list of element
      * @throws JavaModelException when fails to get path or resource
      */
-    private static List<PackageNode> getParentAncestorNodes(IResource element) throws JavaModelException {
+    private static List<PackageNode> getParentAncestorNodes(IResource element,
+            boolean mergeBuildOutputSourceRoots) throws JavaModelException {
         List<PackageNode> nodeList = new LinkedList<>();
         while (element != null && !(element instanceof IWorkspaceRoot)) {
             IJavaElement javaElement = JavaCore.create(element);
@@ -235,10 +227,11 @@ public class PackageCommand {
                 nodeList.add(0, PackageNode.createNodeForProject(javaElement));
             } else if (javaElement instanceof IPackageFragmentRoot) {
                 IPackageFragmentRoot pkgRoot = (IPackageFragmentRoot) javaElement;
-                nodeList.add(0, new PackageRootNode(pkgRoot,
-                        element.getProjectRelativePath().toPortableString(), NodeKind.PACKAGEROOT));
-                nodeList.add(0, PackageNode.createNodeForProject(javaElement));
-                return nodeList;
+                List<PackageNode> prefix = new ArrayList<>();
+                prefix.add(PackageNode.createNodeForProject(javaElement));
+                addPackageFragmentRootPath(prefix, pkgRoot, mergeBuildOutputSourceRoots);
+                prefix.addAll(nodeList);
+                return prefix;
             } else if (javaElement instanceof IPackageFragment) {
                 IPackageFragment packageFragment = (IPackageFragment) javaElement;
                 if (packageFragment.containsJavaResources() || packageFragment.getNonJavaResources().length > 0) {
@@ -303,10 +296,169 @@ public class PackageCommand {
         ResourceVisitor visitor = new JavaResourceVisitor(javaProject);
         resourceSet.accept(visitor);
         List<PackageNode> result = visitor.getNodes();
+        if (query.isMergeBuildOutputSourceRoots()) {
+            addBuildOutputSourceRootPaths(result, javaProject);
+        }
 
         // Invisible project will always have the referenced libraries entry
         if (!ProjectUtils.isVisibleProject(project) || hasReferencedLibraries) {
             result.add(PackageNode.REFERENCED_LIBRARIES_CONTAINER);
+        }
+        return result;
+    }
+
+    private static void addBuildOutputSourceRootPaths(List<PackageNode> nodes, IJavaProject javaProject) {
+        if (javaProject == null) {
+            return;
+        }
+
+        try {
+            IFolder buildOutputRoot = getVisibleBuildOutputRoot(javaProject);
+            if (buildOutputRoot == null) {
+                return;
+            }
+
+            // Keep the original root until the client has applied files.exclude
+            // to every node in its proposed build-output path.
+            for (PackageNode node : nodes) {
+                if (node instanceof PackageRootNode) {
+                    IJavaElement element = JavaCore.create(node.getHandlerIdentifier());
+                    if (element instanceof IPackageFragmentRoot) {
+                        ((PackageRootNode) node).setBuildOutputPath(
+                                getBuildOutputSourceRootPath((IPackageFragmentRoot) element, buildOutputRoot));
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            JdtlsExtActivator.logException("Failed to resolve generated source root display paths", e);
+        }
+    }
+
+    private static void addBuildOutputSourceRootChildren(List<PackageNode> nodes, IJavaProject javaProject,
+            IFolder folder) throws JavaModelException {
+        if (javaProject == null) {
+            return;
+        }
+
+        IFolder buildOutputRoot = getVisibleBuildOutputRoot(javaProject);
+        IPath folderPath = folder.getFullPath();
+        if (buildOutputRoot == null || !buildOutputRoot.getFullPath().isPrefixOf(folderPath)) {
+            return;
+        }
+
+        Set<IPath> existingPaths = nodes.stream()
+                .map(PackageNode::getPath)
+                .filter(StringUtils::isNotBlank)
+                .map(Path::fromPortableString)
+                .collect(Collectors.toSet());
+        for (IPackageFragmentRoot sourceRoot : findSourceRootsUnder(javaProject, folderPath)) {
+            for (PackageNode childNode : getBuildOutputSourceRootPath(sourceRoot, buildOutputRoot)) {
+                IPath childPath = Path.fromPortableString(childNode.getPath());
+                if (folderPath.equals(childPath.removeLastSegments(1)) && existingPaths.add(childPath)) {
+                    nodes.add(childNode);
+                }
+            }
+        }
+    }
+
+    private static void addPackageFragmentRootPath(List<PackageNode> result, IPackageFragmentRoot packageRoot,
+            boolean mergeBuildOutputSourceRoots) throws JavaModelException {
+        PackageRootNode packageRootNode = PackageNode.createNodeForPackageFragmentRoot(packageRoot);
+        // Removing the invisible project's '_' link may produce an empty package root.
+        if (StringUtils.isBlank(packageRootNode.getName())) {
+            return;
+        }
+
+        if (mergeBuildOutputSourceRoots && packageRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+            packageRootNode.setBuildOutputPath(getBuildOutputSourceRootPath(
+                    packageRoot, getVisibleBuildOutputRoot(packageRoot.getJavaProject())));
+        }
+        result.add(packageRootNode);
+    }
+
+    private static List<PackageNode> getBuildOutputSourceRootPath(IPackageFragmentRoot packageRoot,
+            IFolder buildOutputRoot) throws JavaModelException {
+        IResource resource = packageRoot.getResource();
+        if (buildOutputRoot == null || packageRoot.getKind() != IPackageFragmentRoot.K_SOURCE
+                || packageRoot.getRawClasspathEntry().getEntryKind() != IClasspathEntry.CPE_SOURCE
+                || !(resource instanceof IFolder)) {
+            return Collections.emptyList();
+        }
+
+        IPath rootPath = resource.getFullPath();
+        IPath currentPath = buildOutputRoot.getFullPath();
+        if (!currentPath.isPrefixOf(rootPath) || currentPath.equals(rootPath)) {
+            return Collections.emptyList();
+        }
+
+        // A source root loads packages, not the folder path to another source root.
+        // Keep nested roots at project level so both browsing and reveal can reach them.
+        for (IClasspathEntry entry : packageRoot.getJavaProject().getRawClasspath()) {
+            IPath entryPath = entry.getPath();
+            if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE
+                    && currentPath.isPrefixOf(entryPath) && entryPath.isPrefixOf(rootPath)
+                    && !entryPath.equals(rootPath)) {
+                return Collections.emptyList();
+            }
+        }
+
+        List<PackageNode> result = new ArrayList<>();
+        while (currentPath.segmentCount() < rootPath.segmentCount()) {
+            IFolder folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(currentPath);
+            if (!folder.exists()) {
+                return Collections.emptyList();
+            }
+            result.add(PackageNode.createNodeForFolder(folder));
+            currentPath = currentPath.append(rootPath.segment(currentPath.segmentCount()));
+        }
+        PackageRootNode rootNode = PackageNode.createNodeForPackageFragmentRoot(packageRoot);
+        rootNode.setDisplayName(resource.getName());
+        result.add(rootNode);
+        return result;
+    }
+
+    private static IFolder getVisibleBuildOutputRoot(IJavaProject javaProject) throws JavaModelException {
+        if (javaProject == null) {
+            return null;
+        }
+
+        IPath projectPath = javaProject.getPath();
+        IPath outputPath = javaProject.getOutputLocation();
+        if (!projectPath.isPrefixOf(outputPath) || outputPath.segmentCount() <= projectPath.segmentCount()) {
+            return null;
+        }
+
+        IPath buildOutputRootPath = projectPath.append(outputPath.segment(projectPath.segmentCount()));
+        for (Object resource : javaProject.getNonJavaResources()) {
+            if (!(resource instanceof IFolder)
+                    || !buildOutputRootPath.equals(((IFolder) resource).getFullPath())) {
+                continue;
+            }
+
+            List<Object> candidate = new ArrayList<>();
+            candidate.add(resource);
+            ResourceVisitor visitor = new JavaResourceVisitor(javaProject);
+            new ResourceSet(candidate).accept(visitor);
+            if (!visitor.getNodes().isEmpty()) {
+                return (IFolder) resource;
+            }
+        }
+        return null;
+    }
+
+    private static List<IPackageFragmentRoot> findSourceRootsUnder(IJavaProject javaProject, IPath ancestorPath)
+            throws JavaModelException {
+        List<IPackageFragmentRoot> result = new ArrayList<>();
+        for (IClasspathEntry entry : javaProject.getRawClasspath()) {
+            if (entry.getEntryKind() != IClasspathEntry.CPE_SOURCE) {
+                continue;
+            }
+            for (IPackageFragmentRoot packageRoot : javaProject.findPackageFragmentRoots(entry)) {
+                IResource resource = packageRoot.getResource();
+                if (resource instanceof IFolder && ancestorPath.isPrefixOf(resource.getFullPath())) {
+                    result.add(packageRoot);
+                }
+            }
         }
         return result;
     }
@@ -447,6 +599,7 @@ public class PackageCommand {
     private static List<PackageNode> getFolderChildren(PackageParams query, IProgressMonitor pm) {
         List<Object> children = new LinkedList<>();
         IJavaProject javaProject = null;
+        IFolder folder = null;
         try {
             IPackageFragmentRoot packageRoot = getPackageFragmentRootFromQuery(query);
             if (packageRoot != null) {
@@ -466,7 +619,7 @@ public class PackageCommand {
                     }
                 } else {
                     javaProject = packageRoot.getJavaProject();
-                    IFolder folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(Path.fromPortableString(query.getPath()));
+                    folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(Path.fromPortableString(query.getPath()));
                     if (folder.exists()) {
                         boolean isJavaElement = JavaCore.create(folder) != null;
                         children.addAll(Arrays.stream(folder.members())
@@ -477,7 +630,7 @@ public class PackageCommand {
                 }
             } else {
                 // general resource folder.
-                IFolder folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(Path.fromPortableString(query.getPath()));
+                folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(Path.fromPortableString(query.getPath()));
                 if (folder.exists()) {
                     refreshLocal(folder, pm);
                     children.addAll(Arrays.asList(folder.members()));
@@ -488,7 +641,11 @@ public class PackageCommand {
             ResourceSet resourceSet = new ResourceSet(children);
             ResourceVisitor visitor = new JavaResourceVisitor(javaProject);
             resourceSet.accept(visitor);
-            return visitor.getNodes();
+            List<PackageNode> result = visitor.getNodes();
+            if (query.isMergeBuildOutputSourceRoots() && folder != null) {
+                addBuildOutputSourceRootChildren(result, javaProject, folder);
+            }
+            return result;
 
         } catch (CoreException e) {
             JdtlsExtActivator.logException("Problem load project classfile list ", e);

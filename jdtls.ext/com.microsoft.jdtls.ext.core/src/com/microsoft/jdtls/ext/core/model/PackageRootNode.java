@@ -11,6 +11,7 @@
 
 package com.microsoft.jdtls.ext.core.model;
 
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -21,6 +22,8 @@ public class PackageRootNode extends PackageNode {
     private int entryKind;
 
     private Map<String, String> attributes;
+
+    private List<PackageNode> buildOutputPath;
 
     public PackageRootNode(String name, String path, String uri, NodeKind kind, int entryKind) {
         super(name, path, kind);
@@ -47,5 +50,9 @@ public class PackageRootNode extends PackageNode {
 
     public Map<String, String> getAttributes() {
         return this.attributes;
+    }
+
+    public void setBuildOutputPath(List<PackageNode> buildOutputPath) {
+        this.buildOutputPath = buildOutputPath;
     }
 }

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 
-import * as minimatch from "minimatch";
+import { minimatch } from "minimatch";
 import { CancellationToken, Uri, commands, workspace } from "vscode";
 import { Commands, executeJavaLanguageServerCommand } from "../commands";
 import { IClasspath } from "../tasks/buildArtifact/IStepMetadata";
@@ -29,43 +29,29 @@ export namespace Jdtls {
     }
 
     export async function getPackageData(params: IPackageDataParam): Promise<INodeData[]> {
-        const uri: Uri | null = !params.projectUri ? null : Uri.parse(params.projectUri);
-        const excludePatterns: {[key: string]: boolean} | undefined = workspace.getConfiguration("files", uri).get("exclude");
+        const nonJavaResourcesFiltered: boolean = Settings.nonJavaResourcesFiltered();
+        const isVisible = createNodeVisibilityFilter(params.projectUri, nonJavaResourcesFiltered);
+        params.mergeBuildOutputSourceRoots ??= !nonJavaResourcesFiltered;
 
-        let nodeData: INodeData[] = await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
+        const nodeData: INodeData[] = await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND,
             Commands.JAVA_GETPACKAGEDATA, params) || [];
 
-        // check filter settings.
-        if (Settings.nonJavaResourcesFiltered()) {
-            nodeData = nodeData.filter((data: INodeData) => {
-                return data.kind !== NodeKind.Folder && data.kind !== NodeKind.File;
-            });
-        }
-
-        if (excludePatterns && nodeData.length) {
-            const uriOfChildren: string[] = nodeData.map((node: INodeData) => node.uri).filter(Boolean) as string[];
-            const urisToExclude: Set<string> = new Set<string>();
-            for (const pattern in excludePatterns) {
-                if (excludePatterns[pattern]) {
-                    const toExclude: string[] = minimatch.match(uriOfChildren, pattern);
-                    toExclude.forEach((uriToExclude: string) => urisToExclude.add(uriToExclude));
-                }
-            }
-
-            if (urisToExclude.size) {
-                nodeData = nodeData.filter((node: INodeData) => {
-                    if (!node.uri) {
-                        return true;
-                    }
-                    return !urisToExclude.has(node.uri);
-                });
-            }
-        }
-        return nodeData;
+        return nodeData.filter(node => isVisible(node)
+            && (!params.mergeBuildOutputSourceRoots || params.kind !== NodeKind.Project || !getVisibleBuildOutputPath(node, isVisible)));
     }
 
     export async function resolvePath(params: string): Promise<INodeData[]> {
-        return await commands.executeCommand(Commands.EXECUTE_WORKSPACE_COMMAND, Commands.JAVA_RESOLVEPATH, params) || [];
+        const nonJavaResourcesFiltered = Settings.nonJavaResourcesFiltered();
+        const nodes: INodeData[] = await commands.executeCommand(
+            Commands.EXECUTE_WORKSPACE_COMMAND,
+            Commands.JAVA_RESOLVEPATH,
+            params,
+            !nonJavaResourcesFiltered,
+        ) || [];
+        const projectUri = nodes.find(node => node.kind === NodeKind.Project)?.uri;
+        const isVisible = createNodeVisibilityFilter(projectUri, nonJavaResourcesFiltered);
+        return nodes.reduce<INodeData[]>((result, node) =>
+            result.concat(getVisibleBuildOutputPath(node, isVisible) || [node]), []);
     }
 
     export async function getMainClasses(params: string): Promise<IMainClassInfo[]> {
@@ -98,8 +84,30 @@ export namespace Jdtls {
     }
 }
 
+function createNodeVisibilityFilter(projectUri: string | undefined, nonJavaResourcesFiltered: boolean): (node: INodeData) => boolean {
+    const uri = projectUri ? Uri.parse(projectUri) : null;
+    const excludePatterns: {[key: string]: boolean} = workspace.getConfiguration("files", uri).get("exclude") || {};
+    const patterns = Object.keys(excludePatterns).filter(pattern => excludePatterns[pattern]);
+    return node => {
+        if (nonJavaResourcesFiltered && (node.kind === NodeKind.Folder || node.kind === NodeKind.File)) {
+            return false;
+        }
+        const nodeUri = node.uri;
+        return !nodeUri || !patterns.some(pattern => minimatch(nodeUri, pattern));
+    };
+}
+
+function getVisibleBuildOutputPath(node: INodeData, isVisible: (node: INodeData) => boolean): INodeData[] | undefined {
+    if (node.kind === NodeKind.PackageRoot && node.buildOutputPath?.length && node.buildOutputPath.every(isVisible)) {
+        return node.buildOutputPath;
+    }
+    return undefined;
+}
+
 interface IPackageDataParam {
     projectUri: string | undefined;
+    /** Set false to request logical source roots rather than their merged explorer layout. */
+    mergeBuildOutputSourceRoots?: boolean;
     [key: string]: any;
 }
 

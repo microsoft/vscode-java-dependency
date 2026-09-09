@@ -1,0 +1,237 @@
+name: "Java Dependency - Nested Generated Source Roots"
+description: |
+  A generated source root nested inside another source root must remain a
+  project-level logical root rather than disappearing inside the merged tree.
+  Both roots must remain revealable across flat/hierarchical and Show/Hide modes.
+
+setup:
+  extension: "vscjava.vscode-java-pack"
+  vscodeVersion: "stable"
+  workspace: "../nested-generated-sources"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    java.dependency.packagePresentation: "flat"
+    java.dependency.syncWithFolderExplorer: true
+    java.project.explorer.showNonJavaResources: true
+    files.exclude: {}
+    workbench.startupEditor: "none"
+
+steps:
+  - id: "ls-ready"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  - id: "close-aux-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+
+  - id: "collapse-outline"
+    action: "collapseSidebarSection OUTLINE"
+
+  - id: "collapse-timeline"
+    action: "collapseSidebarSection TIMELINE"
+
+  - id: "collapse-workspace-root"
+    action: "collapseSidebarSection nested-generated-sources"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "nested-generated-sources"
+      exact: true
+      inView: "Java Projects"
+    timeout: 30
+
+  - id: "expand-project"
+    action: "expandTreeItem nested-generated-sources"
+    verifyTreeItem:
+      name: "target"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-inner-logical-root"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "target/generated-sources/demo"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "open-inner-source"
+    action: "open file InnerGenerated.java"
+    verifyEditorTab:
+      title: "InnerGenerated.java"
+
+  - id: "collapse-workspace-after-inner-source"
+    action: "collapseSidebarSection nested-generated-sources"
+
+  - id: "verify-flat-inner-reveal"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "InnerGenerated"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-inner-not-merged"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "demo"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "open-outer-source"
+    action: "open file OuterGenerated.java"
+    verifyEditorTab:
+      title: "OuterGenerated.java"
+
+  - id: "collapse-workspace-after-outer-source"
+    action: "collapseSidebarSection nested-generated-sources"
+
+  - id: "verify-flat-outer-reveal"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "OuterGenerated"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-outer-merged-root"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "generated-sources"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-no-duplicate-outer-root"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "target/generated-sources"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "switch-to-hierarchical"
+    action: "executeVSCodeCommand java.view.package.changeToHierarchicalPackageView"
+
+  - id: "collapse-before-hierarchical-reveal"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+    verifyTreeItem:
+      name: "InnerGenerated"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+
+  - id: "reopen-inner-source"
+    action: "open file InnerGenerated.java"
+    verifyEditorTab:
+      title: "InnerGenerated.java"
+
+  - id: "verify-hierarchical-inner-reveal"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "InnerGenerated"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-hierarchical-inner-root"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "target/generated-sources/demo"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+
+  - id: "reopen-outer-source"
+    action: "open file OuterGenerated.java"
+    verifyEditorTab:
+      title: "OuterGenerated.java"
+
+  - id: "verify-hierarchical-outer-reveal"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "OuterGenerated"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "hide-non-java-resources"
+    action: "executeVSCodeCommand java.project.explorer.hideNonJavaResources"
+
+  - id: "collapse-hidden-tree"
+    action: "executeVSCodeCommand workbench.actions.treeView.javaProjectExplorer.collapseAll"
+
+  - id: "expand-hidden-project"
+    action: "expandTreeItem nested-generated-sources"
+    verifyTreeItem:
+      name: "target/generated-sources"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-hidden-inner-root"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "target/generated-sources/demo"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+
+  - id: "verify-target-hidden"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "target"
+      exact: true
+      visible: false
+      inView: "Java Projects"
+
+  - id: "open-inner-source-while-hidden"
+    action: "open file InnerGenerated.java"
+    verifyEditorTab:
+      title: "InnerGenerated.java"
+
+  - id: "verify-hidden-inner-reveal"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "InnerGenerated"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "show-non-java-resources"
+    action: "executeVSCodeCommand java.project.explorer.showNonJavaResources"
+
+  - id: "open-build-info"
+    action: "open file build-info.txt"
+    verifyEditorTab:
+      title: "build-info.txt"
+
+  - id: "collapse-workspace-after-build-info"
+    action: "collapseSidebarSection nested-generated-sources"
+
+  - id: "verify-build-info-reveal"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "build-info.txt"
+      exact: true
+      inView: "Java Projects"
+    timeout: 15
+
+  - id: "verify-inner-root-after-show"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "target/generated-sources/demo"
+      exact: true
+      count: 1
+      inView: "Java Projects"
+    timeout: 15

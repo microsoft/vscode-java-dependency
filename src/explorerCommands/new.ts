@@ -8,6 +8,7 @@ import { commands, Extension, extensions, languages, Position, QuickPickItem, Qu
     window, workspace, WorkspaceEdit, WorkspaceFolder } from "vscode";
 import { Commands, PrimaryTypeNode } from "../../extension.bundle";
 import { ExtensionName } from "../constants";
+import { Jdtls } from "../java/jdtls";
 import { NodeKind } from "../java/nodeData";
 import { DataNode } from "../views/dataNode";
 import { resourceRoots } from "../views/packageRootNode";
@@ -455,14 +456,18 @@ function isPrefix(parentPath: string, filePath: string): boolean {
 
 async function getPackageFsPath(node: DataNode): Promise<string | undefined> {
     if (node.nodeData.kind === NodeKind.Project) {
-        const childrenNodes: DataNode[] = await node.getChildren() as DataNode[];
-        const packageRoots: any[] = childrenNodes.filter((child) => {
-            return child.nodeData.kind === NodeKind.PackageRoot && !resourceRoots.includes(child.name);
+        const packageData = await Jdtls.getPackageData({
+            kind: NodeKind.Project,
+            projectUri: node.uri,
+            mergeBuildOutputSourceRoots: false,
         });
+        const packageRoots = packageData.filter((child) => {
+            return child.kind === NodeKind.PackageRoot && !resourceRoots.includes(child.name);
+        }).sort((a, b) => a.name < b.name ? -1 : 1);
         if (packageRoots.length < 1) {
             // This might happen for an invisible project with "_" as its root
-            const packageNode: DataNode | undefined = childrenNodes.find((child) => {
-                return child.nodeData.kind === NodeKind.Package;
+            const packageNode = packageData.find((child) => {
+                return child.kind === NodeKind.Package;
             });
             if (!packageNode && node.uri) {
                 // This means the .java files are in the default package.
@@ -472,12 +477,12 @@ async function getPackageFsPath(node: DataNode): Promise<string | undefined> {
             }
             return "";
         } else if (packageRoots.length === 1) {
-            return Uri.parse(packageRoots[0].uri).fsPath;
+            return Uri.parse(packageRoots[0].uri!).fsPath;
         } else {
             const options: ISourceRootPickItem[] = packageRoots.map((root) => {
                 return {
                     label: root.name,
-                    fsPath: Uri.parse(root.uri).fsPath,
+                    fsPath: Uri.parse(root.uri!).fsPath,
                 };
             });
             const choice: ISourceRootPickItem | undefined = await window.showQuickPick(options, {
@@ -585,8 +590,12 @@ async function getPackageInformationFromUri(uri: Uri): Promise<Record<string, st
 async function getPackageInformationFromNode(node: DataNode): Promise<Record<string, string> | undefined> {
     const nodeKind = node.nodeData.kind;
     if (nodeKind === NodeKind.Project) {
+        const packageRootPath = await getPackageFsPath(node);
+        if (packageRootPath === undefined) {
+            return undefined;
+        }
         return {
-            packageRootPath: await getPackageFsPath(node) || "",
+            packageRootPath,
             defaultValue: "",
         };
     } else if (nodeKind === NodeKind.PackageRoot) {

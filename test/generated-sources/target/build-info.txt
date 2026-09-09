@@ -1,0 +1,1 @@
+Generated build metadata remains accessible from the physical target folder.
