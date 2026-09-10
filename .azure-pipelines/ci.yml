@@ -28,6 +28,7 @@ pr:
       - scripts/buildJdtlsExt.js
       - jdtls.ext/pom.xml
       - jdtls.ext/**/pom.xml
+      - jdtls.ext/**/META-INF/MANIFEST.MF
       - jdtls.ext/com.microsoft.jdtls.ext.target/com.microsoft.jdtls.ext.tp.target
       - jdtls.ext/.mvn/wrapper/maven-wrapper.properties
       - jdtls.ext/mvnw
