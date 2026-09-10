@@ -17,6 +17,26 @@ trigger:
   branches:
     include:
       - main
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - package.json
+      - package-lock.json
+      - scripts/buildJdtlsExt.js
+      - jdtls.ext/pom.xml
+      - jdtls.ext/**/pom.xml
+      - jdtls.ext/com.microsoft.jdtls.ext.target/com.microsoft.jdtls.ext.tp.target
+      - jdtls.ext/.mvn/wrapper/maven-wrapper.properties
+      - jdtls.ext/mvnw
+      - jdtls.ext/mvnw.cmd
+      - .azure-pipelines/ci.yml
+      - .azure-pipelines/npm-cfs.yml
+      - .azure-pipelines/npm-cfs-variables.yml
+      - .azure-pipelines/maven-cfs-variables.yml
+      - .azure-pipelines/cfs-settings.xml
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1esPipelines
   parameters:
@@ -34,8 +54,35 @@ extends:
     stages:
       - stage: Build
         jobs:
+          - job: CFSValidation
+            displayName: Validate dependencies from CFS
+            condition: eq(variables['Build.Reason'], 'PullRequest')
+            steps:
+              - checkout: self
+                fetchTags: false
+              - task: JavaToolInstaller@0
+                displayName: Use Java 21
+                inputs:
+                  versionSpec: "21"
+                  jdkArchitectureOption: x64
+                  jdkSourceOption: PreInstalled
+              - task: NodeTool@0
+                displayName: Use Node 20.x
+                inputs:
+                  versionSpec: 20.x
+              - template: /.azure-pipelines/npm-cfs.yml@self
+              - script: npm ci --ignore-scripts --prefer-online --cache "$(Agent.TempDirectory)/npm-cache"
+                displayName: Validate npm dependencies from CFS
+              - script: npm run build-server
+                displayName: Validate Maven dependencies from CFS
+                env:
+                  SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+                  MVNW_PASSWORD: $(System.AccessToken)
+                  MAVEN_USER_HOME: $(Agent.TempDirectory)/m2
+                  MAVEN_ARGS: -s $(Build.SourcesDirectory)/.azure-pipelines/cfs-settings.xml -Dmaven.repo.local=$(Agent.TempDirectory)/m2/repository -U
           - job: Job_1
             displayName: CI
+            condition: ne(variables['Build.Reason'], 'PullRequest')
             templateContext:
               outputs:
                 - output: pipelineArtifact
