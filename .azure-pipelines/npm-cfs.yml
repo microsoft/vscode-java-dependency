@@ -63,6 +63,8 @@ steps:
           node -e "const fs=require('fs');const r=new URL(process.env.npm_config_registry);const key='//'+r.host+r.pathname.replace(/\/?$/,'/');fs.appendFileSync(process.env.npm_config_userconfig,key+':_authToken='+process.env.CFS_READ_TOKEN+'\n');"
         displayName: Authenticate to CFS feed with read-only credential
         env:
+          npm_config_registry: $(npm_config_registry)
+          npm_config_userconfig: $(npm_config_userconfig)
           CFS_READ_TOKEN: $(CFS_READ_TOKEN)
 
   # Restore silently falling back to the public registry is the failure mode this
