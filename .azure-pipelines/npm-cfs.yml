@@ -36,6 +36,11 @@
 # pipelines is the 1ES extends template in another repository, so the unqualified
 # form is looked up in 1ESPipelineTemplates and fails YAML compilation.
 
+parameters:
+  - name: useReadOnlyCredential
+    type: boolean
+    default: false
+
 steps:
   - script: npm config set registry $(npm_config_registry) --location=user --userconfig="$(npm_config_userconfig)"
     displayName: Configure CFS npm registry
@@ -44,10 +49,21 @@ steps:
   # registry it finds in the file above. `always-auth` is deliberately not written:
   # it is not read by this task and is rejected outright by the npm 10 shipped with
   # Node 20.
-  - task: NpmAuthenticate@0
-    displayName: Authenticate to CFS feed
-    inputs:
-      workingFile: $(npm_config_userconfig)
+  - ${{ if not(parameters.useReadOnlyCredential) }}:
+      - task: NpmAuthenticate@0
+        displayName: Authenticate to CFS feed
+        inputs:
+          workingFile: $(npm_config_userconfig)
+
+  # PR validation runs repository-controlled code, so it must not receive the
+  # project-scoped System.AccessToken used by trusted branch builds. Its pipeline
+  # definition supplies a secret PAT restricted to Packaging Read.
+  - ${{ if parameters.useReadOnlyCredential }}:
+      - script: >-
+          node -e "const fs=require('fs');const r=new URL(process.env.npm_config_registry);const key='//'+r.host+r.pathname.replace(/\/?$/,'/');fs.appendFileSync(process.env.npm_config_userconfig,key+':_authToken='+process.env.CFS_READ_TOKEN+'\n');"
+        displayName: Authenticate to CFS feed with read-only credential
+        env:
+          CFS_READ_TOKEN: $(CFS_READ_TOKEN)
 
   # Restore silently falling back to the public registry is the failure mode this
   # whole template exists to prevent, and it leaves no trace in the build log, so it
