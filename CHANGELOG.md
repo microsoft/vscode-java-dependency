@@ -4,11 +4,6 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-
-- fix - Align experimental Java LSP tools with provider capabilities. Symbol lookup now returns navigation-only `selectionRange` and `documentUri` instead of `readFileInput`; use file outlines for full declaration reads. Supported `file` paths are absolute, and unsupported outline locations are explicit.
-- fix - Distinguish file-access failures and server initialization from indexing; report depth-limited outlines as truncated.
-
 ## 0.27.6
 
 - enhancement - Prefer Java upgrade over CVE in dependency recommendations in https://github.com/microsoft/vscode-java-dependency/pull/1033
