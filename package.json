@@ -52,7 +52,7 @@
       {
         "name": "lsp_java_getFileStructure",
         "toolReferenceName": "javaFileStructure",
-        "modelDescription": "Outline a known Java source file in the workspace (classes, methods, fields with full declaration ranges). Prefer documentUri from lsp_java_findSymbol when outlineSupported is true, or a confirmed file path; do not guess. Returns an absolute file path and per-symbol readFileRange ({ offset, limit }, 1-based lines). Select a member before reading a large class. Adapt these ranges to the available reader's schema. Only file: workspace documents are supported; use an authorized document reader for dependency or virtual source. limit caps output items, not provider work (default 20, max 60).",
+        "modelDescription": "Outline a known workspace Java file with full declaration readFileRange. Use a confirmed path or documentUri; never guess. Only file: workspace documents are supported.",
         "displayName": "Java: Get File Structure",
         "userDescription": "Get a Java file outline with classes, methods, fields, and line ranges.",
         "tags": [
@@ -69,13 +69,13 @@
           "properties": {
             "uri": {
               "type": "string",
-              "description": "Exact documentUri from a result with outlineSupported=true, or a confirmed absolute/workspace-relative path to a Java file. Only file: documents within the workspace are supported."
+              "description": "File URI or absolute/workspace-relative path."
             },
             "limit": {
               "type": "integer",
               "minimum": 1,
               "maximum": 60,
-              "description": "Maximum output symbol nodes, including children (default: 20, max: 60). Truncation may omit the desired member; fall back to targeted text search rather than assuming it is absent."
+              "description": "Output node cap, including children; default 20. Does not bound provider work."
             }
           },
           "required": [
@@ -86,7 +86,7 @@
       {
         "name": "lsp_java_findSymbol",
         "toolReferenceName": "javaFindSymbol",
-        "modelDescription": "Locate Java types (classes, interfaces, enums, records) by name or pattern. Prefer over generic search for type-name lookup. Source methods are included only when java.symbols.includeSourceMethodDeclarations is enabled; fields are not searched. For members, use the known containing type's file outline, or text search if the type is unknown. Results have documentUri, outlineSupported, and selectionRange (1-based inclusive lines for navigation, NOT the full declaration or implementation). When outlineSupported is true, pass documentUri to lsp_java_getFileStructure for full member read ranges; do not use selectionRange as an implementation read. On empty results, retry once only if serverNotFullyReady is reported; otherwise use text search. Not for literals, comments, build files, or conceptual search.",
+        "modelDescription": "Find Java types by name/pattern; source methods require opt-in, fields are unsupported. selectionRange is navigation-only. For full source ranges, pass documentUri to lsp_java_getFileStructure when outlineSupported=true.",
         "displayName": "Java: Find Symbol",
         "userDescription": "Locate Java types by name; source methods depend on Java symbol-search settings.",
         "tags": [
@@ -103,13 +103,13 @@
           "properties": {
             "query": {
               "type": "string",
-              "description": "Java type name or pattern. Source method search depends on Java settings; field search is not supported."
+              "description": "Java type name or pattern."
             },
             "limit": {
               "type": "integer",
               "minimum": 1,
               "maximum": 50,
-              "description": "Maximum results returned to the model (default: 20, max: 50). Does not limit language-server search work."
+              "description": "Output result cap; default 20. Does not bound provider work."
             }
           },
           "required": [

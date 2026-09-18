@@ -1,11 +1,13 @@
 ---
 name: java-lsp-tools
-description: Java type-name lookup and known-file outlines via the Java Language Server. Method search depends on Java settings; use outlines or text search for members.
+description: Java LSP navigation, source-range handoff and troubleshooting for type lookup and file outlines.
 ---
 
 # Java LSP Tools
 
 Two navigation tools backed by language-service providers, including the Java Language Server (jdtls). Availability and results depend on imported projects, provider scope and Java settings; they do not certify complete coverage.
+
+If these tools are not already available in the current tool list, load them with `tool_search` using a query such as `Java LSP symbol navigation lsp_java`.
 
 ## Tools
 
@@ -21,6 +23,7 @@ Locate Java types (classes, interfaces, enums, records) by name or pattern.
 ### `lsp_java_getFileStructure`
 Get hierarchical outline of a Java file (classes, methods, fields) with line ranges.
 - Input: `{ uri, limit? }` — prefer the exact `documentUri` from a result with `outlineSupported=true`. Confirmed absolute or workspace-relative file paths also work. Do not guess paths. Integer limit defaults to 20, max 60, including child nodes.
+- Only `file:` documents within the workspace are supported. The item limit caps output, not provider work.
 - Output: `{ documentUri, file, symbols: [{ name, kind, startLine, endLine, readFileRange, range, detail?, children? }], truncated? }`. `file` is absolute. `readFileRange` contains a 1-based `offset` and line-count `limit` covering the provider's full declaration range.
 - For a reader accepting `{ filePath, offset, limit }`, use `filePath=file` with the selected symbol's `readFileRange`. Adapt to other reader schemas; Native and CLI parameters are not necessarily identical.
 - Select a member before reading a large class. `truncated=true` means count or depth limits omitted symbols; it does not mean the requested member is absent. Use targeted text search when the capped outline omits it.
@@ -47,7 +50,7 @@ If `lsp_java_findSymbol` returns a relevant result with `outlineSupported=true` 
 ## Fallback
 
 - Empty result: normalization is retried internally only when it changes the query. Retry once after initialization if `reason=serverNotFullyReady`; otherwise use text search. Initialization readiness is not index-completeness evidence.
-- `outlineSupported=false`: use an authorized document reader supporting `documentUri`. Dependency, virtual and outside-workspace documents are not supported by this outline tool; do not rewrite their URIs as workspace paths.
+- `outlineSupported=false`: use an authorized document reader supporting `documentUri`. Dependency, virtual, remote and outside-workspace documents are not supported by this outline tool; do not rewrite their URIs as workspace paths or bypass access boundaries.
 - `fileNotFound`: confirm the file via type lookup or file search; do not guess.
 - `permissionDenied` / `fileSystemUnavailable`: check permissions or the file system connection; symbol search does not repair these failures.
 - `ambiguousWorkspacePath`: pass `documentUri` instead of a duplicated workspace-folder display name.
