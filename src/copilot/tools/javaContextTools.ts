@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Java Context Tools — First Batch (Zero-Blocking)
+ * Java Context Tools
  *
- * These 6 tools are all non-blocking after jdtls is ready:
+ * Two tools are registered; the remaining implementations are not exposed:
  *   1. lsp_java_getFileStructure  — LSP documentSymbol
  *   2. lsp_java_findSymbol        — LSP workspaceSymbol
  *   3. lsp_java_getFileImports    — jdtls AST-only command (no type resolution)
@@ -15,9 +15,9 @@
  *   6. lsp_java_getTypeHierarchy  — LSP type hierarchy
  *
  * Design principles:
- *   - Each tool returns < 200 tokens
+ *   - Bound output size by result count (not a token guarantee)
  *   - Structured JSON output
- *   - No classpath resolution, no dependency download
+ *   - Delegate semantic work to installed language-service providers
  */
 
 import * as path from "path";
@@ -26,7 +26,7 @@ import { Commands } from "../../commands";
 import { languageServerApiManager } from "../../languageServerApi/languageServerApiManager";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
 
-// Hard caps to keep tool responses within the < 200 token budget.
+// Output caps do not bound provider work or response tokens.
 const MAX_SYMBOL_DEPTH = 3;
 const MAX_FILE_STRUCTURE_SYMBOL_NODES = 60;
 const DEFAULT_FILE_STRUCTURE_SYMBOL_NODES = 20;
@@ -43,12 +43,6 @@ function toResult(data: unknown): vscode.LanguageModelToolResult {
 
 function getResponseCharCount(data: unknown): number {
     return typeof data === "string" ? data.length : JSON.stringify(data, null, 2).length;
-}
-
-interface ReadFileInput {
-    filePath: string;
-    offset: number;
-    limit: number;
 }
 
 interface ReadFileRange {
@@ -68,13 +62,6 @@ function toReadFileRange(startLine: number, endLine: number): ReadFileRange {
     return {
         offset: startLine,
         limit: endLine - startLine + 1,
-    };
-}
-
-function toReadFileInput(filePath: string, startLine: number, endLine: number): ReadFileInput {
-    return {
-        filePath,
-        ...toReadFileRange(startLine, endLine),
     };
 }
 
@@ -99,7 +86,40 @@ function normalizeSymbolQuery(query: string): string {
     return q.trim();
 }
 
+class FileAccessError extends Error {
+    constructor(public readonly code: string, message: string, public readonly hint: string) {
+        super(message);
+    }
+}
+
+function getFileAccessError(error: unknown): FileAccessError | undefined {
+    if (error instanceof FileAccessError) {
+        return error;
+    }
+    if (error instanceof vscode.FileSystemError) {
+        switch (error.code) {
+            case "FileNotFound":
+            case "FileNotADirectory":
+                return new FileAccessError("fileNotFound", "File not found.",
+                    "Use a confirmed file path or documentUri. Locate the containing type or use file search; do not guess paths.");
+            case "NoPermissions":
+                return new FileAccessError("permissionDenied", "Permission denied.",
+                    "Check file permissions. Repeating symbol search will not fix access permissions.");
+            case "Unavailable":
+                return new FileAccessError("fileSystemUnavailable", "File system is unavailable.",
+                    "Restore the file system connection before retrying.");
+            default:
+                return undefined;
+        }
+    }
+    return undefined;
+}
+
 function getToolErrorCode(error: unknown): string {
+    const fileError = getFileAccessError(error);
+    if (fileError) {
+        return fileError.code;
+    }
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("No workspace folder")) {
         return "noWorkspaceFolder";
@@ -111,6 +131,33 @@ function getToolErrorCode(error: unknown): string {
         return "outsideWorkspace";
     }
     return "unexpectedError";
+}
+
+function checkFileUri(uri: vscode.Uri): void {
+    if (uri.scheme !== "file") {
+        throw new FileAccessError("unsupportedUriScheme", "This tool only supports file: documents.",
+            "Use a document reader that supports the returned documentUri for virtual or remote documents.");
+    }
+    if (!vscode.workspace.workspaceFolders?.length) {
+        throw new FileAccessError("noWorkspaceFolder", "No workspace folder is open.", "Open the containing workspace first.");
+    }
+    if (!vscode.workspace.getWorkspaceFolder(uri)) {
+        throw new FileAccessError("outsideWorkspace", "The document is outside the current workspace.",
+            "Use an authorized reader for dependency or external source; do not rewrite the URI as a workspace path.");
+    }
+}
+
+function getDocumentLocation(uri: vscode.Uri) {
+    const documentUri = uri.toString();
+    try {
+        checkFileUri(uri);
+        return { documentUri, file: uri.fsPath, outlineSupported: true };
+    } catch (error) {
+        if (!(error instanceof FileAccessError)) {
+            throw error;
+        }
+        return { documentUri, outlineSupported: false, unsupportedReason: error.code };
+    }
 }
 
 /**
@@ -127,27 +174,28 @@ function getToolErrorCode(error: unknown): string {
 function resolveFileUri(input: string): vscode.Uri {
     const folders = vscode.workspace.workspaceFolders;
     if (!folders || folders.length === 0) {
-        throw new Error("No workspace folder is open.");
+        throw new FileAccessError("noWorkspaceFolder", "No workspace folder is open.", "Open the containing workspace first.");
     }
 
     let uri: vscode.Uri;
     const normalizedInput = input.trim();
 
-    if (normalizedInput.includes("://")) {
-        // URI string (e.g. "file:///home/user/project/src/Main.java")
-        uri = vscode.Uri.parse(normalizedInput);
-        if (uri.scheme !== "file") {
-            throw new Error(`Unsupported URI scheme "${uri.scheme}". Only file: URIs are allowed.`);
-        }
-    } else if (path.isAbsolute(normalizedInput)) {
-        // Absolute filesystem path (Unix or Windows)
+    if (path.isAbsolute(normalizedInput)) {
+        // Check filesystem paths before URI schemes to preserve Windows drive paths.
         uri = vscode.Uri.file(normalizedInput);
+    } else if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(normalizedInput)) {
+        uri = vscode.Uri.parse(normalizedInput);
     } else {
         // Relative path — resolve against a matching workspace folder when
         // asRelativePath included the folder name, otherwise use the first root.
         const normalizedRelativePath = normalizedInput.replace(/\\/g, "/");
-        const matchingFolder = folders.find(folder =>
+        const matchingFolders = folders.filter(folder =>
             normalizedRelativePath === folder.name || normalizedRelativePath.startsWith(`${folder.name}/`));
+        if (matchingFolders.length > 1) {
+            throw new FileAccessError("ambiguousWorkspacePath", "The path matches multiple workspace folders.",
+                "Pass the exact documentUri from a previous result instead of a workspace-folder display name.");
+        }
+        const matchingFolder = matchingFolders[0];
         if (matchingFolder) {
             const pathInFolder = normalizedRelativePath === matchingFolder.name
                 ? ""
@@ -158,15 +206,7 @@ function resolveFileUri(input: string): vscode.Uri {
         }
     }
 
-    // Ensure the resolved path is under a workspace folder
-    const resolvedPath = uri.fsPath.toLowerCase();
-    const isUnderWorkspace = folders.some(folder => {
-        const folderPath = folder.uri.fsPath.toLowerCase();
-        return resolvedPath === folderPath || resolvedPath.startsWith(folderPath + (process.platform === "win32" ? "\\" : "/"));
-    });
-    if (!isUnderWorkspace) {
-        throw new Error("The resolved path is outside the current workspace.");
-    }
+    checkFileUri(uri);
 
     return uri;
 }
@@ -192,32 +232,21 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
         let truncated = false;
         try {
             const uri = resolveFileUri(options.input.uri);
-            try {
-                await vscode.workspace.fs.stat(uri);
-            } catch {
-                status = "error";
-                errorCode = "fileNotFound";
-                // Most fileNotFound errors come from the model guessing a path. Return an
-                // actionable hint instead of a dead end so it can self-correct via findSymbol.
-                const fileNotFoundPayload = {
-                    error: "File not found.",
-                    hint: "Call lsp_java_findSymbol to obtain the exact workspace path before retrying. Do not guess file paths.",
-                };
-                responseCharCount = getResponseCharCount(fileNotFoundPayload);
-                return toResult(fileNotFoundPayload);
-            }
+            await vscode.workspace.fs.stat(uri);
             const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
                 "vscode.executeDocumentSymbolProvider", uri,
             );
             if (!symbols || symbols.length === 0) {
                 status = "empty";
-                // Separate "index not ready yet" from a genuine no-symbol result so the model
-                // (and telemetry) can tell a transient state apart from an unrecognized file.
-                const indexing = !languageServerApiManager.isFullyReady();
-                emptyReason = indexing ? "indexingInProgress" : "documentSymbolProviderEmpty";
-                const noSymbolsPayload = indexing
-                    ? { error: "Java language server is still indexing. Retry shortly." }
-                    : { error: "No symbols found. The file may not be recognized by the Java language server." };
+                const serverNotFullyReady = !languageServerApiManager.isFullyReady();
+                emptyReason = serverNotFullyReady ? "serverNotFullyReady" : "documentSymbolProviderEmpty";
+                const noSymbolsPayload = {
+                    symbols: [],
+                    reason: emptyReason,
+                    message: serverNotFullyReady
+                        ? "Java language server initialization has not completed. Retry once after it becomes ready, or use text search."
+                        : "No document symbols returned. Check that the file is recognized by the Java language server.",
+                };
                 responseCharCount = getResponseCharCount(noSymbolsPayload);
                 return toResult(noSymbolsPayload);
             }
@@ -225,13 +254,23 @@ const fileStructureTool: vscode.LanguageModelTool<FileStructureInput> = {
             const result = symbolsToJson(symbols, 0, counter, limit);
             resultCount = counter.count;
             truncated = counter.truncated;
-            const file = vscode.workspace.asRelativePath(uri);
-            const fileStructurePayload = { file, symbols: result, ...(truncated && { truncated: true }) };
+            const fileStructurePayload = {
+                documentUri: uri.toString(),
+                file: uri.fsPath,
+                symbols: result,
+                ...(truncated && { truncated: true }),
+            };
             responseCharCount = getResponseCharCount(fileStructurePayload);
             return toResult(fileStructurePayload);
         } catch (e) {
             status = "error";
             errorCode = errorCode || getToolErrorCode(e);
+            const fileError = getFileAccessError(e);
+            if (fileError) {
+                const payload = { error: fileError.message, errorCode, hint: fileError.hint };
+                responseCharCount = getResponseCharCount(payload);
+                return toResult(payload);
+            }
             throw e;
         } finally {
             sendInfo("", {
@@ -282,6 +321,8 @@ function symbolsToJson(symbols: vscode.DocumentSymbol[], depth: number, counter:
         }
         if (s.children?.length && depth < MAX_SYMBOL_DEPTH) {
             node.children = symbolsToJson(s.children, depth + 1, counter, limit);
+        } else if (s.children?.length) {
+            counter.truncated = true;
         }
         result.push(node);
     }
@@ -302,12 +343,14 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
         const startTime = Date.now();
         let resultCount = 0;
         let totalResults = 0;
-        const limit = Math.min(Math.max(options.input.limit || 20, 1), 50);
+        const limit = Math.min(Math.max(Math.floor(options.input.limit ?? 20), 1), 50);
         let status = "success";
         let errorCode = "";
         let emptyReason = "";
         let responseCharCount = 0;
         let retried = false;
+        let initialQueryDurationMs = 0;
+        let retryQueryDurationMs = 0;
         try {
             const rawQuery = (options.input.query ?? "").trim();
             // Reject blank/whitespace-only queries early: an empty query triggers an
@@ -316,55 +359,65 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                 status = "error";
                 errorCode = "emptyQuery";
                 const emptyQueryPayload = {
-                    error: "Query is empty. Provide a class, interface, method, or field name to search for.",
+                    error: "Query is empty. Provide a Java type name or pattern.",
                 };
                 responseCharCount = getResponseCharCount(emptyQueryPayload);
                 return toResult(emptyQueryPayload);
             }
-            let symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-                "vscode.executeWorkspaceSymbolProvider", rawQuery,
-            );
-            // Server-side fallback: if the verbatim query misses, retry once with a
+            let symbols: vscode.SymbolInformation[] | undefined;
+            const initialQueryStart = Date.now();
+            try {
+                symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                    "vscode.executeWorkspaceSymbolProvider", rawQuery,
+                );
+            } finally {
+                initialQueryDurationMs = Date.now() - initialQueryStart;
+            }
+            // Tool-side fallback: if the verbatim query misses, retry once with a
             // normalized identifier (strip package qualifier, generics, and parameter
             // lists) so the model does not have to chain repeated findSymbol calls itself.
             if (!symbols || symbols.length === 0) {
                 const normalized = normalizeSymbolQuery(rawQuery);
                 if (normalized && normalized !== rawQuery) {
                     retried = true;
-                    symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-                        "vscode.executeWorkspaceSymbolProvider", normalized,
-                    );
+                    const retryQueryStart = Date.now();
+                    try {
+                        symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                            "vscode.executeWorkspaceSymbolProvider", normalized,
+                        );
+                    } finally {
+                        retryQueryDurationMs = Date.now() - retryQueryStart;
+                    }
                 }
             }
             if (!symbols || symbols.length === 0) {
                 status = "empty";
-                // Distinguish a transient "index not ready" state from a real no-match so the
-                // model can retry later instead of concluding the symbol does not exist.
-                const indexing = !languageServerApiManager.isFullyReady();
-                emptyReason = indexing ? "indexingInProgress" : "workspaceSymbolNoMatch";
-                const noMatchesPayload = indexing
-                    ? { results: [], message: "Java language server is still indexing. Retry shortly or use grep_search as a fallback." }
-                    : { results: [], message: "No symbols found." };
+                const serverNotFullyReady = !languageServerApiManager.isFullyReady();
+                emptyReason = serverNotFullyReady ? "serverNotFullyReady" : "workspaceSymbolNoMatch";
+                const noMatchesPayload = {
+                    results: [],
+                    reason: emptyReason,
+                    message: serverNotFullyReady
+                        ? "Java language server initialization has not completed. Retry once after it becomes ready, or use text search."
+                        : "No matching symbols returned. Methods require java.symbols.includeSourceMethodDeclarations; fields are not searched."
+                            + " Use the known containing type's file outline or text search. Empty results do not prove a symbol is absent.",
+                };
                 responseCharCount = getResponseCharCount(noMatchesPayload);
                 return toResult(noMatchesPayload);
             }
             totalResults = symbols.length;
             const results = symbols.slice(0, limit).map(s => {
-                const file = vscode.workspace.asRelativePath(s.location.uri);
                 const { startLine, endLine } = toInclusiveLineRange(s.location.range);
                 return {
                     name: s.name,
                     kind: vscode.SymbolKind[s.kind],
                     container: s.containerName || undefined,
-                    file,
-                    startLine,
-                    endLine,
-                    readFileInput: toReadFileInput(file, startLine, endLine),
-                    range: `L${startLine}-${endLine}`,
+                    ...getDocumentLocation(s.location.uri),
+                    selectionRange: { startLine, endLine },
                 };
             });
             resultCount = results.length;
-            const findSymbolPayload = { results, total: symbols.length };
+            const findSymbolPayload = { results, total: symbols.length, ...(symbols.length > limit && { truncated: true }) };
             responseCharCount = getResponseCharCount(findSymbolPayload);
             return toResult(findSymbolPayload);
         } catch (e) {
@@ -382,6 +435,8 @@ const findSymbolTool: vscode.LanguageModelTool<FindSymbolInput> = {
                 resultCount,
                 totalResults,
                 responseCharCount,
+                initialQueryDurationMs,
+                retryQueryDurationMs,
                 durationMs: Date.now() - startTime,
             });
         }
