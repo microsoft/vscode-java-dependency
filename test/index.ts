@@ -31,6 +31,14 @@ async function main(): Promise<void> {
 
         // Download VS Code, unzip it and run the integration test
 
+        // Run isolated LSP tool contract tests without requiring a Java project.
+        await runTests({
+            vscodeExecutablePath,
+            extensionDevelopmentPath,
+            extensionTestsPath: path.join(extensionDevelopmentPath, "out", "test", "lsp-tools-suite"),
+            launchArgs: [`--user-data-dir=${userDir}`],
+        });
+
         // Run general test
         await runTests({
             vscodeExecutablePath,
