@@ -34,4 +34,12 @@ To set up the vscode-java-dependency project, follow these steps:
    - Run the "Attach to Plugin" task.
    - Note: This task is required only if you want to debug Java code [jdtls.ext](./jdtls.ext). It requires the [vscode-pde](https://marketplace.visualstudio.com/items?itemName=yaozheng.vscode-pde) extension to be installed.
 
+## Java LSP Tool Contract Tests
+
+After installing dependencies, run `npm run test-lsp-tools` for the isolated navigation-tool suite. It compiles TypeScript and starts a separate VS Code test host; no Java server build, Java project, or signed-in Copilot session is required. Set `VSCODE_EXECUTABLE_PATH` to reuse an existing VS Code executable instead of downloading one.
+
+These tests exercise the tool implementations with real VS Code URI, range, error and tool-result types, but mock providers, workspace membership, readiness and telemetry. They cover output contracts, URI handoff, error classification, retry behavior and truncation. They do not validate live JDT search coverage, indexing completeness, Native/CLI reader integration or token savings. The suite also runs as part of `npm test`.
+
+`lmTool.findSymbol` records `initialQueryDurationMs` and `retryQueryDurationMs` separately from total `durationMs`. These measure client-observed provider calls, not internal JDT phases; retry duration is zero when no retry occurs. No query text, source paths or symbol names are added to these events.
+
 Thank you for your contributions and support!

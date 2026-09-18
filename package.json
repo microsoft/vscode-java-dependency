@@ -52,7 +52,7 @@
       {
         "name": "lsp_java_getFileStructure",
         "toolReferenceName": "javaFileStructure",
-        "modelDescription": "Outline a known Java file (classes, methods, fields with line ranges) to pick a precise read_file range instead of reading the whole file. Needs a path from lsp_java_findSymbol or the user — do not guess. Returns file plus per-symbol readFileRange ({ offset, limit }) for read_file. Use limit to cap outline items (default 20, max 60). Not for workspace search (use lsp_java_findSymbol).",
+        "modelDescription": "Outline a known Java source file in the workspace (classes, methods, fields with full declaration ranges). Prefer documentUri from lsp_java_findSymbol when outlineSupported is true, or a confirmed file path; do not guess. Returns an absolute file path and per-symbol readFileRange ({ offset, limit }, 1-based lines). Select a member before reading a large class. Adapt these ranges to the available reader's schema. Only file: workspace documents are supported; use an authorized document reader for dependency or virtual source. limit caps output items, not provider work (default 20, max 60).",
         "displayName": "Java: Get File Structure",
         "userDescription": "Get a Java file outline with classes, methods, fields, and line ranges.",
         "tags": [
@@ -69,11 +69,13 @@
           "properties": {
             "uri": {
               "type": "string",
-              "description": "Workspace-relative path to a Java file, from lsp_java_findSymbol or user input — do not guess."
+              "description": "Exact documentUri from a result with outlineSupported=true, or a confirmed absolute/workspace-relative path to a Java file. Only file: documents within the workspace are supported."
             },
             "limit": {
-              "type": "number",
-              "description": "Maximum outline items to return (default: 20, max: 60). Use a smaller value when only top-level context is needed."
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60,
+              "description": "Maximum output symbol nodes, including children (default: 20, max: 60). Truncation may omit the desired member; fall back to targeted text search rather than assuming it is absent."
             }
           },
           "required": [
@@ -84,9 +86,9 @@
       {
         "name": "lsp_java_findSymbol",
         "toolReferenceName": "javaFindSymbol",
-        "modelDescription": "Find Java class/interface/method/field definitions across the workspace by name or partial identifier. Prefer over grep_search, file_search, or semantic_search for Java symbol lookup. Each result has file and readFileInput ({ filePath, offset, limit }) for read_file; use it when source is needed, or lsp_java_getFileStructure with file for broader context. On empty results don't re-search (it retries internally); retry once only if it reports indexing in progress, else use generic search. Not for non-Java files, literals, comments, or build/XML files.",
+        "modelDescription": "Locate Java types (classes, interfaces, enums, records) by name or pattern. Prefer over generic search for type-name lookup. Source methods are included only when java.symbols.includeSourceMethodDeclarations is enabled; fields are not searched. For members, use the known containing type's file outline, or text search if the type is unknown. Results have documentUri, outlineSupported, and selectionRange (1-based inclusive lines for navigation, NOT the full declaration or implementation). When outlineSupported is true, pass documentUri to lsp_java_getFileStructure for full member read ranges; do not use selectionRange as an implementation read. On empty results, retry once only if serverNotFullyReady is reported; otherwise use text search. Not for literals, comments, build files, or conceptual search.",
         "displayName": "Java: Find Symbol",
-        "userDescription": "Find Java class, method, field, or interface definitions by name.",
+        "userDescription": "Locate Java types by name; source methods depend on Java symbol-search settings.",
         "tags": [
           "java",
           "lsp",
@@ -101,11 +103,13 @@
           "properties": {
             "query": {
               "type": "string",
-              "description": "Symbol name or pattern to search for"
+              "description": "Java type name or pattern. Source method search depends on Java settings; field search is not supported."
             },
             "limit": {
-              "type": "number",
-              "description": "Maximum results (default: 20, max: 50)"
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Maximum results returned to the model (default: 20, max: 50). Does not limit language-server search work."
             }
           },
           "required": [
@@ -1192,6 +1196,7 @@
     "compile": "tsc -p . && webpack --config webpack.config.js --mode development",
     "watch": "webpack --mode development --watch",
     "test": "tsc -p . && webpack --config webpack.config.js --mode development && node ./dist/test/index.js",
+    "test-lsp-tools": "tsc -p . && node ./out/test/runLspToolsTests.js",
     "test-e2e": "autotest run-all test/e2e-plans --no-llm",
     "build-server": "node scripts/buildJdtlsExt.js",
     "vscode:prepublish": "tsc -p ./ && webpack --mode production",

@@ -1,15 +1,19 @@
 ---
-description: Use Java LSP tools for precise Java symbol navigation. Prefer lsp_java_findSymbol and lsp_java_getFileStructure over generic search only when locating Java classes, methods, fields, or file outlines.
+description: Use Java LSP tools for Java type-name lookup and known-file outlines. Method search depends on Java settings; use outlines or text search for members.
 applyTo: '**/*.java'
 ---
 
-For Java symbol navigation, two compiler-accurate `lsp_java_*` tools are available and return structured results with smaller, easier-to-interpret payloads than generic search:
+For Java navigation, two `lsp_java_*` tools return structured results from language-service providers:
 
-- `lsp_java_findSymbol(query)` — find class/method/field definitions by name across the workspace
-- `lsp_java_getFileStructure(uri)` — get file outline (classes, methods, fields) with line ranges
+- `lsp_java_findSymbol(query)` — locate types by name or pattern. Source methods require `java.symbols.includeSourceMethodDeclarations`; fields are not searched. Do not change Java settings to make a query work.
+- `lsp_java_getFileStructure(uri)` — get a known workspace file's outline (classes, methods, fields) with full declaration ranges.
 
 If these tools are not already available in the current tool list, load them with `tool_search` using a query such as `Java LSP symbol navigation lsp_java`.
 
-Use `lsp_java_findSymbol` before `grep_search`, `search_subagent`, `semantic_search`, or `file_search` only when the task is to locate Java symbols by name or partial identifier. If it returns relevant symbols and source is needed, call `read_file` with the returned `readFileInput`, or call `lsp_java_getFileStructure` with the returned `file` when broader file context is needed.
+Prefer `lsp_java_findSymbol` for type-name lookup. For a method or field with a known containing type, locate that type and inspect its file outline. If the containing type is unknown, use text search. A result's `selectionRange` is a navigation location, not an implementation range; do not read it expecting a complete method or class.
 
-Use `lsp_java_getFileStructure` only with a path confirmed by the user or a previous tool result. Prefer `file` from `lsp_java_findSymbol`; do not guess paths. Its output includes a top-level `file` and per-symbol `readFileRange`; to read a selected symbol, call `read_file` with `filePath=file` and that `readFileRange`. Use `limit` to keep large outlines small. Use generic search for string literals, comments, XML, Gradle/Maven files, non-Java files, or broad conceptual exploration. `lsp_java_findSymbol` already retries internally with a normalized identifier, so do not re-issue the same search on an empty result: if it reports indexing in progress, retry once after a short pause; otherwise fall back to generic search.
+Pass `documentUri` to `lsp_java_getFileStructure` only when `outlineSupported=true`, or use a confirmed workspace file path. Its output includes an absolute `file` path and per-symbol `readFileRange` with 1-based `offset` and line-count `limit`. Adapt those fields to the available reader's schema; Native and CLI readers need not have identical parameters. Select the needed member before reading a large class. If `truncated=true`, an omitted member is not evidence of absence; use targeted text search rather than repeatedly requesting the same capped outline.
+
+When `outlineSupported=false`, preserve `documentUri` and use an authorized reader that supports dependency, virtual, or external source. Do not rewrite it as a workspace path or bypass access boundaries. On `fileNotFound`, confirm the file path; on `permissionDenied` or `fileSystemUnavailable`, address access or connection issues instead of repeating symbol lookup.
+
+Use generic search for string literals, comments, XML, Gradle/Maven files, non-Java files, or broad conceptual exploration. `lsp_java_findSymbol` retries internally only when normalization changes an empty query result. Do not repeat the same search on an empty result: retry once after initialization only if it reports `serverNotFullyReady`; otherwise use generic search. Server readiness describes initialization, not proof of complete results.
