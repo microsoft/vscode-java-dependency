@@ -62,20 +62,22 @@ extends:
               - checkout: self
                 fetchTags: false
               # The image does not have jdk preinstalled, we need to download it first.
-              - task: PowerShell@2
+              - task: Bash@3
                 displayName: Download JDK 25
                 inputs:
-                  targetType: 'inline'
+                  targetType: inline
                   script: |-
-                    New-Item -ItemType Directory -Path "$env:AGENT_TEMPDIRECTORY\downloadjdk"
-                    Invoke-WebRequest -Uri "https://aka.ms/download-jdk/microsoft-jdk-25-windows-x64.zip" -OutFile "$env:AGENT_TEMPDIRECTORY\downloadjdk\microsoft-jdk-25-windows-x64.zip"
+                    mkdir -p "$(Agent.TempDirectory)/downloadjdk"
+                    curl --fail --location --silent --show-error \
+                      "https://aka.ms/download-jdk/microsoft-jdk-25-linux-x64.tar.gz" \
+                      --output "$(Agent.TempDirectory)/downloadjdk/microsoft-jdk-25-linux-x64.tar.gz"
               - task: JavaToolInstaller@0
                 displayName: Use Java 25
                 inputs:
                   versionSpec: "25"
                   jdkArchitectureOption: x64
                   jdkSourceOption: LocalDirectory
-                  jdkFile: $(Agent.TempDirectory)/downloadjdk/microsoft-jdk-25-windows-x64.zip
+                  jdkFile: $(Agent.TempDirectory)/downloadjdk/microsoft-jdk-25-linux-x64.tar.gz
                   jdkDestinationDirectory: $(Agent.ToolsDirectory)/ms-jdk25
               - script: java --version
                 displayName: 'Check Java installation'
@@ -106,20 +108,22 @@ extends:
               - checkout: self
                 fetchTags: false
               # The image does not have jdk preinstalled, we need to download it first.
-              - task: PowerShell@2
+              - task: Bash@3
                 displayName: Download JDK 25
                 inputs:
-                  targetType: 'inline'
+                  targetType: inline
                   script: |-
-                    New-Item -ItemType Directory -Path "$env:AGENT_TEMPDIRECTORY\downloadjdk"
-                    Invoke-WebRequest -Uri "https://aka.ms/download-jdk/microsoft-jdk-25-windows-x64.zip" -OutFile "$env:AGENT_TEMPDIRECTORY\downloadjdk\microsoft-jdk-25-windows-x64.zip"
+                    mkdir -p "$(Agent.TempDirectory)/downloadjdk"
+                    curl --fail --location --silent --show-error \
+                      "https://aka.ms/download-jdk/microsoft-jdk-25-linux-x64.tar.gz" \
+                      --output "$(Agent.TempDirectory)/downloadjdk/microsoft-jdk-25-linux-x64.tar.gz"
               - task: JavaToolInstaller@0
                 displayName: Use Java 25
                 inputs:
                   versionSpec: "25"
                   jdkArchitectureOption: x64
                   jdkSourceOption: LocalDirectory
-                  jdkFile: $(Agent.TempDirectory)/downloadjdk/microsoft-jdk-25-windows-x64.zip
+                  jdkFile: $(Agent.TempDirectory)/downloadjdk/microsoft-jdk-25-linux-x64.tar.gz
                   jdkDestinationDirectory: $(Agent.ToolsDirectory)/ms-jdk25
               - script: java --version
                 displayName: 'Check Java installation'
