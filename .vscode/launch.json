@@ -12,8 +12,7 @@
         "DEBUG_VSCODE_JAVA":"true"
       },
       "sourceMaps": true,
-      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ],
-      "preLaunchTask": "npm: watch"
+      "outFiles": [ "${workspaceFolder}/dist/**/*.js" ]
     },
     {
       "type": "java",
