@@ -1,0 +1,66 @@
+name: 🐛 Bug report
+description: Report a bug in Project Manager for Java, with a reproducible project so it can be confirmed automatically.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! A **minimal reproducible project** lets a maintainer (or the Copilot agent) reproduce the issue with an AutoTest UI test and turn it into a regression test. The more precise the repro, the faster the fix.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: input
+    id: repro-project
+    attributes:
+      label: Reproducible project
+      description: A link to a public GitHub repo, or note that you attached a zip below. Prefer the smallest project that still shows the bug.
+      placeholder: "https://github.com/<you>/<minimal-repro>"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps against the project above. Name the affected surface (Java Projects tree, a context-menu / command, Referenced Libraries, export jar, new type, etc.).
+      placeholder: |
+        1. Open the project above in VS Code
+        2. Focus the Java Projects view
+        3. Expand src/main/java > com.example
+        4. Right-click App.java > ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead. Screenshots and the "Java" / "Language Support for Java" output-channel logs help a lot.
+    validations:
+      required: true
+
+  - type: textarea
+    id: versions
+    attributes:
+      label: Environment
+      description: Fill in the versions you are running.
+      value: |
+        - OS:
+        - VS Code version:
+        - Extension Pack for Java / Project Manager for Java version:
+        - JDK version:
+    validations:
+      required: true
