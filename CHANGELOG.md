@@ -4,6 +4,16 @@ All notable changes to the "vscode-java-dependency" extension will be documented
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.27.7
+
+- fix - Prevent duplicate Java project roots and incorrect workspace-folder grouping in multi-root workspaces in https://github.com/microsoft/vscode-java-dependency/pull/1061
+- fix - Hide duplicate empty physical folder hierarchies while preserving non-Java resources in https://github.com/microsoft/vscode-java-dependency/pull/1063
+- fix - Hide workspace roots without Java projects when non-Java resources are hidden in https://github.com/microsoft/vscode-java-dependency/pull/1074
+- enhancement - Allow browsing and opening files in non-Java workspace roots when non-Java resources are shown, respecting `files.exclude`, in https://github.com/microsoft/vscode-java-dependency/pull/1075
+- ux - Move the Show/Hide Non-Java Resources action to the Java Projects view toolbar in https://github.com/microsoft/vscode-java-dependency/pull/1078
+- fix - Align experimental Java LSP navigation tool contracts and distinguish navigation locations from full declaration read ranges in https://github.com/microsoft/vscode-java-dependency/pull/1099
+- enhancement - Add Spanish localization for commands, settings, task definitions, and Java Projects welcome views in https://github.com/microsoft/vscode-java-dependency/pull/1101
+
 ## 0.27.6
 
 - enhancement - Prefer Java upgrade over CVE in dependency recommendations in https://github.com/microsoft/vscode-java-dependency/pull/1033
