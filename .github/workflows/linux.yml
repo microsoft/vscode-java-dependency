@@ -49,4 +49,9 @@ jobs:
 
     - name: Print language server Log if job failed
       if: ${{ failure() }}
-      run: find $HOME/.config/Code/User/workspaceStorage/*/redhat.java/jdt_ws/.metadata/.log -print -exec cat '{}' \;;
+      run: |
+        if [ -z "$JAVA_TEST_USER_DIR" ] || [ ! -d "$JAVA_TEST_USER_DIR/User/workspaceStorage" ]; then
+          echo "::warning::Java test workspace storage is unavailable; the test host may not have started."
+          exit 0
+        fi
+        find "$JAVA_TEST_USER_DIR/User/workspaceStorage" -path '*/redhat.java/jdt_ws/.metadata/.log' -print -exec cat '{}' \;

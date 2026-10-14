@@ -34,6 +34,12 @@ To set up the vscode-java-dependency project, follow these steps:
    - Run the "Attach to Plugin" task.
    - Note: This task is required only if you want to debug Java code [jdtls.ext](./jdtls.ext). It requires the [vscode-pde](https://marketplace.visualstudio.com/items?itemName=yaozheng.vscode-pde) extension to be installed.
 
+## Integration Tests
+
+After building the server JAR and installing dependencies, run `npm test`. The Gradle fixture uses Gradle 9.1.0 to support the JDK 25 bundled with the Java extension.
+
+The runner prints its temporary VS Code user data directory and exports it as `JAVA_TEST_USER_DIR` in GitHub Actions. CI reads Java language server logs from that directory's `User/workspaceStorage`, rather than the default VS Code profile.
+
 ## Java LSP Tool Contract Tests
 
 After installing dependencies, run `npm run test-lsp-tools` for the isolated navigation-tool suite. It compiles TypeScript and starts a separate VS Code test host; no Java server build, Java project, or signed-in Copilot session is required. Set `VSCODE_EXECUTABLE_PATH` to reuse an existing VS Code executable instead of downloading one.

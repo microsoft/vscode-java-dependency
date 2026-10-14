@@ -12,6 +12,10 @@ async function main(): Promise<void> {
         // test fails in macOS since the limitation of path length
         // See: https://github.com/microsoft/vscode/issues/86382#issuecomment-593765388
         const userDir = fs.mkdtempSync(path.join(os.tmpdir(), "vscode-user"));
+        process.stdout.write(`Test user data directory: ${userDir}${os.EOL}`);
+        if (process.env.GITHUB_ENV) {
+            fs.appendFileSync(process.env.GITHUB_ENV, `JAVA_TEST_USER_DIR=${userDir}${os.EOL}`);
+        }
         const vscodeExecutablePath = await downloadAndUnzipVSCode();
 
         // Resolve redhat.java dependency

@@ -45,4 +45,10 @@ jobs:
 
     - name: Print language server Log if job failed
       if: ${{ failure() }}
-      run: Get-ChildItem -Path $env:APPDATA/Code/User/workspaceStorage/*/redhat.java/jdt_ws/.metadata/.log | cat
+      run: |
+        if (-not $env:JAVA_TEST_USER_DIR -or -not (Test-Path "$env:JAVA_TEST_USER_DIR\User\workspaceStorage")) {
+          Write-Warning 'Java test workspace storage is unavailable; the test host may not have started.'
+          exit 0
+        }
+        Get-ChildItem -Path "$env:JAVA_TEST_USER_DIR\User\workspaceStorage\*\redhat.java\jdt_ws\.metadata\.log" -Force |
+          ForEach-Object { Write-Output $_.FullName; Get-Content -LiteralPath $_.FullName }
