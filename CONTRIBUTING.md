@@ -40,6 +40,8 @@ After building the server JAR and installing dependencies, run `npm test`. The G
 
 The runner prints its temporary VS Code user data directory and exports it as `JAVA_TEST_USER_DIR` in GitHub Actions. CI reads Java language server logs from that directory's `User/workspaceStorage`, rather than the default VS Code profile.
 
+The test command also checks all Mocha runner entry points in plain Node.js, including success and failure propagation. Mocha 12 exposes its constructor as an ESM default export; the runners use default imports with `esModuleInterop` so both Node.js ESM namespaces and VS Code's CommonJS-compatible loader expose the same constructor.
+
 ## Java LSP Tool Contract Tests
 
 After installing dependencies, run `npm run test-lsp-tools` for the isolated navigation-tool suite. It compiles TypeScript and starts a separate VS Code test host; no Java server build, Java project, or signed-in Copilot session is required. Set `VSCODE_EXECUTABLE_PATH` to reuse an existing VS Code executable instead of downloading one.

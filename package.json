@@ -1195,7 +1195,7 @@
   "scripts": {
     "compile": "tsc -p . && webpack --config webpack.config.js --mode development",
     "watch": "webpack --mode development --watch",
-    "test": "tsc -p . && webpack --config webpack.config.js --mode development && node ./dist/test/index.js",
+    "test": "tsc -p . && node ./out/test/mochaRunners.js && webpack --config webpack.config.js --mode development && node ./dist/test/index.js",
     "test-lsp-tools": "tsc -p . && node ./out/test/runLspToolsTests.js",
     "test-e2e": "autotest run-all test/e2e-plans --no-llm",
     "build-server": "node scripts/buildJdtlsExt.js",
