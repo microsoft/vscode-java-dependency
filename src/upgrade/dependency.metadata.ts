@@ -20,7 +20,7 @@ const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
     "org.springframework.boot:*": {
         "reason": UpgradeReason.END_OF_LIFE,
         "name": "Spring Boot",
-        "supportedVersion": "2.7.x || >=3.2.x",
+        "supportedVersion": "2.7.x || >=3.5.x",
         "eolDate": {
             "4.0.x": "2027-12",
             "3.5.x": "2032-06",
@@ -40,7 +40,7 @@ const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
             "1.5.x": "2020-11",
         },
         "suggestedVersion": {
-            "name": "3.5",
+            "name": "4.0",
             "description": "latest stable release",
         },
     },
@@ -60,14 +60,14 @@ const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
             "4.3.x": "2020-12",
         },
         "suggestedVersion": {
-            "name": "6.2",
+            "name": "7.0",
             "description": "latest stable release",
         },
     },
     "org.springframework.security:*": {
         "reason": UpgradeReason.END_OF_LIFE,
         "name": "Spring Security",
-        "supportedVersion": "5.7.x || 5.8.x || >=6.2.x",
+        "supportedVersion": "5.7.x || 5.8.x || >=6.5.x",
         "eolDate": {
             "7.0.x": "2027-12",
             "6.5.x": "2032-06",
@@ -88,7 +88,23 @@ const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
             "4.2.x": "2020-11",
         },
         "suggestedVersion": {
-            "name": "3.5",
+            "name": "6.5",
+            "description": "latest stable release",
+        },
+    },
+    "org.springframework.cloud:*": {
+        "reason": UpgradeReason.END_OF_LIFE,
+        "name": "Spring Cloud",
+        "supportedVersion": ">=2025.x",
+        "eolDate": {
+            "2025.x": "2026-12",
+            "2024.x": "2025-12",
+            "2023.x": "2024-12",
+            "2022.x": "2023-12",
+            "2021.x": "2022-12",
+        },
+        "suggestedVersion": {
+            "name": "2025.0",
             "description": "latest stable release",
         },
     },
@@ -96,9 +112,8 @@ const DEPENDENCIES_TO_SCAN: DependencyCheckMetadata = {
         "reason": UpgradeReason.DEPRECATED,
         "name": "Java EE",
         "suggestedVersion": {
-            "name": "Jakarta EE 10",
-            "description": "latest release with wide Java runtime version support",
-
+            "name": "Jakarta EE 11",
+            "description": "latest stable release",
         },
     },
     [Upgrade.PACKAGE_ID_FOR_JAVA_RUNTIME]: DEPENDENCY_JAVA_RUNTIME,
