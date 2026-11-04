@@ -1,0 +1,140 @@
+# Reproduces #1119 using a Maven packaging=pom project without Java nature.
+# The absence checks pass on 0.27.6 and expose the released 0.27.7 regression.
+# Run with --vsix <freshly-built VSIX> --no-llm --analysis-mode evidence-only to
+# preserve the actual JDT LS exception alongside the deterministic UI results.
+# Copy the full server log: Output-channel checks only see rendered lines.
+
+name: "Java Dependency - Source Entry Inspection"
+description: |
+  Opens a Java Maven project and adds the existing multi-module Maven fixture.
+  Expands the packaging=pom parent project's physical source folders and
+  refreshes Java Projects. Browsing a non-Java Maven project must not produce
+  Failed to inspect Java source entries or Java model error code 969.
+
+setup:
+  extension: "vscjava.vscode-java-pack"
+  vscodeVersion: "stable"
+  workspace: "../maven"
+  timeout: 180
+  settings:
+    java.configuration.checkProjectSettingsExclusions: false
+    java.configuration.updateBuildConfiguration: "automatic"
+    java.project.explorer.showNonJavaResources: true
+    extensions.autoUpdate: false
+    extensions.autoCheckUpdates: false
+    workbench.startupEditor: "none"
+
+steps:
+  - id: "wait-for-initial-import"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  - id: "close-auxiliary-bar"
+    action: "executeVSCodeCommand workbench.action.closeAuxiliaryBar"
+
+  - id: "collapse-file-explorer"
+    action: "collapseSidebarSection maven"
+
+  - id: "focus-java-projects"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "my-app"
+      exact: true
+      inView: "Java Projects"
+    timeout: 30
+
+  - id: "expand-java-project"
+    action: "expandTreeItem my-app"
+    verifyTreeItem:
+      name: "src/main/java"
+      exact: true
+      inView: "Java Projects"
+    timeout: 30
+
+  - id: "add-maven-parent-workspace"
+    action: "executeVSCodeCommand workbench.action.addRootFolder"
+
+  - id: "enter-maven-parent-workspace"
+    action: "fillQuickInput ${workspaceParent}/multi-module"
+
+  - id: "confirm-maven-parent-workspace"
+    action: "tryClickButton Add"
+
+  - id: "wait-for-parent-import"
+    action: "waitForLanguageServer"
+    timeout: 180
+
+  - id: "refresh-mixed-workspace"
+    action: "executeVSCodeCommand java.view.package.refresh"
+
+  - id: "collapse-mixed-file-explorer"
+    action: "collapseSidebarSection UNTITLED (WORKSPACE)"
+
+  - id: "focus-maven-parent-workspace"
+    action: "executeVSCodeCommand javaProjectExplorer.focus"
+    verifyTreeItem:
+      name: "multi-module"
+      exact: true
+      level: 1
+      inView: "Java Projects"
+    timeout: 30
+
+  - id: "expand-maven-parent-workspace"
+    action: "expandTreeItem multi-module"
+    verifyTreeItem:
+      name: "de.myorg.myservice"
+      exact: true
+      level: 2
+      inView: "Java Projects"
+    timeout: 30
+
+  - id: "expand-packaging-pom-project"
+    action: "expandTreeItem de.myorg.myservice"
+    verifyTreeItem:
+      name: "src"
+      exact: true
+      level: 3
+      inView: "Java Projects"
+    timeout: 30
+
+  - id: "expand-parent-physical-source-folder"
+    action: "expandTreeItem src"
+    verifyTreeItem:
+      name: "main"
+      exact: true
+      level: 4
+      inView: "Java Projects"
+    timeout: 30
+
+  - id: "refresh-expanded-parent"
+    action: "executeVSCodeCommand java.view.package.refresh"
+
+  - id: "settle-server-log"
+    action: "wait 3 seconds"
+
+  - id: "open-java-server-log"
+    action: "executeVSCodeCommand java.open.serverLog"
+    verifyEditorTab:
+      title: ".log"
+    timeout: 15
+
+  - id: "locate-inspection-log-entry"
+    action: "findText Failed to inspect Java source entries"
+
+  - id: "select-full-server-log"
+    action: "executeVSCodeCommand editor.action.selectAll"
+
+  - id: "verify-no-source-entry-inspection-error"
+    action: "executeVSCodeCommand editor.action.clipboardCopyAction"
+    verifyClipboard:
+      notEmpty: true
+      contains: "!SESSION"
+      notContains: "Failed to inspect Java source entries"
+    timeout: 15
+
+  - id: "verify-no-nonexistent-java-model-error"
+    action: "wait 1 seconds"
+    verifyClipboard:
+      contains: "!SESSION"
+      notContains: "Error in Java Model (code 969): de.myorg.myservice"
+    timeout: 15

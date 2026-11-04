@@ -158,7 +158,7 @@ public class ResourceSet {
 
     private boolean containsSourceClasspathEntry(IContainer container) {
         try {
-            IJavaProject javaProject = JavaCore.create(container.getProject());
+            IJavaProject javaProject = ProjectUtils.getJavaProject(container.getProject());
             if (javaProject == null) {
                 return false;
             }
