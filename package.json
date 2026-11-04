@@ -1195,7 +1195,7 @@
   "scripts": {
     "compile": "tsc -p . && webpack --config webpack.config.js --mode development",
     "watch": "webpack --mode development --watch",
-    "test": "tsc -p . && webpack --config webpack.config.js --mode development && node ./dist/test/index.js",
+    "test": "tsc -p . && node ./out/test/mochaRunners.js && webpack --config webpack.config.js --mode development && node ./dist/test/index.js",
     "test-lsp-tools": "tsc -p . && node ./out/test/runLspToolsTests.js",
     "test-e2e": "autotest run-all test/e2e-plans --no-llm",
     "build-server": "node scripts/buildJdtlsExt.js",
@@ -1213,7 +1213,7 @@
     "@vscode/test-electron": "^3.1.0",
     "copy-webpack-plugin": "^14.0.0",
     "glob": "^13.0.6",
-    "mocha": "^11.7.5",
+    "mocha": "^12.0.3",
     "ts-loader": "^9.6.2",
     "tslint": "^6.1.3",
     "typescript": "^4.9.4",
@@ -1234,6 +1234,6 @@
     "vscode-tas-client": "^0.3.0"
   },
   "overrides": {
-    "serialize-javascript": ">=7.0.5"
+    "serialize-javascript": ">=7.1.4"
   }
 }

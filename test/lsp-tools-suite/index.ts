@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import * as Mocha from "mocha";
+import Mocha from "mocha";
 import * as path from "path";
 
 export function run(): Promise<void> {
