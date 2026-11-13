@@ -22,7 +22,7 @@ extends:
       sourceAnalysisVariablesToReset:
         - npm_config_registry
     settings:
-      networkIsolationPolicy: Permissive
+      networkIsolationPolicy: Okay,GitHub
     stages:
       - stage: Build
         jobs:
