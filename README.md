@@ -19,6 +19,7 @@ A lightweight extension to provide additional Java project explorer features. It
 ![create project](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/create-project.png)
 
 ### Export Jar
+
 > Note: For Spring Boot projects, please use the build tool to build the executable jar, for example: `mvn package`.
 
 ![export jar](https://raw.githubusercontent.com/Microsoft/vscode-java-dependency/main/images/export-jar.png)
@@ -71,7 +72,6 @@ You can turn these reminders on or off at any time with the `java.dependency.ena
 - VS Code (version 1.95.0+)
 - [Language Support for Java by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java)
 
-
 ## Settings
 
 | Setting Name | Description | Default Value |
@@ -88,19 +88,20 @@ You can turn these reminders on or off at any time with the `java.dependency.ena
 ## Contribution
 
 ### Build
-* Prerequirement
-    - Node.js
-    - Java SDK 11 or above
 
-* Go to root folder:
-```
+- Prerequirement
+  - Node.js
+  - Java SDK 11 or above
+- Go to root folder:
+
+```shell
 npm install
 npm run build-server
 ```
 
 ## Telemetry
-VS Code collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](https://go.microsoft.com/fwlink/?LinkID=528096&clcid=0x409) to learn more. If you don't wish to send usage data to Microsoft, you can set the `telemetry.enableTelemetry` setting to `false`. Learn more in our [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
 
+VS Code collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](https://go.microsoft.com/fwlink/?LinkID=528096&clcid=0x409) to learn more. If you don't wish to send usage data to Microsoft, you can set the `telemetry.enableTelemetry` setting to `false`. Learn more in our [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
 
 ---
 
